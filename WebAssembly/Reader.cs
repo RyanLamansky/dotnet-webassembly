@@ -42,10 +42,10 @@ namespace WebAssembly
 
 		public byte ReadVarUInt7() => (byte)(this.ReadVarUInt32() & 0b1111111);
 
+		public sbyte ReadVarInt7() => (sbyte)(this.ReadVarInt32() & 0b11111111);
+
 		public uint ReadVarUInt32()
 		{
-			Assert(this.reader != null);
-
 			var result = 0u;
 			var shift = 0;
 			while (true)
@@ -56,6 +56,29 @@ namespace WebAssembly
 					break;
 				shift += 7;
 			}
+
+			return result;
+		}
+
+		public Int32 ReadVarInt32()
+		{
+			var result = 0;
+			Int32 current;
+			var count = 0;
+			var signBits = -1;
+			do
+			{
+				current = this.ReadByte() & 0xFF;
+				result |= (current & 0x7F) << (count * 7);
+				signBits <<= 7;
+				count++;
+			} while (((current & 0x80) == 0x80) && count < 5);
+
+			if ((current & 0x80) == 0x80)
+				throw new ModuleLoadException("Invalid LEB128 sequence.", this.offset);
+
+			if (((signBits >> 1) & result) != 0)
+				result |= signBits;
 
 			return result;
 		}

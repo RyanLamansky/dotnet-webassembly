@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
 
-namespace WebAssembly.Sections
+namespace WebAssembly
 {
-	class Custom : Section
+	/// <summary>
+	/// Contains arbitrary bytes that may have meaning in certain environments.
+	/// </summary>
+	public class CustomSection
 	{
 		/// <summary>
 		/// Creates a new custom section.
 		/// </summary>
-		public Custom()
+		public CustomSection()
 		{
 		}
 
@@ -32,11 +35,5 @@ namespace WebAssembly.Sections
 			get => this.content ?? (this.content = new List<byte>());
 			set => this.content = value ?? new List<byte>();
 		}
-
-		/// <summary>
-		/// Summarizes the custom section as a string.
-		/// </summary>
-		/// <returns>A string summary of this custom section.</returns>
-		public override string ToString() => $"Custom: {this.Name}, {this.content.Count:n}";
 	}
 }

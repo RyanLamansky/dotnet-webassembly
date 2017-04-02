@@ -21,15 +21,26 @@ namespace WebAssembly
 		/// </summary>
 		const uint magic = 0x6d736100;
 
-		private IList<Section> sections;
+		private IList<CustomSection> customSections;
 
 		/// <summary>
-		/// Sections within the module.
+		/// Custom sections.
 		/// </summary>
-		public IList<Section> Sections
+		public IList<CustomSection> CustomSections
 		{
-			get => this.sections ?? (this.sections = new List<Section>());
-			set => this.sections = value ?? throw new ArgumentNullException(nameof(value));
+			get => this.customSections ?? (this.customSections = new List<CustomSection>());
+			set => this.customSections = value ?? new List<CustomSection>();
+		}
+
+		private IList<Type> types;
+
+		/// <summary>
+		/// Function signatures.
+		/// </summary>
+		public IList<Type> Types
+		{
+			get => this.types ?? (this.types = new List<Type>());
+			set => this.types = value ?? new List<Type>();
 		}
 
 		/// <summary>
@@ -65,16 +76,49 @@ namespace WebAssembly
 
 						switch (id)
 						{
-							case 0:
-								var preNameOffset = reader.Offset;
-								var nameLength = reader.ReadVarUInt32();
-
-								module.Sections.Add(new Sections.Custom
+							case 0: //Custom section
 								{
-									Name = reader.ReadString(nameLength),
-									Content = reader.ReadBytes(payloadLength - checked((uint)(reader.Offset - preNameOffset))),
-								});
+									var preNameOffset = reader.Offset;
+									var nameLength = reader.ReadVarUInt32();
+
+									module.CustomSections.Add(new CustomSection
+									{
+										Name = reader.ReadString(nameLength),
+										Content = reader.ReadBytes(payloadLength - checked((uint)(reader.Offset - preNameOffset))),
+									});
+								}
 								break;
+
+							case 1: //Function signature declarations
+								{
+									var count = reader.ReadVarUInt32();
+									var types = module.types = new List<Type>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										types.Add(new Type(reader));
+								}
+								break;
+
+							case 2: //Import declarations
+
+							case 3: //Function declarations
+
+							case 4: //Indirect function table and other tables
+
+							case 5: //Memory attributes
+
+							case 6: //Global declarations
+
+							case 7: //Exports
+
+							case 8: //Start function declaration
+
+							case 9: //Elements section
+
+							case 10: //Function bodies (code)
+
+							case 11: //Data segments
+
 							default:
 								throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
 						}
