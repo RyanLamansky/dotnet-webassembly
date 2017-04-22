@@ -69,6 +69,18 @@ namespace WebAssembly
 			set => this.functions = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		private IList<Table> tables;
+
+		/// <summary>
+		/// Functions defined within the assembly.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Table> Tables
+		{
+			get => this.tables ?? (this.tables = new List<Table>());
+			set => this.tables = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -146,6 +158,14 @@ namespace WebAssembly
 								break;
 
 							case 4: //Indirect function table and other tables
+								{
+									var count = reader.ReadVarUInt32();
+									var tables = module.tables = new List<Table>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										tables.Add(new Table(reader));
+								}
+								break;
 
 							case 5: //Memory attributes
 
