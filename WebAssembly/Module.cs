@@ -26,10 +26,11 @@ namespace WebAssembly
 		/// <summary>
 		/// Custom sections.
 		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
 		public IList<CustomSection> CustomSections
 		{
 			get => this.customSections ?? (this.customSections = new List<CustomSection>());
-			set => this.customSections = value ?? new List<CustomSection>();
+			set => this.customSections = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
 		private IList<Type> types;
@@ -37,10 +38,11 @@ namespace WebAssembly
 		/// <summary>
 		/// Function signatures.
 		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
 		public IList<Type> Types
 		{
 			get => this.types ?? (this.types = new List<Type>());
-			set => this.types = value ?? new List<Type>();
+			set => this.types = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
 		private IList<Import> imports;
@@ -48,10 +50,23 @@ namespace WebAssembly
 		/// <summary>
 		/// Imported external features.
 		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
 		public IList<Import> Imports
 		{
 			get => this.imports ?? (this.imports = new List<Import>());
-			set => this.imports = value ?? new List<Import>();
+			set => this.imports = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
+		private IList<Function> functions;
+
+		/// <summary>
+		/// Functions defined within the assembly.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Function> Functions
+		{
+			get => this.functions ?? (this.functions = new List<Function>());
+			set => this.functions = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
 		/// <summary>
@@ -121,6 +136,14 @@ namespace WebAssembly
 								break;
 
 							case 3: //Function declarations
+								{
+									var count = reader.ReadVarUInt32();
+									var functions = module.functions = new List<Function>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										functions.Add(new Function(reader.ReadVarUInt32()));
+								}
+								break;
 
 							case 4: //Indirect function table and other tables
 
