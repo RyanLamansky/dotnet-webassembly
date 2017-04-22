@@ -43,6 +43,17 @@ namespace WebAssembly
 			set => this.types = value ?? new List<Type>();
 		}
 
+		private IList<Import> imports;
+
+		/// <summary>
+		/// Imported external features.
+		/// </summary>
+		public IList<Import> Imports
+		{
+			get => this.imports ?? (this.imports = new List<Import>());
+			set => this.imports = value ?? new List<Import>();
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -100,6 +111,14 @@ namespace WebAssembly
 								break;
 
 							case 2: //Import declarations
+								{
+									var count = reader.ReadVarUInt32();
+									var imports = module.imports = new List<Import>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										imports.Add(Import.ParseFrom(reader));
+								}
+								break;
 
 							case 3: //Function declarations
 

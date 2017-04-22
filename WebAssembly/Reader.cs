@@ -60,10 +60,10 @@ namespace WebAssembly
 			return result;
 		}
 
-		public Int32 ReadVarInt32()
+		public int ReadVarInt32()
 		{
 			var result = 0;
-			Int32 current;
+			int current;
 			var count = 0;
 			var signBits = -1;
 			do
@@ -94,7 +94,7 @@ namespace WebAssembly
 			return result;
 		}
 
-		private byte ReadByte()
+		public byte ReadByte()
 		{
 			Assert(this.reader != null);
 
