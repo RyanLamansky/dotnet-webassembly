@@ -72,13 +72,25 @@ namespace WebAssembly
 		private IList<Table> tables;
 
 		/// <summary>
-		/// Functions defined within the assembly.
+		/// Tables defined within the assembly.
 		/// </summary>
 		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
 		public IList<Table> Tables
 		{
 			get => this.tables ?? (this.tables = new List<Table>());
 			set => this.tables = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
+		private IList<Memory> memories;
+
+		/// <summary>
+		/// Linear memory areas defined within the assembly.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Memory> Memories
+		{
+			get => this.memories ?? (this.memories = new List<Memory>());
+			set => this.memories = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
 		/// <summary>
@@ -168,6 +180,14 @@ namespace WebAssembly
 								break;
 
 							case 5: //Memory attributes
+								{
+									var count = reader.ReadVarUInt32();
+									var memories = module.memories = new List<Memory>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										memories.Add(new Memory(reader));
+								}
+								break;
 
 							case 6: //Global declarations
 
