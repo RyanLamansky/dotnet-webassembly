@@ -93,6 +93,18 @@ namespace WebAssembly
 			set => this.memories = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		private IList<Global> globals;
+
+		/// <summary>
+		/// Global values defined within the assembly.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Global> Globals
+		{
+			get => this.globals ?? (this.globals = new List<Global>());
+			set => this.globals = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -190,6 +202,14 @@ namespace WebAssembly
 								break;
 
 							case 6: //Global declarations
+								{
+									var count = reader.ReadVarUInt32();
+									var globals = module.globals = new List<Global>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										globals.Add(new Global(reader));
+								}
+								break;
 
 							case 7: //Exports
 

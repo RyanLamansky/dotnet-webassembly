@@ -43,7 +43,7 @@
 		Else = 0x05,
 
 		/// <summary>
-		/// An instruction that marks the end of a block, loop, if, or function
+		/// An instruction that marks the end of a block, loop, if, or function.
 		/// </summary>
 		[OpCodeCharacteristics("end")]
 		End = 0x0b,
