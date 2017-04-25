@@ -105,6 +105,18 @@ namespace WebAssembly
 			set => this.globals = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		private IList<Export> exports;
+
+		/// <summary>
+		/// Features to be made available to the host environment.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Export> Exports
+		{
+			get => this.exports ?? (this.exports = new List<Export>());
+			set => this.exports = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -212,6 +224,14 @@ namespace WebAssembly
 								break;
 
 							case 7: //Exports
+								{
+									var count = reader.ReadVarUInt32();
+									var exports= module.exports = new List<Export>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										exports.Add(new Export(reader));
+								}
+								break;
 
 							case 8: //Start function declaration
 
