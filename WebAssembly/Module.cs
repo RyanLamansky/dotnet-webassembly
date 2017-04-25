@@ -122,6 +122,18 @@ namespace WebAssembly
 		/// </summary>
 		public uint? Start { get; set; }
 
+		private IList<Element> elements;
+
+		/// <summary>
+		/// The elements section allows a module to initialize (at instantiation time) the elements of any imported or internally-defined table with any other definition in the module
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Element> Elements
+		{
+			get => this.elements ?? (this.elements = new List<Element>());
+			set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -243,6 +255,14 @@ namespace WebAssembly
 								break;
 
 							case 9: //Elements section
+								{
+									var count = reader.ReadVarUInt32();
+									var elements = module.elements = new List<Element>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										elements.Add(new Element(reader));
+								}
+								break;
 
 							case 10: //Function bodies (code)
 
