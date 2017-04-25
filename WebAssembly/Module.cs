@@ -118,6 +118,11 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// Gets or sets the start function index, or null if no start function is present.
+		/// </summary>
+		public uint? Start { get; set; }
+
+		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
 		/// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
@@ -234,6 +239,8 @@ namespace WebAssembly
 								break;
 
 							case 8: //Start function declaration
+								module.Start = reader.ReadVarUInt32();
+								break;
 
 							case 9: //Elements section
 
