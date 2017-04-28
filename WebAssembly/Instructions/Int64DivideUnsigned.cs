@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64DivideUnsigned.
+	/// Unsigned division (result is floored).
 	/// </summary>
 	public class Int64DivideUnsigned : Instruction
 	{

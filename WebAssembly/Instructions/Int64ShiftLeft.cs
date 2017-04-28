@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64ShiftLeft.
+	/// Sign-agnostic shift left.
 	/// </summary>
 	public class Int64ShiftLeft : Instruction
 	{

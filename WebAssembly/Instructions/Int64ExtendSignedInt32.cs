@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64ExtendSignedInt32.
+	/// Extend a signed 32-bit integer to a 64-bit integer.
 	/// </summary>
 	public class Int64ExtendSignedInt32 : Instruction
 	{

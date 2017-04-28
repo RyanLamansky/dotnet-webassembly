@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32CountLeadingZeroes.
+	/// Sign-agnostic count leading zero bits.  All zero bits are considered leading if the value is zero.
 	/// </summary>
 	public class Int32CountLeadingZeroes : Instruction
 	{

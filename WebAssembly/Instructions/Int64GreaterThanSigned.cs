@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64GreaterThanSigned.
+	/// Signed greater than.
 	/// </summary>
 	public class Int64GreaterThanSigned : Instruction
 	{

@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Or.
+	/// Sign-agnostic bitwise inclusive or.
 	/// </summary>
 	public class Int64Or : Instruction
 	{

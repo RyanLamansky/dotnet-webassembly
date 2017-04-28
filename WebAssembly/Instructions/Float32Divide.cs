@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Divide.
+	/// Division.
 	/// </summary>
 	public class Float32Divide : Instruction
 	{

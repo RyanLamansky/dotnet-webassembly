@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64ShiftRightUnsigned.
+	///Sign-replicating (arithmetic) shift right.
 	/// </summary>
 	public class Int64ShiftRightUnsigned : Instruction
 	{

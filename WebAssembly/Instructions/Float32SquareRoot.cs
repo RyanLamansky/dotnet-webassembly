@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32SquareRoot.
+	/// Square root.
 	/// </summary>
 	public class Float32SquareRoot : Instruction
 	{

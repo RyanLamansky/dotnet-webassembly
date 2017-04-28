@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64Truncate.
+	/// Round to nearest integer towards zero.
 	/// </summary>
 	public class Float64Truncate : Instruction
 	{

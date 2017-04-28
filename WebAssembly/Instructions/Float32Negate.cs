@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Negate.
+	/// Negation.
 	/// </summary>
 	public class Float32Negate : Instruction
 	{

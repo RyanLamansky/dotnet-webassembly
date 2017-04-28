@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64ConvertUnsignedInt32.
+	/// Convert an unsigned 32-bit integer to a 64-bit float.
 	/// </summary>
 	public class Float64ConvertUnsignedInt32 : Instruction
 	{

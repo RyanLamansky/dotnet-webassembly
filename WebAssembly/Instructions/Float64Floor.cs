@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64Floor.
+	/// Floor operator.
 	/// </summary>
 	public class Float64Floor : Instruction
 	{

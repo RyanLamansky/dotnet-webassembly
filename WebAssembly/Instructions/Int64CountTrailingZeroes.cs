@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64CountTrailingZeroes.
+	/// Sign-agnostic count trailing zero bits.  All zero bits are considered trailing if the value is zero.
 	/// </summary>
 	public class Int64CountTrailingZeroes : Instruction
 	{

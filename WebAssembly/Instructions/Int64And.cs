@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64And.
+	/// Sign-agnostic bitwise and.
 	/// </summary>
 	public class Int64And : Instruction
 	{

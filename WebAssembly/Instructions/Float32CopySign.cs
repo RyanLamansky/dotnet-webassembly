@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32CopySign.
+	/// Copysign.
 	/// </summary>
 	public class Float32CopySign : Instruction
 	{

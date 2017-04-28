@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Maximum.
+	/// Maximum (binary operator); if either operand is NaN, returns NaN.
 	/// </summary>
 	public class Float32Maximum : Instruction
 	{

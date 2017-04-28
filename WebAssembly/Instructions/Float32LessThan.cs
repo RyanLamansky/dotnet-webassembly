@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32LessThan.
+	/// Compare ordered and less than.
 	/// </summary>
 	public class Float32LessThan : Instruction
 	{

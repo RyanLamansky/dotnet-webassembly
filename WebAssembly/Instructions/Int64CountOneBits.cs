@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64CountOneBits.
+	/// Sign-agnostic count number of one bits.
 	/// </summary>
 	public class Int64CountOneBits : Instruction
 	{

@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64Add.
+	/// Addition.
 	/// </summary>
 	public class Float64Add : Instruction
 	{

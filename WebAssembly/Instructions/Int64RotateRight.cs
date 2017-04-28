@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64RotateRight.
+	/// Sign-agnostic rotate right.
 	/// </summary>
 	public class Int64RotateRight : Instruction
 	{

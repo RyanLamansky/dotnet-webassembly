@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32WrapInt64.
+	/// Wrap a 64-bit integer to a 32-bit integer.
 	/// </summary>
 	public class Int32WrapInt64 : Instruction
 	{

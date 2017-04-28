@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64GreaterThanOrEqual.
+	/// Compare ordered and greater than or equal.
 	/// </summary>
 	public class Float64GreaterThanOrEqual : Instruction
 	{

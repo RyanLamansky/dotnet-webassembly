@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64TruncateSignedFloat64.
+	/// Truncate a 64-bit float to a signed 64-bit integer.
 	/// </summary>
 	public class Int64TruncateSignedFloat64 : Instruction
 	{

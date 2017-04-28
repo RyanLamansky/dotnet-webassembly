@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Ceiling.
+	/// Ceiling operator.
 	/// </summary>
 	public class Float32Ceiling : Instruction
 	{

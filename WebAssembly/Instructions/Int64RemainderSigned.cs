@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64RemainderSigned.
+	/// Signed remainder (result has the sign of the dividend).
 	/// </summary>
 	public class Int64RemainderSigned : Instruction
 	{

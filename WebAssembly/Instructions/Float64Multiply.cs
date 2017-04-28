@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64Multiply.
+	/// Multiplication.
 	/// </summary>
 	public class Float64Multiply : Instruction
 	{

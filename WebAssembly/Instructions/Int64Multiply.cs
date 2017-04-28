@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Multiply.
+	/// Sign-agnostic multiplication (lower 64-bits).
 	/// </summary>
 	public class Int64Multiply : Instruction
 	{

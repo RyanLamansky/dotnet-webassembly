@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32ReinterpretInt32.
+	/// Reinterpret the bits of a 32-bit integer as a 32-bit float.
 	/// </summary>
 	public class Float32ReinterpretInt32 : Instruction
 	{

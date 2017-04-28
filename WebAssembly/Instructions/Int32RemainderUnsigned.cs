@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32RemainderUnsigned.
+	/// Unsigned remainder.
 	/// </summary>
 	public class Int32RemainderUnsigned : Instruction
 	{

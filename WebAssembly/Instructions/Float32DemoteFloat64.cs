@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32DemoteFloat64.
+	/// Demote a 64-bit float to a 32-bit float.
 	/// </summary>
 	public class Float32DemoteFloat64 : Instruction
 	{

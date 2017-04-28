@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32LessThanUnsigned.
+	/// Unsigned less than.
 	/// </summary>
 	public class Int32LessThanUnsigned : Instruction
 	{

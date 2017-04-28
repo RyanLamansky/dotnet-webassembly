@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32TruncateUnsignedFloat32.
+	/// Truncate a 32-bit float to an unsigned 32-bit integer.
 	/// </summary>
 	public class Int32TruncateUnsignedFloat32 : Instruction
 	{

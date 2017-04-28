@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32Subtract.
+	/// Sign-agnostic subtraction.
 	/// </summary>
 	public class Int32Subtract : Instruction
 	{

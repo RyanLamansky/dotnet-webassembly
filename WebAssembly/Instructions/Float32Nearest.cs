@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Nearest.
+	/// Round to nearest integer, ties to even.
 	/// </summary>
 	public class Float32Nearest : Instruction
 	{

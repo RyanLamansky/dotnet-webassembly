@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64Absolute.
+	/// Absolute value.
 	/// </summary>
 	public class Float64Absolute : Instruction
 	{

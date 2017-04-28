@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Minimum.
+	/// Minimum (binary operator); if either operand is NaN, returns NaN.
 	/// </summary>
 	public class Float32Minimum : Instruction
 	{

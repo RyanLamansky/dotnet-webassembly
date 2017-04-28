@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float64PromoteFloat32.
+	/// Promote a 32-bit float to a 64-bit float.
 	/// </summary>
 	public class Float64PromoteFloat32 : Instruction
 	{

@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Add.
+	/// Sign-agnostic addition.
 	/// </summary>
 	public class Int64Add : Instruction
 	{

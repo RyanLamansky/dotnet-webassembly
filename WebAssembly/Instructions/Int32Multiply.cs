@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32Multiply.
+	/// Sign-agnostic multiplication (lower 32-bits).
 	/// </summary>
 	public class Int32Multiply : Instruction
 	{

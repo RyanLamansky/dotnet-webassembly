@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64DivideSigned.
+	/// Signed division (result is truncated toward zero).
 	/// </summary>
 	public class Int64DivideSigned : Instruction
 	{

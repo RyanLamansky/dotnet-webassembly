@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32EqualZero.
+	/// Compare equal to zero (return 1 if operand is zero, 0 otherwise).
 	/// </summary>
 	public class Int32EqualZero : Instruction
 	{

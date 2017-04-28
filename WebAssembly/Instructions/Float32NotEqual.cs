@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32NotEqual.
+	/// Compare unordered or unequal.
 	/// </summary>
 	public class Float32NotEqual : Instruction
 	{

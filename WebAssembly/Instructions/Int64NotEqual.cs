@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64NotEqual.
+	/// Sign-agnostic compare unequal.
 	/// </summary>
 	public class Int64NotEqual : Instruction
 	{

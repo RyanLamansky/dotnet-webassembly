@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32NotEqual.
+	/// Sign-agnostic compare unequal.
 	/// </summary>
 	public class Int32NotEqual : Instruction
 	{

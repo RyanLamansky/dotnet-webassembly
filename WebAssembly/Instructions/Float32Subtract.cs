@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Subtract.
+	/// Subtraction.
 	/// </summary>
 	public class Float32Subtract : Instruction
 	{
