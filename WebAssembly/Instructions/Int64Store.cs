@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Store.
+	/// (No conversion) store 8 bytes.
 	/// </summary>
-	public class Int64Store : Instruction
+	public class Int64Store : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Store"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int64Store"/> instance.
 		/// </summary>
 		public Int64Store()
+		{
+		}
+
+		internal Int64Store(Reader reader)
+			: base(reader)
 		{
 		}
 	}

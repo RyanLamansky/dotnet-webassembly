@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Load8Signed.
+	/// Load 1 byte and sign-extend i8 to i64.
 	/// </summary>
-	public class Int64Load8Signed : Instruction
+	public class Int64Load8Signed : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Load8Signed"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int64Load8Signed"/> instance.
 		/// </summary>
 		public Int64Load8Signed()
+		{
+		}
+
+		internal Int64Load8Signed(Reader reader)
+			: base(reader)
 		{
 		}
 	}

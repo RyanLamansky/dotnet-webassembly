@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Float32Store.
+	/// (No conversion) store 4 bytes.
 	/// </summary>
-	public class Float32Store : Instruction
+	public class Float32Store : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Store"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Float32Store"/> instance.
 		/// </summary>
 		public Float32Store()
+		{
+		}
+
+		internal Float32Store(Reader reader)
+			: base(reader)
 		{
 		}
 	}

@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Load.
+	/// Load 8 bytes as i64.
 	/// </summary>
-	public class Int64Load : Instruction
+	public class Int64Load : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Load"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int64Load"/> instance.
 		/// </summary>
 		public Int64Load()
+		{
+		}
+
+		internal Int64Load(Reader reader)
+			: base(reader)
 		{
 		}
 	}

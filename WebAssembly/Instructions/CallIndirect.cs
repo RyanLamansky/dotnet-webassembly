@@ -1,7 +1,9 @@
+using System;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for CallIndirect.
+	/// Call function indirectly.
 	/// </summary>
 	public class CallIndirect : Instruction
 	{
@@ -11,10 +13,29 @@ namespace WebAssembly.Instructions
 		public sealed override OpCode OpCode => OpCode.CallIndirect;
 
 		/// <summary>
+		/// The index of the type representing the function signature.
+		/// </summary>
+		public uint Type { get; set; }
+
+		/// <summary>
+		/// Reserved for future use.
+		/// </summary>
+		public byte Reserved { get; set; }
+
+		/// <summary>
 		/// Creates a new  <see cref="CallIndirect"/> instance.
 		/// </summary>
 		public CallIndirect()
 		{
+		}
+
+		internal CallIndirect(Reader reader)
+		{
+			if (reader == null)
+				throw new ArgumentNullException(nameof(reader));
+
+			Type = reader.ReadVarUInt32();
+			Reserved = reader.ReadVarUInt1();
 		}
 	}
 }

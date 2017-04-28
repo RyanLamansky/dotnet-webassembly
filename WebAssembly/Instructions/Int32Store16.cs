@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32Store16.
+	/// Wrap i32 to i16 and store 2 bytes.
 	/// </summary>
-	public class Int32Store16 : Instruction
+	public class Int32Store16 : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Store16"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int32Store16"/> instance.
 		/// </summary>
 		public Int32Store16()
+		{
+		}
+
+		internal Int32Store16(Reader reader)
+			: base(reader)
 		{
 		}
 	}

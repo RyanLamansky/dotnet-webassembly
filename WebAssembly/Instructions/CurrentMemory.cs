@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for CurrentMemory.
+	/// Return the current memory size in units of 65536-byte pages.
 	/// </summary>
 	public class CurrentMemory : Instruction
 	{
@@ -11,10 +11,20 @@ namespace WebAssembly.Instructions
 		public sealed override OpCode OpCode => OpCode.CurrentMemory;
 
 		/// <summary>
+		/// Not currently used.
+		/// </summary>
+		public byte Reserved { get; set; }
+
+		/// <summary>
 		/// Creates a new  <see cref="CurrentMemory"/> instance.
 		/// </summary>
 		public CurrentMemory()
 		{
+		}
+
+		internal CurrentMemory(Reader reader)
+		{
+			Reserved = reader.ReadVarUInt1();
 		}
 	}
 }

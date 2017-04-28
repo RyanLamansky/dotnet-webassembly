@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for GetGlobal.
+	/// (i32 index){T} => {T}; Read a global variable.
 	/// </summary>
-	public class GetGlobal : Instruction
+	public class GetGlobal : VariableAccessInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.GetGlobal"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="GetGlobal"/> instance.
 		/// </summary>
 		public GetGlobal()
+		{
+		}
+
+		internal GetGlobal(Reader reader)
+			: base(reader)
 		{
 		}
 	}

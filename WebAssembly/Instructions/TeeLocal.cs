@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for TeeLocal.
+	/// Like <see cref="SetLocal"/>, but also returns the set value.
 	/// </summary>
-	public class TeeLocal : Instruction
+	public class TeeLocal : VariableAccessInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.TeeLocal"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="TeeLocal"/> instance.
 		/// </summary>
 		public TeeLocal()
+		{
+		}
+
+		internal TeeLocal(Reader reader)
+			: base(reader)
 		{
 		}
 	}

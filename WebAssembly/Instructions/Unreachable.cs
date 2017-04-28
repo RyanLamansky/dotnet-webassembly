@@ -1,8 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Unreachable.
+	/// An instruction which always traps.
 	/// </summary>
+	/// <remarks>It is intended to be used for example after calls to functions which are known by the producer not to return.</remarks>
 	public class Unreachable : Instruction
 	{
 		/// <summary>

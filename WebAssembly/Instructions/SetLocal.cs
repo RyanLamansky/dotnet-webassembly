@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for SetLocal.
+	/// Set the current value of a local variable.
 	/// </summary>
-	public class SetLocal : Instruction
+	public class SetLocal : VariableAccessInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.SetLocal"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="SetLocal"/> instance.
 		/// </summary>
 		public SetLocal()
+		{
+		}
+
+		internal SetLocal(Reader reader)
+			: base(reader)
 		{
 		}
 	}

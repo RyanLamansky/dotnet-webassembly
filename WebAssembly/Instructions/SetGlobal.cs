@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for SetGlobal.
+	/// (i32 index, T value){T} => i32 index; Write a global variable.
 	/// </summary>
-	public class SetGlobal : Instruction
+	public class SetGlobal : VariableAccessInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.SetGlobal"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="SetGlobal"/> instance.
 		/// </summary>
 		public SetGlobal()
+		{
+		}
+
+		internal SetGlobal(Reader reader)
+			: base(reader)
 		{
 		}
 	}

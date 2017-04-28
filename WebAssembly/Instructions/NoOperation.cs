@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for NoOperation.
+	/// No operation, no effect.
 	/// </summary>
 	public class NoOperation : Instruction
 	{

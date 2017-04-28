@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int32Load.
+	/// Load 4 bytes as i32.
 	/// </summary>
-	public class Int32Load : Instruction
+	public class Int32Load : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Load"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int32Load"/> instance.
 		/// </summary>
 		public Int32Load()
+		{
+		}
+
+		internal Int32Load(Reader reader)
+			: base(reader)
 		{
 		}
 	}

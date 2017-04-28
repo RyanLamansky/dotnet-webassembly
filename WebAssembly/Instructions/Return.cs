@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Return.
+	/// Return zero or more values from this function.
 	/// </summary>
 	public class Return : Instruction
 	{

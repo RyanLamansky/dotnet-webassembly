@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Else.
+	/// Marks the else block of an <see cref="If"/>.
 	/// </summary>
 	public class Else : Instruction
 	{

@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for GetLocal.
+	/// Read the current value of a local variable.
 	/// </summary>
-	public class GetLocal : Instruction
+	public class GetLocal : VariableAccessInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.GetLocal"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="GetLocal"/> instance.
 		/// </summary>
 		public GetLocal()
+		{
+		}
+
+		internal GetLocal(Reader reader)
+			: base(reader)
 		{
 		}
 	}

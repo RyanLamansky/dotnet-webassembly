@@ -1,9 +1,9 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Int64Load16Unsigned.
+	/// Load 2 bytes and zero-extend i16 to i64.
 	/// </summary>
-	public class Int64Load16Unsigned : Instruction
+	public class Int64Load16Unsigned : MemoryImmediateInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Load16Unsigned"/>.
@@ -14,6 +14,11 @@ namespace WebAssembly.Instructions
 		/// Creates a new  <see cref="Int64Load16Unsigned"/> instance.
 		/// </summary>
 		public Int64Load16Unsigned()
+		{
+		}
+
+		internal Int64Load16Unsigned(Reader reader)
+			: base(reader)
 		{
 		}
 	}

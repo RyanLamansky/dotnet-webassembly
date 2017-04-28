@@ -1,7 +1,7 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// (Placeholder) Instruction for Drop.
+	/// A unary operator that discards the value of its operand.
 	/// </summary>
 	public class Drop : Instruction
 	{
