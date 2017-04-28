@@ -28,7 +28,7 @@
 		/// A block with a label at the beginning which may be used to form loops.
 		/// </summary>
 		[OpCodeCharacteristics("loop")]
-		Loops = 0x03,
+		Loop = 0x03,
 
 		/// <summary>
 		/// The beginning of an if construct with an implicit "then" block.
