@@ -146,6 +146,18 @@ namespace WebAssembly
 			set => this.codes = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		private IList<Data> data;
+
+		/// <summary>
+		/// The data section declares the initialized data that is loaded into the linear memory.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<Data> Data
+		{
+			get => this.data ?? (this.data = new List<Data>());
+			set => this.data = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -282,13 +294,19 @@ namespace WebAssembly
 									var codes = module.codes = new List<FunctionBody>(checked((int)count));
 
 									for (var i = 0; i < count; i++)
-									{
 										codes.Add(new FunctionBody(reader, reader.ReadVarUInt32()));
-									}
 								}
 								break;
 
 							case 11: //Data segments
+								{
+									var count = reader.ReadVarUInt32();
+									var data = module.data = new List<Data>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+										data.Add(new Data(reader));
+								}
+								break;
 
 							default:
 								throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
