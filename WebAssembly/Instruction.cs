@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
@@ -60,6 +61,7 @@ namespace WebAssembly
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));
 
+			var depth = 1;
 			while (true)
 			{
 				var opCode = (OpCode)reader.ReadByte();
@@ -68,11 +70,31 @@ namespace WebAssembly
 					default: throw new ModuleLoadException($"Don't know how to parse opcode \"{opCode}\".", reader.Offset);
 					case OpCode.Unreachable: yield return new Unreachable(); break;
 					case OpCode.NoOperation: yield return new NoOperation(); break;
-					case OpCode.Block: yield return new Block(reader); break;
-					case OpCode.Loop: yield return new Loop(reader); break;
-					case OpCode.If: yield return new If(reader); break;
+
+					case OpCode.Block:
+						yield return new Block(reader);
+						depth++;
+						break;
+
+					case OpCode.Loop:
+						yield return new Loop(reader);
+						depth++;
+						break;
+
+					case OpCode.If:
+						yield return new If(reader);
+						depth++;
+						break;
+
 					case OpCode.Else: yield return new Else(); break;
-					case OpCode.End: yield return new End(); break;
+
+					case OpCode.End:
+						yield return new End();
+						Assert(depth > 0);
+						if (--depth == 0)
+							yield break;
+						break;
+
 					case OpCode.Branch: yield return new Branch(reader); break;
 					case OpCode.BranchIf: yield return new BranchIf(reader); break;
 					case OpCode.BranchTable: yield return new BranchTable(reader); break;

@@ -134,6 +134,18 @@ namespace WebAssembly
 			set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		private IList<FunctionBody> codes;
+
+		/// <summary>
+		/// The code section contains a body for every function in the module.
+		/// </summary>
+		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+		public IList<FunctionBody> Codes
+		{
+			get => this.codes ?? (this.codes = new List<FunctionBody>());
+			set => this.codes = value ?? throw new ArgumentNullException(nameof(value));
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
@@ -265,6 +277,16 @@ namespace WebAssembly
 								break;
 
 							case 10: //Function bodies (code)
+								{
+									var count = reader.ReadVarUInt32();
+									var codes = module.codes = new List<FunctionBody>(checked((int)count));
+
+									for (var i = 0; i < count; i++)
+									{
+										codes.Add(new FunctionBody(reader, reader.ReadVarUInt32()));
+									}
+								}
+								break;
 
 							case 11: //Data segments
 
