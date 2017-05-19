@@ -65,5 +65,16 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"{Index}: {InitializerExpression.Count} ({Elements.Count})";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar(this.Index);
+			foreach (var instruction in this.InitializerExpression)
+				instruction.WriteTo(writer);
+
+			writer.WriteVar((uint)this.Elements.Count);
+			foreach (var element in this.Elements)
+				writer.WriteVar(element);
+		}
 	}
 }
