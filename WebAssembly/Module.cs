@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
@@ -327,6 +328,94 @@ namespace WebAssembly
 				{
 					throw new ModuleLoadException(x.Message, reader.Offset, x);
 				}
+			}
+		}
+
+		/// <summary>
+		/// Writes the contents of this module to a <see cref="Stream"/>.
+		/// </summary>
+		/// <param name="output">The destination for data.  The stream is left open after reading is complete.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="output"/> cannot be null.</exception>
+		public void ToBinary(Stream output)
+		{
+			using (var writer = new Writer(output))
+			{
+				writer.Write(magic);
+				writer.Write(0x1);
+
+				var buffer = new Byte[4 * 1024];
+
+				if (this.types != null)
+				{
+					WriteSection(buffer, writer, 1, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.types.Count);
+						foreach (var type in this.types)
+							type?.WriteTo(writer);
+					});
+				}
+
+				if (this.imports != null)
+				{
+				}
+
+				if (this.functions != null)
+				{
+				}
+
+				if (this.tables != null)
+				{
+				}
+
+				if (this.memories != null)
+				{
+				}
+
+				if (this.globals != null)
+				{
+				}
+
+				if (this.exports != null)
+				{
+				}
+
+				if (this.Start != null)
+				{
+				}
+
+				if (this.elements != null)
+				{
+				}
+
+				if (this.codes != null)
+				{
+				}
+
+				if (this.data != null)
+				{
+				}
+			}
+		}
+
+		static void WriteSection(Byte[] buffer, Writer writer, byte section, Action<Writer> action)
+		{
+			Assert(buffer != null);
+			Assert(writer != null);
+			Assert(action != null);
+
+			writer.Write(section);
+			using (var memory = new MemoryStream())
+			{
+				using (var sectionWriter = new Writer(memory))
+				{
+					action(sectionWriter);
+				}
+
+				writer.WriteVar(checked((uint)memory.Length));
+				memory.Position = 0;
+				int read;
+				while ((read = memory.Read(buffer, 0, buffer.Length)) > 0)
+					writer.Write(buffer, 0, read);
 			}
 		}
 	}

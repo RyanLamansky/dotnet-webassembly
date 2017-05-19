@@ -106,5 +106,21 @@ namespace WebAssembly
 
 			return builder.ToString();
 		}
+
+		internal void WriteTo(Writer writer)
+		{
+			var parameters = this.Parameters;
+			var returns = this.Returns;
+
+			writer.WriteVar((sbyte)this.Form);
+
+			writer.WriteVar((uint)parameters.Count);
+			foreach (var parameter in parameters)
+				writer.WriteVar((sbyte)parameter);
+
+			writer.WriteVar((uint)returns.Count);
+			foreach (var @return in returns)
+				writer.WriteVar((sbyte)@return);
+		}
 	}
 }
