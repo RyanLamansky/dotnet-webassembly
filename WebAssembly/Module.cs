@@ -417,6 +417,10 @@ namespace WebAssembly
 
 				if (this.Start != null)
 				{
+					WriteSection(buffer, writer, 8, sectionWriter =>
+					{
+						sectionWriter.WriteVar(this.Start.GetValueOrDefault());
+					});
 				}
 
 				if (this.elements != null)
