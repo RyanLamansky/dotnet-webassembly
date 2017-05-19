@@ -9,7 +9,7 @@ namespace WebAssembly
 	/// <summary>
 	/// A combination of <see cref="OpCode"/> and its associated parameters.
 	/// </summary>
-	public abstract class Instruction
+	public abstract class Instruction : IEquatable<Instruction>
 	{
 		/// <summary>
 		/// Creates a new <see cref="Instruction"/> instance.
@@ -24,6 +24,26 @@ namespace WebAssembly
 		public abstract OpCode OpCode { get; }
 
 		internal abstract void WriteTo(Writer writer);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="other">The instruction to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public abstract bool Equals(Instruction other);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="obj">The object instance to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public override bool Equals(object obj) => this.Equals(obj as Instruction);
+
+		/// <summary>
+		/// Returns a simple hash code based on the value of the instruction.
+		/// </summary>
+		/// <returns>The hash code.</returns>
+		public abstract override int GetHashCode();
 
 		/// <summary>
 		/// Parses an instruction stream restricted to the opcodes available for an initializer expression.
