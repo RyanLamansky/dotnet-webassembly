@@ -357,6 +357,12 @@ namespace WebAssembly
 
 				if (this.imports != null)
 				{
+					WriteSection(buffer, writer, 2, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.imports.Count);
+						foreach (var import in this.imports)
+							import?.WriteTo(writer);
+					});
 				}
 
 				if (this.functions != null)

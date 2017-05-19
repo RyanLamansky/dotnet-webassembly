@@ -39,7 +39,7 @@ namespace WebAssembly
 		/// <summary>
 		/// Creates a new <see cref="Import"/> instance.
 		/// </summary>
-		protected Import()
+		internal Import()
 		{
 		}
 
@@ -48,6 +48,12 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"{Module}::{Field}";
+
+		internal virtual void WriteTo(Writer writer)
+		{
+			writer.Write(this.Module);
+			writer.Write(this.Field);
+		}
 
 		/// <summary>
 		/// Creates an <see cref="Import"/> instance from the provided <see cref="Reader"/>.
@@ -94,7 +100,7 @@ namespace WebAssembly
 			/// <summary>
 			/// The index within the module's types that describes the function signature.
 			/// </summary>
-			public uint TypeIndex { get; set;}
+			public uint TypeIndex { get; set; }
 
 			/// <summary>
 			/// Creates a new <see cref="Function"/> instance.
@@ -108,6 +114,13 @@ namespace WebAssembly
 			/// </summary>
 			/// <returns>A string representation of this instance.</returns>
 			public override string ToString() => $"{base.ToString()} (Function {TypeIndex}";
+
+			internal override void WriteTo(Writer writer)
+			{
+				base.WriteTo(writer);
+				writer.Write((byte)ExternalKind.Function);
+				writer.WriteVar(this.TypeIndex);
+			}
 		}
 	}
 }
