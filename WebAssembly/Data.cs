@@ -60,5 +60,19 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Index: {Index}, Length: {rawData?.Count()}";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar(this.Index);
+			foreach (var instruction in this.InitializerExpression)
+				instruction.WriteTo(writer);
+
+			writer.WriteVar((uint)this.RawData.Count);
+			if (this.RawData is byte[] bytes)
+				writer.Write(bytes);
+			else
+				foreach (var b in this.RawData)
+					writer.Write(b);
+		}
 	}
 }
