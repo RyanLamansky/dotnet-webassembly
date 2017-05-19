@@ -37,5 +37,12 @@ namespace WebAssembly.Instructions
 			Type = reader.ReadVarUInt32();
 			Reserved = reader.ReadVarUInt1();
 		}
+
+		internal override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)OpCode.CallIndirect);
+			writer.WriteVar(this.Type);
+			writer.WriteVar(this.Reserved);
+		}
 	}
 }

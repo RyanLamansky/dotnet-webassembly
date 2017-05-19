@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic bitwise inclusive or.
 	/// </summary>
-	public class Int32Or : Instruction
+	public class Int32Or : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Or"/>.

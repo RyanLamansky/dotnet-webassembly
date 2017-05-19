@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic shift left.
 	/// </summary>
-	public class Int64ShiftLeft : Instruction
+	public class Int64ShiftLeft : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64ShiftLeft"/>.

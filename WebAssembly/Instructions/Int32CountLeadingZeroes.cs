@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic count leading zero bits.  All zero bits are considered leading if the value is zero.
 	/// </summary>
-	public class Int32CountLeadingZeroes : Instruction
+	public class Int32CountLeadingZeroes : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32CountLeadingZeroes"/>.

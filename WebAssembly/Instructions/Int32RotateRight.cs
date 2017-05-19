@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic rotate right.
 	/// </summary>
-	public class Int32RotateRight : Instruction
+	public class Int32RotateRight : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32RotateRight"/>.

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Subtraction.
 	/// </summary>
-	public class Float32Subtract : Instruction
+	public class Float32Subtract : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Subtract"/>.

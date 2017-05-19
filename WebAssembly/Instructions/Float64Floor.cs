@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Floor operator.
 	/// </summary>
-	public class Float64Floor : Instruction
+	public class Float64Floor : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Floor"/>.

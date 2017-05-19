@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic compare unequal.
 	/// </summary>
-	public class Int64NotEqual : Instruction
+	public class Int64NotEqual : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64NotEqual"/>.

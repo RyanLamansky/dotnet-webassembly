@@ -36,5 +36,11 @@
 		{
 			Value = reader.ReadVarInt64();
 		}
+
+		internal override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)OpCode.Int64Constant);
+			writer.WriteVar(this.Value);
+		}
 	}
 }

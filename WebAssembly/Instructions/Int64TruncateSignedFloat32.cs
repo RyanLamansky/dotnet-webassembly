@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Truncate a 32-bit float to a signed 64-bit integer.
 	/// </summary>
-	public class Int64TruncateSignedFloat32 : Instruction
+	public class Int64TruncateSignedFloat32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64TruncateSignedFloat32"/>.

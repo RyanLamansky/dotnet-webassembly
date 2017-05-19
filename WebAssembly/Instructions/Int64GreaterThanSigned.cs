@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Signed greater than.
 	/// </summary>
-	public class Int64GreaterThanSigned : Instruction
+	public class Int64GreaterThanSigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64GreaterThanSigned"/>.

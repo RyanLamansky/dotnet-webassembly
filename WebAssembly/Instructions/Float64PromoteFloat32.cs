@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Promote a 32-bit float to a 64-bit float.
 	/// </summary>
-	public class Float64PromoteFloat32 : Instruction
+	public class Float64PromoteFloat32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64PromoteFloat32"/>.

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic bitwise exclusive or.
 	/// </summary>
-	public class Int64ExclusiveOr : Instruction
+	public class Int64ExclusiveOr : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64ExclusiveOr"/>.

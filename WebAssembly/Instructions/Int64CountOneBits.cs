@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic count number of one bits.
 	/// </summary>
-	public class Int64CountOneBits : Instruction
+	public class Int64CountOneBits : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64CountOneBits"/>.

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic count trailing zero bits.  All zero bits are considered trailing if the value is zero.
 	/// </summary>
-	public class Int32CountTrailingZeroes : Instruction
+	public class Int32CountTrailingZeroes : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32CountTrailingZeroes"/>.

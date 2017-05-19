@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic multiplication (lower 32-bits).
 	/// </summary>
-	public class Int32Multiply : Instruction
+	public class Int32Multiply : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Multiply"/>.

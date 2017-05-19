@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Compare ordered and less than or equal.
 	/// </summary>
-	public class Float64LessThanOrEqual : Instruction
+	public class Float64LessThanOrEqual : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64LessThanOrEqual"/>.

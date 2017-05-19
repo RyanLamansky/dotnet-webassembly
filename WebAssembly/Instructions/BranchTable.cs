@@ -51,5 +51,17 @@ namespace WebAssembly.Instructions
 
 			this.DefaultLabel = reader.ReadVarUInt32();
 		}
+
+		internal sealed override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)OpCode.BranchTable);
+
+			var labels = this.Labels;
+			writer.WriteVar((uint)labels.Count);
+
+			foreach (var label in labels)
+				writer.WriteVar(label);
+			writer.WriteVar(this.DefaultLabel);
+		}
 	}
 }

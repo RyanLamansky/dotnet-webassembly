@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Compare unordered or unequal.
 	/// </summary>
-	public class Float32NotEqual : Instruction
+	public class Float32NotEqual : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32NotEqual"/>.

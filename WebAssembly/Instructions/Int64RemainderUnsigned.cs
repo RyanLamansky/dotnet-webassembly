@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Unsigned remainder.
 	/// </summary>
-	public class Int64RemainderUnsigned : Instruction
+	public class Int64RemainderUnsigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64RemainderUnsigned"/>.

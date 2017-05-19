@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	///Sign-replicating (arithmetic) shift right.
 	/// </summary>
-	public class Int64ShiftRightUnsigned : Instruction
+	public class Int64ShiftRightUnsigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64ShiftRightUnsigned"/>.

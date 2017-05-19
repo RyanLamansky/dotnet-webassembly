@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Multiplication.
 	/// </summary>
-	public class Float32Multiply : Instruction
+	public class Float32Multiply : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Multiply"/>.

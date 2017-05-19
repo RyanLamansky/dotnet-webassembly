@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic subtraction.
 	/// </summary>
-	public class Int64Subtract : Instruction
+	public class Int64Subtract : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Subtract"/>.

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Unsigned division (result is floored).
 	/// </summary>
-	public class Int32DivideUnsigned : Instruction
+	public class Int32DivideUnsigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32DivideUnsigned"/>.

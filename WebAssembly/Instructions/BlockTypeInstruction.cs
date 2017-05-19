@@ -32,5 +32,11 @@ namespace WebAssembly.Instructions
 
 			Type = (BlockType)reader.ReadVarInt7();
 		}
+
+		internal sealed override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)this.OpCode);
+			writer.WriteVar((sbyte)this.Type);
+		}
 	}
 }

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Extend an unsigned 32-bit integer to a 64-bit integer.
 	/// </summary>
-	public class Int64ExtendUnsignedInt32 : Instruction
+	public class Int64ExtendUnsignedInt32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64ExtendUnsignedInt32"/>.

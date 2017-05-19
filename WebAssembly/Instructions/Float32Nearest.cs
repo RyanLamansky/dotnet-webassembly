@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Round to nearest integer, ties to even.
 	/// </summary>
-	public class Float32Nearest : Instruction
+	public class Float32Nearest : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Nearest"/>.

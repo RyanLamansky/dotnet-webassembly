@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Compare ordered and greater than.
 	/// </summary>
-	public class Float32GreaterThan : Instruction
+	public class Float32GreaterThan : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32GreaterThan"/>.

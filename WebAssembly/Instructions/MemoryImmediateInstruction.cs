@@ -56,5 +56,12 @@ namespace WebAssembly.Instructions
 			Flags = (Options)reader.ReadVarUInt32();
 			Offset = reader.ReadVarUInt32();
 		}
+
+		internal sealed override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)this.OpCode);
+			writer.WriteVar((uint)this.Flags);
+			writer.WriteVar(this.Offset);
+		}
 	}
 }

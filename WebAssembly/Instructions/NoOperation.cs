@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// No operation, no effect.
 	/// </summary>
-	public class NoOperation : Instruction
+	public class NoOperation : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.NoOperation"/>.

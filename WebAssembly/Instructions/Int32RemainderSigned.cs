@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Signed remainder (result has the sign of the dividend).
 	/// </summary>
-	public class Int32RemainderSigned : Instruction
+	public class Int32RemainderSigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32RemainderSigned"/>.

@@ -397,6 +397,12 @@ namespace WebAssembly
 
 				if (this.globals != null)
 				{
+					WriteSection(buffer, writer, 6, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.globals.Count);
+						foreach (var global in this.globals)
+							global?.WriteTo(writer);
+					});
 				}
 
 				if (this.exports != null)

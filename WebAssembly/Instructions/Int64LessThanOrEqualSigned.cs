@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Signed less than or equal.
 	/// </summary>
-	public class Int64LessThanOrEqualSigned : Instruction
+	public class Int64LessThanOrEqualSigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64LessThanOrEqualSigned"/>.

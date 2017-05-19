@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Return zero or more values from this function.
 	/// </summary>
-	public class Return : Instruction
+	public class Return : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Return"/>.

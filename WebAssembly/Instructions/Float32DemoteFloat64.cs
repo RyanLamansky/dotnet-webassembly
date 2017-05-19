@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Demote a 64-bit float to a 32-bit float.
 	/// </summary>
-	public class Float32DemoteFloat64 : Instruction
+	public class Float32DemoteFloat64 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32DemoteFloat64"/>.

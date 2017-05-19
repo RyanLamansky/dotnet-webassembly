@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Ceiling operator.
 	/// </summary>
-	public class Float64Ceiling : Instruction
+	public class Float64Ceiling : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Ceiling"/>.

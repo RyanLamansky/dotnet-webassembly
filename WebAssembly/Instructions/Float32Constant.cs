@@ -36,5 +36,11 @@
 		{
 			Value = reader.ReadFloat32();
 		}
+
+		internal override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)OpCode.Float32Constant);
+			writer.Write(this.Value);
+		}
 	}
 }

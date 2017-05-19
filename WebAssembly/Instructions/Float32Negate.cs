@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Negation.
 	/// </summary>
-	public class Float32Negate : Instruction
+	public class Float32Negate : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Negate"/>.

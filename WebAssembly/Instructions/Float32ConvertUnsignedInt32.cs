@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Convert an unsigned 32-bit integer to a 32-bit float.
 	/// </summary>
-	public class Float32ConvertUnsignedInt32 : Instruction
+	public class Float32ConvertUnsignedInt32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32ConvertUnsignedInt32"/>.

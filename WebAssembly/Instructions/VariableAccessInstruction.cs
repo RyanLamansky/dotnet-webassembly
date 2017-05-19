@@ -35,5 +35,11 @@ namespace WebAssembly.Instructions
 		internal VariableAccessInstruction()
 		{
 		}
+
+		internal sealed override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)this.OpCode);
+			writer.WriteVar(this.Index);
+		}
 	}
 }

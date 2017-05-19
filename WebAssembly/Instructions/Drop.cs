@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// A unary operator that discards the value of its operand.
 	/// </summary>
-	public class Drop : Instruction
+	public class Drop : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Drop"/>.

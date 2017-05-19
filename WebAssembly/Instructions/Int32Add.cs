@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic addition.
 	/// </summary>
-	public class Int32Add : Instruction
+	public class Int32Add : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Add"/>.

@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Minimum (binary operator); if either operand is NaN, returns NaN.
 	/// </summary>
-	public class Float32Minimum : Instruction
+	public class Float32Minimum : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Minimum"/>.

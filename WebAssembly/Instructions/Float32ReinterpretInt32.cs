@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Reinterpret the bits of a 32-bit integer as a 32-bit float.
 	/// </summary>
-	public class Float32ReinterpretInt32 : Instruction
+	public class Float32ReinterpretInt32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32ReinterpretInt32"/>.

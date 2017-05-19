@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Signed division (result is truncated toward zero).
 	/// </summary>
-	public class Int64DivideSigned : Instruction
+	public class Int64DivideSigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64DivideSigned"/>.

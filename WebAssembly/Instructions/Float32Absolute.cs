@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Absolute value.
 	/// </summary>
-	public class Float32Absolute : Instruction
+	public class Float32Absolute : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Absolute"/>.

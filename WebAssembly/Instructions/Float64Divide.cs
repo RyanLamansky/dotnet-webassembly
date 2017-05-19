@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Division.
 	/// </summary>
-	public class Float64Divide : Instruction
+	public class Float64Divide : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Divide"/>.

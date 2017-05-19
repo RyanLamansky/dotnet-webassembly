@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Copysign.
 	/// </summary>
-	public class Float64CopySign : Instruction
+	public class Float64CopySign : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64CopySign"/>.

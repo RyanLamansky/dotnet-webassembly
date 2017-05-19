@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic bitwise and.
 	/// </summary>
-	public class Int64And : Instruction
+	public class Int64And : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64And"/>.

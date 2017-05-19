@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Wrap a 64-bit integer to a 32-bit integer.
 	/// </summary>
-	public class Int32WrapInt64 : Instruction
+	public class Int32WrapInt64 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32WrapInt64"/>.

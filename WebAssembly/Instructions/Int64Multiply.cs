@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Sign-agnostic multiplication (lower 64-bits).
 	/// </summary>
-	public class Int64Multiply : Instruction
+	public class Int64Multiply : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Multiply"/>.

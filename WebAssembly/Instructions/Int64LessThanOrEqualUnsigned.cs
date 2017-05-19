@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Unsigned less than or equal.
 	/// </summary>
-	public class Int64LessThanOrEqualUnsigned : Instruction
+	public class Int64LessThanOrEqualUnsigned : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64LessThanOrEqualUnsigned"/>.

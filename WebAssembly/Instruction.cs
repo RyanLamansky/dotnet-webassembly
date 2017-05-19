@@ -23,6 +23,8 @@ namespace WebAssembly
 		/// </summary>
 		public abstract OpCode OpCode { get; }
 
+		internal abstract void WriteTo(Writer writer);
+
 		/// <summary>
 		/// Parses an instruction stream restricted to the opcodes available for an initializer expression.
 		/// </summary>

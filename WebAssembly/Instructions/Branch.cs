@@ -31,5 +31,11 @@ namespace WebAssembly.Instructions
 
 			Index = reader.ReadVarUInt32();
 		}
+
+		internal sealed override void WriteTo(Writer writer)
+		{
+			writer.Write((byte)OpCode.Branch);
+			writer.WriteVar(this.Index);
+		}
 	}
 }

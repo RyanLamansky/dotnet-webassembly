@@ -3,7 +3,7 @@
 	/// <summary>
 	/// An instruction that marks the end of a block, loop, if, or function.
 	/// </summary>
-	class End : Instruction
+	class End : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.End"/>.

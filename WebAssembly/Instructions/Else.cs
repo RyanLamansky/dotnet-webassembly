@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Marks the else block of an <see cref="If"/>.
 	/// </summary>
-	public class Else : Instruction
+	public class Else : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Else"/>.

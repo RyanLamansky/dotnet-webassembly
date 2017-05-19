@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Round to nearest integer towards zero.
 	/// </summary>
-	public class Float32Truncate : Instruction
+	public class Float32Truncate : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Truncate"/>.

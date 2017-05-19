@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Truncate a 64-bit float to an unsigned 64-bit integer.
 	/// </summary>
-	public class Int64TruncateUnsignedFloat64 : Instruction
+	public class Int64TruncateUnsignedFloat64 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64TruncateUnsignedFloat64"/>.

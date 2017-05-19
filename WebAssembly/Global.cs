@@ -44,5 +44,13 @@ namespace WebAssembly
 			this.IsMutable = reader.ReadVarUInt1() == 1;
 			this.InitializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
 		}
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar((sbyte)this.ContentType);
+			writer.WriteVar(this.IsMutable ? 1u : 0);
+			foreach (var instruction in this.InitializerExpression)
+				instruction.WriteTo(writer);
+		}
 	}
 }

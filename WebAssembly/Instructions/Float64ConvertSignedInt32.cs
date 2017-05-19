@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Convert a signed 32-bit integer to a 64-bit float.
 	/// </summary>
-	public class Float64ConvertSignedInt32 : Instruction
+	public class Float64ConvertSignedInt32 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64ConvertSignedInt32"/>.

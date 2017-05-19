@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Reinterpret the bits of a 64-bit float as a 64-bit integer.
 	/// </summary>
-	public class Int64ReinterpretFloat64 : Instruction
+	public class Int64ReinterpretFloat64 : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64ReinterpretFloat64"/>.

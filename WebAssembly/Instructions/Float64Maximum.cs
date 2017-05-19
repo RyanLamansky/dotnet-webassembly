@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Maximum (binary operator); if either operand is NaN, returns NaN.
 	/// </summary>
-	public class Float64Maximum : Instruction
+	public class Float64Maximum : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Maximum"/>.

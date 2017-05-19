@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Square root.
 	/// </summary>
-	public class Float64SquareRoot : Instruction
+	public class Float64SquareRoot : SimpleInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64SquareRoot"/>.
