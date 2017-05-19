@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -62,5 +63,30 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Locals: {locals?.Count}, Code: {code?.Count}";
+
+		internal void WriteTo(Writer writer, byte[] buffer)
+		{
+			using (var memory = new MemoryStream())
+			{
+				using (var bodyWriter = new Writer(memory))
+				{
+					var locals = this.Locals;
+					var instructions = this.Code;
+
+					bodyWriter.WriteVar((uint)locals.Count);
+					foreach (var local in locals)
+						local.WriteTo(bodyWriter);
+
+					foreach (var instruction in instructions)
+						instruction.WriteTo(bodyWriter);
+				}
+
+				writer.WriteVar(checked((uint)memory.Length));
+				memory.Position = 0;
+				int read;
+				while ((read = memory.Read(buffer, 0, buffer.Length)) > 0)
+					writer.Write(buffer, 0, read);
+			}
+		}
 	}
 }

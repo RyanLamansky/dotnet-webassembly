@@ -38,5 +38,11 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"{Count} of {Type}";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar(this.Count);
+			writer.WriteVar((sbyte)this.Type);
+		}
 	}
 }
