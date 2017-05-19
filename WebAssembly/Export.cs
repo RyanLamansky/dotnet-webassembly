@@ -52,5 +52,12 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"{Name}; {Kind}: {Index}";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.Write(this.Name);
+			writer.Write((byte)this.Kind);
+			writer.WriteVar(this.Index);
+		}
 	}
 }

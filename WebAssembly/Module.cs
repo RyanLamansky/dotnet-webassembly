@@ -407,6 +407,12 @@ namespace WebAssembly
 
 				if (this.exports != null)
 				{
+					WriteSection(buffer, writer, 7, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.exports.Count);
+						foreach (var export in this.exports)
+							export?.WriteTo(writer);
+					});
 				}
 
 				if (this.Start != null)
