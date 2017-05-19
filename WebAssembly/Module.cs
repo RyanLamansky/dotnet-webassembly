@@ -341,7 +341,7 @@ namespace WebAssembly
 			using (var writer = new Writer(output))
 			{
 				writer.Write(magic);
-				writer.Write(0x1);
+				writer.Write((uint)0x1);
 
 				var buffer = new Byte[4 * 1024];
 
@@ -351,7 +351,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.types.Count);
 						foreach (var type in this.types)
-							type?.WriteTo(writer);
+							type?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -361,7 +361,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.imports.Count);
 						foreach (var import in this.imports)
-							import?.WriteTo(writer);
+							import?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -371,7 +371,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.functions.Count);
 						foreach (var function in this.functions)
-							function?.WriteTo(writer);
+							function?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -381,7 +381,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.tables.Count);
 						foreach (var table in this.tables)
-							table?.WriteTo(writer);
+							table?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -391,7 +391,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.memories.Count);
 						foreach (var memory in this.memories)
-							memory?.WriteTo(writer);
+							memory?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -401,7 +401,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.globals.Count);
 						foreach (var global in this.globals)
-							global?.WriteTo(writer);
+							global?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -411,7 +411,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.exports.Count);
 						foreach (var export in this.exports)
-							export?.WriteTo(writer);
+							export?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -429,7 +429,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.elements.Count);
 						foreach (var element in this.elements)
-							element?.WriteTo(writer);
+							element?.WriteTo(sectionWriter);
 					});
 				}
 
@@ -439,7 +439,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.codes.Count);
 						foreach (var code in this.codes)
-							code?.WriteTo(writer, buffer);
+							code?.WriteTo(sectionWriter, buffer);
 					});
 				}
 
@@ -449,7 +449,7 @@ namespace WebAssembly
 					{
 						sectionWriter.WriteVar((uint)this.data.Count);
 						foreach (var data in this.data)
-							data?.WriteTo(writer);
+							data?.WriteTo(sectionWriter);
 					});
 				}
 			}
