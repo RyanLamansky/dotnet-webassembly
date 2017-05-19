@@ -377,6 +377,12 @@ namespace WebAssembly
 
 				if (this.tables != null)
 				{
+					WriteSection(buffer, writer, 3, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.tables.Count);
+						foreach (var table in this.tables)
+							table?.WriteTo(writer);
+					});
 				}
 
 				if (this.memories != null)

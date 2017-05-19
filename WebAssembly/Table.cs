@@ -49,5 +49,11 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Table {ElementType}, {ResizableLimits}";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar((sbyte)this.ElementType);
+			this.ResizableLimits.WriteTo(writer);
+		}
 	}
 }

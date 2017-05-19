@@ -11,6 +11,10 @@ namespace WebAssembly
 		enum Flags : uint
 		{
 			/// <summary>
+			/// No flags are set.
+			/// </summary>
+			None = 0x0,
+			/// <summary>
 			/// Indicates whether the <see cref="ResizableLimits.Maximum"/> field is present.
 			/// </summary>
 			Maximum = 0x1,
@@ -54,5 +58,16 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Minimum: {Minimum}, Maximum: {Maximum}";
+
+		internal void WriteTo(Writer writer)
+		{
+			var flags = Flags.None
+				| (this.Maximum.HasValue ? Flags.Maximum : 0)
+				;
+			writer.WriteVar((uint)flags);
+			writer.WriteVar(this.Minimum);
+			if ((flags & Flags.Maximum) != 0)
+				writer.WriteVar(this.Maximum.GetValueOrDefault());
+		}
 	}
 }
