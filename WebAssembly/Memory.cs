@@ -43,5 +43,10 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Memory {ResizableLimits}";
+
+		internal void WriteTo(Writer writer)
+		{
+			this.ResizableLimits.WriteTo(writer);
+		}
 	}
 }

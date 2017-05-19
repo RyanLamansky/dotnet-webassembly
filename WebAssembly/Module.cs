@@ -377,7 +377,7 @@ namespace WebAssembly
 
 				if (this.tables != null)
 				{
-					WriteSection(buffer, writer, 3, sectionWriter =>
+					WriteSection(buffer, writer, 4, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.tables.Count);
 						foreach (var table in this.tables)
@@ -387,6 +387,12 @@ namespace WebAssembly
 
 				if (this.memories != null)
 				{
+					WriteSection(buffer, writer, 5, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.memories.Count);
+						foreach (var memory in this.memories)
+							memory?.WriteTo(writer);
+					});
 				}
 
 				if (this.globals != null)
