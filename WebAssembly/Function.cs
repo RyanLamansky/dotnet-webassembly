@@ -31,5 +31,10 @@
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Function {Type}";
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.WriteVar(this.Type);
+		}
 	}
 }

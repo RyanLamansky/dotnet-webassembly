@@ -367,6 +367,12 @@ namespace WebAssembly
 
 				if (this.functions != null)
 				{
+					WriteSection(buffer, writer, 3, sectionWriter =>
+					{
+						sectionWriter.WriteVar((uint)this.functions.Count);
+						foreach (var function in this.functions)
+							function?.WriteTo(writer);
+					});
 				}
 
 				if (this.tables != null)
