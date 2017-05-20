@@ -14,6 +14,11 @@ namespace WebAssembly
 		{
 		}
 
+		/// <summary>
+		/// This customs section is to be written after the indicated preceding section.  Defaults to <see cref="Section.None"/>, causing it to be in front of all other sections.
+		/// </summary>
+		public Section PrecedingSection { get; set; }
+
 		private string name;
 
 		/// <summary>
@@ -34,6 +39,16 @@ namespace WebAssembly
 		{
 			get => this.content ?? (this.content = new List<byte>());
 			set => this.content = value ?? new List<byte>();
+		}
+
+		internal void WriteTo(Writer writer)
+		{
+			writer.Write(this.Name);
+			if (this.content is byte[] bytes)
+				writer.Write(bytes);
+			else
+				foreach (var b in this.Content)
+					writer.Write(b);
 		}
 	}
 }

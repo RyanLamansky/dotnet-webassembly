@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly
@@ -210,14 +211,15 @@ namespace WebAssembly
 					}
 
 					var module = new Module();
+					var previousSection = Section.None;
 
 					while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 					{
 						var payloadLength = reader.ReadVarUInt32();
 
-						switch (id)
+						switch ((Section)id)
 						{
-							case 0: //Custom section
+							case Section.None: //Custom section
 								{
 									var preNameOffset = reader.Offset;
 									var nameLength = reader.ReadVarUInt32();
@@ -226,11 +228,12 @@ namespace WebAssembly
 									{
 										Name = reader.ReadString(nameLength),
 										Content = reader.ReadBytes(payloadLength - checked((uint)(reader.Offset - preNameOffset))),
+										PrecedingSection = previousSection
 									});
 								}
-								break;
+								continue; //Skip normal post-section logic since this isn't a real section.
 
-							case 1: //Function signature declarations
+							case Section.Type: //Function signature declarations
 								{
 									var count = reader.ReadVarUInt32();
 									var types = module.types = new List<Type>(checked((int)count));
@@ -240,7 +243,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 2: //Import declarations
+							case Section.Import: //Import declarations
 								{
 									var count = reader.ReadVarUInt32();
 									var imports = module.imports = new List<Import>(checked((int)count));
@@ -250,7 +253,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 3: //Function declarations
+							case Section.Function: //Function declarations
 								{
 									var count = reader.ReadVarUInt32();
 									var functions = module.functions = new List<Function>(checked((int)count));
@@ -260,7 +263,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 4: //Indirect function table and other tables
+							case Section.Table: //Indirect function table and other tables
 								{
 									var count = reader.ReadVarUInt32();
 									var tables = module.tables = new List<Table>(checked((int)count));
@@ -270,7 +273,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 5: //Memory attributes
+							case Section.Memory: //Memory attributes
 								{
 									var count = reader.ReadVarUInt32();
 									var memories = module.memories = new List<Memory>(checked((int)count));
@@ -280,7 +283,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 6: //Global declarations
+							case Section.Global: //Global declarations
 								{
 									var count = reader.ReadVarUInt32();
 									var globals = module.globals = new List<Global>(checked((int)count));
@@ -290,7 +293,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 7: //Exports
+							case Section.Export: //Exports
 								{
 									var count = reader.ReadVarUInt32();
 									var exports = module.exports = new List<Export>(checked((int)count));
@@ -300,11 +303,11 @@ namespace WebAssembly
 								}
 								break;
 
-							case 8: //Start function declaration
+							case Section.Start: //Start function declaration
 								module.Start = reader.ReadVarUInt32();
 								break;
 
-							case 9: //Elements section
+							case Section.Element: //Elements section
 								{
 									var count = reader.ReadVarUInt32();
 									var elements = module.elements = new List<Element>(checked((int)count));
@@ -314,7 +317,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 10: //Function bodies (code)
+							case Section.Code: //Function bodies (code)
 								{
 									var count = reader.ReadVarUInt32();
 									var codes = module.codes = new List<FunctionBody>(checked((int)count));
@@ -324,7 +327,7 @@ namespace WebAssembly
 								}
 								break;
 
-							case 11: //Data segments
+							case Section.Data: //Data segments
 								{
 									var count = reader.ReadVarUInt32();
 									var data = module.data = new List<Data>(checked((int)count));
@@ -337,6 +340,8 @@ namespace WebAssembly
 							default:
 								throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
 						}
+
+						previousSection = (Section)id;
 					}
 
 					return module;
@@ -363,6 +368,11 @@ namespace WebAssembly
 		/// <exception cref="ArgumentNullException"><paramref name="output"/> cannot be null.</exception>
 		public void ToBinary(Stream output)
 		{
+			var customSectionsByPrecedingSection = this.customSections?
+				.Where(custom => custom != null)
+				.GroupBy(custom => custom.PrecedingSection)
+				.ToDictionary(group => group.Key);
+
 			using (var writer = new Writer(output))
 			{
 				writer.Write(magic);
@@ -372,7 +382,7 @@ namespace WebAssembly
 
 				if (this.types != null)
 				{
-					WriteSection(buffer, writer, 1, sectionWriter =>
+					WriteSection(buffer, writer, Section.Type, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.types.Count);
 						foreach (var type in this.types)
@@ -382,7 +392,7 @@ namespace WebAssembly
 
 				if (this.imports != null)
 				{
-					WriteSection(buffer, writer, 2, sectionWriter =>
+					WriteSection(buffer, writer, Section.Import, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.imports.Count);
 						foreach (var import in this.imports)
@@ -392,7 +402,7 @@ namespace WebAssembly
 
 				if (this.functions != null)
 				{
-					WriteSection(buffer, writer, 3, sectionWriter =>
+					WriteSection(buffer, writer, Section.Function, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.functions.Count);
 						foreach (var function in this.functions)
@@ -402,7 +412,7 @@ namespace WebAssembly
 
 				if (this.tables != null)
 				{
-					WriteSection(buffer, writer, 4, sectionWriter =>
+					WriteSection(buffer, writer, Section.Table, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.tables.Count);
 						foreach (var table in this.tables)
@@ -412,7 +422,7 @@ namespace WebAssembly
 
 				if (this.memories != null)
 				{
-					WriteSection(buffer, writer, 5, sectionWriter =>
+					WriteSection(buffer, writer, Section.Memory, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.memories.Count);
 						foreach (var memory in this.memories)
@@ -422,7 +432,7 @@ namespace WebAssembly
 
 				if (this.globals != null)
 				{
-					WriteSection(buffer, writer, 6, sectionWriter =>
+					WriteSection(buffer, writer, Section.Global, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.globals.Count);
 						foreach (var global in this.globals)
@@ -432,7 +442,7 @@ namespace WebAssembly
 
 				if (this.exports != null)
 				{
-					WriteSection(buffer, writer, 7, sectionWriter =>
+					WriteSection(buffer, writer, Section.Export, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.exports.Count);
 						foreach (var export in this.exports)
@@ -442,7 +452,7 @@ namespace WebAssembly
 
 				if (this.Start != null)
 				{
-					WriteSection(buffer, writer, 8, sectionWriter =>
+					WriteSection(buffer, writer, Section.Start, sectionWriter =>
 					{
 						sectionWriter.WriteVar(this.Start.GetValueOrDefault());
 					});
@@ -450,7 +460,7 @@ namespace WebAssembly
 
 				if (this.elements != null)
 				{
-					WriteSection(buffer, writer, 9, sectionWriter =>
+					WriteSection(buffer, writer, Section.Element, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.elements.Count);
 						foreach (var element in this.elements)
@@ -460,7 +470,7 @@ namespace WebAssembly
 
 				if (this.codes != null)
 				{
-					WriteSection(buffer, writer, 10, sectionWriter =>
+					WriteSection(buffer, writer, Section.Code, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.codes.Count);
 						foreach (var code in this.codes)
@@ -470,7 +480,7 @@ namespace WebAssembly
 
 				if (this.data != null)
 				{
-					WriteSection(buffer, writer, 11, sectionWriter =>
+					WriteSection(buffer, writer, Section.Data, sectionWriter =>
 					{
 						sectionWriter.WriteVar((uint)this.data.Count);
 						foreach (var data in this.data)
@@ -480,13 +490,34 @@ namespace WebAssembly
 			}
 		}
 
-		static void WriteSection(Byte[] buffer, Writer writer, byte section, Action<Writer> action)
+		static void WriteCustomSection(
+			byte[] buffer,
+			Writer writer,
+			Section precedingSection,
+			Dictionary<Section, IGrouping<Section, CustomSection>> customSectionsByPrecedingSection
+			)
+		{
+			if (customSectionsByPrecedingSection == null)
+				return;
+			if (!customSectionsByPrecedingSection.TryGetValue(precedingSection, out var entries))
+				return;
+
+			foreach (var custom in entries)
+			{
+				WriteSection(buffer, writer, Section.None, sectionWriter =>
+				{
+					custom.WriteTo(sectionWriter);
+				});
+			}
+		}
+
+		static void WriteSection(byte[] buffer, Writer writer, Section section, Action<Writer> action)
 		{
 			Assert(buffer != null);
 			Assert(writer != null);
 			Assert(action != null);
 
-			writer.Write(section);
+			writer.Write((byte)section);
 			using (var memory = new MemoryStream())
 			{
 				using (var sectionWriter = new Writer(memory))
