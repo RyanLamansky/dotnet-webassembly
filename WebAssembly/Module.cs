@@ -166,7 +166,7 @@ namespace WebAssembly
 		/// <returns>The module.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly stream.</exception>
-		public static Module From(Stream input)
+		public static Module FromBinary(Stream input)
 		{
 			using (var reader = new Reader(input))
 			{
