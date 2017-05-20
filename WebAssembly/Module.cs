@@ -177,11 +177,11 @@ namespace WebAssembly
 		/// The specified path, file name, or both exceed the system-defined maximum length.
 		/// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-		public static Module FromBinary(string path)
+		public static Module ReadFromBinary(string path)
 		{
 			using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
 			{
-				return FromBinary(stream);
+				return ReadFromBinary(stream);
 			}
 		}
 
@@ -192,7 +192,7 @@ namespace WebAssembly
 		/// <returns>The module.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly stream.</exception>
-		public static Module FromBinary(Stream input)
+		public static Module ReadFromBinary(Stream input)
 		{
 			using (var reader = new Reader(input))
 			{
@@ -366,7 +366,7 @@ namespace WebAssembly
 		/// </summary>
 		/// <param name="output">The destination for data.  The stream is left open after reading is complete.</param>
 		/// <exception cref="ArgumentNullException"><paramref name="output"/> cannot be null.</exception>
-		public void ToBinary(Stream output)
+		public void WriteToBinary(Stream output)
 		{
 			var customSectionsByPrecedingSection = this.customSections?
 				.Where(custom => custom != null)

@@ -12,12 +12,12 @@ namespace WebAssembly
 	public class ModuleTests
 	{
 		/// <summary>
-		/// Tests the <see cref="Module.FromBinary(Stream)"/> method.
+		/// Tests the <see cref="Module.ReadFromBinary(Stream)"/> method.
 		/// </summary>
 		[TestMethod]
-		public void Module_FromBinaryStream()
+		public void Module_ReadFromBinaryStream()
 		{
-			Assert.AreEqual("input", ExceptionAssert.Expect<ArgumentNullException>(() => Module.FromBinary((Stream)null)).ParamName);
+			Assert.AreEqual("input", ExceptionAssert.Expect<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null)).ParamName);
 
 			using (var sample = new MemoryStream())
 			{
@@ -28,7 +28,7 @@ namespace WebAssembly
 					writer.Write(0x6e736100); //Bad magic number.
 				}
 				sample.Position = 0;
-				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.FromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
+				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
 				Assert.IsTrue(sample.CanSeek, "Stream was closed but should have been left open.");
 
 				sample.Position = 0;
@@ -38,7 +38,7 @@ namespace WebAssembly
 					//Missing version.
 				}
 				sample.Position = 0;
-				Assert.IsInstanceOfType(ExceptionAssert.Expect<ModuleLoadException>(() => Module.FromBinary(sample)).InnerException, typeof(EndOfStreamException));
+				Assert.IsInstanceOfType(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).InnerException, typeof(EndOfStreamException));
 
 				sample.Position = 0;
 				using (var writer = new BinaryWriter(sample, utf8, true))
@@ -47,7 +47,7 @@ namespace WebAssembly
 					writer.Write(0x0); //Bad version
 				}
 				sample.Position = 0;
-				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.FromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
+				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
 
 				sample.Position = 0;
 				using (var writer = new BinaryWriter(sample, utf8, true))
@@ -57,7 +57,7 @@ namespace WebAssembly
 					writer.Write(0x1);
 				}
 				sample.Position = 0;
-				Assert.IsNotNull(Module.FromBinary(sample));
+				Assert.IsNotNull(Module.ReadFromBinary(sample));
 
 				sample.Position = 0;
 				using (var writer = new BinaryWriter(sample, utf8, true))
@@ -67,7 +67,7 @@ namespace WebAssembly
 					writer.Write(0xd); //Pre-release version, binary format is otherwise identical to first release.
 				}
 				sample.Position = 0;
-				Assert.IsNotNull(Module.FromBinary(sample));
+				Assert.IsNotNull(Module.ReadFromBinary(sample));
 			}
 		}
 	}
