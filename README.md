@@ -1,28 +1,26 @@
 ﻿# .NET WebAssembly
 
-An experimental library with the near-term objective of providing the ability to read, modify, and write WebAssembly binary files (WASM) from .NET-based applications.
-A longer term goal is to enable JIT compilation and execution of WASM files that don't have JavaScript dependencies.
+An library able to read, modify, and write WebAssembly binary files (WASM) from .NET-based applications.
+The long term goal is to enable JIT compilation and execution of WASM files that don't have JavaScript dependencies.
+
+Publishing via NuGet is planned at the time of API stability and robust JIT compilation support.
+Beta versions may be published if there is interest.
 
 ## Current Status
 
-Full parsing of the MVP WebAssembly spec is done.
-This enables deep inspection of any valid WASM file.
-
-Writing WASM is currently being migrated from my unpublished prototype.
-Once complete, this library will be able to create new WASMs or modify existing ones.
+Integration with the .NET JIT has begun.
+This will be accomplished via run-time CIL generation which is then compiled via the standard .NET JIT.
 
 ## Development Plan
 
 This will evolve as the project takes shape.
 
-- [x] Unpublished prototype
-- [x]  Parse all aspects of the MVP spec of Web Assembly
-- [ ] 🔜 Write WASM files
-- [ ] Initial WAST parser (i32.const, end, exported functions)
-- [ ] JIT compile i32.const, end
+- [x] Read WebAssembly binary files (WASM)
+- [x] Write WebAssembly binary files (WASM)
+- [ ] 🔜 JIT compile `i32.const`, `end`
 - [ ] Invoke exported functions via .NET (Hello World!)
-- [ ] Review official WAST test cases, update this plan (many steps will be added)
-- [ ] ❓
-- [ ] Full JIT support for all spects of the MVP spec of Web Assembly
+- [ ] Compiler passes all tests at https://github.com/WebAssembly/spec/tree/master/test/core
+- [ ] > 90% automated test code coverage
 - [ ] API Cleanup (last breaking changes)
 - [ ] Publish 1.0 on NuGet
+- [ ] Initial WAT/WAST parser (i32.const, end, exported functions)
