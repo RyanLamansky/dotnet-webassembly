@@ -17,7 +17,7 @@ namespace WebAssembly
 		[TestMethod]
 		public void Module_FromBinaryStream()
 		{
-			Assert.AreEqual("input", ExceptionAssert.Expect<ArgumentNullException>(() => Module.FromBinary(null)).ParamName);
+			Assert.AreEqual("input", ExceptionAssert.Expect<ArgumentNullException>(() => Module.FromBinary((Stream)null)).ParamName);
 
 			using (var sample = new MemoryStream())
 			{

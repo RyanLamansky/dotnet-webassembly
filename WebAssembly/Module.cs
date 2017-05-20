@@ -160,6 +160,31 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// Creates a new <see cref="Module"/> from a file.
+		/// </summary>
+		/// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
+		/// <returns>The module.</returns>
+		/// <exception cref="ArgumentNullException"><paramref name="path"/> cannot be null.</exception>
+		/// <exception cref="ArgumentException">
+		/// <paramref name="path"/> is an empty string (""), contains only white space, or contains one or more invalid characters; or,
+		/// <paramref name="path"/> refers to a non-file device, such as "con:", "com1:", "lpt1:", etc. in an NTFS environment.
+		/// </exception>
+		/// <exception cref="NotSupportedException"><paramref name="path"/> refers to a non-file device, such as "con:", "com1:", "lpt1:", etc. in a non-NTFS environment.</exception>
+		/// <exception cref="FileNotFoundException">The file indicated by <paramref name="path"/> could not be found.</exception>
+		/// <exception cref="DirectoryNotFoundException">The specified <paramref name="path"/> is invalid, such as being on an unmapped drive.</exception>
+		/// <exception cref="PathTooLongException">
+		/// The specified path, file name, or both exceed the system-defined maximum length.
+		/// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
+		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
+		public static Module FromBinary(string path)
+		{
+			using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
+			{
+				return FromBinary(stream);
+			}
+		}
+
+		/// <summary>
 		/// Creates a new <see cref="Module"/> from a stream.
 		/// </summary>
 		/// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
@@ -268,7 +293,7 @@ namespace WebAssembly
 							case 7: //Exports
 								{
 									var count = reader.ReadVarUInt32();
-									var exports= module.exports = new List<Export>(checked((int)count));
+									var exports = module.exports = new List<Export>(checked((int)count));
 
 									for (var i = 0; i < count; i++)
 										exports.Add(new Export(reader));
