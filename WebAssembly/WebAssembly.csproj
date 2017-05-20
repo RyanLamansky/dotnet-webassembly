@@ -16,4 +16,8 @@
     <DocumentationFile>bin\Debug\netstandard1.4\WebAssembly.xml</DocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+  </ItemGroup>
+
 </Project>

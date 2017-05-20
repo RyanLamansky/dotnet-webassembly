@@ -7,7 +7,7 @@ using static System.Diagnostics.Debug;
 namespace WebAssembly
 {
 	/// <summary>
-	/// Contains raw information about a WebAssembly module.
+	/// Contains raw information about a WebAssembly module.  Use <see cref="Compiler"/> if you wish to execute a WebAssembly file.
 	/// </summary>
 	public class Module
 	{
@@ -21,7 +21,7 @@ namespace WebAssembly
 		/// <summary>
 		/// Indicates that the source data is in the WebAssembly binary format.
 		/// </summary>
-		const uint magic = 0x6d736100;
+		internal const uint Magic = 0x6d736100;
 
 		private IList<CustomSection> customSections;
 
@@ -198,7 +198,7 @@ namespace WebAssembly
 			{
 				try
 				{
-					if (reader.ReadUInt32() != magic)
+					if (reader.ReadUInt32() != Magic)
 						throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
 
 					switch (reader.ReadUInt32())
@@ -216,6 +216,8 @@ namespace WebAssembly
 					while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 					{
 						var payloadLength = reader.ReadVarUInt32();
+						if (id != 0 && (Section)id < previousSection)
+							throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", reader.Offset);
 
 						switch ((Section)id)
 						{
@@ -375,7 +377,7 @@ namespace WebAssembly
 
 			using (var writer = new Writer(output))
 			{
-				writer.Write(magic);
+				writer.Write(Magic);
 				writer.Write((uint)0x1);
 
 				var buffer = new Byte[4 * 1024];
