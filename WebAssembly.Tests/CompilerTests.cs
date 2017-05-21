@@ -38,6 +38,10 @@ namespace WebAssembly
 			var module = new Module();
 			module.Types.Add(new Type
 			{
+				Returns = new []
+				{
+					ValueType.Int32,
+				}
 			});
 			module.Functions.Add(new Function
 			{
@@ -89,6 +93,10 @@ namespace WebAssembly
 			var module = new Module();
 			module.Types.Add(new Type
 			{
+				Returns = new[]
+				{
+					ValueType.Int32,
+				}
 			});
 			module.Functions.Add(new Function
 			{

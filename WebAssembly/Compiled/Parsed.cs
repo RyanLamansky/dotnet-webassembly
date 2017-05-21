@@ -154,7 +154,7 @@ namespace WebAssembly.Compiled
 						var exported = exportedFunctions[i];
 						var func = this.Functions[exported.Value];
 
-						var method = exportsBuilder.DefineMethod(exported.Key, exportedFunctionAttributes, CallingConventions.Standard, typeof(int), null);
+						var method = exportsBuilder.DefineMethod(exported.Key, exportedFunctionAttributes, CallingConventions.Standard, func.Signature.return_types.FirstOrDefault(), null);
 						il = method.GetILGenerator();
 						for (var j = 0; j < func.Instructions.Length; j++)
 						{
