@@ -38,6 +38,28 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="BranchTable"/> instance with the provided properties.
+		/// </summary>
+		/// <param name="defaultLabel">The default label if the jump is out of bounds.</param>
+		/// <param name="labels">A zero-based array of labels.</param>
+		public BranchTable(uint defaultLabel, params uint[] labels)
+			:this(defaultLabel, (IList<uint>)labels)
+		{
+		}
+
+		/// <summary>
+		/// Creates a new <see cref="BranchTable"/> instance with the provided properties.
+		/// </summary>
+		/// <param name="defaultLabel">The default label if the jump is out of bounds.</param>
+		/// <param name="labels">A zero-based array of labels.</param>
+		/// <exception cref="ArgumentNullException"><paramref name="labels"/> cannot be to null.</exception>
+		public BranchTable(uint defaultLabel, IList<uint> labels)
+		{
+			this.DefaultLabel = defaultLabel;
+			this.labels = labels ?? throw new ArgumentNullException(nameof(labels));
+		}
+
 		internal BranchTable(Reader reader)
 		{
 			if (reader == null)

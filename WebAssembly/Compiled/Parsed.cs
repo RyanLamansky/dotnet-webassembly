@@ -194,7 +194,15 @@ namespace WebAssembly.Compiled
 								case OpCode.Branch:
 									{
 										var br = (Instructions.Branch)instruction;
-										il.Emit(OpCodes.Br, labels[depth - br.Index]);
+										il.Emit(OpCodes.Br, labels[depth - br.Index - 1]);
+									}
+									break;
+
+								case OpCode.BranchTable:
+									{
+										var br_table = (Instructions.BranchTable)instruction;
+										il.Emit(OpCodes.Switch, br_table.Labels.Select(index => labels[depth - index - 1]).ToArray());
+										il.Emit(OpCodes.Br, labels[depth - br_table.DefaultLabel - 1]);
 									}
 									break;
 
