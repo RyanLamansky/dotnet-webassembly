@@ -1,15 +1,18 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
 using System.IO;
 
 namespace WebAssembly
 {
 	using Compiled;
+
 	/// <summary>
 	/// Aids in development of test cases by allowing rapid construction and compilation of simple WebAssembly files.
 	/// </summary>
 	static class AssemblyBuilder
 	{
 		public static TExport CreateInstance<TExport>(string name, ValueType? @return, params Instruction[] code)
+		where TExport : class
 		{
 			Assert.IsNotNull(name);
 			Assert.IsNotNull(code);
@@ -36,13 +39,62 @@ namespace WebAssembly
 				Code = code
 			});
 
-			Instance<dynamic> compiled;
+			Instance<TExport> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
+				Assert.AreNotEqual(0, memory.Length);
 				memory.Position = 0;
 
-				var maker = Compiler.FromBinary<dynamic>(memory);
+				var maker = Compiler.FromBinary<TExport>(memory);
+				Assert.IsNotNull(maker);
+				compiled = maker();
+			}
+
+			Assert.IsNotNull(compiled);
+			Assert.IsNotNull(compiled.Exports);
+
+			return compiled.Exports;
+		}
+
+		public static TExport CreateInstance<TExport>(string name, ValueType? @return, IList<ValueType> parameters, params Instruction[] code)
+		where TExport : class
+		{
+			Assert.IsNotNull(name);
+			Assert.IsNotNull(parameters);
+			Assert.IsNotNull(code);
+
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+				Returns = @return.HasValue == false
+				? new ValueType[0]
+				: new[]
+				{
+					@return.GetValueOrDefault()
+				},
+				Parameters = parameters,
+			});
+			module.Functions.Add(new Function
+			{
+			});
+			module.Exports.Add(new Export
+			{
+				Name = name
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = code
+			});
+
+			Instance<TExport> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				Assert.AreNotEqual(0, memory.Length);
+				memory.Position = 0;
+
+				var maker = Compiler.FromBinary<TExport>(memory);
 				Assert.IsNotNull(maker);
 				compiled = maker();
 			}

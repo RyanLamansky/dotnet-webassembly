@@ -17,6 +17,15 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="GetLocal"/> for the provided variable index.
+		/// </summary>
+		/// <param name="index">The index of the variable to access.</param>
+		public GetLocal(uint index)
+			: base(index)
+		{
+		}
+
 		internal GetLocal(Reader reader)
 			: base(reader)
 		{

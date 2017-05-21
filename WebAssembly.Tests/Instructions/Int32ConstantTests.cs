@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions
 	public class Int32ConstantTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="BranchTable"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int32Constant"/> instruction.
 		/// </summary>
 		[TestMethod]
 		public void Int32Constant_Compiled()

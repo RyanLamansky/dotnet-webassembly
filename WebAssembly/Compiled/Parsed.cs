@@ -154,7 +154,14 @@ namespace WebAssembly.Compiled
 						var exported = exportedFunctions[i];
 						var func = this.Functions[exported.Value];
 
-						var method = exportsBuilder.DefineMethod(exported.Key, exportedFunctionAttributes, CallingConventions.Standard, func.Signature.return_types.FirstOrDefault(), null);
+						var method = exportsBuilder.DefineMethod(
+							exported.Key,
+							exportedFunctionAttributes,
+							CallingConventions.Standard,
+							func.Signature.return_types.FirstOrDefault(),
+							func.Signature.param_types
+							);
+
 						il = method.GetILGenerator();
 						for (var j = 0; j < func.Instructions.Length; j++)
 						{
@@ -169,6 +176,44 @@ namespace WebAssembly.Compiled
 
 								case OpCode.Return:
 									il.Emit(OpCodes.Ret);
+									break;
+
+								case OpCode.GetLocal:
+									{
+										var get_local = (Instructions.GetLocal)instruction;
+
+										var localIndex = get_local.Index - func.Signature.param_types.Length;
+										if (localIndex < 0)
+										{
+											//Referring to a parameter.
+											switch (get_local.Index)
+											{
+												default:
+													il.Emit(OpCodes.Ldarg, checked((int)get_local.Index));
+													break;
+
+												//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
+												case 0: il.Emit(OpCodes.Ldarg_1); break;
+												case 1: il.Emit(OpCodes.Ldarg_2); break;
+												case 2: il.Emit(OpCodes.Ldarg_3); break;
+											}
+										}
+										else
+										{
+											//Referring to a local.
+											switch (localIndex)
+											{
+												default:
+													il.Emit(OpCodes.Ldloc, checked((int)localIndex));
+													break;
+
+												case 0: il.Emit(OpCodes.Ldloc_0); break;
+												case 1: il.Emit(OpCodes.Ldloc_1); break;
+												case 2: il.Emit(OpCodes.Ldloc_2); break;
+												case 3: il.Emit(OpCodes.Ldloc_3); break;
+											}
+										}
+									}
 									break;
 
 								case OpCode.Int32Constant:

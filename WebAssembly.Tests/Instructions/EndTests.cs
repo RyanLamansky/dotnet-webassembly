@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions
 	public class EndTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="BranchTable"/> instruction.
+		/// Tests compilation and execution of the <see cref="End"/> instruction.
 		/// </summary>
 		[TestMethod]
 		public void End_Compiled()
