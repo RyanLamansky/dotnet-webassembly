@@ -163,6 +163,14 @@ namespace WebAssembly.Compiled
 							{
 								default: throw new NotSupportedException($"Instruction {instruction.OpCode} is unknown or unsupported.");
 
+								case OpCode.End:
+									il.Emit(OpCodes.Ret);
+									break;
+
+								case OpCode.Return:
+									il.Emit(OpCodes.Ret);
+									break;
+
 								case OpCode.Int32Constant:
 									{
 										var i32const = (Instructions.Int32Constant)instruction;
@@ -184,10 +192,6 @@ namespace WebAssembly.Compiled
 											case 8: il.Emit(OpCodes.Ldc_I4_8); break;
 										}
 									}
-									break;
-
-								case OpCode.End:
-									il.Emit(OpCodes.Ret);
 									break;
 							}
 						}
