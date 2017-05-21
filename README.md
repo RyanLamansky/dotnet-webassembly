@@ -20,10 +20,11 @@ This will evolve as the project takes shape.
 - [x]  JIT compile `i32.const`, `end`
 - [x] Invoke exported functions via .NET (Hello World!)
 - [ ] 🔜 Implement more WebAssembly instructions, particularly `block`, `loop`, `if`, and `br_table`
-- [ ] 🔜 Change API to manage imports and exports through a user-provided abstract class, avoiding the need for dynamic invocation and significantly improving speed
+- [x] Add support for automatic implementation of abstract classes as a means to avoid inefficient dynamic invocation
 - [ ] Compiler passes all tests at https://github.com/WebAssembly/spec/tree/master/test/core
 - [ ] > 90% automated test code coverage
 - [ ] API Cleanup (last breaking changes)
 - [ ] Publish 1.0 on NuGet
 - [ ] Initial WAT/WAST parser (i32.const, end, exported functions)
+- [ ] Add support for automatic implementation of interfaces as an alternative to existing abstract class code
 - [ ] 🛑 Save generated assemblies to files, blocked by https://github.com/dotnet/corefx/issues/4491

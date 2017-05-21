@@ -101,7 +101,7 @@ namespace WebAssembly.Compiled
 		public readonly Function[] Functions;
 		public readonly KeyValuePair<string, uint>[] ExportedFunctions;
 
-		public Func<Instance> Compile()
+		public ConstructorInfo Compile(System.Type instanceContainer, System.Type exportContainer)
 		{
 			var module = AssemblyBuilder.DefineDynamicAssembly(
 				new AssemblyName("CompiledWebAssembly"),
@@ -123,27 +123,38 @@ namespace WebAssembly.Compiled
 				MethodAttributes.RTSpecialName
 				;
 
-			const MethodAttributes functionAttributes =
+			const MethodAttributes exportedFunctionAttributes =
 				MethodAttributes.Public |
+				MethodAttributes.Virtual |
+				MethodAttributes.Final |
 				MethodAttributes.HideBySig
 				;
 
 			TypeInfo exports;
-			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, typeof(Exports));
+			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
 			{
 				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
 				var il = instanceConstructor.GetILGenerator();
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Call, typeof(Exports).GetTypeInfo().DeclaredConstructors.First());
+				{
+					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+					if (usableConstructor != null)
+					{
+						il.Emit(OpCodes.Ldarg_0);
+						il.Emit(OpCodes.Call, usableConstructor);
+					}
+				}
 				il.Emit(OpCodes.Ret);
 
+				var exportedFunctions = this.ExportedFunctions;
+
+				if (exportedFunctions != null)
 				{
-					for (var i = 0; i < this.ExportedFunctions.Length; i++)
+					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
-						var exported = this.ExportedFunctions[i];
+						var exported = exportedFunctions[i];
 						var func = this.Functions[exported.Value];
 
-						var method = exportsBuilder.DefineMethod(exported.Key, functionAttributes, CallingConventions.Standard, typeof(int), null);
+						var method = exportsBuilder.DefineMethod(exported.Key, exportedFunctionAttributes, CallingConventions.Standard, typeof(int), null);
 						il = method.GetILGenerator();
 						for (var j = 0; j < func.Instructions.Length; j++)
 						{
@@ -188,17 +199,17 @@ namespace WebAssembly.Compiled
 
 			TypeInfo instance;
 			{
-				var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, typeof(Instance));
+				var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, instanceContainer);
 				var instanceConstructor = instanceBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
 				var il = instanceConstructor.GetILGenerator();
 				il.Emit(OpCodes.Ldarg_0);
 				il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
-				il.Emit(OpCodes.Call, typeof(Instance)
+				il.Emit(OpCodes.Call, instanceContainer
 					.GetTypeInfo()
 					.DeclaredConstructors
 					.First(info => info.GetParameters()
 					.FirstOrDefault()
-					?.ParameterType == typeof(Exports)
+					?.ParameterType == exportContainer
 					)
 					);
 				il.Emit(OpCodes.Ret);
@@ -206,9 +217,7 @@ namespace WebAssembly.Compiled
 				instance = instanceBuilder.CreateTypeInfo();
 			}
 
-			var maker = instance.DeclaredConstructors.First();
-
-			return () => (Instance)maker.Invoke(null);
+			return instance.DeclaredConstructors.First();
 		}
 	}
 }
