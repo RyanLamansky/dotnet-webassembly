@@ -17,6 +17,15 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="Block"/> of the provided type.
+		/// </summary>
+		/// <param name="type">Becomes the block's <see cref="BlockTypeInstruction.Type"/>.</param>
+		public Block(BlockType type)
+			: base(type)
+		{
+		}
+
 		internal Block(Reader reader)
 			: base(reader)
 		{

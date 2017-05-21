@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Compiled
 {
@@ -149,8 +150,12 @@ namespace WebAssembly.Compiled
 
 				if (exportedFunctions != null)
 				{
+					var labels = new Dictionary<uint, Label>();
+
 					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
+						labels.Clear();
+
 						var exported = exportedFunctions[i];
 						var func = this.Functions[exported.Value];
 
@@ -163,6 +168,7 @@ namespace WebAssembly.Compiled
 							);
 
 						il = method.GetILGenerator();
+						var depth = 1u;
 						for (var j = 0; j < func.Instructions.Length; j++)
 						{
 							var instruction = func.Instructions[j];
@@ -170,8 +176,26 @@ namespace WebAssembly.Compiled
 							{
 								default: throw new NotSupportedException($"Instruction {instruction.OpCode} is unknown or unsupported.");
 
+								case OpCode.Block:
+									labels.Add(depth++, il.DefineLabel());
+									break;
+
 								case OpCode.End:
-									il.Emit(OpCodes.Ret);
+									Assert(depth > 0);
+									if (--depth == 0)
+										il.Emit(OpCodes.Ret);
+									else
+									{
+										il.MarkLabel(labels[depth]);
+										labels.Remove(depth);
+									}
+									break;
+
+								case OpCode.Branch:
+									{
+										var br = (Instructions.Branch)instruction;
+										il.Emit(OpCodes.Br, labels[depth - br.Index]);
+									}
 									break;
 
 								case OpCode.Return:
@@ -239,6 +263,9 @@ namespace WebAssembly.Compiled
 									}
 									break;
 							}
+
+							if (depth == 0)
+								break;
 						}
 					}
 				}

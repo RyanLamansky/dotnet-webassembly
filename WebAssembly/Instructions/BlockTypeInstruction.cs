@@ -20,6 +20,11 @@ namespace WebAssembly.Instructions
 			this.Type = BlockType.Empty;
 		}
 
+		internal BlockTypeInstruction(BlockType type)
+		{
+			this.Type = type;
+		}
+
 		/// <summary>
 		/// Creates a new <see cref="BlockType"/> instance from the provided data stream.
 		/// </summary>

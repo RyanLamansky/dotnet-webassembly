@@ -24,6 +24,15 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="Branch"/> instance with the provided index.
+		/// </summary>
+		/// <param name="index">The number of ancestor blocks to climb; 0 is the immediate parent.</param>
+		public Branch(uint index)
+		{
+			this.Index = index;
+		}
+
 		internal Branch(Reader reader)
 		{
 			if (reader == null)
