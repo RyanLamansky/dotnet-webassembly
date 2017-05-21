@@ -1,6 +1,7 @@
 ﻿# .NET WebAssembly
+[![NuGet](https://img.shields.io/nuget/v/WebAssembly.svg)](https://www.nuget.org/packages/WebAssembly)
 
-An library able to read, modify, and write WebAssembly binary files (WASM) from .NET-based applications.
+A library able to create, read, modify, write and execute WebAssembly (WASM) files from .NET-based applications.
 The long term goal is to enable JIT compilation and execution of WASM files that don't have JavaScript dependencies.
 
 Publishing via NuGet is planned at the time of API stability and robust JIT compilation support.
@@ -17,7 +18,7 @@ This will evolve as the project takes shape.
 
 - [x] Read WebAssembly binary files (WASM)
 - [x] Write WebAssembly binary files (WASM)
-- [x]  JIT compile `i32.const`, `end`
+- [x] JIT compile `i32.const`, `end`
 - [x] Invoke exported functions via .NET (Hello World!)
 - [ ] 🔜 Implement more WebAssembly instructions, particularly `block`, `loop`, `if`, and `br_table`
 - [x] Add support for automatic implementation of abstract classes as a means to avoid inefficient dynamic invocation
