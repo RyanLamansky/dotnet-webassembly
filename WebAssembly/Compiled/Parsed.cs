@@ -180,6 +180,24 @@ namespace WebAssembly.Compiled
 									labels.Add(depth++, il.DefineLabel());
 									break;
 
+								case OpCode.If:
+									{
+										var label = il.DefineLabel();
+										labels.Add(depth++, label);
+										il.Emit(OpCodes.Brfalse, label);
+									}
+									break;
+
+								case OpCode.Else:
+									{
+										var afterElse = il.DefineLabel();
+										il.Emit(OpCodes.Br, afterElse);
+
+										il.MarkLabel(labels[depth - 1]);
+										labels[depth - 1] = afterElse;
+									}
+									break;
+
 								case OpCode.End:
 									Assert(depth > 0);
 									if (--depth == 0)
