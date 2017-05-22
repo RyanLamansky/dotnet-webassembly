@@ -17,6 +17,15 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="SetLocal"/> for the provided variable index.
+		/// </summary>
+		/// <param name="index">The index of the variable to access.</param>
+		public SetLocal(uint index)
+			: base(index)
+		{
+		}
+
 		internal SetLocal(Reader reader)
 			: base(reader)
 		{

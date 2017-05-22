@@ -151,18 +151,17 @@ namespace WebAssembly.Compiled
 				if (exportedFunctions != null)
 				{
 					var labels = new Dictionary<uint, Label>();
+					var loopLabels = new HashSet<Label>();
 
 					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
-						labels.Clear();
-
 						var exported = exportedFunctions[i];
 						var func = this.Functions[exported.Value];
 
 						var method = exportsBuilder.DefineMethod(
 							exported.Key,
 							exportedFunctionAttributes,
-							CallingConventions.Standard,
+							CallingConventions.HasThis,
 							func.Signature.return_types.FirstOrDefault(),
 							func.Signature.param_types
 							);
@@ -178,6 +177,15 @@ namespace WebAssembly.Compiled
 
 								case OpCode.Block:
 									labels.Add(depth++, il.DefineLabel());
+									break;
+
+								case OpCode.Loop:
+									{
+										var loopStart = il.DefineLabel();
+										labels.Add(depth++, loopStart);
+										il.MarkLabel(loopStart);
+										loopLabels.Add(loopStart);
+									}
 									break;
 
 								case OpCode.If:
@@ -204,7 +212,13 @@ namespace WebAssembly.Compiled
 										il.Emit(OpCodes.Ret);
 									else
 									{
-										il.MarkLabel(labels[depth]);
+										var label = labels[depth];
+
+										if (!loopLabels.Contains(label)) //Loop labels are marked where defined.
+											il.MarkLabel(label);
+										else
+											loopLabels.Remove(label);
+
 										labels.Remove(depth);
 									}
 									break;
@@ -236,13 +250,13 @@ namespace WebAssembly.Compiled
 										if (localIndex < 0)
 										{
 											//Referring to a parameter.
+											//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
 											switch (get_local.Index)
 											{
 												default:
-													il.Emit(OpCodes.Ldarg, checked((int)get_local.Index));
+													il.Emit(OpCodes.Ldarg, checked((ushort)(get_local.Index + 1)));
 													break;
 
-												//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
 												case 0: il.Emit(OpCodes.Ldarg_1); break;
 												case 1: il.Emit(OpCodes.Ldarg_2); break;
 												case 2: il.Emit(OpCodes.Ldarg_3); break;
@@ -261,6 +275,38 @@ namespace WebAssembly.Compiled
 												case 1: il.Emit(OpCodes.Ldloc_1); break;
 												case 2: il.Emit(OpCodes.Ldloc_2); break;
 												case 3: il.Emit(OpCodes.Ldloc_3); break;
+											}
+										}
+									}
+									break;
+
+								case OpCode.SetLocal:
+									{
+										var set_local = (Instructions.SetLocal)instruction;
+
+										var localIndex = set_local.Index - func.Signature.param_types.Length;
+										if (localIndex < 0)
+										{
+											//Referring to a parameter.
+											//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
+											if (set_local.Index + 1 <= byte.MaxValue)
+												il.Emit(OpCodes.Starg_S, checked((byte)(set_local.Index + 1)));
+											else
+												il.Emit(OpCodes.Starg, checked((ushort)(set_local.Index + 1)));
+										}
+										else
+										{
+											//Referring to a local.
+											switch (localIndex)
+											{
+												default:
+													il.Emit(OpCodes.Stloc, checked((int)localIndex));
+													break;
+
+												case 0: il.Emit(OpCodes.Stloc_0); break;
+												case 1: il.Emit(OpCodes.Stloc_1); break;
+												case 2: il.Emit(OpCodes.Stloc_2); break;
+												case 3: il.Emit(OpCodes.Stloc_3); break;
 											}
 										}
 									}
@@ -287,6 +333,10 @@ namespace WebAssembly.Compiled
 											case 8: il.Emit(OpCodes.Ldc_I4_8); break;
 										}
 									}
+									break;
+
+								case OpCode.Int32Add:
+									il.Emit(OpCodes.Add);
 									break;
 							}
 
