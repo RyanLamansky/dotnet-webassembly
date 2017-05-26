@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 
 namespace WebAssembly
@@ -38,7 +39,7 @@ namespace WebAssembly
 			var module = new Module();
 			module.Types.Add(new Type
 			{
-				Returns = new []
+				Returns = new[]
 				{
 					ValueType.Int32,
 				}
@@ -162,6 +163,35 @@ namespace WebAssembly
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(5, exports.SetByConstructor);
+		}
+
+		/// <summary>
+		/// Tests the compiler when linear memory is used.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_Memory()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(1, 1));
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compiler.FromBinary<dynamic>(memory)();
+			}
+
+			using (compiled)
+			{
+				Assert.IsNotNull(compiled);
+				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
+				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+			}
+
+			Assert.AreEqual(IntPtr.Zero, compiled.Start);
+			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 	}
 }

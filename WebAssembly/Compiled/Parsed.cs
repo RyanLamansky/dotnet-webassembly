@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Compiled
@@ -55,6 +56,21 @@ namespace WebAssembly.Compiled
 						}
 						break;
 
+					case Section.Memory:
+						{
+							var count = reader.ReadVarUInt32();
+							if (count > 1)
+								throw new ModuleLoadException("Multiple memory values are not supported.", reader.Offset);
+
+							var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+							this.MemoryPagesMinimum = reader.ReadVarUInt32();
+							if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
+								this.MemoryPagesMaximum = reader.ReadVarUInt32();
+							else
+								this.MemoryPagesMaximum = this.MemoryPagesMinimum;
+						}
+						break;
+
 					case Section.Export:
 						{
 							var totalExports = reader.ReadVarUInt32();
@@ -99,8 +115,10 @@ namespace WebAssembly.Compiled
 			this.ExportedFunctions = exportedFunctions;
 		}
 
-		public readonly Function[] Functions;
-		public readonly KeyValuePair<string, uint>[] ExportedFunctions;
+		private readonly Function[] Functions;
+		private readonly KeyValuePair<string, uint>[] ExportedFunctions;
+		private readonly uint MemoryPagesMinimum;
+		private readonly uint MemoryPagesMaximum;
 
 		public ConstructorInfo Compile(System.Type instanceContainer, System.Type exportContainer)
 		{
@@ -354,8 +372,31 @@ namespace WebAssembly.Compiled
 				var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, instanceContainer);
 				var instanceConstructor = instanceBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
 				var il = instanceConstructor.GetILGenerator();
+				var memoryAllocated = checked(this.MemoryPagesMaximum * Memory.PageSize);
+
 				il.Emit(OpCodes.Ldarg_0);
 				il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
+				if (memoryAllocated > 0)
+				{
+					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
+					il.Emit(OpCodes.Call, typeof(Marshal)
+						.GetTypeInfo()
+						.GetDeclaredMethods(nameof(Marshal.AllocHGlobal))
+						.First(m =>
+						{
+							var parms = m.GetParameters();
+							return parms.Length == 1 && parms[0].ParameterType == typeof(int);
+						})
+						);
+					il.Emit(OpCodes.Dup);
+					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
+					il.Emit(OpCodes.Add);
+				}
+				else
+				{
+					il.Emit(OpCodes.Ldc_I4_0);
+					il.Emit(OpCodes.Ldc_I4_0);
+				}
 				il.Emit(OpCodes.Call, instanceContainer
 					.GetTypeInfo()
 					.DeclaredConstructors

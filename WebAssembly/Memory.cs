@@ -7,6 +7,11 @@ namespace WebAssembly
 	/// </summary>
 	public class Memory
 	{
+		/// <summary>
+		/// The standard memory page size.
+		/// </summary>
+		public const uint PageSize = 65536;
+
 		private ResizableLimits resizableLimits;
 
 		/// <summary>
@@ -23,6 +28,16 @@ namespace WebAssembly
 		/// </summary>
 		public Memory()
 		{
+		}
+
+		/// <summary>
+		/// Creates a new <see cref="Memory"/> instance with the provided <see cref="ResizableLimits.Minimum"/> and <see cref="ResizableLimits.Maximum"/> values.
+		/// </summary>
+		/// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
+		/// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>
+		public Memory(uint minimum, uint? maximum)
+		{
+			this.resizableLimits = new ResizableLimits(minimum, maximum);
 		}
 
 		/// <summary>

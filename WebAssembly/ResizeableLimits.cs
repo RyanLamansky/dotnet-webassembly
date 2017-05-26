@@ -8,7 +8,7 @@ namespace WebAssembly
 	public class ResizableLimits
 	{
 		[Flags]
-		enum Flags : uint
+		internal enum Flags : uint
 		{
 			/// <summary>
 			/// No flags are set.
@@ -21,20 +21,31 @@ namespace WebAssembly
 		}
 
 		/// <summary>
-		/// Initial length (in units of table elements or wasm pages).
+		/// Initial length (in units of table elements or 65,536-byte pages).
 		/// </summary>
-		public readonly uint Minimum;
+		public uint Minimum { get; set; }
 
 		/// <summary>
-		/// Maximum length (in units of table elements or wasm pages).
+		/// Maximum length (in units of table elements or 65,536-byte pages).
 		/// </summary>
-		public readonly uint? Maximum;
+		public uint? Maximum { get; set; }
 
 		/// <summary>
-		/// Creates a new <see cref="ResizableLimits"/> instance with the provided values.
+		/// Creates a new <see cref="ResizableLimits"/> instance.
 		/// </summary>
 		public ResizableLimits()
 		{
+		}
+
+		/// <summary>
+		/// Creates a new <see cref="ResizableLimits"/> instance with the provided <see cref="Minimum"/> and <see cref="Maximum"/> values.
+		/// </summary>
+		/// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
+		/// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>
+		public ResizableLimits(uint minimum, uint? maximum)
+		{
+			this.Minimum = minimum;
+			this.Maximum = maximum;
 		}
 
 		/// <summary>

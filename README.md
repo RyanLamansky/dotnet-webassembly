@@ -31,7 +31,7 @@ This will evolve as the project takes shape.
 - [x] Invoke exported functions via .NET (Hello World!)
 - [x] Add support for automatic implementation of abstract classes as a means to avoid inefficient dynamic invocation
 - [x] Compile control flow instructions: `block`, `loop`, `if`, and `br_table`
-- [ ] 🔜 Implement linear memory using an array
+- [ ] 🔜 Implement linear memory using unmanaged memory with range checks
 - [ ] Implement any remaining instructions not yet built to support development of other features
 - [ ] Implement less-commonly-used features to achieve full compliance with the specification
 - [ ] Compiler passes all tests at https://github.com/WebAssembly/spec/tree/master/test/core
@@ -44,6 +44,6 @@ This will evolve as the project takes shape.
 
 These features are under consideration for development after all the core work is done.
 
-- ☣ Implement linear memory using unmanaged memory (raw pointer), as an option for confident users desiring maximum performance
+- ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance
 - 🤔 Add support for automatic implementation of interfaces as an alternative to existing abstract class code
 - 🚀 Extensible optimization framework
