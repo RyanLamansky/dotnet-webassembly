@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace WebAssembly
 {
@@ -188,6 +189,10 @@ namespace WebAssembly
 				Assert.IsNotNull(compiled);
 				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
 				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.AreEqual(Memory.PageSize, compiled.End.ToInt64() - compiled.Start.ToInt64());
+
+				for (var i = 0; i < Memory.PageSize; i += 8)
+					Assert.AreEqual(0, Marshal.ReadInt64(compiled.Start + 8));
 			}
 
 			Assert.AreEqual(IntPtr.Zero, compiled.Start);

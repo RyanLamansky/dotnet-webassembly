@@ -18,8 +18,23 @@ namespace WebAssembly.Compiled
 			this.Start = start;
 			this.End = end;
 			var size = end.ToInt64() - start.ToInt64();
-			if (size > 0)
-				GC.AddMemoryPressure(size);
+
+			if (size == 0)
+				return;
+
+			GC.AddMemoryPressure(size);
+
+			var emptyPage = new long[Memory.PageSize / 8];
+			var pages = size / Memory.PageSize;
+			for (var i = 0; i < pages; i++)
+			{
+				Marshal.Copy(
+					emptyPage,
+					0,
+					new IntPtr(start.ToInt64() + Memory.PageSize * i),
+					(int)Memory.PageSize / 8
+					);
+			}
 		}
 
 		/// <summary>

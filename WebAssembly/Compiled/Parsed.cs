@@ -149,10 +149,56 @@ namespace WebAssembly.Compiled
 				MethodAttributes.HideBySig
 				;
 
+			const MethodAttributes rangeCheckAttributes =
+				MethodAttributes.Private |
+				MethodAttributes.Static |
+				MethodAttributes.HideBySig
+				;
+
 			TypeInfo exports;
 			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
+			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
+
+			var rangeCheckInt32 = exportsBuilder.DefineMethod(
+				"☣ Range Check 32",
+				rangeCheckAttributes,
+				typeof(uint),
+				new[] { typeof(uint), exportsBuilder.AsType() }
+				);
 			{
-				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
+				var il = rangeCheckInt32.GetILGenerator();
+				il.Emit(OpCodes.Ldarg_1);
+				il.Emit(OpCodes.Ldfld, linearMemorySize);
+				il.Emit(OpCodes.Ldarg_0);
+				il.Emit(OpCodes.Ldc_I4_4);
+				il.Emit(OpCodes.Add_Ovf_Un);
+				var outOfRange = il.DefineLabel();
+				il.Emit(OpCodes.Blt_Un_S, outOfRange);
+				il.Emit(OpCodes.Ldarg_0);
+				il.Emit(OpCodes.Ret);
+				il.MarkLabel(outOfRange);
+				il.Emit(OpCodes.Ldarg_0);
+				il.Emit(OpCodes.Ldc_I4_4);
+				il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
+					.GetTypeInfo()
+					.DeclaredConstructors
+					.First(c =>
+					{
+						var parms = c.GetParameters();
+						return parms.Length == 2
+						&& parms[0].ParameterType == typeof(uint)
+						&& parms[1].ParameterType == typeof(uint)
+						;
+					}));
+				il.Emit(OpCodes.Throw);
+			}
+
+			{
+				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
+					typeof(IntPtr),
+					typeof(uint),
+				});
 				var il = instanceConstructor.GetILGenerator();
 				{
 					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
@@ -161,6 +207,14 @@ namespace WebAssembly.Compiled
 						il.Emit(OpCodes.Ldarg_0);
 						il.Emit(OpCodes.Call, usableConstructor);
 					}
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_1);
+					il.Emit(OpCodes.Stfld, linearMemoryStart);
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_2);
+					il.Emit(OpCodes.Stfld, linearMemorySize);
 				}
 				il.Emit(OpCodes.Ret);
 
@@ -330,6 +384,25 @@ namespace WebAssembly.Compiled
 									}
 									break;
 
+								case OpCode.Int32Load:
+									{
+										var i3load = (Instructions.Int32Load)instruction;
+										if (i3load.Offset != 0)
+										{
+											il.Emit(OpCodes.Ldc_I4, i3load.Offset);
+											il.Emit(OpCodes.Add_Ovf_Un);
+										}
+
+										il.Emit(OpCodes.Ldarg_0);
+										il.Emit(OpCodes.Call, rangeCheckInt32);
+
+										il.Emit(OpCodes.Ldarg_0);
+										il.Emit(OpCodes.Ldfld, linearMemoryStart);
+										il.Emit(OpCodes.Add);
+										il.Emit(OpCodes.Ldind_I4);
+									}
+									break;
+
 								case OpCode.Int32Constant:
 									{
 										var i32const = (Instructions.Int32Constant)instruction;
@@ -374,10 +447,9 @@ namespace WebAssembly.Compiled
 				var il = instanceConstructor.GetILGenerator();
 				var memoryAllocated = checked(this.MemoryPagesMaximum * Memory.PageSize);
 
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
 				if (memoryAllocated > 0)
 				{
+					var start = il.DeclareLocal(typeof(IntPtr));
 					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
 					il.Emit(OpCodes.Call, typeof(Marshal)
 						.GetTypeInfo()
@@ -388,12 +460,25 @@ namespace WebAssembly.Compiled
 							return parms.Length == 1 && parms[0].ParameterType == typeof(int);
 						})
 						);
-					il.Emit(OpCodes.Dup);
+					il.Emit(OpCodes.Stloc_0);
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldloc_0);
+					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
+					il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
+
+					il.Emit(OpCodes.Ldloc_0);
+					il.Emit(OpCodes.Ldloc_0);
 					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
 					il.Emit(OpCodes.Add);
 				}
 				else
 				{
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldc_I4_0);
+					il.Emit(OpCodes.Ldc_I4_0);
+					il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
+
 					il.Emit(OpCodes.Ldc_I4_0);
 					il.Emit(OpCodes.Ldc_I4_0);
 				}
