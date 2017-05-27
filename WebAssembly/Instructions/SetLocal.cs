@@ -35,7 +35,15 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
-			var localIndex = this.Index - context.Function.Signature.param_types.Length;
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(OpCode.SetLocal, 1, stack.Count);
+
+			var setType = stack.Pop();
+			if (setType != context.Locals[this.Index])
+				throw new StackTypeInvalidException(OpCode.SetLocal, context.Locals[this.Index], setType);
+
+			var localIndex = this.Index - context.Function.Signature.ParameterTypes.Length;
 			if (localIndex < 0)
 			{
 				//Referring to a parameter.

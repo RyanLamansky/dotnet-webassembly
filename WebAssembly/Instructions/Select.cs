@@ -23,17 +23,17 @@ namespace WebAssembly.Instructions
 		{
 			var stack = context.Stack;
 			if (stack.Count < 3)
-				throw new CompilerException($"Select instruction requires at least 3 values on the stack, found {stack.Count}.");
+				throw new StackTooSmallException(OpCode.Select, 3, stack.Count);
 
 			var type = stack.Pop();
 			if (type != ValueType.Int32)
-				throw new CompilerException($"Select instruction the top stack item to be Int32, found {type}.");
+				throw new StackTypeInvalidException(OpCode.Select, ValueType.Int32, type);
 
 			var typeB = stack.Pop();
 			var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
 
 			if (typeA != typeB)
-				throw new CompilerException($"Select instruction the output types to match, found {typeA} and {typeB}.");
+				throw new StackParameterMismatchException(OpCode.Select, typeA, typeB);
 
 			HelperMethod helper;
 			switch (typeA)

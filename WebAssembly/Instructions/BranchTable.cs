@@ -110,10 +110,18 @@ namespace WebAssembly.Instructions
 			HashCode.Combine(this.Labels.Select(label => (int)label))
 			);
 
-		internal override void Compile(CompilationContext il)
+		internal override void Compile(CompilationContext context)
 		{
-			il.Emit(OpCodes.Switch, this.Labels.Select(index => il.Labels[il.Depth - index - 1]).ToArray());
-			il.Emit(OpCodes.Br, il.Labels[il.Depth - this.DefaultLabel - 1]);
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.BranchTable, 1, 0);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.BranchTable, ValueType.Int32, type);
+
+			context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[context.Depth - index - 1]).ToArray());
+			context.Emit(OpCodes.Br, context.Labels[context.Depth - this.DefaultLabel - 1]);
 		}
 	}
 }

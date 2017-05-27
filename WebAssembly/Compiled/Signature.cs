@@ -4,16 +4,17 @@ namespace WebAssembly.Compiled
 {
 	internal sealed class Signature
 	{
-		public readonly System.Type[] param_types;
-		public readonly ValueType[] RawTypes;
-		public readonly System.Type[] return_types;
+		public readonly System.Type[] ParameterTypes;
+		public readonly ValueType[] RawParameterTypes;
+		public readonly System.Type[] ReturnTypes;
+		public readonly ValueType[] RawReturnTypes;
 
 		public Signature(Reader reader)
 		{
 			reader.ReadVarInt7(); //Function Type
 
-			var parameters = this.param_types = new System.Type[reader.ReadVarUInt32()];
-			var rawTypes = this.RawTypes = new ValueType[parameters.Length];
+			var parameters = this.ParameterTypes = new System.Type[reader.ReadVarUInt32()];
+			var rawParameters = this.RawParameterTypes = new ValueType[parameters.Length];
 
 			System.Type Map(ValueType type)
 			{
@@ -28,15 +29,16 @@ namespace WebAssembly.Compiled
 			}
 
 			for (var i = 0; i < parameters.Length; i++)
-				parameters[i] = Map(rawTypes[i] = (ValueType)reader.ReadVarInt7());
+				parameters[i] = Map(rawParameters[i] = (ValueType)reader.ReadVarInt7());
 
-			var returns = this.return_types = new System.Type[reader.ReadVarUInt1()];
+			var returns = this.ReturnTypes = new System.Type[reader.ReadVarUInt1()];
+			var rawReturns = this.RawReturnTypes = new ValueType[returns.Length];
 
 			if (returns.Length > 1)
 				throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset);
 
 			for (var i = 0; i < returns.Length; i++)
-				returns[i] = Map((ValueType)reader.ReadVarInt7());
+				returns[i] = Map(rawReturns[i] = (ValueType)reader.ReadVarInt7());
 		}
 	}
 }

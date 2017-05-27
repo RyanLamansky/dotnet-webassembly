@@ -37,7 +37,7 @@ namespace WebAssembly.Instructions
 		{
 			context.Stack.Push(context.Locals[this.Index]);
 
-			var localIndex = this.Index - context.Function.Signature.param_types.Length;
+			var localIndex = this.Index - context.Function.Signature.ParameterTypes.Length;
 			if (localIndex < 0)
 			{
 				//Referring to a parameter.

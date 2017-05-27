@@ -21,6 +21,18 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			var returns = context.Function.Signature.RawReturnTypes;
+			if (returns.Length != 0)
+			{
+				var stack = context.Stack;
+				if (stack.Count == 0)
+					throw new StackTooSmallException(OpCode.Return, 1, 0);
+
+				var type = stack.Pop();
+				if (type != returns[0])
+					throw new StackTypeInvalidException(OpCode.Return, returns[0], type);
+			}
+
 			context.Emit(OpCodes.Ret);
 		}
 	}

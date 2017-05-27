@@ -21,6 +21,19 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			var stack = context.Stack;
+			if (stack.Count < 2)
+				throw new StackTooSmallException(OpCode.Int32Add, 2, stack.Count);
+		
+			var typeB = stack.Pop();
+			var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
+
+			if (typeA != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.Int32Add, ValueType.Int32, typeA);
+
+			if (typeA != typeB)
+				throw new StackParameterMismatchException(OpCode.Int32Add, typeA, typeB);
+
 			context.Emit(OpCodes.Add);
 		}
 	}

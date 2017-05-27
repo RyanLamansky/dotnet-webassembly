@@ -63,6 +63,7 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			context.Stack.Push(ValueType.Int32);
 			Emit(context, this.Value);
 		}
 

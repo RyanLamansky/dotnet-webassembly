@@ -28,7 +28,6 @@ namespace WebAssembly.Instructions
 				new Return(),
 				new End(),
 				new Int32Constant(1),
-				new Return(),
 				new End());
 
 			Assert.AreEqual<int>(2, exports.Test());

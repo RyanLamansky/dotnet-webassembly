@@ -353,8 +353,8 @@ namespace WebAssembly.Compiled
 							exported.Key,
 							exportedFunctionAttributes,
 							CallingConventions.HasThis,
-							func.Signature.return_types.FirstOrDefault(),
-							func.Signature.param_types
+							func.Signature.ReturnTypes.FirstOrDefault(),
+							func.Signature.ParameterTypes
 							);
 
 						il = method.GetILGenerator();
@@ -364,7 +364,7 @@ namespace WebAssembly.Compiled
 							func,
 							linearMemoryStart,
 							getHelper,
-							func.Signature.RawTypes.Concat(
+							func.Signature.RawParameterTypes.Concat(
 								func
 								.Locals
 								.SelectMany(locals => Enumerable.Range(0, checked((int)locals.Count)).Select(_ => locals.Type))
@@ -372,7 +372,11 @@ namespace WebAssembly.Compiled
 							);
 						var instructions = func.Instructions;
 						for (var j = 0; j < instructions.Length; j++)
-							instructions[j].Compile(context);
+						{
+							var instruction = instructions[j];
+							instruction.Compile(context);
+							context.Previous = instruction.OpCode;
+						}
 					}
 				}
 			}

@@ -24,7 +24,24 @@ namespace WebAssembly.Instructions
 		{
 			Assert(context.Depth > 0);
 			if (--context.Depth == 0)
+			{
+				if (context.Previous == OpCode.Return)
+					return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
+
+				var returns = context.Function.Signature.RawReturnTypes;
+				if (returns.Length != 0)
+				{
+					var stack = context.Stack;
+					if (stack.Count == 0)
+						throw new StackTooSmallException(OpCode.End, 1, 0);
+
+					var type = stack.Pop();
+					if (type != returns[0])
+						throw new StackTypeInvalidException(OpCode.End, returns[0], type);
+				}
+
 				context.Emit(OpCodes.Ret);
+			}
 			else
 			{
 				var label = context.Labels[context.Depth];

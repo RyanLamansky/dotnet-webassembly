@@ -35,6 +35,14 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.If, 1, 0);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.If, ValueType.Int32, type);
+
 			var label = context.DefineLabel();
 			context.Labels.Add(context.Depth++, label);
 			context.Emit(OpCodes.Brfalse, label);

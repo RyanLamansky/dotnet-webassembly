@@ -42,6 +42,8 @@ namespace WebAssembly
 
 		public uint Depth = 1u;
 
+		public OpCode Previous = OpCode.NoOperation;
+
 		public Dictionary<uint, Label> Labels = new Dictionary<uint, Label>();
 
 		public HashSet<Label> LoopLabels = new HashSet<Label>();
