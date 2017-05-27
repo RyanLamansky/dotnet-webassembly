@@ -30,5 +30,13 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var loopStart = context.DefineLabel();
+			context.Labels.Add(context.Depth++, loopStart);
+			context.MarkLabel(loopStart);
+			context.LoopLabels.Add(loopStart);
+		}
 	}
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -62,5 +63,10 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Index);
+
+		internal override void Compile(CompilationContext context)
+		{
+			context.Emit(OpCodes.Br, context.Labels[context.Depth - this.Index - 1]);
+		}
 	}
 }

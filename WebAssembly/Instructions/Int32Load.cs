@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -20,6 +22,23 @@ namespace WebAssembly.Instructions
 		internal Int32Load(Reader reader)
 			: base(reader)
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			if (this.Offset != 0)
+			{
+				Int32Constant.Emit(context, (int)this.Offset);
+				context.Emit(OpCodes.Add_Ovf_Un);
+			}
+
+			context.Emit(OpCodes.Ldarg_0);
+			context.Emit(OpCodes.Call, context.RangeCheckInt32);
+
+			context.Emit(OpCodes.Ldarg_0);
+			context.Emit(OpCodes.Ldfld, context.LinearMemoryStart);
+			context.Emit(OpCodes.Add);
+			context.Emit(OpCodes.Ldind_I4);
 		}
 	}
 }

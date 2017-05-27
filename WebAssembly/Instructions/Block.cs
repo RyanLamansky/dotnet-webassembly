@@ -30,5 +30,10 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal sealed override void Compile(CompilationContext context)
+		{
+			context.Labels.Add(context.Depth++, context.DefineLabel());
+		}
 	}
 }

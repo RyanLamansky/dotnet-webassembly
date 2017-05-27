@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,15 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Else()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var afterElse = context.DefineLabel();
+			context.Emit(OpCodes.Br, afterElse);
+
+			context.MarkLabel(context.Labels[context.Depth - 1]);
+			context.Labels[context.Depth - 1] = afterElse;
 		}
 	}
 }

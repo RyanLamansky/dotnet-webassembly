@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -29,6 +31,13 @@ namespace WebAssembly.Instructions
 		internal If(Reader reader)
 			: base(reader)
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var label = context.DefineLabel();
+			context.Labels.Add(context.Depth++, label);
+			context.Emit(OpCodes.Brfalse, label);
 		}
 	}
 }

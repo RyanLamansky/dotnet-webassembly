@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Instructions
+﻿using System.Reflection.Emit;
+
+namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Produce the value of an i32 immediate.
@@ -58,5 +60,31 @@
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Value);
+
+		internal override void Compile(CompilationContext context)
+		{
+			Emit(context, this.Value);
+		}
+
+		internal static void Emit(CompilationContext context, int value)
+		{
+			switch (value)
+			{
+				default:
+					context.Emit(OpCodes.Ldc_I4, value);
+					break;
+
+				case -1: context.Emit(OpCodes.Ldc_I4_M1); break;
+				case 0: context.Emit(OpCodes.Ldc_I4_0); break;
+				case 1: context.Emit(OpCodes.Ldc_I4_1); break;
+				case 2: context.Emit(OpCodes.Ldc_I4_2); break;
+				case 3: context.Emit(OpCodes.Ldc_I4_3); break;
+				case 4: context.Emit(OpCodes.Ldc_I4_4); break;
+				case 5: context.Emit(OpCodes.Ldc_I4_5); break;
+				case 6: context.Emit(OpCodes.Ldc_I4_6); break;
+				case 7: context.Emit(OpCodes.Ldc_I4_7); break;
+				case 8: context.Emit(OpCodes.Ldc_I4_8); break;
+			}
+		}
 	}
 }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Compiled
 {
@@ -222,9 +221,6 @@ namespace WebAssembly.Compiled
 
 				if (exportedFunctions != null)
 				{
-					var labels = new Dictionary<uint, Label>();
-					var loopLabels = new HashSet<Label>();
-
 					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
 						var exported = exportedFunctions[i];
@@ -239,201 +235,11 @@ namespace WebAssembly.Compiled
 							);
 
 						il = method.GetILGenerator();
-						var depth = 1u;
-						for (var j = 0; j < func.Instructions.Length; j++)
-						{
-							var instruction = func.Instructions[j];
-							switch (instruction.OpCode)
-							{
-								default: throw new NotSupportedException($"Instruction {instruction.OpCode} is unknown or unsupported.");
 
-								case OpCode.Block:
-									labels.Add(depth++, il.DefineLabel());
-									break;
-
-								case OpCode.Loop:
-									{
-										var loopStart = il.DefineLabel();
-										labels.Add(depth++, loopStart);
-										il.MarkLabel(loopStart);
-										loopLabels.Add(loopStart);
-									}
-									break;
-
-								case OpCode.If:
-									{
-										var label = il.DefineLabel();
-										labels.Add(depth++, label);
-										il.Emit(OpCodes.Brfalse, label);
-									}
-									break;
-
-								case OpCode.Else:
-									{
-										var afterElse = il.DefineLabel();
-										il.Emit(OpCodes.Br, afterElse);
-
-										il.MarkLabel(labels[depth - 1]);
-										labels[depth - 1] = afterElse;
-									}
-									break;
-
-								case OpCode.End:
-									Assert(depth > 0);
-									if (--depth == 0)
-										il.Emit(OpCodes.Ret);
-									else
-									{
-										var label = labels[depth];
-
-										if (!loopLabels.Contains(label)) //Loop labels are marked where defined.
-											il.MarkLabel(label);
-										else
-											loopLabels.Remove(label);
-
-										labels.Remove(depth);
-									}
-									break;
-
-								case OpCode.Branch:
-									{
-										var br = (Instructions.Branch)instruction;
-										il.Emit(OpCodes.Br, labels[depth - br.Index - 1]);
-									}
-									break;
-
-								case OpCode.BranchTable:
-									{
-										var br_table = (Instructions.BranchTable)instruction;
-										il.Emit(OpCodes.Switch, br_table.Labels.Select(index => labels[depth - index - 1]).ToArray());
-										il.Emit(OpCodes.Br, labels[depth - br_table.DefaultLabel - 1]);
-									}
-									break;
-
-								case OpCode.Return:
-									il.Emit(OpCodes.Ret);
-									break;
-
-								case OpCode.GetLocal:
-									{
-										var get_local = (Instructions.GetLocal)instruction;
-
-										var localIndex = get_local.Index - func.Signature.param_types.Length;
-										if (localIndex < 0)
-										{
-											//Referring to a parameter.
-											//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
-											switch (get_local.Index)
-											{
-												default:
-													il.Emit(OpCodes.Ldarg, checked((ushort)(get_local.Index + 1)));
-													break;
-
-												case 0: il.Emit(OpCodes.Ldarg_1); break;
-												case 1: il.Emit(OpCodes.Ldarg_2); break;
-												case 2: il.Emit(OpCodes.Ldarg_3); break;
-											}
-										}
-										else
-										{
-											//Referring to a local.
-											switch (localIndex)
-											{
-												default:
-													il.Emit(OpCodes.Ldloc, checked((int)localIndex));
-													break;
-
-												case 0: il.Emit(OpCodes.Ldloc_0); break;
-												case 1: il.Emit(OpCodes.Ldloc_1); break;
-												case 2: il.Emit(OpCodes.Ldloc_2); break;
-												case 3: il.Emit(OpCodes.Ldloc_3); break;
-											}
-										}
-									}
-									break;
-
-								case OpCode.SetLocal:
-									{
-										var set_local = (Instructions.SetLocal)instruction;
-
-										var localIndex = set_local.Index - func.Signature.param_types.Length;
-										if (localIndex < 0)
-										{
-											//Referring to a parameter.
-											//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
-											if (set_local.Index + 1 <= byte.MaxValue)
-												il.Emit(OpCodes.Starg_S, checked((byte)(set_local.Index + 1)));
-											else
-												il.Emit(OpCodes.Starg, checked((ushort)(set_local.Index + 1)));
-										}
-										else
-										{
-											//Referring to a local.
-											switch (localIndex)
-											{
-												default:
-													il.Emit(OpCodes.Stloc, checked((int)localIndex));
-													break;
-
-												case 0: il.Emit(OpCodes.Stloc_0); break;
-												case 1: il.Emit(OpCodes.Stloc_1); break;
-												case 2: il.Emit(OpCodes.Stloc_2); break;
-												case 3: il.Emit(OpCodes.Stloc_3); break;
-											}
-										}
-									}
-									break;
-
-								case OpCode.Int32Load:
-									{
-										var i3load = (Instructions.Int32Load)instruction;
-										if (i3load.Offset != 0)
-										{
-											il.Emit(OpCodes.Ldc_I4, i3load.Offset);
-											il.Emit(OpCodes.Add_Ovf_Un);
-										}
-
-										il.Emit(OpCodes.Ldarg_0);
-										il.Emit(OpCodes.Call, rangeCheckInt32);
-
-										il.Emit(OpCodes.Ldarg_0);
-										il.Emit(OpCodes.Ldfld, linearMemoryStart);
-										il.Emit(OpCodes.Add);
-										il.Emit(OpCodes.Ldind_I4);
-									}
-									break;
-
-								case OpCode.Int32Constant:
-									{
-										var i32const = (Instructions.Int32Constant)instruction;
-										switch (i32const.Value)
-										{
-											default:
-												il.Emit(OpCodes.Ldc_I4, i32const.Value);
-												break;
-
-											case -1: il.Emit(OpCodes.Ldc_I4_M1); break;
-											case 0: il.Emit(OpCodes.Ldc_I4_0); break;
-											case 1: il.Emit(OpCodes.Ldc_I4_1); break;
-											case 2: il.Emit(OpCodes.Ldc_I4_2); break;
-											case 3: il.Emit(OpCodes.Ldc_I4_3); break;
-											case 4: il.Emit(OpCodes.Ldc_I4_4); break;
-											case 5: il.Emit(OpCodes.Ldc_I4_5); break;
-											case 6: il.Emit(OpCodes.Ldc_I4_6); break;
-											case 7: il.Emit(OpCodes.Ldc_I4_7); break;
-											case 8: il.Emit(OpCodes.Ldc_I4_8); break;
-										}
-									}
-									break;
-
-								case OpCode.Int32Add:
-									il.Emit(OpCodes.Add);
-									break;
-							}
-
-							if (depth == 0)
-								break;
-						}
+						var context = new CompilationContext(il, func, linearMemoryStart, rangeCheckInt32);
+						var instructions = func.Instructions;
+						for (var j = 0; j < instructions.Length; j++)
+							instructions[j].Compile(context);
 					}
 				}
 			}

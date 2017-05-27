@@ -25,6 +25,9 @@ namespace WebAssembly
 
 		internal abstract void WriteTo(Writer writer);
 
+		internal virtual void Compile(CompilationContext context) =>
+			throw new NotImplementedException($"{this.OpCode} does not currently support compilation.");
+
 		/// <summary>
 		/// Determines whether this instruction is identical to another.
 		/// </summary>

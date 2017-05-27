@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -108,5 +109,11 @@ namespace WebAssembly.Instructions
 			(int)this.DefaultLabel,
 			HashCode.Combine(this.Labels.Select(label => (int)label))
 			);
+
+		internal override void Compile(CompilationContext il)
+		{
+			il.Emit(OpCodes.Switch, this.Labels.Select(index => il.Labels[il.Depth - index - 1]).ToArray());
+			il.Emit(OpCodes.Br, il.Labels[il.Depth - this.DefaultLabel - 1]);
+		}
 	}
 }
