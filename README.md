@@ -32,8 +32,8 @@ This will evolve as the project takes shape.
 - [x] Add support for automatic implementation of abstract classes as a means to avoid inefficient dynamic invocation
 - [x] Compile control flow instructions: `block`, `loop`, `if`, and `br_table`
 - [x] Implement linear memory using unmanaged memory with range checks
-- [ ] 🔜 Compile remaining specialized instructions: `select`, `drop`, `unreachable`, `nop`
-- [ ] Compile `call`, `call_indirect`
+- [x] Compile remaining specialized instructions: `select`, `drop`, `unreachable`, `nop`
+- [ ] 🔜 Compile `call`, `call_indirect`
 - [ ] Compile `get_global`, `set_global`
 - [ ] Implement imports
 - [ ] Implement any remaining instructions not yet built to support development of other features

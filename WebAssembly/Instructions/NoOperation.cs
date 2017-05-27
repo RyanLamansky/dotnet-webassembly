@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,11 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public NoOperation()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			context.Emit(OpCodes.Nop);
 		}
 	}
 }

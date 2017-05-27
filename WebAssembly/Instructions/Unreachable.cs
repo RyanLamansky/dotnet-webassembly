@@ -1,3 +1,7 @@
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -16,6 +20,12 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Unreachable()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			context.Emit(OpCodes.Newobj, typeof(Compiled.UnreachableException).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
+			context.Emit(OpCodes.Throw);
 		}
 	}
 }

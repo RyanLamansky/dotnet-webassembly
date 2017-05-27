@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,17 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Drop()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.Drop, 1, 0);
+
+			stack.Pop();
+
+			context.Emit(OpCodes.Pop);
 		}
 	}
 }

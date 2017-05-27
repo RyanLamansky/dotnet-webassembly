@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace WebAssembly.Compiled
+﻿namespace WebAssembly.Compiled
 {
 	/// <summary>
 	/// Describes an exception where an out-of-range memory access was attempted.
 	/// </summary>
-	public class MemoryAccessOutOfRangeException : Exception
+	public class MemoryAccessOutOfRangeException : RuntimeException
 	{
 		/// <summary>
 		/// Creates a new <see cref="MemoryAccessOutOfRangeException"/> instance with the provided offset and length.
