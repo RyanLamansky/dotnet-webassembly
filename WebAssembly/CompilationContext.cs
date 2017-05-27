@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using static System.Diagnostics.Debug;
@@ -8,30 +9,31 @@ namespace WebAssembly
 	internal sealed class CompilationContext
 	{
 		private readonly ILGenerator generator;
+		private readonly Func<HelperMethod, MethodInfo> getHelper;
 
 		public CompilationContext(
 			ILGenerator generator,
 			Compiled.Function function,
 			FieldBuilder linearMemoryStart,
-			MethodBuilder rangeCheckInt32
+			Func<HelperMethod, MethodInfo> getHelper
 			)
 		{
 			Assert(generator != null);
 			Assert(function != null);
 			Assert(linearMemoryStart != null);
-			Assert(rangeCheckInt32 != null);
+			Assert(getHelper != null);
 
 			this.generator = generator;
 			this.Function = function;
 			this.LinearMemoryStart = linearMemoryStart;
-			this.RangeCheckInt32 = rangeCheckInt32;
+			this.getHelper = getHelper;
 		}
+
+		public MethodInfo this[HelperMethod method] => getHelper(method);
 
 		public readonly Compiled.Function Function;
 
 		public readonly FieldBuilder LinearMemoryStart;
-
-		public readonly MethodBuilder RangeCheckInt32;
 
 		public uint Depth = 1u;
 

@@ -33,7 +33,7 @@ namespace WebAssembly.Instructions
 			}
 
 			context.Emit(OpCodes.Ldarg_0);
-			context.Emit(OpCodes.Call, context.RangeCheckInt32);
+			context.Emit(OpCodes.Call, context[HelperMethod.RangeCheckInt32]);
 
 			context.Emit(OpCodes.Ldarg_0);
 			context.Emit(OpCodes.Ldfld, context.LinearMemoryStart);

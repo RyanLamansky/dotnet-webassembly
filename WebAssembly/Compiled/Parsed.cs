@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Compiled
 {
@@ -159,39 +160,57 @@ namespace WebAssembly.Compiled
 			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
 			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
 
-			var rangeCheckInt32 = exportsBuilder.DefineMethod(
-				"☣ Range Check 32",
-				rangeCheckAttributes,
-				typeof(uint),
-				new[] { typeof(uint), exportsBuilder.AsType() }
-				);
+			var helperMethods = new Dictionary<HelperMethod, MethodInfo>();
+			var getHelper = new Func<HelperMethod, MethodInfo>(helper =>
 			{
-				var il = rangeCheckInt32.GetILGenerator();
-				il.Emit(OpCodes.Ldarg_1);
-				il.Emit(OpCodes.Ldfld, linearMemorySize);
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Ldc_I4_4);
-				il.Emit(OpCodes.Add_Ovf_Un);
-				var outOfRange = il.DefineLabel();
-				il.Emit(OpCodes.Blt_Un_S, outOfRange);
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Ret);
-				il.MarkLabel(outOfRange);
-				il.Emit(OpCodes.Ldarg_0);
-				il.Emit(OpCodes.Ldc_I4_4);
-				il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
-					.GetTypeInfo()
-					.DeclaredConstructors
-					.First(c =>
-					{
-						var parms = c.GetParameters();
-						return parms.Length == 2
-						&& parms[0].ParameterType == typeof(uint)
-						&& parms[1].ParameterType == typeof(uint)
-						;
-					}));
-				il.Emit(OpCodes.Throw);
-			}
+				if (helperMethods.TryGetValue(helper, out var method))
+					return method;
+
+				MethodBuilder builder;
+
+				switch (helper)
+				{
+					case HelperMethod.RangeCheckInt32:
+						builder = exportsBuilder.DefineMethod(
+							"☣ Range Check 32",
+							rangeCheckAttributes,
+							typeof(uint),
+							new[] { typeof(uint), exportsBuilder.AsType() }
+							);
+						{
+							var il = builder.GetILGenerator();
+							il.Emit(OpCodes.Ldarg_1);
+							il.Emit(OpCodes.Ldfld, linearMemorySize);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ldc_I4_4);
+							il.Emit(OpCodes.Add_Ovf_Un);
+							var outOfRange = il.DefineLabel();
+							il.Emit(OpCodes.Blt_Un_S, outOfRange);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ret);
+							il.MarkLabel(outOfRange);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ldc_I4_4);
+							il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
+								.GetTypeInfo()
+								.DeclaredConstructors
+								.First(c =>
+								{
+									var parms = c.GetParameters();
+									return parms.Length == 2
+									&& parms[0].ParameterType == typeof(uint)
+									&& parms[1].ParameterType == typeof(uint)
+									;
+								}));
+							il.Emit(OpCodes.Throw);
+						}
+						helperMethods.Add(HelperMethod.RangeCheckInt32, builder);
+						return builder;
+				}
+
+				Fail("Attempted to obtain an unknown helper method.");
+				return null;
+			});
 
 			{
 				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
@@ -236,7 +255,7 @@ namespace WebAssembly.Compiled
 
 						il = method.GetILGenerator();
 
-						var context = new CompilationContext(il, func, linearMemoryStart, rangeCheckInt32);
+						var context = new CompilationContext(il, func, linearMemoryStart, getHelper);
 						var instructions = func.Instructions;
 						for (var j = 0; j < instructions.Length; j++)
 							instructions[j].Compile(context);
