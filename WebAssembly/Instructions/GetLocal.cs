@@ -35,6 +35,8 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			context.Stack.Push(context.Locals[this.Index]);
+
 			var localIndex = this.Index - context.Function.Signature.param_types.Length;
 			if (localIndex < 0)
 			{

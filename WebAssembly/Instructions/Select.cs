@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,34 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Select()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 3)
+				throw new CompilerException($"Select instruction requires at least 3 values on the stack, found {stack.Count}.");
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new CompilerException($"Select instruction the top stack item to be Int32, found {type}.");
+
+			var typeB = stack.Pop();
+			var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
+
+			if (typeA != typeB)
+				throw new CompilerException($"Select instruction the output types to match, found {typeA} and {typeB}.");
+
+			HelperMethod helper;
+			switch (typeA)
+			{
+				default: //This shouldn't be possible due to previous validations.
+				case ValueType.Int32: helper = HelperMethod.SelectInt32; break;
+				case ValueType.Int64: helper = HelperMethod.SelectInt64; break;
+				case ValueType.Float32: helper = HelperMethod.SelectFloat32; break;
+				case ValueType.Float64: helper = HelperMethod.SelectFloat64; break;
+			}
+			context.Emit(OpCodes.Call, context[helper]);
 		}
 	}
 }

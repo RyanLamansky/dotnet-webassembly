@@ -149,7 +149,7 @@ namespace WebAssembly.Compiled
 				MethodAttributes.HideBySig
 				;
 
-			const MethodAttributes rangeCheckAttributes =
+			const MethodAttributes helperMethodAttributes =
 				MethodAttributes.Private |
 				MethodAttributes.Static |
 				MethodAttributes.HideBySig
@@ -172,8 +172,8 @@ namespace WebAssembly.Compiled
 				{
 					case HelperMethod.RangeCheckInt32:
 						builder = exportsBuilder.DefineMethod(
-							"☣ Range Check 32",
-							rangeCheckAttributes,
+							"☣ Range Check Int32",
+							helperMethodAttributes,
 							typeof(uint),
 							new[] { typeof(uint), exportsBuilder.AsType() }
 							);
@@ -205,6 +205,110 @@ namespace WebAssembly.Compiled
 							il.Emit(OpCodes.Throw);
 						}
 						helperMethods.Add(HelperMethod.RangeCheckInt32, builder);
+						return builder;
+
+					case HelperMethod.SelectInt32:
+						builder = exportsBuilder.DefineMethod(
+							"☣ Select Int32",
+							helperMethodAttributes,
+							typeof(int),
+							new[]
+							{
+								typeof(int),
+								typeof(int),
+								typeof(int),
+							}
+							);
+						{
+							var il = builder.GetILGenerator();
+							il.Emit(OpCodes.Ldarg_2);
+							var @true = il.DefineLabel();
+							il.Emit(OpCodes.Brtrue_S, @true);
+							il.Emit(OpCodes.Ldarg_1);
+							il.Emit(OpCodes.Ret);
+							il.MarkLabel(@true);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ret);
+						}
+						helperMethods.Add(HelperMethod.SelectInt32, builder);
+						return builder;
+
+					case HelperMethod.SelectInt64:
+						builder = exportsBuilder.DefineMethod(
+							"☣ Select Int64",
+							helperMethodAttributes,
+							typeof(long),
+							new[]
+							{
+								typeof(long),
+								typeof(long),
+								typeof(int),
+							}
+							);
+						{
+							var il = builder.GetILGenerator();
+							il.Emit(OpCodes.Ldarg_2);
+							var @true = il.DefineLabel();
+							il.Emit(OpCodes.Brtrue_S, @true);
+							il.Emit(OpCodes.Ldarg_1);
+							il.Emit(OpCodes.Ret);
+							il.MarkLabel(@true);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ret);
+						}
+						helperMethods.Add(HelperMethod.SelectInt64, builder);
+						return builder;
+
+					case HelperMethod.SelectFloat32:
+						builder = exportsBuilder.DefineMethod(
+							"☣ Select Float32",
+							helperMethodAttributes,
+							typeof(float),
+							new[]
+							{
+								typeof(float),
+								typeof(float),
+								typeof(int),
+							}
+							);
+						{
+							var il = builder.GetILGenerator();
+							il.Emit(OpCodes.Ldarg_2);
+							var @true = il.DefineLabel();
+							il.Emit(OpCodes.Brtrue_S, @true);
+							il.Emit(OpCodes.Ldarg_1);
+							il.Emit(OpCodes.Ret);
+							il.MarkLabel(@true);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ret);
+						}
+						helperMethods.Add(HelperMethod.SelectFloat32, builder);
+						return builder;
+
+					case HelperMethod.SelectFloat64:
+						builder = exportsBuilder.DefineMethod(
+							"☣ Select Float64",
+							helperMethodAttributes,
+							typeof(double),
+							new[]
+							{
+								typeof(double),
+								typeof(double),
+								typeof(int),
+							}
+							);
+						{
+							var il = builder.GetILGenerator();
+							il.Emit(OpCodes.Ldarg_2);
+							var @true = il.DefineLabel();
+							il.Emit(OpCodes.Brtrue_S, @true);
+							il.Emit(OpCodes.Ldarg_1);
+							il.Emit(OpCodes.Ret);
+							il.MarkLabel(@true);
+							il.Emit(OpCodes.Ldarg_0);
+							il.Emit(OpCodes.Ret);
+						}
+						helperMethods.Add(HelperMethod.SelectFloat64, builder);
 						return builder;
 				}
 
@@ -255,7 +359,17 @@ namespace WebAssembly.Compiled
 
 						il = method.GetILGenerator();
 
-						var context = new CompilationContext(il, func, linearMemoryStart, getHelper);
+						var context = new CompilationContext(
+							il,
+							func,
+							linearMemoryStart,
+							getHelper,
+							func.Signature.RawTypes.Concat(
+								func
+								.Locals
+								.SelectMany(locals => Enumerable.Range(0, checked((int)locals.Count)).Select(_ => locals.Type))
+								).ToArray()
+							);
 						var instructions = func.Instructions;
 						for (var j = 0; j < instructions.Length; j++)
 							instructions[j].Compile(context);

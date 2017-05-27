@@ -15,18 +15,21 @@ namespace WebAssembly
 			ILGenerator generator,
 			Compiled.Function function,
 			FieldBuilder linearMemoryStart,
-			Func<HelperMethod, MethodInfo> getHelper
+			Func<HelperMethod, MethodInfo> getHelper,
+			ValueType[] locals
 			)
 		{
 			Assert(generator != null);
 			Assert(function != null);
 			Assert(linearMemoryStart != null);
 			Assert(getHelper != null);
+			Assert(locals != null);
 
 			this.generator = generator;
 			this.Function = function;
 			this.LinearMemoryStart = linearMemoryStart;
 			this.getHelper = getHelper;
+			this.Locals = locals;
 		}
 
 		public MethodInfo this[HelperMethod method] => getHelper(method);
@@ -35,11 +38,15 @@ namespace WebAssembly
 
 		public readonly FieldBuilder LinearMemoryStart;
 
+		public readonly ValueType[] Locals;
+
 		public uint Depth = 1u;
 
 		public Dictionary<uint, Label> Labels = new Dictionary<uint, Label>();
 
 		public HashSet<Label> LoopLabels = new HashSet<Label>();
+
+		public Stack<ValueType> Stack = new Stack<ValueType>();
 
 		public Label DefineLabel() => generator.DefineLabel();
 
