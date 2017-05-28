@@ -1,9 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace WebAssembly.Instructions
 {
@@ -32,7 +28,6 @@ namespace WebAssembly.Instructions
 			where T : struct
 		{
 			var module = new Module();
-			module.Memories.Add(new Memory(1, 1));
 			module.Types.Add(new Type
 			{
 				Parameters = new ValueType[]
