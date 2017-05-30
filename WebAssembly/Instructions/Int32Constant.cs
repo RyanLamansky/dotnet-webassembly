@@ -31,6 +31,12 @@ namespace WebAssembly.Instructions
 		public Int32Constant(int value) => Value = value;
 
 		/// <summary>
+		/// Creates a new <see cref="Int32Constant"/> instance with the provided value.
+		/// </summary>
+		/// <param name="value">The value of the constant.  This is passed to the <see cref="Value"/> property with an unchecked cast.</param>
+		public Int32Constant(uint value) => Value = unchecked((int)value);
+
+		/// <summary>
 		/// Creates a new <see cref="Int32Constant"/> instance from binary data.
 		/// </summary>
 		/// <param name="reader">The source of binary data.</param>
