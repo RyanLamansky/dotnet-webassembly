@@ -17,9 +17,9 @@ The API is unstable--this means the names and structure of everything can change
 - `WebAssembly.Module` reflects the binary format in a very pure form: nearly anything that can be found in a valid WASM file is covered.
 As the binary format is optimized for size efficiency, it can be difficult to use, particularly concepts like index space and labels.
 The best resource for understanding how things work is the test code, in this repository under WebAssembly.Tests.
-
-Though not in the NuGet package yet, JIT compilation is in development and is available in the repository as `WebAssembly.Compiler`.
-All available features are covered by tests in the WebAssembly.Tests project.
+- `WebAssembly.Compiler` converts WebAssembly binary files (WASM) to .NET via the run-time code generation features in [System.Reflection.Emit](https://msdn.microsoft.com/en-us/library/system.reflection.emit.aspx).
+As it ultimately runs on the same CLR as C#, performance is equivalent.
+The supported WebAssembly opcodes are still limited; currently the best way to see the available instructions and how to use them is the test code, in this repository under WebAssembly.Tests.
 
 ## Development Plan
 
