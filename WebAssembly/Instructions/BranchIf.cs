@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -22,6 +23,15 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public BranchIf()
 		{
+		}
+
+		/// <summary>
+		/// Creates a new <see cref="BranchIf"/> instance with the provided index.
+		/// </summary>
+		/// <param name="index">The number of ancestor blocks to climb; 0 is the immediate parent.</param>
+		public BranchIf(uint index)
+		{
+			this.Index = index;
 		}
 
 		internal BranchIf(Reader reader)
@@ -53,5 +63,18 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Index);
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.If, 1, 0);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.If, ValueType.Int32, type);
+
+			context.Emit(OpCodes.Brtrue, context.Labels[context.Depth - this.Index - 1]);
+		}
 	}
 }
