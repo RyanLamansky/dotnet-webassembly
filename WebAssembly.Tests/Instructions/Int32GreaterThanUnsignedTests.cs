@@ -16,7 +16,7 @@ namespace WebAssembly.Instructions
 		{
 			const uint comparand = 0xF;
 
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase>(nameof(CompilerTestBase.Test),
+			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>(nameof(CompilerTestBase<int>.Test),
 				ValueType.Int32,
 				 new[]
 				 {

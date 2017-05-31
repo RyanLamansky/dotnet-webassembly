@@ -16,7 +16,7 @@ namespace WebAssembly.Instructions
 		{
 			const int target = 0xF;
 
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase>(nameof(CompilerTestBase.Test),
+			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>(nameof(CompilerTestBase<int>.Test),
 				ValueType.Int32,
 				 new[]
 				 {

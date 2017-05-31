@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
 		[Timeout(1000)]
 		public void Loop_Compiled()
 		{
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase2>(nameof(CompilerTestBase2.Test),
+			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase2<int>>(nameof(CompilerTestBase2<int>.Test),
 				ValueType.Int32,
 				new[]
 				{

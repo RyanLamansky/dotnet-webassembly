@@ -14,7 +14,7 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void BranchTable_Compiled()
 		{
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase>("Test",
+			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>("Test",
 				ValueType.Int32,
 				 new[]
 				 {

@@ -16,7 +16,7 @@ namespace WebAssembly.Instructions
 		{
 			const uint divisor = 2;
 
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase>(nameof(CompilerTestBase.Test),
+			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>(nameof(CompilerTestBase<int>.Test),
 				ValueType.Int32,
 				 new[]
 				 {
