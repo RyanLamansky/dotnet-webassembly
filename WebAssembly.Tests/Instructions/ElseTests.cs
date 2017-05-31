@@ -14,12 +14,7 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Else_Compiled()
 		{
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>(nameof(CompilerTestBase<int>.Test),
-				ValueType.Int32,
-				 new[]
-				 {
-					 ValueType.Int32
-				 },
+			var exports = CompilerTestBase<int>.CreateInstance(
 				new GetLocal(0),
 				new If(),
 				new Int32Constant(3),

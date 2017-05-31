@@ -14,12 +14,7 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void BranchIf_Compiled()
 		{
-			var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>(nameof(CompilerTestBase<int>.Test),
-				ValueType.Int32,
-				new ValueType[]
-				{
-					ValueType.Int32,
-				},
+			var exports = CompilerTestBase<int>.CreateInstance(
 				new Block(BlockType.Empty),
 				new GetLocal(0),
 				new BranchIf(0),
