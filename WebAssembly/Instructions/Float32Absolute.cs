@@ -1,9 +1,13 @@
+using System;
+using System.Linq;
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Absolute value.
 	/// </summary>
-	public class Float32Absolute : SimpleInstruction
+	public class Float32Absolute : ValueOneToOneCallInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Absolute"/>.
@@ -16,5 +20,19 @@ namespace WebAssembly.Instructions
 		public Float32Absolute()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => method;
+
+		internal override ValueType ValueType => ValueType.Float32;
+
+		private static readonly RegeneratingWeakReference<MethodInfo> method = new RegeneratingWeakReference<MethodInfo>(() =>
+			typeof(Math).GetTypeInfo().DeclaredMethods.First(m =>
+			{
+				if (m.Name != nameof(Math.Abs))
+					return false;
+
+				var parms = m.GetParameters();
+				return parms.Length == 1 && parms[0].ParameterType == typeof(float);
+			}));
 	}
 }

@@ -1,9 +1,13 @@
+using System;
+using System.Linq;
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Ceiling operator.
 	/// </summary>
-	public class Float64Ceiling : SimpleInstruction
+	public class Float64Ceiling : ValueOneToOneCallInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Ceiling"/>.
@@ -16,5 +20,19 @@ namespace WebAssembly.Instructions
 		public Float64Ceiling()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => method;
+
+		internal override ValueType ValueType => ValueType.Float64;
+
+		private static readonly RegeneratingWeakReference<MethodInfo> method = new RegeneratingWeakReference<MethodInfo>(() =>
+			typeof(Math).GetTypeInfo().DeclaredMethods.First(m =>
+			{
+				if (m.Name != nameof(Math.Ceiling))
+					return false;
+
+				var parms = m.GetParameters();
+				return parms.Length == 1 && parms[0].ParameterType == typeof(double);
+			}));
 	}
 }
