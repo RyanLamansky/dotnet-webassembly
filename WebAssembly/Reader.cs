@@ -89,14 +89,14 @@ namespace WebAssembly
 
 		public long ReadVarInt64()
 		{
-			var result = 0;
+			var result = 0L;
 			long current;
 			var count = 0;
-			var signBits = -1;
+			var signBits = -1L;
 			do
 			{
 				current = this.ReadByte();
-				result |= ((byte)current & 0x7F) << (count * 7);
+				result |= (current & 0x7F) << (count * 7);
 				signBits <<= 7;
 				count++;
 			} while (((current & 0x80) == 0x80) && count < 10);

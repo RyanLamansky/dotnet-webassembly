@@ -57,13 +57,13 @@ namespace WebAssembly
 			var remaining = value >> 7;
 			var hasMore = true;
 			var end = ((value & int.MinValue) == 0) ? 0 : -1;
-			while (hasMore)
+			do
 			{
 				hasMore = (remaining != end) || ((remaining & 1) != ((value >> 6) & 1));
 				writer.Write((byte)((value & 0x7f) | (hasMore ? 0x80 : 0)));
 				value = remaining;
 				remaining >>= 7;
-			}
+			} while (hasMore);
 		}
 
 		public void WriteVar(long value)
@@ -72,14 +72,14 @@ namespace WebAssembly
 
 			var remaining = value >> 7;
 			var hasMore = true;
-			var end = ((value & int.MinValue) == 0) ? 0 : -1;
-			while (hasMore)
+			var end = ((value & long.MinValue) == 0) ? 0 : -1;
+			do
 			{
 				hasMore = (remaining != end) || ((remaining & 1) != ((value >> 6) & 1));
 				writer.Write((byte)(((byte)value & 0x7f) | (hasMore ? 0x80 : 0)));
 				value = remaining;
 				remaining >>= 7;
-			}
+			} while (hasMore);
 		}
 
 		public void Write(float value)

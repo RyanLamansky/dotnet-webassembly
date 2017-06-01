@@ -60,6 +60,10 @@ namespace WebAssembly
 
 		public void Emit(System.Reflection.Emit.OpCode opcode, long arg) => generator.Emit(opcode, arg);
 
+		public void Emit(System.Reflection.Emit.OpCode opcode, float arg) => generator.Emit(opcode, arg);
+
+		public void Emit(System.Reflection.Emit.OpCode opcode, double arg) => generator.Emit(opcode, arg);
+
 		public void Emit(System.Reflection.Emit.OpCode opcode, Label label) => generator.Emit(opcode, label);
 
 		public void Emit(System.Reflection.Emit.OpCode opcode, Label[] labels) => generator.Emit(opcode, labels);

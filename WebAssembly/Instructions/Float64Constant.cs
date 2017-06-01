@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Instructions
+﻿using System.Reflection.Emit;
+
+namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Produce the value of an f64 immediate.
@@ -58,5 +60,11 @@
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Value.GetHashCode());
+
+		internal override void Compile(CompilationContext context)
+		{
+			context.Stack.Push(ValueType.Float64);
+			context.Emit(OpCodes.Ldc_R8, this.Value);
+		}
 	}
 }

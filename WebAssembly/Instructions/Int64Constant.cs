@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Instructions
+﻿using System.Reflection.Emit;
+
+namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Produce the value of an i64 immediate.
@@ -27,6 +29,12 @@
 		/// </summary>
 		/// <param name="value">The value of the constant.  This is passed to the <see cref="Value"/> property.</param>
 		public Int64Constant(long value) => Value = value;
+
+		/// <summary>
+		/// Creates a new <see cref="Int64Constant"/> instance with the provided value.
+		/// </summary>
+		/// <param name="value">The value of the constant.  This is passed to the <see cref="Value"/> property.</param>
+		public Int64Constant(ulong value) => Value = unchecked((long)value);
 
 		/// <summary>
 		/// Creates a new <see cref="Int64Constant"/> instance from binary data.
@@ -58,5 +66,11 @@
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Value.GetHashCode());
+
+		internal override void Compile(CompilationContext context)
+		{
+			context.Stack.Push(ValueType.Int64);
+			context.Emit(OpCodes.Ldc_I8, this.Value);
+		}
 	}
 }
