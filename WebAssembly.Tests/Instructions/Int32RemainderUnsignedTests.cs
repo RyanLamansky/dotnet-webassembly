@@ -14,16 +14,16 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Int32RemainderUnsigned_Compiled()
 		{
-			const uint and = 0xF;
+			const uint divisor = 0xF;
 
 			var exports = CompilerTestBase<int>.CreateInstance(
 				new GetLocal(0),
-				new Int32Constant(and),
+				new Int32Constant(divisor),
 				new Int32RemainderUnsigned(),
 				new End());
 
 			foreach (var value in new uint[] { 0x00, 0x0F, 0xF0, 0xFF, })
-				Assert.AreEqual(value % and, (uint)exports.Test((int)value));
+				Assert.AreEqual(value % divisor, (uint)exports.Test((int)value));
 		}
 	}
 }
