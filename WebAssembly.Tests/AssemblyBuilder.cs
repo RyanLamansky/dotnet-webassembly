@@ -44,7 +44,7 @@ namespace WebAssembly
 				Assert.AreNotEqual(0, memory.Length);
 				memory.Position = 0;
 
-				var maker = Compiler.FromBinary<TExport>(memory);
+				var maker = Compile.FromBinary<TExport>(memory);
 				Assert.IsNotNull(maker);
 				compiled = maker();
 			}
@@ -92,7 +92,7 @@ namespace WebAssembly
 				Assert.AreNotEqual(0, memory.Length);
 				memory.Position = 0;
 
-				var maker = Compiler.FromBinary<TExport>(memory);
+				var maker = Compile.FromBinary<TExport>(memory);
 				Assert.IsNotNull(maker);
 				compiled = maker();
 			}

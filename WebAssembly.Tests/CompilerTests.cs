@@ -8,7 +8,7 @@ namespace WebAssembly
 	using Instructions;
 
 	/// <summary>
-	/// Validates basic features of the <see cref="Compiler"/> class.
+	/// Validates basic features of the <see cref="Compile"/> class.
 	/// </summary>
 	[TestClass]
 	public class CompilerTests
@@ -25,7 +25,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				var result = Compiler.FromBinary<object>(memory)();
+				var result = Compile.FromBinary<object>(memory)();
 				Assert.IsNotNull(result);
 			}
 		}
@@ -61,7 +61,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<dynamic>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			compiled.Exports.Start();
@@ -94,7 +94,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<dynamic>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 		}
 
@@ -134,7 +134,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<dynamic>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -189,7 +189,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<HelloWorldExports>(memory)();
+				compiled = Compile.FromBinary<HelloWorldExports>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -274,7 +274,7 @@ namespace WebAssembly
 
 				using (var readOnly = new ForwardReadOnlyStream(memory.ToArray()))
 				{
-					compiled = Compiler.FromBinary<HelloWorldExports>(readOnly)();
+					compiled = Compile.FromBinary<HelloWorldExports>(readOnly)();
 				}
 			}
 
@@ -312,7 +312,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<HelloWorldExportsWithConstructor>(memory)();
+				compiled = Compile.FromBinary<HelloWorldExportsWithConstructor>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -334,7 +334,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<dynamic>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			using (compiled)

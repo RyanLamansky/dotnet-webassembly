@@ -11,7 +11,7 @@ namespace WebAssembly
 	/// <summary>
 	/// Provides compilation functionality.  Use <see cref="Module"/> for robust inspection and modification capability.
 	/// </summary>
-	public static class Compiler
+	public static class Compile
 	{
 		/// <summary>
 		/// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.

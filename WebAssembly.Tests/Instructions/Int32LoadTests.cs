@@ -55,7 +55,7 @@ namespace WebAssembly.Instructions
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<MemoryReadTestBase<int>>(memory)();
+				compiled = Compile.FromBinary<MemoryReadTestBase<int>>(memory)();
 			}
 
 			using (compiled)
@@ -154,7 +154,7 @@ namespace WebAssembly.Instructions
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compiler.FromBinary<MemoryReadTestBase<int>>(memory)();
+				compiled = Compile.FromBinary<MemoryReadTestBase<int>>(memory)();
 			}
 
 			using (compiled)

@@ -63,7 +63,7 @@ namespace WebAssembly.Instructions
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				return Compiler.FromBinary<SelectTester<T>>(memory)();
+				return Compile.FromBinary<SelectTester<T>>(memory)();
 			}
 		}
 
