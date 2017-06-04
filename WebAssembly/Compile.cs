@@ -212,7 +212,7 @@ namespace WebAssembly
 								var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
 								var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
 								internalFunctions[i] = exportsBuilder.DefineMethod(
-									$"Test{i}",
+									$"👻 {i}",
 									internalFunctionAttributes,
 									CallingConventions.Standard,
 									signature.ReturnTypes.FirstOrDefault(),
