@@ -104,5 +104,15 @@ namespace WebAssembly
 
 			return compiled.Exports;
 		}
+
+		private static readonly Dictionary<System.Type, ValueType> map = new Dictionary<System.Type, ValueType>(4)
+		{
+			{ typeof(int), ValueType.Int32 },
+			{ typeof(long), ValueType.Int64 },
+			{ typeof(float), ValueType.Float32 },
+			{ typeof(double), ValueType.Float64 },
+		};
+
+		public static ValueType Map(System.Type type) => map[type];
 	}
 }

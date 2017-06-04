@@ -28,12 +28,14 @@
 		/// <returns>The <see cref="CompilerTestBase2{T}"/> instance.</returns>
 		public static CompilerTestBase2<T> CreateInstance(params Instruction[] instructions)
 		{
+			var type = AssemblyBuilder.Map(typeof(T));
+
 			return AssemblyBuilder.CreateInstance<CompilerTestBase2<T>>(nameof(CompilerTestBase2<T>.Test),
-				ValueType.Int32,
+				type,
 				new[]
 				{
-					ValueType.Int32,
-					ValueType.Int32,
+					type,
+					type,
 				},
 				instructions);
 		}
