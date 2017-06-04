@@ -21,7 +21,7 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
-			var returns = context.Function.Signature.RawReturnTypes;
+			var returns = context.Signature.RawReturnTypes;
 			if (returns.Length != 0)
 			{
 				var stack = context.Stack;

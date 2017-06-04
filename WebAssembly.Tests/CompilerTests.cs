@@ -32,6 +32,74 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// Tests a compilation of an assembly that contains a single exported function that does nothing.
+		/// </summary>
+		[TestMethod]
+		public void Compile_MinimalExportedFunction()
+		{
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+			});
+			module.Functions.Add(new Function
+			{
+			});
+			module.Exports.Add(new Export
+			{
+				Name = nameof(HelloWorldExports.Start)
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+				new End(),
+				},
+			});
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compiler.FromBinary<dynamic>(memory)();
+			}
+
+			compiled.Exports.Start();
+		}
+
+		/// <summary>
+		/// Tests a compilation of an assembly that contains a single internal function that does nothing.
+		/// </summary>
+		[TestMethod]
+		public void Compile_MinimalInternalFunction()
+		{
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+			});
+			module.Functions.Add(new Function
+			{
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+				new End(),
+				},
+			});
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compiler.FromBinary<dynamic>(memory)();
+			}
+		}
+
+		/// <summary>
 		/// Tests a very simple program with a single exported function that returns a number, executed dynamically.
 		/// </summary>
 		[TestMethod]
@@ -123,6 +191,92 @@ namespace WebAssembly
 				memory.Position = 0;
 
 				compiled = Compiler.FromBinary<HelloWorldExports>(memory)();
+			}
+
+			var exports = compiled.Exports;
+			Assert.AreEqual(3, exports.Start());
+		}
+
+		private sealed class ForwardReadOnlyStream : Stream
+		{
+			private readonly byte[] data;
+			private int position;
+
+			public ForwardReadOnlyStream(byte[] data)
+			{
+				this.data = data;
+			}
+
+			public override bool CanRead => true;
+
+			public override bool CanSeek => false;
+
+			public override bool CanWrite => false;
+
+			public override long Length => throw new NotSupportedException();
+
+			public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+			public override void Flush() => throw new NotSupportedException();
+
+			public override int Read(byte[] buffer, int offset, int count)
+			{
+				count = Math.Min(count, this.data.Length - this.position);
+				if (count == 0)
+					return 0;
+
+				Array.Copy(this.data, this.position, buffer, offset, count);
+				this.position += count;
+				return count;
+			}
+
+			public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+			public override void SetLength(long value) => throw new NotSupportedException();
+
+			public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+		}
+
+		/// <summary>
+		/// Tests a very simple program with a read-only forward-only stream to ensure reliable streaming compilation.
+		/// </summary>
+		[TestMethod]
+		public void Compile_Streaming()
+		{
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+				Returns = new[]
+				{
+					ValueType.Int32,
+				}
+			});
+			module.Functions.Add(new Function
+			{
+			});
+			module.Exports.Add(new Export
+			{
+				Name = nameof(HelloWorldExports.Start)
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+				new Int32Constant { Value = 3 },
+				new End(),
+				},
+			});
+
+			Instance<HelloWorldExports> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				using (var readOnly = new ForwardReadOnlyStream(memory.ToArray()))
+				{
+					compiled = Compiler.FromBinary<HelloWorldExports>(readOnly)();
+				}
 			}
 
 			var exports = compiled.Exports;

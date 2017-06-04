@@ -37,20 +37,20 @@ namespace WebAssembly.Instructions
 		{
 			context.Stack.Push(context.Locals[this.Index]);
 
-			var localIndex = this.Index - context.Function.Signature.ParameterTypes.Length;
+			var localIndex = this.Index - context.Signature.ParameterTypes.Length;
 			if (localIndex < 0)
 			{
 				//Referring to a parameter.
-				//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
 				switch (this.Index)
 				{
 					default:
-						context.Emit(OpCodes.Ldarg, checked((ushort)(this.Index + 1)));
+						context.Emit(OpCodes.Ldarg, checked((ushort)this.Index));
 						break;
 
-					case 0: context.Emit(OpCodes.Ldarg_1); break;
-					case 1: context.Emit(OpCodes.Ldarg_2); break;
-					case 2: context.Emit(OpCodes.Ldarg_3); break;
+					case 0: context.Emit(OpCodes.Ldarg_0); break;
+					case 1: context.Emit(OpCodes.Ldarg_1); break;
+					case 2: context.Emit(OpCodes.Ldarg_2); break;
+					case 3: context.Emit(OpCodes.Ldarg_3); break;
 				}
 			}
 			else

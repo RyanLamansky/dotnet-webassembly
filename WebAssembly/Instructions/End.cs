@@ -28,7 +28,7 @@ namespace WebAssembly.Instructions
 				if (context.Previous == OpCode.Return)
 					return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
 
-				var returns = context.Function.Signature.RawReturnTypes;
+				var returns = context.Signature.RawReturnTypes;
 				if (returns.Length != 0)
 				{
 					var stack = context.Stack;

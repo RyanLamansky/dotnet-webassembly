@@ -69,7 +69,13 @@ namespace WebAssembly
 				{
 					throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
 				}
-				catch (Exception x) when (!(x is CompilerException) && !(x is ModuleLoadException))
+				catch (Exception x) when (
+				!(x is CompilerException)
+				&& !(x is ModuleLoadException)
+#if DEBUG
+				&& !System.Diagnostics.Debugger.IsAttached
+#endif
+				)
 				{
 					throw new ModuleLoadException(x.Message, reader.Offset, x);
 				}
@@ -101,8 +107,73 @@ namespace WebAssembly
 			Signature[] signatures = null;
 			Signature[] functionSignatures = null;
 			KeyValuePair<string, uint>[] exportedFunctions = null;
-			Compiled.Function[] functions = null;
 			var previousSection = Section.None;
+
+			var module = AssemblyBuilder.DefineDynamicAssembly(
+				new AssemblyName("CompiledWebAssembly"),
+				AssemblyBuilderAccess.RunAndCollect
+				)
+				.DefineDynamicModule("CompiledWebAssembly")
+				;
+
+			const TypeAttributes classAttributes =
+				TypeAttributes.Public |
+				TypeAttributes.Class |
+				TypeAttributes.BeforeFieldInit
+				;
+
+			const MethodAttributes constructorAttributes =
+				MethodAttributes.Public |
+				MethodAttributes.HideBySig |
+				MethodAttributes.SpecialName |
+				MethodAttributes.RTSpecialName
+				;
+
+			const MethodAttributes internalFunctionAttributes =
+				MethodAttributes.Private |
+				MethodAttributes.Static |
+				MethodAttributes.HideBySig
+				;
+
+			const MethodAttributes exportedFunctionAttributes =
+				MethodAttributes.Public |
+				MethodAttributes.Virtual |
+				MethodAttributes.Final |
+				MethodAttributes.HideBySig
+				;
+
+			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
+			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
+
+			{
+				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
+					typeof(IntPtr),
+					typeof(uint),
+				});
+				var il = instanceConstructor.GetILGenerator();
+				{
+					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+					if (usableConstructor != null)
+					{
+						il.Emit(OpCodes.Ldarg_0);
+						il.Emit(OpCodes.Call, usableConstructor);
+					}
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_1);
+					il.Emit(OpCodes.Stfld, linearMemoryStart);
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_2);
+					il.Emit(OpCodes.Stfld, linearMemorySize);
+				}
+				il.Emit(OpCodes.Ret);
+			}
+
+			var exports = exportsBuilder.AsType();
+			var context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize);
+			MethodBuilder[] internalFunctions = null;
 
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 			{
@@ -124,9 +195,20 @@ namespace WebAssembly
 					case Section.Function:
 						{
 							functionSignatures = new Signature[reader.ReadVarUInt32()];
+							internalFunctions = new MethodBuilder[functionSignatures.Length];
 
 							for (var i = 0; i < functionSignatures.Length; i++)
-								functionSignatures[i] = signatures[reader.ReadVarUInt32()];
+							{
+								var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
+								var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
+								internalFunctions[i] = exportsBuilder.DefineMethod(
+									$"Test{i}",
+									internalFunctionAttributes,
+									CallingConventions.Standard,
+									signature.ReturnTypes.FirstOrDefault(),
+									parms
+									);
+							}
 						}
 						break;
 
@@ -171,10 +253,43 @@ namespace WebAssembly
 
 					case Section.Code:
 						{
-							functions = new Compiled.Function[reader.ReadVarUInt32()];
+							var functionBodies = reader.ReadVarUInt32();
 
-							for (var i = 0; i < functions.Length; i++)
-								functions[i] = new Compiled.Function(reader, functionSignatures[i], reader.ReadVarUInt32());
+							if (functionBodies > 0 && functionSignatures == null)
+								throw new ModuleLoadException("Code section is invalid when Function section is missing.", reader.Offset);
+							if (functionBodies != functionSignatures.Length)
+								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", reader.Offset);
+
+							for (var i = 0; i < functionBodies; i++)
+							{
+								var signature = functionSignatures[i];
+								var byteLength = reader.ReadVarUInt32();
+								var startingOffset = reader.Offset;
+
+								var locals = new Compiled.Function.Local[reader.ReadVarUInt32()];
+								for (var l = 0; l < locals.Length; i++)
+									locals[l] = new Compiled.Function.Local(reader);
+
+								var il = internalFunctions[i].GetILGenerator();
+
+								context.Reset(
+									il,
+									signature,
+									signature.RawParameterTypes.Concat(
+										locals
+										.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
+										).ToArray()
+									);
+
+								foreach (var instruction in Instruction.Parse(reader))
+								{
+									instruction.Compile(context);
+									context.Previous = instruction.OpCode;
+								}
+
+								if (reader.Offset - startingOffset != byteLength)
+									throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
+							}
 						}
 						break;
 
@@ -185,112 +300,32 @@ namespace WebAssembly
 				previousSection = (Section)id;
 			}
 
-			return FromParsed(exportedFunctions, functions, memoryPagesMaximum, instanceContainer, exportContainer);
-		}
-
-		private static ConstructorInfo FromParsed(
-			KeyValuePair<string, uint>[] exportedFunctions,
-			Compiled.Function[] functions,
-			uint memoryPagesMaximum,
-			System.Type instanceContainer,
-			System.Type exportContainer)
-		{
-			var module = AssemblyBuilder.DefineDynamicAssembly(
-				new AssemblyName("CompiledWebAssembly"),
-				AssemblyBuilderAccess.RunAndCollect
-				)
-				.DefineDynamicModule("CompiledWebAssembly")
-				;
-
-			const TypeAttributes classAttributes =
-				TypeAttributes.Public |
-				TypeAttributes.Class |
-				TypeAttributes.BeforeFieldInit
-				;
-
-			const MethodAttributes constructorAttributes =
-				MethodAttributes.Public |
-				MethodAttributes.HideBySig |
-				MethodAttributes.SpecialName |
-				MethodAttributes.RTSpecialName
-				;
-
-			const MethodAttributes exportedFunctionAttributes =
-				MethodAttributes.Public |
-				MethodAttributes.Virtual |
-				MethodAttributes.Final |
-				MethodAttributes.HideBySig
-				;
-
-			TypeInfo exports;
-			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
-			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
-			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
-
+			if (exportedFunctions != null)
 			{
-				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
-					typeof(IntPtr),
-					typeof(uint),
-				});
-				var il = instanceConstructor.GetILGenerator();
+				for (var i = 0; i < exportedFunctions.Length; i++)
 				{
-					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
-					if (usableConstructor != null)
-					{
-						il.Emit(OpCodes.Ldarg_0);
-						il.Emit(OpCodes.Call, usableConstructor);
-					}
+					var exported = exportedFunctions[i];
+					var signature = functionSignatures[exported.Value];
+
+					var method = exportsBuilder.DefineMethod(
+						exported.Key,
+						exportedFunctionAttributes,
+						CallingConventions.HasThis,
+						signature.ReturnTypes.FirstOrDefault(),
+						signature.ParameterTypes
+						);
+
+					var il = method.GetILGenerator();
+					for (var parm = 0; parm < signature.ParameterTypes.Length; parm++)
+						il.Emit(OpCodes.Ldarg, parm + 1);
 
 					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_1);
-					il.Emit(OpCodes.Stfld, linearMemoryStart);
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_2);
-					il.Emit(OpCodes.Stfld, linearMemorySize);
-				}
-				il.Emit(OpCodes.Ret);
-
-				if (exportedFunctions != null)
-				{
-					var context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize);
-
-					for (var i = 0; i < exportedFunctions.Length; i++)
-					{
-						var exported = exportedFunctions[i];
-						var func = functions[exported.Value];
-
-						var method = exportsBuilder.DefineMethod(
-							exported.Key,
-							exportedFunctionAttributes,
-							CallingConventions.HasThis,
-							func.Signature.ReturnTypes.FirstOrDefault(),
-							func.Signature.ParameterTypes
-							);
-
-						il = method.GetILGenerator();
-
-						context.Reset(
-							il,
-							func,
-							func.Signature.RawParameterTypes.Concat(
-								func
-								.Locals
-								.SelectMany(locals => Enumerable.Range(0, checked((int)locals.Count)).Select(_ => locals.Type))
-								).ToArray()
-							);
-						var instructions = func.Instructions;
-						for (var j = 0; j < instructions.Length; j++)
-						{
-							var instruction = instructions[j];
-							instruction.Compile(context);
-							context.Previous = instruction.OpCode;
-						}
-					}
+					il.Emit(OpCodes.Call, internalFunctions[exported.Value]);
+					il.Emit(OpCodes.Ret);
 				}
 			}
 
-			exports = exportsBuilder.CreateTypeInfo();
+			var exportInfo = exportsBuilder.CreateTypeInfo();
 
 			TypeInfo instance;
 			{
@@ -317,7 +352,7 @@ namespace WebAssembly
 					il.Emit(OpCodes.Ldarg_0);
 					il.Emit(OpCodes.Ldloc_0);
 					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
-					il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
+					il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
 
 					il.Emit(OpCodes.Ldloc_0);
 					il.Emit(OpCodes.Ldloc_0);
@@ -329,7 +364,7 @@ namespace WebAssembly
 					il.Emit(OpCodes.Ldarg_0);
 					il.Emit(OpCodes.Ldc_I4_0);
 					il.Emit(OpCodes.Ldc_I4_0);
-					il.Emit(OpCodes.Newobj, exports.DeclaredConstructors.First());
+					il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
 
 					il.Emit(OpCodes.Ldc_I4_0);
 					il.Emit(OpCodes.Ldc_I4_0);
@@ -347,6 +382,7 @@ namespace WebAssembly
 				instance = instanceBuilder.CreateTypeInfo();
 			}
 
+			module.CreateGlobalFunctions();
 			return instance.DeclaredConstructors.First();
 		}
 	}

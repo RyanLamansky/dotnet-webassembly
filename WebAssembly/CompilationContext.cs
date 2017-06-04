@@ -26,16 +26,16 @@ namespace WebAssembly
 
 		public void Reset(
 			ILGenerator generator,
-			Compiled.Function function,
+			Signature signature,
 			ValueType[] locals
 			)
 		{
 			Assert(generator != null);
-			Assert(function != null);
+			Assert(signature != null);
 			Assert(locals != null);
 
 			this.generator = generator;
-			this.Function = function;
+			this.Signature = signature;
 			this.Locals = locals;
 
 			this.Depth = 1;
@@ -213,7 +213,7 @@ namespace WebAssembly
 			}
 		}
 
-		public Compiled.Function Function;
+		public Signature Signature;
 
 		public readonly FieldBuilder LinearMemoryStart;
 
@@ -234,6 +234,26 @@ namespace WebAssembly
 		public Label DefineLabel() => generator.DefineLabel();
 
 		public void MarkLabel(Label loc) => generator.MarkLabel(loc);
+
+		public void EmitLoadThis()
+		{
+			var arg = checked((ushort)this.Signature.ParameterTypes.Length);
+			System.Reflection.Emit.OpCode opCode;
+			switch (arg)
+			{
+				case 0: opCode = OpCodes.Ldarg_0; break;
+				case 1: opCode = OpCodes.Ldarg_1; break;
+				case 2: opCode = OpCodes.Ldarg_2; break;
+				case 3: opCode = OpCodes.Ldarg_3; break;
+				default:
+					if (arg <= byte.MaxValue)
+						generator.Emit(OpCodes.Ldarg_S, (byte)arg);
+					else
+						generator.Emit(OpCodes.Ldarg, arg);
+					return;
+			}
+			generator.Emit(opCode);
+		}
 
 		public void Emit(System.Reflection.Emit.OpCode opcode) => generator.Emit(opcode);
 
