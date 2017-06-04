@@ -11,15 +11,24 @@ namespace WebAssembly
 		private readonly TypeBuilder exportsBuilder;
 		private ILGenerator generator;
 
-		public CompilationContext(TypeBuilder exportsBuilder, FieldBuilder linearMemoryStart, FieldBuilder linearMemorySize)
+		public CompilationContext(
+			TypeBuilder exportsBuilder,
+			FieldBuilder linearMemoryStart,
+			FieldBuilder linearMemorySize,
+			Signature[] functionSignatures,
+			MethodInfo[] methods)
 		{
 			Assert(exportsBuilder != null);
 			Assert(linearMemoryStart != null);
 			Assert(linearMemorySize != null);
+			Assert(functionSignatures != null);
+			Assert(methods != null);
 
 			this.exportsBuilder = exportsBuilder;
 			this.LinearMemoryStart = linearMemoryStart;
 			this.LinearMemorySize = linearMemorySize;
+			this.FunctionSignatures = functionSignatures;
+			this.Methods = methods;
 		}
 
 		public void Reset(
@@ -42,6 +51,10 @@ namespace WebAssembly
 			this.LoopLabels.Clear();
 			this.Stack.Clear();
 		}
+
+		public readonly Signature[] FunctionSignatures;
+
+		public readonly MethodInfo[] Methods;
 
 		private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = new Dictionary<HelperMethod, MethodBuilder>();
 

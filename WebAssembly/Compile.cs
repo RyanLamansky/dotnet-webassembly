@@ -182,7 +182,7 @@ namespace WebAssembly
 			}
 
 			var exports = exportsBuilder.AsType();
-			var context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize);
+			CompilationContext context = null;
 			MethodBuilder[] internalFunctions = null;
 
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -206,6 +206,7 @@ namespace WebAssembly
 						{
 							functionSignatures = new Signature[reader.ReadVarUInt32()];
 							internalFunctions = new MethodBuilder[functionSignatures.Length];
+							context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize, functionSignatures, internalFunctions);
 
 							for (var i = 0; i < functionSignatures.Length; i++)
 							{

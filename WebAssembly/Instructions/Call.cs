@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -22,6 +23,15 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Call()
 		{
+		}
+
+		/// <summary>
+		/// Creates a new  <see cref="Call"/> instance to invoke the function at the specified index.
+		/// </summary>
+		/// <param name="index">The location within the function index to call.</param>
+		public Call(uint index)
+		{
+			this.Index = index;
 		}
 
 		internal Call(Reader reader)
@@ -56,5 +66,32 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Index);
+
+		internal override void Compile(CompilationContext context)
+		{
+			if (this.Index >= context.Methods.Length)
+				throw new CompilerException($"Function for index {this.Index} requseted, the assembly contains only {context.Methods.Length}.");
+
+			var signature = context.FunctionSignatures[this.Index];
+			var paramTypes = signature.RawParameterTypes;
+			var returnTypes = signature.RawReturnTypes;
+
+			var stack = context.Stack;
+			if (stack.Count < paramTypes.Length)
+				throw new StackTooSmallException(this.OpCode, paramTypes.Length, stack.Count);
+
+			for (var i = 0; i < paramTypes.Length; i++)
+			{
+				var type = stack.Pop();
+				if (type != paramTypes[i])
+					throw new StackTypeInvalidException(this.OpCode, paramTypes[i], type);
+			}
+
+			for (var i = 0; i < returnTypes.Length; i++)
+				stack.Push(returnTypes[i]);
+
+			context.EmitLoadThis();
+			context.Emit(OpCodes.Call, context.Methods[this.Index]);
+		}
 	}
 }

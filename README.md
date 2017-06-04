@@ -17,7 +17,7 @@ The API is unstable--this means the names and structure of everything can change
 - `WebAssembly.Module` reflects the binary format in a very pure form: nearly anything that can be found in a valid WASM file is covered.
 As the binary format is optimized for size efficiency, it can be difficult to use, particularly concepts like index space and labels.
 The best resource for understanding how things work is the test code, in this repository under WebAssembly.Tests.
-- `WebAssembly.Compiler` converts WebAssembly binary files (WASM) to .NET via the run-time code generation features in [System.Reflection.Emit](https://msdn.microsoft.com/en-us/library/system.reflection.emit.aspx).
+- `WebAssembly.Compile` converts WebAssembly binary files (WASM) to .NET via the run-time code generation features in [System.Reflection.Emit](https://msdn.microsoft.com/en-us/library/system.reflection.emit.aspx).
 As it ultimately runs on the same CLR as C#, performance is equivalent.
 The supported WebAssembly opcodes are still limited; currently the best way to see the available instructions and how to use them is the test code, in this repository under WebAssembly.Tests.
 
@@ -33,7 +33,8 @@ This will evolve as the project takes shape.
 - [x] Compile control flow instructions: `block`, `loop`, `if`, and `br_table`
 - [x] Implement linear memory using unmanaged memory with range checks
 - [x] Compile remaining specialized instructions: `select`, `drop`, `unreachable`, `nop`
-- [ ] 🔜 Compile `call`, `call_indirect`
+- [x] Compile `call`
+- [ ] 🔜 Compile `call_indirect`
 - [ ] Compile `get_global`, `set_global`
 - [ ] Implement imports
 - [ ] Implement any remaining instructions not yet built to support development of other features
