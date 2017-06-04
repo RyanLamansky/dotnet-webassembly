@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.4</TargetFramework>
+		<TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
 		<Title>WebAssembly for .NET</Title>
 		<PackageVersion>0.2.0-preview</PackageVersion>
 		<Authors>Ryan Lamansky</Authors>
