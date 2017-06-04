@@ -1,4 +1,4 @@
-﻿namespace WebAssembly.Compiled
+﻿namespace WebAssembly
 {
 	/// <summary>
 	/// Indicates an <see cref="Instructions.Unreachable"/> instruction was reached.

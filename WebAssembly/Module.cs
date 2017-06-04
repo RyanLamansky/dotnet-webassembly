@@ -7,7 +7,7 @@ using static System.Diagnostics.Debug;
 namespace WebAssembly
 {
 	/// <summary>
-	/// Contains raw information about a WebAssembly module.  Use <see cref="Compiler"/> if you wish to execute a WebAssembly file.
+	/// Contains raw information about a WebAssembly module.  Use <see cref="Compile"/> if you wish to execute a WebAssembly file.
 	/// </summary>
 	public class Module
 	{

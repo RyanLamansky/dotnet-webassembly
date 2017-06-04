@@ -40,10 +40,10 @@ namespace WebAssembly.Instructions
 				context.Emit(OpCodes.Add_Ovf_Un);
 			}
 
-			context.Emit(OpCodes.Ldarg_0);
+			context.EmitLoadThis();
 			context.Emit(OpCodes.Call, context[HelperMethod.RangeCheckInt32]);
 
-			context.Emit(OpCodes.Ldarg_0);
+			context.EmitLoadThis();
 			context.Emit(OpCodes.Ldfld, context.LinearMemoryStart);
 			context.Emit(OpCodes.Add);
 			context.Emit(OpCodes.Ldind_I4);

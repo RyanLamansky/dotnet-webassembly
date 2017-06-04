@@ -43,15 +43,14 @@ namespace WebAssembly.Instructions
 			if (setType != context.Locals[this.Index])
 				throw new StackTypeInvalidException(OpCode.SetLocal, context.Locals[this.Index], setType);
 
-			var localIndex = this.Index - context.Function.Signature.ParameterTypes.Length;
+			var localIndex = this.Index - context.Signature.ParameterTypes.Length;
 			if (localIndex < 0)
 			{
 				//Referring to a parameter.
-				//Argument 0 is for the "this" parameter, allowing access to features unique to the WASM instance.
-				if (this.Index + 1 <= byte.MaxValue)
-					context.Emit(OpCodes.Starg_S, checked((byte)(this.Index + 1)));
+				if (this.Index <= byte.MaxValue)
+					context.Emit(OpCodes.Starg_S, checked((byte)(this.Index)));
 				else
-					context.Emit(OpCodes.Starg, checked((ushort)(this.Index + 1)));
+					context.Emit(OpCodes.Starg, checked((ushort)(this.Index)));
 			}
 			else
 			{
