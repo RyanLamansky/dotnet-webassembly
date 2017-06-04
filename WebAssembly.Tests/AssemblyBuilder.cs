@@ -4,8 +4,6 @@ using System.IO;
 
 namespace WebAssembly
 {
-	using Compiled;
-
 	/// <summary>
 	/// Aids in development of test cases by allowing rapid construction and compilation of simple WebAssembly files.
 	/// </summary>

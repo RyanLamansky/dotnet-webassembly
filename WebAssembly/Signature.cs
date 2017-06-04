@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WebAssembly.Compiled
+namespace WebAssembly
 {
 	internal sealed class Signature
 	{

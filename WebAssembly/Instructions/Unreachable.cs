@@ -24,7 +24,7 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
-			context.Emit(OpCodes.Newobj, typeof(Compiled.UnreachableException).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
+			context.Emit(OpCodes.Newobj, typeof(UnreachableException).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
 			context.Emit(OpCodes.Throw);
 		}
 	}

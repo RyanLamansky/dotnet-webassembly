@@ -8,8 +8,6 @@ using System.Runtime.InteropServices;
 
 namespace WebAssembly
 {
-	using Compiled;
-
 	/// <summary>
 	/// Provides compilation functionality.  Use <see cref="Module"/> for robust inspection and modification capability.
 	/// </summary>
@@ -82,6 +80,18 @@ namespace WebAssembly
 			}
 
 			return () => (Instance<TExports>)constructor.Invoke(null);
+		}
+
+		private struct Local
+		{
+			public Local(Reader reader)
+			{
+				this.Count = reader.ReadVarUInt32();
+				this.Type = (ValueType)reader.ReadVarInt7();
+			}
+
+			public readonly uint Count;
+			public readonly ValueType Type;
 		}
 
 		private static ConstructorInfo FromBinary(
@@ -266,9 +276,9 @@ namespace WebAssembly
 								var byteLength = reader.ReadVarUInt32();
 								var startingOffset = reader.Offset;
 
-								var locals = new Compiled.Function.Local[reader.ReadVarUInt32()];
+								var locals = new Local[reader.ReadVarUInt32()];
 								for (var l = 0; l < locals.Length; i++)
-									locals[l] = new Compiled.Function.Local(reader);
+									locals[l] = new Local(reader);
 
 								var il = internalFunctions[i].GetILGenerator();
 

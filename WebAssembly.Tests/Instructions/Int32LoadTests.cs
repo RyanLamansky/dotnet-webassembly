@@ -7,8 +7,6 @@ using System.Text;
 
 namespace WebAssembly.Instructions
 {
-	using Compiled;
-
 	/// <summary>
 	/// Tests the <see cref="Int32Load"/> instruction.
 	/// </summary>

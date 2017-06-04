@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WebAssembly.Compiled
+namespace WebAssembly
 {
 	/// <summary>
 	/// Describes an error encountered during execution of a compiled WebAssembly.

@@ -3,8 +3,6 @@ using System.IO;
 
 namespace WebAssembly.Instructions
 {
-	using Compiled;
-
 	/// <summary>
 	/// Tests the <see cref="Select"/> instruction.
 	/// </summary>

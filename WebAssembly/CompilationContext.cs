@@ -6,8 +6,6 @@ using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
-	using Compiled;
-
 	internal sealed class CompilationContext
 	{
 		private readonly TypeBuilder exportsBuilder;

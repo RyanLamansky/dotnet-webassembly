@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 
 namespace WebAssembly
 {
-	using Compiled;
 	using Instructions;
 
 	/// <summary>

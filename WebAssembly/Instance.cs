@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace WebAssembly.Compiled
+namespace WebAssembly
 {
 	/// <summary>
 	/// A compiled WebAssembly instance.
