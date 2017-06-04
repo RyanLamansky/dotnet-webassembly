@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -53,12 +54,12 @@ namespace WebAssembly
 			if (!exportInfo.IsPublic && !exportInfo.IsNestedPublic)
 				throw new CompilerException($"Export type {exportInfo.FullName} must be public so that the compiler can inherit it.");
 
-			Parsed parsed;
+			ConstructorInfo constructor;
 			using (var reader = new Reader(input))
 			{
 				try
 				{
-					parsed = new Parsed(reader);
+					constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports));
 				}
 				catch (OverflowException x)
 				{
@@ -68,18 +69,131 @@ namespace WebAssembly
 				{
 					throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
 				}
-				catch (Exception x)
+				catch (Exception x) when (!(x is CompilerException) && !(x is ModuleLoadException))
 				{
 					throw new ModuleLoadException(x.Message, reader.Offset, x);
 				}
 			}
 
-			var constructor = FromParsed(parsed, typeof(Instance<TExports>), typeof(TExports));
-
 			return () => (Instance<TExports>)constructor.Invoke(null);
 		}
 
-		private static ConstructorInfo FromParsed(Parsed parsed, System.Type instanceContainer, System.Type exportContainer)
+		private static ConstructorInfo FromBinary(
+			Reader reader,
+			System.Type instanceContainer,
+			System.Type exportContainer)
+		{
+			if (reader.ReadUInt32() != Module.Magic)
+				throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
+
+			switch (reader.ReadUInt32())
+			{
+				case 0x1: //First release
+				case 0xd: //Final pre-release, binary format is identical with first release.
+					break;
+				default:
+					throw new ModuleLoadException("Unsupported version, only version 0x1 and 0xd are accepted.", 4);
+			}
+
+			uint memoryPagesMinimum = 0;
+			uint memoryPagesMaximum = 0;
+
+			Signature[] signatures = null;
+			Signature[] functionSignatures = null;
+			KeyValuePair<string, uint>[] exportedFunctions = null;
+			Compiled.Function[] functions = null;
+			var previousSection = Section.None;
+
+			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
+			{
+				var payloadLength = reader.ReadVarUInt32();
+				if (id != 0 && (Section)id < previousSection)
+					throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", reader.Offset);
+
+				switch ((Section)id)
+				{
+					case Section.Type:
+						{
+							signatures = new Signature[reader.ReadVarUInt32()];
+
+							for (var i = 0; i < signatures.Length; i++)
+								signatures[i] = new Signature(reader);
+						}
+						break;
+
+					case Section.Function:
+						{
+							functionSignatures = new Signature[reader.ReadVarUInt32()];
+
+							for (var i = 0; i < functionSignatures.Length; i++)
+								functionSignatures[i] = signatures[reader.ReadVarUInt32()];
+						}
+						break;
+
+					case Section.Memory:
+						{
+							var count = reader.ReadVarUInt32();
+							if (count > 1)
+								throw new ModuleLoadException("Multiple memory values are not supported.", reader.Offset);
+
+							var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+							memoryPagesMinimum = reader.ReadVarUInt32();
+							if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
+								memoryPagesMaximum = reader.ReadVarUInt32();
+							else
+								memoryPagesMaximum = memoryPagesMinimum;
+						}
+						break;
+
+					case Section.Export:
+						{
+							var totalExports = reader.ReadVarUInt32();
+							var xFunctions = new List<KeyValuePair<string, uint>>((int)Math.Min(int.MaxValue, totalExports));
+
+							for (var i = 0; i < totalExports; i++)
+							{
+								var name = reader.ReadString(reader.ReadVarUInt32());
+
+								var kind = (ExternalKind)reader.ReadByte();
+								switch (kind)
+								{
+									case ExternalKind.Function:
+										xFunctions.Add(new KeyValuePair<string, uint>(name, reader.ReadVarUInt32()));
+										break;
+									default:
+										throw new NotSupportedException($"Unsupported or unrecognized export kind {kind}.");
+								}
+							}
+
+							exportedFunctions = xFunctions.ToArray();
+						}
+						break;
+
+					case Section.Code:
+						{
+							functions = new Compiled.Function[reader.ReadVarUInt32()];
+
+							for (var i = 0; i < functions.Length; i++)
+								functions[i] = new Compiled.Function(reader, functionSignatures[i], reader.ReadVarUInt32());
+						}
+						break;
+
+					default:
+						throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
+				}
+
+				previousSection = (Section)id;
+			}
+
+			return FromParsed(exportedFunctions, functions, memoryPagesMaximum, instanceContainer, exportContainer);
+		}
+
+		private static ConstructorInfo FromParsed(
+			KeyValuePair<string, uint>[] exportedFunctions,
+			Compiled.Function[] functions,
+			uint memoryPagesMaximum,
+			System.Type instanceContainer,
+			System.Type exportContainer)
 		{
 			var module = AssemblyBuilder.DefineDynamicAssembly(
 				new AssemblyName("CompiledWebAssembly"),
@@ -137,8 +251,6 @@ namespace WebAssembly
 				}
 				il.Emit(OpCodes.Ret);
 
-				var exportedFunctions = parsed.ExportedFunctions;
-
 				if (exportedFunctions != null)
 				{
 					var context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize);
@@ -146,7 +258,7 @@ namespace WebAssembly
 					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
 						var exported = exportedFunctions[i];
-						var func = parsed.Functions[exported.Value];
+						var func = functions[exported.Value];
 
 						var method = exportsBuilder.DefineMethod(
 							exported.Key,
@@ -185,7 +297,7 @@ namespace WebAssembly
 				var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, instanceContainer);
 				var instanceConstructor = instanceBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
 				var il = instanceConstructor.GetILGenerator();
-				var memoryAllocated = checked(parsed.MemoryPagesMaximum * Memory.PageSize);
+				var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
 
 				if (memoryAllocated > 0)
 				{
