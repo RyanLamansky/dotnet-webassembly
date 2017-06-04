@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Compiled
 {
@@ -149,172 +148,10 @@ namespace WebAssembly.Compiled
 				MethodAttributes.HideBySig
 				;
 
-			const MethodAttributes helperMethodAttributes =
-				MethodAttributes.Private |
-				MethodAttributes.Static |
-				MethodAttributes.HideBySig
-				;
-
 			TypeInfo exports;
 			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
 			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
 			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
-
-			var helperMethods = new Dictionary<HelperMethod, MethodInfo>();
-			var getHelper = new Func<HelperMethod, MethodInfo>(helper =>
-			{
-				if (helperMethods.TryGetValue(helper, out var method))
-					return method;
-
-				MethodBuilder builder;
-
-				switch (helper)
-				{
-					case HelperMethod.RangeCheckInt32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Range Check Int32",
-							helperMethodAttributes,
-							typeof(uint),
-							new[] { typeof(uint), exportsBuilder.AsType() }
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ldfld, linearMemorySize);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ldc_I4_4);
-							il.Emit(OpCodes.Add_Ovf_Un);
-							var outOfRange = il.DefineLabel();
-							il.Emit(OpCodes.Blt_Un_S, outOfRange);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(outOfRange);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ldc_I4_4);
-							il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
-								.GetTypeInfo()
-								.DeclaredConstructors
-								.First(c =>
-								{
-									var parms = c.GetParameters();
-									return parms.Length == 2
-									&& parms[0].ParameterType == typeof(uint)
-									&& parms[1].ParameterType == typeof(uint)
-									;
-								}));
-							il.Emit(OpCodes.Throw);
-						}
-						helperMethods.Add(HelperMethod.RangeCheckInt32, builder);
-						return builder;
-
-					case HelperMethod.SelectInt32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Int32",
-							helperMethodAttributes,
-							typeof(int),
-							new[]
-							{
-								typeof(int),
-								typeof(int),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectInt32, builder);
-						return builder;
-
-					case HelperMethod.SelectInt64:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Int64",
-							helperMethodAttributes,
-							typeof(long),
-							new[]
-							{
-								typeof(long),
-								typeof(long),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectInt64, builder);
-						return builder;
-
-					case HelperMethod.SelectFloat32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Float32",
-							helperMethodAttributes,
-							typeof(float),
-							new[]
-							{
-								typeof(float),
-								typeof(float),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectFloat32, builder);
-						return builder;
-
-					case HelperMethod.SelectFloat64:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Float64",
-							helperMethodAttributes,
-							typeof(double),
-							new[]
-							{
-								typeof(double),
-								typeof(double),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectFloat64, builder);
-						return builder;
-				}
-
-				Fail("Attempted to obtain an unknown helper method.");
-				return null;
-			});
 
 			{
 				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
@@ -344,6 +181,8 @@ namespace WebAssembly.Compiled
 
 				if (exportedFunctions != null)
 				{
+					var context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize);
+
 					for (var i = 0; i < exportedFunctions.Length; i++)
 					{
 						var exported = exportedFunctions[i];
@@ -359,11 +198,9 @@ namespace WebAssembly.Compiled
 
 						il = method.GetILGenerator();
 
-						var context = new CompilationContext(
+						context.Reset(
 							il,
 							func,
-							linearMemoryStart,
-							getHelper,
 							func.Signature.RawParameterTypes.Concat(
 								func
 								.Locals
