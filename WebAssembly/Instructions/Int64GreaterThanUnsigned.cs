@@ -3,7 +3,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Unsigned greater than.
 	/// </summary>
-	public class Int64GreaterThanUnsigned : ValueTwoToOneInstruction
+	public class Int64GreaterThanUnsigned : ValueTwoToInt32Instruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64GreaterThanUnsigned"/>.

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace WebAssembly
+﻿namespace WebAssembly
 {
 	/// <summary>
 	/// Many compiler tests can use this template to host the test.
