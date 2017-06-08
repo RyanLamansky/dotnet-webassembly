@@ -14,16 +14,34 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Int32LessThanUnsigned_Compiled()
 		{
-			const uint comparand = 0xF;
-
-			var exports = CompilerTestBase<int>.CreateInstance(
+			var exports = ComparisonTestBase<int>.CreateInstance(
 				new GetLocal(0),
-				new Int32Constant(comparand),
+				new GetLocal(1),
 				new Int32LessThanUnsigned(),
 				new End());
 
-			foreach (var value in new uint[] { 0x00, 0x0F, 0xF0, 0xFF, })
-				Assert.AreEqual(value < comparand, exports.Test((int)value) == 1);
+			var values = new uint[]
+			{
+				0,
+				1,
+				0x00,
+				0x0F,
+				0xF0,
+				0xFF,
+				byte.MaxValue,
+				ushort.MaxValue,
+				int.MaxValue,
+				uint.MaxValue,
+			};
+
+			foreach (var comparand in values)
+			{
+				foreach (var value in values)
+					Assert.AreEqual(comparand < value, exports.Test((int)comparand, (int)value) != 0);
+
+				foreach (var value in values)
+					Assert.AreEqual(value < comparand, exports.Test((int)value, (int)comparand) != 0);
+			}
 		}
 	}
 }

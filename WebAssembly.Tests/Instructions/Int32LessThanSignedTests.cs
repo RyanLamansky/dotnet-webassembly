@@ -14,16 +14,37 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Int32LessThanSigned_Compiled()
 		{
-			const int comparand = 0xF;
-
-			var exports = CompilerTestBase<int>.CreateInstance(
+			var exports = ComparisonTestBase<int>.CreateInstance(
 				new GetLocal(0),
-				new Int32Constant(comparand),
+				new GetLocal(1),
 				new Int32LessThanSigned(),
 				new End());
 
-			foreach (var value in new[] { 0x00, 0x0F, 0xF0, 0xFF, })
-				Assert.AreEqual(value < comparand, exports.Test(value) == 1);
+			var values = new int[]
+			{
+				-1,
+				0,
+				1,
+				0x00,
+				0x0F,
+				0xF0,
+				0xFF,
+				byte.MaxValue,
+				short.MinValue,
+				short.MaxValue,
+				ushort.MaxValue,
+				int.MinValue,
+				int.MaxValue,
+			};
+
+			foreach (var comparand in values)
+			{
+				foreach (var value in values)
+					Assert.AreEqual(comparand < value, exports.Test(comparand, value) != 0);
+
+				foreach (var value in values)
+					Assert.AreEqual(value < comparand, exports.Test(value, comparand) != 0);
+			}
 		}
 	}
 }

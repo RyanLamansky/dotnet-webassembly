@@ -3,26 +3,25 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// Tests the <see cref="Int32Equal"/> instruction.
+	/// Tests the <see cref="Int32LessThanOrEqualUnsigned"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class Int32EqualTests
+	public class Int32LessThanOrEqualUnsignedTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int32Equal"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int32LessThanOrEqualUnsigned"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Int32Equal_Compiled()
+		public void Int32LessThanOrEqualUnsigned_Compiled()
 		{
 			var exports = ComparisonTestBase<int>.CreateInstance(
 				new GetLocal(0),
 				new GetLocal(1),
-				new Int32Equal(),
+				new Int32LessThanOrEqualUnsigned(),
 				new End());
 
-			var values = new int[]
+			var values = new uint[]
 			{
-				-1,
 				0,
 				1,
 				0x00,
@@ -30,20 +29,18 @@ namespace WebAssembly.Instructions
 				0xF0,
 				0xFF,
 				byte.MaxValue,
-				short.MinValue,
-				short.MaxValue,
 				ushort.MaxValue,
-				int.MinValue,
 				int.MaxValue,
+				uint.MaxValue,
 			};
 
 			foreach (var comparand in values)
 			{
 				foreach (var value in values)
-					Assert.AreEqual(comparand == value, exports.Test(comparand, value) != 0);
+					Assert.AreEqual(comparand <= value, exports.Test((int)comparand, (int)value) != 0);
 
 				foreach (var value in values)
-					Assert.AreEqual(value == comparand, exports.Test(value, comparand) != 0);
+					Assert.AreEqual(value <= comparand, exports.Test((int)value, (int)comparand) != 0);
 			}
 		}
 	}

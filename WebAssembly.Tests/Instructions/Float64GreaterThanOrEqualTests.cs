@@ -4,21 +4,21 @@ using System;
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// Tests the <see cref="Float64GreaterThan"/> instruction.
+	/// Tests the <see cref="Float64GreaterThanOrEqual"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class Float64GreaterThanTests
+	public class Float64GreaterThanOrEqualTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Float64GreaterThan"/> instruction.
+		/// Tests compilation and execution of the <see cref="Float64GreaterThanOrEqual"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Float64GreaterThan_Compiled()
+		public void Float64GreaterThanOrEqual_Compiled()
 		{
 			var exports = ComparisonTestBase<double>.CreateInstance(
 				new GetLocal(0),
 				new GetLocal(1),
-				new Float64GreaterThan(),
+				new Float64GreaterThanOrEqual(),
 				new End());
 
 			var values = new[]
@@ -38,10 +38,10 @@ namespace WebAssembly.Instructions
 			foreach (var comparand in values)
 			{
 				foreach (var value in values)
-					Assert.AreEqual(comparand > value, exports.Test(comparand, value) != 0);
+					Assert.AreEqual(comparand >= value, exports.Test(comparand, value) != 0);
 
 				foreach (var value in values)
-					Assert.AreEqual(value > comparand, exports.Test(value, comparand) != 0);
+					Assert.AreEqual(value >= comparand, exports.Test(value, comparand) != 0);
 			}
 		}
 	}
