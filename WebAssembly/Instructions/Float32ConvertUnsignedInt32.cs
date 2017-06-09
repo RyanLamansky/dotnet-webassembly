@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,22 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Float32ConvertUnsignedInt32()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.Float32ConvertUnsignedInt32, 1, 0);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.Float32ConvertUnsignedInt32, ValueType.Int32, type);
+
+			context.Emit(OpCodes.Conv_R_Un);
+			context.Emit(OpCodes.Conv_R4);
+
+			stack.Push(ValueType.Float32);
 		}
 	}
 }
