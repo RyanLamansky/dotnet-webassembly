@@ -34,8 +34,8 @@ This will evolve as the project takes shape.
 - [x] Implement linear memory using unmanaged memory with range checks
 - [x] Compile remaining specialized instructions: `select`, `drop`, `unreachable`, `nop`
 - [x] Compile `call`
-- [ ] 🔜 Compile `call_indirect`
-- [ ] Compile `get_global`, `set_global`
+- [x] Compile `call_indirect`
+- [ ] 🔜 Compile `get_global`, `set_global`
 - [ ] Implement imports
 - [ ] Implement any remaining instructions not yet built to support development of other features
 - [ ] Implement less-commonly-used features to achieve full compliance with the specification

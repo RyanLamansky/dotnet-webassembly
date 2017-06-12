@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -27,6 +29,15 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public CallIndirect()
 		{
+		}
+
+		/// <summary>
+		/// Creates a new  <see cref="CallIndirect"/> instance.
+		/// </summary>
+		/// <param name="type">The index of the type representing the function signature.</param>
+		public CallIndirect(uint type)
+		{
+			this.Type = type;
 		}
 
 		internal CallIndirect(Reader reader)
@@ -61,5 +72,36 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Type, this.Reserved);
+
+		internal override void Compile(CompilationContext context)
+		{
+			var signature = context.Types[this.Type];
+			var paramTypes = signature.RawParameterTypes;
+			var returnTypes = signature.RawReturnTypes;
+
+			var stack = context.Stack;
+			if (stack.Count < paramTypes.Length)
+				throw new StackTooSmallException(this.OpCode, paramTypes.Length, stack.Count);
+
+			for (var i = 0; i < paramTypes.Length; i++)
+			{
+				var type = stack.Pop();
+				if (type != paramTypes[i])
+					throw new StackTypeInvalidException(this.OpCode, paramTypes[i], type);
+			}
+
+			for (var i = 0; i < returnTypes.Length; i++)
+				stack.Push(returnTypes[i]);
+
+			Int32Constant.Emit(context, checked((int)this.Type));
+			context.Emit(OpCodes.Call, context[HelperMethod.GetFunctionPointer]);
+			context.Emit(OpCodes.Stloc, context.IndirectPointerLocal.LocalIndex);
+			context.EmitLoadThis();
+			context.Emit(OpCodes.Ldloc, context.IndirectPointerLocal.LocalIndex);
+			context.EmitCalli(
+				signature.ReturnTypes.Length == 0 ? typeof(void) : signature.ReturnTypes[0],
+				signature.ParameterTypes.Concat(new[] { context.ExportsBuilder.AsType() }).ToArray(
+				));
+		}
 	}
 }

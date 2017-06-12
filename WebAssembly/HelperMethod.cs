@@ -7,5 +7,6 @@
 		SelectFloat64,
 		SelectInt32,
 		SelectInt64,
+		GetFunctionPointer,
 	}
 }

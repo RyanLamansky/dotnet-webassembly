@@ -94,6 +94,18 @@ namespace WebAssembly
 			public readonly ValueType Type;
 		}
 
+		internal struct Indirect
+		{
+			public Indirect(uint type, MethodBuilder function)
+			{
+				this.type = type;
+				this.function = function;
+			}
+
+			public readonly uint type;
+			public readonly MethodBuilder function;
+		}
+
 		private static ConstructorInfo FromBinary(
 			Reader reader,
 			System.Type instanceContainer,
@@ -140,7 +152,7 @@ namespace WebAssembly
 				;
 
 			const MethodAttributes internalFunctionAttributes =
-				MethodAttributes.Private |
+				MethodAttributes.Assembly |
 				MethodAttributes.Static |
 				MethodAttributes.HideBySig
 				;
@@ -156,34 +168,9 @@ namespace WebAssembly
 			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
 			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
 
-			{
-				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
-					typeof(IntPtr),
-					typeof(uint),
-				});
-				var il = instanceConstructor.GetILGenerator();
-				{
-					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
-					if (usableConstructor != null)
-					{
-						il.Emit(OpCodes.Ldarg_0);
-						il.Emit(OpCodes.Call, usableConstructor);
-					}
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_1);
-					il.Emit(OpCodes.Stfld, linearMemoryStart);
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_2);
-					il.Emit(OpCodes.Stfld, linearMemorySize);
-				}
-				il.Emit(OpCodes.Ret);
-			}
-
 			var exports = exportsBuilder.AsType();
-			CompilationContext context = null;
 			MethodBuilder[] internalFunctions = null;
+			Indirect[] functionElements = null;
 
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 			{
@@ -198,7 +185,7 @@ namespace WebAssembly
 							signatures = new Signature[reader.ReadVarUInt32()];
 
 							for (var i = 0; i < signatures.Length; i++)
-								signatures[i] = new Signature(reader);
+								signatures[i] = new Signature(reader, (uint)i);
 						}
 						break;
 
@@ -206,7 +193,6 @@ namespace WebAssembly
 						{
 							functionSignatures = new Signature[reader.ReadVarUInt32()];
 							internalFunctions = new MethodBuilder[functionSignatures.Length];
-							context = new CompilationContext(exportsBuilder, linearMemoryStart, linearMemorySize, functionSignatures, internalFunctions);
 
 							for (var i = 0; i < functionSignatures.Length; i++)
 							{
@@ -219,6 +205,28 @@ namespace WebAssembly
 									signature.ReturnTypes.FirstOrDefault(),
 									parms
 									);
+							}
+						}
+						break;
+
+					case Section.Table:
+						{
+							var count = reader.ReadVarUInt32();
+							for (var i = 0; i < count; i++)
+							{
+								var elementType = (ElementType)reader.ReadVarInt7();
+								switch (elementType)
+								{
+									default:
+										throw new ModuleLoadException($"Element type {elementType} not supported.", reader.Offset);
+
+									case ElementType.AnyFunction:
+										var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+										functionElements = new Indirect[reader.ReadVarUInt32()];
+										if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
+											reader.ReadVarUInt32(); //Not used.
+										break;
+								}
 							}
 						}
 						break;
@@ -262,6 +270,37 @@ namespace WebAssembly
 						}
 						break;
 
+					case Section.Element:
+						{
+							if (functionElements == null)
+								throw new ModuleLoadException("Element section found without an associated table section.", reader.Offset);
+
+							var count = reader.ReadVarUInt32();
+							for (var i = 0; i < count; i++)
+							{
+								var index = reader.ReadVarUInt32();
+								if (index != 0)
+									throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", reader.Offset);
+
+								{
+									var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
+									if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || c.Value != 0 || !(initializer[1] is Instructions.End))
+										throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant of 0 followed by end.", reader.Offset);
+								}
+
+								var elements = reader.ReadVarUInt32();
+								if (elements != functionElements.Length)
+									throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", reader.Offset);
+
+								for (var j = 0; j < functionElements.Length; j++)
+								{
+									var functionIndex= reader.ReadVarUInt32();
+									functionElements[j] = new Indirect(functionSignatures[functionIndex].TypeIndex, internalFunctions[functionIndex]);
+								}
+							}
+						}
+						break;
+
 					case Section.Code:
 						{
 							var functionBodies = reader.ReadVarUInt32();
@@ -270,6 +309,17 @@ namespace WebAssembly
 								throw new ModuleLoadException("Code section is invalid when Function section is missing.", reader.Offset);
 							if (functionBodies != functionSignatures.Length)
 								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", reader.Offset);
+
+							var context = new CompilationContext(
+								exportsBuilder,
+								linearMemoryStart,
+								linearMemorySize,
+								functionSignatures,
+								internalFunctions,
+								signatures,
+								functionElements,
+								module
+								);
 
 							for (var i = 0; i < functionBodies; i++)
 							{
@@ -305,7 +355,7 @@ namespace WebAssembly
 						break;
 
 					default:
-						throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
+						throw new ModuleLoadException($"Unrecognized section type {(Section)id}.", reader.Offset);
 				}
 
 				previousSection = (Section)id;
@@ -334,6 +384,31 @@ namespace WebAssembly
 					il.Emit(OpCodes.Call, internalFunctions[exported.Value]);
 					il.Emit(OpCodes.Ret);
 				}
+			}
+
+			{
+				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
+					typeof(IntPtr),
+					typeof(uint),
+				});
+				var il = instanceConstructor.GetILGenerator();
+				{
+					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+					if (usableConstructor != null)
+					{
+						il.Emit(OpCodes.Ldarg_0);
+						il.Emit(OpCodes.Call, usableConstructor);
+					}
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_1);
+					il.Emit(OpCodes.Stfld, linearMemoryStart);
+
+					il.Emit(OpCodes.Ldarg_0);
+					il.Emit(OpCodes.Ldarg_2);
+					il.Emit(OpCodes.Stfld, linearMemorySize);
+				}
+				il.Emit(OpCodes.Ret);
 			}
 
 			var exportInfo = exportsBuilder.CreateTypeInfo();

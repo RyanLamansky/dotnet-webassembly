@@ -4,13 +4,16 @@ namespace WebAssembly
 {
 	internal sealed class Signature
 	{
+		public readonly uint TypeIndex;
 		public readonly System.Type[] ParameterTypes;
 		public readonly ValueType[] RawParameterTypes;
 		public readonly System.Type[] ReturnTypes;
 		public readonly ValueType[] RawReturnTypes;
 
-		public Signature(Reader reader)
+		public Signature(Reader reader, uint typeIndex)
 		{
+			this.TypeIndex = typeIndex;
+
 			reader.ReadVarInt7(); //Function Type
 
 			var parameters = this.ParameterTypes = new System.Type[reader.ReadVarUInt32()];
