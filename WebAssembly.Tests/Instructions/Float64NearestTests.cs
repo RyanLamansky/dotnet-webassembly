@@ -7,7 +7,7 @@ namespace WebAssembly.Instructions
 	/// Tests the <see cref="Float64Nearest"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class Float64Nearestests
+	public class Float64NearestTests
 	{
 		/// <summary>
 		/// Tests compilation and execution of the <see cref="Float64Nearest"/> instruction.

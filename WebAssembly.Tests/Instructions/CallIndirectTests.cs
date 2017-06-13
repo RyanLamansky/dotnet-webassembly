@@ -96,7 +96,6 @@ namespace WebAssembly.Instructions
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
-				//module.WriteToBinary(File.OpenWrite(@"C:\Users\Kardax\Documents\visual studio 2017\Projects\WebApplication1\CallIndirect.wasm"));
 				memory.Position = 0;
 
 				compiled = Compile.FromBinary<CompilerTestBase<int>>(memory)();

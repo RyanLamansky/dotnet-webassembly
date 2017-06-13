@@ -1,9 +1,11 @@
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Square root.
 	/// </summary>
-	public class Float32SquareRoot : SimpleInstruction
+	public class Float32SquareRoot : Float64CallWrapperInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32SquareRoot"/>.
@@ -16,5 +18,7 @@ namespace WebAssembly.Instructions
 		public Float32SquareRoot()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => Float64SquareRoot.Method;
 	}
 }

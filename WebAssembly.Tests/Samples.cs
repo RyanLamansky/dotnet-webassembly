@@ -1,4 +1,6 @@
-﻿namespace WebAssembly
+﻿using System;
+
+namespace WebAssembly
 {
 	/// <summary>
 	/// Provides diverse sample data values.
@@ -70,6 +72,38 @@
 			uint.MaxValue,
 			long.MaxValue,
 			ulong.MaxValue,
+		};
+
+		public static float[] Single => new float[]
+		{
+			0.0f,
+			1.0f,
+			-1.0f,
+			-(float)Math.PI,
+			(float)Math.PI,
+			float.NaN,
+			float.NegativeInfinity,
+			float.PositiveInfinity,
+			float.Epsilon,
+			-float.Epsilon,
+		};
+
+		public static double[] Double => new[]
+		{
+			0.0,
+			1.0,
+			-1.0,
+			-(float)Math.PI,
+			(float)Math.PI,
+			float.Epsilon,
+			-float.Epsilon,
+			-Math.PI,
+			Math.PI,
+			double.NaN,
+			double.NegativeInfinity,
+			double.PositiveInfinity,
+			double.Epsilon,
+			-double.Epsilon,
 		};
 	}
 }

@@ -21,11 +21,11 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override MethodInfo MethodInfo => method;
+		internal override MethodInfo MethodInfo => Method;
 
 		internal override ValueType ValueType => ValueType.Float64;
 
-		private static readonly RegeneratingWeakReference<MethodInfo> method = new RegeneratingWeakReference<MethodInfo>(() =>
+		internal static readonly RegeneratingWeakReference<MethodInfo> Method = new RegeneratingWeakReference<MethodInfo>(() =>
 			typeof(Math).GetTypeInfo().DeclaredMethods.First(m =>
 			{
 				if (m.Name != nameof(Math.Floor))

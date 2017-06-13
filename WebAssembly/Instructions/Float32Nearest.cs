@@ -1,9 +1,11 @@
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Round to nearest integer, ties to even.
 	/// </summary>
-	public class Float32Nearest : SimpleInstruction
+	public class Float32Nearest : Float64CallWrapperInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Nearest"/>.
@@ -16,5 +18,7 @@ namespace WebAssembly.Instructions
 		public Float32Nearest()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => Float64Nearest.Method;
 	}
 }

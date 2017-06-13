@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,21 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Float64PromoteFloat32()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count == 0)
+				throw new StackTooSmallException(OpCode.Float64PromoteFloat32, 1, 0);
+
+			var type = stack.Pop();
+			if (type != ValueType.Float32)
+				throw new StackTypeInvalidException(OpCode.Float64PromoteFloat32, ValueType.Float32, type);
+
+			context.Emit(OpCodes.Conv_R8);
+
+			stack.Push(ValueType.Float64);
 		}
 	}
 }

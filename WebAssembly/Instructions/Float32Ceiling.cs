@@ -1,9 +1,11 @@
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Ceiling operator.
 	/// </summary>
-	public class Float32Ceiling : SimpleInstruction
+	public class Float32Ceiling : Float64CallWrapperInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Ceiling"/>.
@@ -16,5 +18,7 @@ namespace WebAssembly.Instructions
 		public Float32Ceiling()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => Float64Ceiling.Method;
 	}
 }

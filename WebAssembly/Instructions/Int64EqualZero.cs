@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,24 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Int64EqualZero()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(this.OpCode, 1, stack.Count);
+
+			var type = stack.Pop();
+
+			if (type != ValueType.Int64)
+				throw new StackTypeInvalidException(this.OpCode, ValueType.Int64, type);
+
+			stack.Push(ValueType.Int32);
+
+			context.Emit(OpCodes.Ldc_I4_0);
+			context.Emit(OpCodes.Conv_I8);
+			context.Emit(OpCodes.Ceq);
 		}
 	}
 }

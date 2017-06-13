@@ -1,9 +1,11 @@
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Floor operator.
 	/// </summary>
-	public class Float32Floor : SimpleInstruction
+	public class Float32Floor : Float64CallWrapperInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Floor"/>.
@@ -16,5 +18,7 @@ namespace WebAssembly.Instructions
 		public Float32Floor()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => Float64Floor.Method;
 	}
 }

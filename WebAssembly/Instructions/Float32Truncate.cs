@@ -1,9 +1,11 @@
+using System.Reflection;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Round to nearest integer towards zero.
 	/// </summary>
-	public class Float32Truncate : SimpleInstruction
+	public class Float32Truncate : Float64CallWrapperInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Truncate"/>.
@@ -16,5 +18,7 @@ namespace WebAssembly.Instructions
 		public Float32Truncate()
 		{
 		}
+
+		internal override MethodInfo MethodInfo => Float64Truncate.Method;
 	}
 }

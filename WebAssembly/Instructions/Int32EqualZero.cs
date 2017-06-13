@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,21 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Int32EqualZero()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(this.OpCode, 1, stack.Count);
+
+			var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
+
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(this.OpCode, ValueType.Int32, type);
+
+			context.Emit(OpCodes.Ldc_I4_0);
+			context.Emit(OpCodes.Ceq);
 		}
 	}
 }
