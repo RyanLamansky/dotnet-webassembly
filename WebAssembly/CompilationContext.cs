@@ -198,6 +198,12 @@ namespace WebAssembly
 
 		public readonly Signature[] Types;
 
+		internal const MethodAttributes HelperMethodAttributes =
+			MethodAttributes.Private |
+			MethodAttributes.Static |
+			MethodAttributes.HideBySig
+			;
+
 		private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = new Dictionary<HelperMethod, MethodBuilder>();
 
 		public MethodInfo this[HelperMethod helper]
@@ -209,12 +215,6 @@ namespace WebAssembly
 				if (this.helperMethods.TryGetValue(helper, out var builder))
 					return builder;
 
-				const MethodAttributes helperMethodAttributes =
-					MethodAttributes.Private |
-					MethodAttributes.Static |
-					MethodAttributes.HideBySig
-					;
-
 				var exportsBuilder = this.ExportsBuilder;
 
 				switch (helper)
@@ -222,7 +222,7 @@ namespace WebAssembly
 					case HelperMethod.RangeCheckInt32:
 						builder = exportsBuilder.DefineMethod(
 							"☣ Range Check Int32",
-							helperMethodAttributes,
+							HelperMethodAttributes,
 							typeof(uint),
 							new[] { typeof(uint), exportsBuilder.AsType() }
 							);
@@ -255,114 +255,27 @@ namespace WebAssembly
 						}
 						helperMethods.Add(HelperMethod.RangeCheckInt32, builder);
 						return builder;
-
-					case HelperMethod.SelectInt32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Int32",
-							helperMethodAttributes,
-							typeof(int),
-							new[]
-							{
-								typeof(int),
-								typeof(int),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectInt32, builder);
-						return builder;
-
-					case HelperMethod.SelectInt64:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Int64",
-							helperMethodAttributes,
-							typeof(long),
-							new[]
-							{
-								typeof(long),
-								typeof(long),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectInt64, builder);
-						return builder;
-
-					case HelperMethod.SelectFloat32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Float32",
-							helperMethodAttributes,
-							typeof(float),
-							new[]
-							{
-								typeof(float),
-								typeof(float),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectFloat32, builder);
-						return builder;
-
-					case HelperMethod.SelectFloat64:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Select Float64",
-							helperMethodAttributes,
-							typeof(double),
-							new[]
-							{
-								typeof(double),
-								typeof(double),
-								typeof(int),
-							}
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_2);
-							var @true = il.DefineLabel();
-							il.Emit(OpCodes.Brtrue_S, @true);
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(@true);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-						}
-						helperMethods.Add(HelperMethod.SelectFloat64, builder);
-						return builder;
 				}
 
 				Fail("Attempted to obtain an unknown helper method.");
 				return null;
+			}
+		}
+
+		public MethodInfo this[HelperMethod helper, Func<HelperMethod, TypeBuilder, MethodBuilder> creator]
+		{
+			get
+			{
+				Assert(creator != null);
+				Assert(this.helperMethods != null);
+				Assert(this.ExportsBuilder != null);
+
+				if (this.helperMethods.TryGetValue(helper, out var builder))
+					return builder;
+
+				this.helperMethods.Add(helper, builder = creator(helper, this.ExportsBuilder));
+				Assert(builder != null, "Helper method creator returned null.");
+				return builder;
 			}
 		}
 

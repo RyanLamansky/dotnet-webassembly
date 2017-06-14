@@ -1,4 +1,5 @@
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
+using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions
 {
@@ -21,7 +22,10 @@ namespace WebAssembly.Instructions
 
 		internal override void Compile(CompilationContext context)
 		{
+			Assert(context != null);
+
 			var stack = context.Stack;
+			Assert(stack != null);
 			if (stack.Count < 3)
 				throw new StackTooSmallException(OpCode.Select, 3, stack.Count);
 
@@ -39,12 +43,93 @@ namespace WebAssembly.Instructions
 			switch (typeA)
 			{
 				default: //This shouldn't be possible due to previous validations.
+					Fail("Unknown ValueType.");
+					return;
 				case ValueType.Int32: helper = HelperMethod.SelectInt32; break;
 				case ValueType.Int64: helper = HelperMethod.SelectInt64; break;
 				case ValueType.Float32: helper = HelperMethod.SelectFloat32; break;
 				case ValueType.Float64: helper = HelperMethod.SelectFloat64; break;
 			}
-			context.Emit(OpCodes.Call, context[helper]);
+			context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
+		}
+
+		static MethodBuilder CreateSelectHelper(HelperMethod helper, TypeBuilder exportsBuilder)
+		{
+			Assert(exportsBuilder != null);
+
+			MethodBuilder builder;
+			switch (helper)
+			{
+				default:
+					Fail("Attempted to obtain an unknown helper method.");
+					return null;
+				case HelperMethod.SelectInt32:
+					builder = exportsBuilder.DefineMethod(
+						"☣ Select Int32",
+						CompilationContext.HelperMethodAttributes,
+						typeof(int),
+						new[]
+						{
+								typeof(int),
+								typeof(int),
+								typeof(int),
+						}
+						);
+					break;
+
+				case HelperMethod.SelectInt64:
+					builder = exportsBuilder.DefineMethod(
+						"☣ Select Int64",
+						CompilationContext.HelperMethodAttributes,
+						typeof(long),
+						new[]
+						{
+								typeof(long),
+								typeof(long),
+								typeof(int),
+						}
+						);
+					break;
+
+				case HelperMethod.SelectFloat32:
+					builder = exportsBuilder.DefineMethod(
+						"☣ Select Float32",
+						CompilationContext.HelperMethodAttributes,
+						typeof(float),
+						new[]
+						{
+								typeof(float),
+								typeof(float),
+								typeof(int),
+						}
+						);
+					break;
+
+				case HelperMethod.SelectFloat64:
+					builder = exportsBuilder.DefineMethod(
+						"☣ Select Float64",
+						CompilationContext.HelperMethodAttributes,
+						typeof(double),
+						new[]
+						{
+								typeof(double),
+								typeof(double),
+								typeof(int),
+						}
+						);
+					break;
+			}
+
+			var il = builder.GetILGenerator();
+			il.Emit(OpCodes.Ldarg_2);
+			var @true = il.DefineLabel();
+			il.Emit(OpCodes.Brtrue_S, @true);
+			il.Emit(OpCodes.Ldarg_1);
+			il.Emit(OpCodes.Ret);
+			il.MarkLabel(@true);
+			il.Emit(OpCodes.Ldarg_0);
+			il.Emit(OpCodes.Ret);
+			return builder;
 		}
 	}
 }
