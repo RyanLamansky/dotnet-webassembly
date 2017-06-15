@@ -1035,7 +1035,7 @@
 		/// <summary>
 		/// Reinterpret the bits of a 64-bit integer as a 64-bit float.
 		/// </summary>
-		[OpCodeCharacteristics("f64.reinterpret/i32")]
-		Float64ReinterpretInt32 = 0xbf,
+		[OpCodeCharacteristics("f64.reinterpret/i64")]
+		Float64ReinterpretInt64 = 0xbf,
 	}
 }

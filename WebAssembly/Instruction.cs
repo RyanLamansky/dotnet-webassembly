@@ -284,7 +284,7 @@ namespace WebAssembly
 					case OpCode.Int32ReinterpretFloat32: yield return new Int32ReinterpretFloat32(); break;
 					case OpCode.Int64ReinterpretFloat64: yield return new Int64ReinterpretFloat64(); break;
 					case OpCode.Float32ReinterpretInt32: yield return new Float32ReinterpretInt32(); break;
-					case OpCode.Float64ReinterpretInt32: yield return new Float64ReinterpretInt32(); break;
+					case OpCode.Float64ReinterpretInt64: yield return new Float64ReinterpretInt64(); break;
 				}
 			}
 		}

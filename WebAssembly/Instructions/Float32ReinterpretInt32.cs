@@ -1,3 +1,5 @@
+﻿using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,39 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Float32ReinterpretInt32()
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(OpCode.Float32ReinterpretInt32, 1, stack.Count);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.Float32ReinterpretInt32, ValueType.Int32, type);
+
+			stack.Push(ValueType.Float32);
+
+			context.Emit(OpCodes.Call, context[HelperMethod.Float32ReinterpretInt32, (helper, exportsBuilder) =>
+			{
+				var builder = exportsBuilder.DefineMethod(
+					"☣ Float32ReinterpretInt32",
+					CompilationContext.HelperMethodAttributes,
+					typeof(float),
+					new[]
+					{
+							typeof(int),
+					}
+					);
+
+				var il = builder.GetILGenerator();
+				il.Emit(OpCodes.Ldarga_S, 0);
+				il.Emit(OpCodes.Ldind_R4);
+				il.Emit(OpCodes.Ret);
+				return builder;
+			}
+			]);
 		}
 	}
 }
