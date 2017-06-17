@@ -44,7 +44,10 @@ namespace WebAssembly.Instructions
 				switch (this.Index)
 				{
 					default:
-						context.Emit(OpCodes.Ldarg, checked((ushort)this.Index));
+						if (this.Index <= byte.MaxValue)
+							context.Emit(OpCodes.Ldarg_S, checked((byte)this.Index));
+						else
+							context.Emit(OpCodes.Ldarg, checked((ushort)this.Index));
 						break;
 
 					case 0: context.Emit(OpCodes.Ldarg_0); break;
@@ -59,7 +62,13 @@ namespace WebAssembly.Instructions
 				switch (localIndex)
 				{
 					default:
-						context.Emit(OpCodes.Ldloc, checked((int)localIndex));
+						if (localIndex > 65534) // https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.ldloc
+							throw new CompilerException($"Implementation limit exceeded: maximum accessible local index is 65534, tried to access {localIndex}.");
+
+						if (localIndex <= byte.MaxValue)
+							context.Emit(OpCodes.Ldloc_S, (byte)localIndex);
+						else
+							context.Emit(OpCodes.Ldloc, checked((ushort)localIndex));
 						break;
 
 					case 0: context.Emit(OpCodes.Ldloc_0); break;
