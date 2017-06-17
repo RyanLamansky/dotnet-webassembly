@@ -106,6 +106,24 @@ namespace WebAssembly
 			public readonly MethodBuilder function;
 		}
 
+		internal sealed class GlobalInfo
+		{
+			public readonly ValueType Type;
+			public readonly bool IsMutable;
+			public readonly MethodBuilder Builder;
+
+			public GlobalInfo(ValueType type, bool isMutable, MethodBuilder builder)
+			{
+				this.Type = type;
+				this.IsMutable = isMutable;
+				this.Builder = builder;
+			}
+
+#if DEBUG
+			public sealed override string ToString() => $"{this.Type} {this.IsMutable}";
+#endif
+		}
+
 		private static ConstructorInfo FromBinary(
 			Reader reader,
 			System.Type instanceContainer,
@@ -171,6 +189,9 @@ namespace WebAssembly
 			var exports = exportsBuilder.AsType();
 			MethodBuilder[] internalFunctions = null;
 			Indirect[] functionElements = null;
+			GlobalInfo[] globalGetters = null;
+			GlobalInfo[] globalSetters = null;
+			CompilationContext context = null;
 
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 			{
@@ -246,6 +267,66 @@ namespace WebAssembly
 						}
 						break;
 
+					case Section.Global:
+						{
+							var count = reader.ReadVarUInt32();
+							globalGetters = new GlobalInfo[count];
+							globalSetters = new GlobalInfo[count];
+
+							context = new CompilationContext(
+								exportsBuilder,
+								linearMemoryStart,
+								linearMemorySize,
+								functionSignatures,
+								internalFunctions,
+								signatures,
+								functionElements,
+								module,
+								globalGetters,
+								globalSetters
+								);
+
+							for (var i = 0; i < globalGetters.Length; i++)
+							{
+								var contentType = (ValueType)reader.ReadVarInt7();
+								var isMutable = reader.ReadVarUInt1() == 1;
+
+								var getter = exportsBuilder.DefineMethod(
+									$"🌍 Get {i}",
+									internalFunctionAttributes,
+									CallingConventions.Standard,
+									contentType.ToSystemType(),
+									isMutable ? new[] { exports } : null
+									);
+
+								if (isMutable == false)
+								{
+									var il = getter.GetILGenerator();
+
+									var signature = new Signature(contentType);
+
+									context.Reset(
+										il,
+										signature,
+										signature.RawParameterTypes
+										);
+
+									foreach (var instruction in Instruction.ParseInitializerExpression(reader))
+									{
+										instruction.Compile(context);
+										context.Previous = instruction.OpCode;
+									}
+								}
+								else //Mutable
+								{
+									throw new NotSupportedException();
+								}
+
+								globalGetters[i] = new GlobalInfo(contentType, isMutable, getter);
+							}
+						}
+						break;
+
 					case Section.Export:
 						{
 							var totalExports = reader.ReadVarUInt32();
@@ -294,7 +375,7 @@ namespace WebAssembly
 
 								for (var j = 0; j < functionElements.Length; j++)
 								{
-									var functionIndex= reader.ReadVarUInt32();
+									var functionIndex = reader.ReadVarUInt32();
 									functionElements[j] = new Indirect(functionSignatures[functionIndex].TypeIndex, internalFunctions[functionIndex]);
 								}
 							}
@@ -310,16 +391,21 @@ namespace WebAssembly
 							if (functionBodies != functionSignatures.Length)
 								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", reader.Offset);
 
-							var context = new CompilationContext(
-								exportsBuilder,
-								linearMemoryStart,
-								linearMemorySize,
-								functionSignatures,
-								internalFunctions,
-								signatures,
-								functionElements,
-								module
-								);
+							if (context == null) //Might have been created by the Global section, if present.
+							{
+								context = new CompilationContext(
+									exportsBuilder,
+									linearMemoryStart,
+									linearMemorySize,
+									functionSignatures,
+									internalFunctions,
+									signatures,
+									functionElements,
+									module,
+									globalGetters,
+									globalSetters
+									);
+							}
 
 							for (var i = 0; i < functionBodies; i++)
 							{

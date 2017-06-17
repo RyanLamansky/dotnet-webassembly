@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -17,9 +19,41 @@ namespace WebAssembly.Instructions
 		{
 		}
 
+		/// <summary>
+		/// Creates a new <see cref="GetGlobal"/> for the provided variable index.
+		/// </summary>
+		/// <param name="index">The index of the variable to access.</param>
+		public GetGlobal(uint index)
+			: base(index)
+		{
+		}
+
 		internal GetGlobal(Reader reader)
 			: base(reader)
 		{
+		}
+
+		internal override void Compile(CompilationContext context)
+		{
+			if (context.GlobalGetters == null)
+				throw new CompilerException("Can't use GetGlobal without a global section.");
+
+			Compile.GlobalInfo getter;
+			try
+			{
+				getter = context.GlobalGetters[this.Index];
+			}
+			catch (System.IndexOutOfRangeException x)
+			{
+				throw new CompilerException($"Global at index {this.Index} does not exist.", x);
+			}
+
+			if (getter.IsMutable)
+				context.EmitLoadThis();
+
+			context.Emit(OpCodes.Call, getter.Builder);
+
+			context.Stack.Push(getter.Type);
 		}
 	}
 }

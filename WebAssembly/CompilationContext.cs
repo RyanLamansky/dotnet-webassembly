@@ -20,7 +20,9 @@ namespace WebAssembly
 			MethodInfo[] methods,
 			Signature[] types,
 			Compile.Indirect[] functionElements,
-			ModuleBuilder module
+			ModuleBuilder module,
+			Compile.GlobalInfo[] globalGetters,
+			Compile.GlobalInfo[] globalSetters
 			)
 		{
 			Assert(exportsBuilder != null);
@@ -37,6 +39,8 @@ namespace WebAssembly
 			this.FunctionSignatures = functionSignatures;
 			this.Methods = methods;
 			this.Types = types;
+			this.GlobalGetters = globalGetters;
+			this.GlobalSetters = globalSetters;
 
 			if (functionElements == null)
 				return;
@@ -197,6 +201,10 @@ namespace WebAssembly
 		public readonly MethodInfo[] Methods;
 
 		public readonly Signature[] Types;
+
+		public readonly Compile.GlobalInfo[] GlobalGetters;
+
+		public readonly Compile.GlobalInfo[] GlobalSetters;
 
 		internal const MethodAttributes HelperMethodAttributes =
 			MethodAttributes.Private |

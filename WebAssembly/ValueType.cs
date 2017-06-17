@@ -22,4 +22,19 @@
 		/// </summary>
 		Float64 = -0x04,
 	}
+
+	static class ValueTypeExtensions
+	{
+		public static System.Type ToSystemType(this ValueType valueType)
+		{
+			switch (valueType)
+			{
+				case ValueType.Int32: return typeof(int);
+				case ValueType.Int64: return typeof(long);
+				case ValueType.Float32: return typeof(float);
+				case ValueType.Float64: return typeof(double);
+				default: throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(ValueType)} {valueType} not recognized.");
+			}
+		}
+	}
 }
