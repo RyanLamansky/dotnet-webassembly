@@ -4,16 +4,238 @@ using System.IO;
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// Tests the <see cref="GetGlobal"/> instruction.
+	/// Tests the <see cref="SetGlobal"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class GetGlobalTests
+	public class SetGlobalTests
 	{
 		/// <summary>
-		/// Used to test a single return with no parameters.
+		/// Framework for testing.
 		/// </summary>
 		public abstract class TestBase
 		{
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestInt32(int value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestInt64(long value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestFloat32(float value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestFloat64(double value);
+		}
+
+		/// <summary>
+		/// Tests compilation and execution of the <see cref="SetGlobal"/> instruction.
+		/// </summary>
+		[TestMethod]
+		public void SetGlobal_Compiled()
+		{
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Int32,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Int64,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Float32,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Float64,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Functions.Add(new Function
+			{
+				Type = 0,
+			});
+			module.Functions.Add(new Function
+			{
+				Type = 1,
+			});
+			module.Functions.Add(new Function
+			{
+				Type = 2,
+			});
+			module.Functions.Add(new Function
+			{
+				Type = 3,
+			});
+			module.Globals.Add(new Global
+			{
+				IsMutable = true,
+				ContentType = ValueType.Int32,
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(4),
+					new End(),
+				},
+			});
+			module.Globals.Add(new Global
+			{
+				IsMutable = true,
+				ContentType = ValueType.Int64,
+				InitializerExpression = new Instruction[]
+				{
+					new Int64Constant(5),
+					new End(),
+				},
+			});
+			module.Globals.Add(new Global
+			{
+				IsMutable = true,
+				ContentType = ValueType.Float32,
+				InitializerExpression = new Instruction[]
+				{
+					new Float32Constant(6),
+					new End(),
+				},
+			});
+			module.Globals.Add(new Global
+			{
+				IsMutable = true,
+				ContentType = ValueType.Float64,
+				InitializerExpression = new Instruction[]
+				{
+					new Float64Constant(7),
+					new End(),
+				},
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 0,
+				Name = nameof(TestBase.TestInt32)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 1,
+				Name = nameof(TestBase.TestInt64)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 2,
+				Name = nameof(TestBase.TestFloat32)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 3,
+				Name = nameof(TestBase.TestFloat64)
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(0),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(1),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(2),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(3),
+					new End(),
+				},
+			});
+
+			Instance<TestBase> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compile.FromBinary<TestBase>(memory)();
+			}
+
+			var exports = compiled.Exports;
+			exports.TestInt32(4);
+			exports.TestInt64(5);
+			exports.TestFloat32(6);
+			exports.TestFloat64(7);
+		}
+
+		/// <summary>
+		/// Framework for testing.
+		/// </summary>
+		public abstract class RoundTripTestBase
+		{
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestInt32(int value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestInt64(long value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestFloat32(float value);
+
+			/// <summary>
+			/// Receives a value.
+			/// </summary>
+			public abstract void TestFloat64(double value);
+			
 			/// <summary>
 			/// Returns a value.
 			/// </summary>
@@ -36,12 +258,52 @@ namespace WebAssembly.Instructions
 		}
 
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="GetGlobal"/> instruction for immutable values.
+		/// Tests compilation and execution of the <see cref="SetGlobal"/> instruction by validating retention via the <see cref="GetGlobal"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void GetGlobal_Immutable_Compiled()
+		public void SetGlobal_GetGlobal_Compiled()
 		{
 			var module = new Module();
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Int32,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Int64,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Float32,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
+			module.Types.Add(new Type
+			{
+				Parameters = new[]
+				{
+					ValueType.Float64,
+				},
+				Returns = new ValueType[]
+				{
+				}
+			});
 			module.Types.Add(new Type
 			{
 				Parameters = new ValueType[]
@@ -82,55 +344,50 @@ namespace WebAssembly.Instructions
 					ValueType.Float64,
 				}
 			});
-			module.Functions.Add(new Function
+			for (uint i = 0; i <= 7; i++)
 			{
-				Type = 0,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 1,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 2,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 3,
-			});
+				module.Functions.Add(new Function
+				{
+					Type = i,
+				});
+			}
 			module.Globals.Add(new Global
 			{
+				IsMutable = true,
 				ContentType = ValueType.Int32,
 				InitializerExpression = new Instruction[]
 				{
-					new Int32Constant(4),
+					new Int32Constant(0),
 					new End(),
 				},
 			});
 			module.Globals.Add(new Global
 			{
+				IsMutable = true,
 				ContentType = ValueType.Int64,
 				InitializerExpression = new Instruction[]
 				{
-					new Int64Constant(5),
+					new Int64Constant(0),
 					new End(),
 				},
 			});
 			module.Globals.Add(new Global
 			{
+				IsMutable = true,
 				ContentType = ValueType.Float32,
 				InitializerExpression = new Instruction[]
 				{
-					new Float32Constant(6),
+					new Float32Constant(0),
 					new End(),
 				},
 			});
 			module.Globals.Add(new Global
 			{
+				IsMutable = true,
 				ContentType = ValueType.Float64,
 				InitializerExpression = new Instruction[]
 				{
-					new Float64Constant(7),
+					new Float64Constant(0),
 					new End(),
 				},
 			});
@@ -153,6 +410,62 @@ namespace WebAssembly.Instructions
 			{
 				Index = 3,
 				Name = nameof(TestBase.TestFloat64)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 4,
+				Name = nameof(TestBase.TestInt32)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 5,
+				Name = nameof(TestBase.TestInt64)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 6,
+				Name = nameof(TestBase.TestFloat32)
+			});
+			module.Exports.Add(new Export
+			{
+				Index = 7,
+				Name = nameof(TestBase.TestFloat64)
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(0),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(1),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(2),
+					new End(),
+				},
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new SetGlobal(3),
+					new End(),
+				},
 			});
 			module.Codes.Add(new FunctionBody
 			{
@@ -187,188 +500,21 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase> compiled;
+			Instance<RoundTripTestBase> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<TestBase>(memory)();
+				compiled = Compile.FromBinary<RoundTripTestBase>(memory)();
 			}
 
 			var exports = compiled.Exports;
-			Assert.AreEqual(4, exports.TestInt32());
-			Assert.AreEqual(5, exports.TestInt64());
-			Assert.AreEqual(6, exports.TestFloat32());
-			Assert.AreEqual(7, exports.TestFloat64());
-		}
+			exports.TestInt32(4);
+			exports.TestInt64(5);
+			exports.TestFloat32(6);
+			exports.TestFloat64(7);
 
-		/// <summary>
-		/// Tests compilation and execution of the <see cref="GetGlobal"/> instruction for mutable values.
-		/// </summary>
-		[TestMethod]
-		public void GetGlobal_Mutable_Compiled()
-		{
-			var module = new Module();
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
-				{
-				},
-				Returns = new[]
-				{
-					ValueType.Int32,
-				}
-			});
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
-				{
-				},
-				Returns = new[]
-				{
-					ValueType.Int64,
-				}
-			});
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
-				{
-				},
-				Returns = new[]
-				{
-					ValueType.Float32,
-				}
-			});
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
-				{
-				},
-				Returns = new[]
-				{
-					ValueType.Float64,
-				}
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 0,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 1,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 2,
-			});
-			module.Functions.Add(new Function
-			{
-				Type = 3,
-			});
-			module.Globals.Add(new Global
-			{
-				IsMutable = true,
-				ContentType = ValueType.Int32,
-				InitializerExpression = new Instruction[]
-				{
-					new Int32Constant(4),
-					new End(),
-				},
-			});
-			module.Globals.Add(new Global
-			{
-				IsMutable = true,
-				ContentType = ValueType.Int64,
-				InitializerExpression = new Instruction[]
-				{
-					new Int64Constant(5),
-					new End(),
-				},
-			});
-			module.Globals.Add(new Global
-			{
-				IsMutable = true,
-				ContentType = ValueType.Float32,
-				InitializerExpression = new Instruction[]
-				{
-					new Float32Constant(6),
-					new End(),
-				},
-			});
-			module.Globals.Add(new Global
-			{
-				IsMutable = true,
-				ContentType = ValueType.Float64,
-				InitializerExpression = new Instruction[]
-				{
-					new Float64Constant(7),
-					new End(),
-				},
-			});
-			module.Exports.Add(new Export
-			{
-				Index = 0,
-				Name = nameof(TestBase.TestInt32)
-			});
-			module.Exports.Add(new Export
-			{
-				Index = 1,
-				Name = nameof(TestBase.TestInt64)
-			});
-			module.Exports.Add(new Export
-			{
-				Index = 2,
-				Name = nameof(TestBase.TestFloat32)
-			});
-			module.Exports.Add(new Export
-			{
-				Index = 3,
-				Name = nameof(TestBase.TestFloat64)
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetGlobal(0),
-					new End(),
-				},
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetGlobal(1),
-					new End(),
-				},
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetGlobal(2),
-					new End(),
-				},
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetGlobal(3),
-					new End(),
-				},
-			});
-
-			Instance<TestBase> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<TestBase>(memory)();
-			}
-
-			var exports = compiled.Exports;
 			Assert.AreEqual(4, exports.TestInt32());
 			Assert.AreEqual(5, exports.TestInt64());
 			Assert.AreEqual(6, exports.TestFloat32());

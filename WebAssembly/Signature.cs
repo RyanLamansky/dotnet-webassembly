@@ -8,6 +8,17 @@
 		public readonly System.Type[] ReturnTypes;
 		public readonly ValueType[] RawReturnTypes;
 
+		private static readonly RegeneratingWeakReference<Signature> empty = new RegeneratingWeakReference<Signature>(() => new Signature());
+
+		public static Signature Empty => empty;
+
+		private Signature()
+		{
+			this.TypeIndex = uint.MaxValue;
+			this.ReturnTypes = this.ParameterTypes = new System.Type[0];
+			this.RawReturnTypes = this.RawParameterTypes = new ValueType[0];
+		}
+
 		public Signature(ValueType returnType)
 		{
 			this.TypeIndex = uint.MaxValue;

@@ -186,6 +186,31 @@ namespace WebAssembly
 			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
 			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
 
+			ILGenerator instanceConstructorIL;
+			{
+				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
+					typeof(IntPtr), //linearMemoryStart
+					typeof(uint), //linearMemorySize
+				});
+				instanceConstructorIL = instanceConstructor.GetILGenerator();
+				{
+					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+					if (usableConstructor != null)
+					{
+						instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+						instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
+					}
+
+					instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+					instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+					instanceConstructorIL.Emit(OpCodes.Stfld, linearMemoryStart);
+
+					instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+					instanceConstructorIL.Emit(OpCodes.Ldarg_2);
+					instanceConstructorIL.Emit(OpCodes.Stfld, linearMemorySize);
+				}
+			}
+
 			var exports = exportsBuilder.AsType();
 			MethodBuilder[] internalFunctions = null;
 			Indirect[] functionElements = null;
@@ -286,6 +311,8 @@ namespace WebAssembly
 								globalSetters
 								);
 
+							var emptySignature = Signature.Empty;
+
 							for (var i = 0; i < globalGetters.Length; i++)
 							{
 								var contentType = (ValueType)reader.ReadVarInt7();
@@ -299,16 +326,17 @@ namespace WebAssembly
 									isMutable ? new[] { exports } : null
 									);
 
+								globalGetters[i] = new GlobalInfo(contentType, isMutable, getter);
+
+								var il = getter.GetILGenerator();
+								var getterSignature = new Signature(contentType);
+
 								if (isMutable == false)
 								{
-									var il = getter.GetILGenerator();
-
-									var signature = new Signature(contentType);
-
 									context.Reset(
 										il,
-										signature,
-										signature.RawParameterTypes
+										getterSignature,
+										getterSignature.RawParameterTypes
 										);
 
 									foreach (var instruction in Instruction.ParseInitializerExpression(reader))
@@ -319,10 +347,57 @@ namespace WebAssembly
 								}
 								else //Mutable
 								{
-									throw new NotSupportedException();
-								}
+									var field = exportsBuilder.DefineField(
+										$"🌍 {i}",
+										contentType.ToSystemType(),
+										FieldAttributes.Private | (isMutable ? 0 : FieldAttributes.InitOnly)
+										);
 
-								globalGetters[i] = new GlobalInfo(contentType, isMutable, getter);
+									il.Emit(OpCodes.Ldarg_0);
+									il.Emit(OpCodes.Ldfld, field);
+									il.Emit(OpCodes.Ret);
+
+									var setter = exportsBuilder.DefineMethod(
+									$"🌍 Set {i}",
+										internalFunctionAttributes,
+										CallingConventions.Standard,
+										typeof(void),
+										new[] { contentType.ToSystemType(), exports }
+										);
+
+									il = setter.GetILGenerator();
+									il.Emit(OpCodes.Ldarg_1);
+									il.Emit(OpCodes.Ldarg_0);
+									il.Emit(OpCodes.Stfld, field);
+									il.Emit(OpCodes.Ret);
+
+									globalSetters[i] = new GlobalInfo(contentType, isMutable, setter);
+
+									context.Reset(
+										instanceConstructorIL,
+										emptySignature,
+										emptySignature.RawParameterTypes
+										);
+
+									context.EmitLoadThis();
+									var ended = false;
+
+									foreach (var instruction in Instruction.ParseInitializerExpression(reader))
+									{
+										if (ended)
+											throw new CompilerException("Only a single End is allowed within an initializer expression.");
+
+										if (instruction.OpCode == OpCode.End)
+										{
+											context.Emit(OpCodes.Stfld, field);
+											ended = true;
+											continue;
+										}
+
+										instruction.Compile(context);
+										context.Previous = instruction.OpCode;
+									}
+								}
 							}
 						}
 						break;
@@ -472,31 +547,7 @@ namespace WebAssembly
 				}
 			}
 
-			{
-				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
-					typeof(IntPtr),
-					typeof(uint),
-				});
-				var il = instanceConstructor.GetILGenerator();
-				{
-					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
-					if (usableConstructor != null)
-					{
-						il.Emit(OpCodes.Ldarg_0);
-						il.Emit(OpCodes.Call, usableConstructor);
-					}
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_1);
-					il.Emit(OpCodes.Stfld, linearMemoryStart);
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldarg_2);
-					il.Emit(OpCodes.Stfld, linearMemorySize);
-				}
-				il.Emit(OpCodes.Ret);
-			}
-
+			instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
 			var exportInfo = exportsBuilder.CreateTypeInfo();
 
 			TypeInfo instance;
