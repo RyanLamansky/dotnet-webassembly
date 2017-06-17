@@ -65,7 +65,8 @@ namespace WebAssembly
 				var opCode = (OpCode)reader.ReadByte();
 				switch (opCode)
 				{
-					default: throw new ModuleLoadException($"Don't know how to parse opcode \"{opCode}\".", reader.Offset);
+					default: throw new ModuleLoadException($"Opcode \"{opCode}\" is not permitted in intializer expressions.", reader.Offset);
+					case OpCode.GetGlobal: yield return new GetGlobal(reader); break;
 					case OpCode.Int32Constant: yield return new Int32Constant(reader); break;
 					case OpCode.Int64Constant: yield return new Int64Constant(reader); break;
 					case OpCode.Float32Constant: yield return new Float32Constant(reader); break;
