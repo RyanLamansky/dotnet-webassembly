@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 
 namespace WebAssembly
 {
@@ -105,5 +107,10 @@ namespace WebAssembly
 			double.Epsilon,
 			-double.Epsilon,
 		};
+
+		public static byte[] Memory => new byte[] { 254, 2, 3, 4, 5, 6, 7, 8 }
+			.Concat(Encoding.Unicode.GetBytes("🐩")) //Must be aligned to 16 bits for compatibility with JavaScript Uint16Array.
+			.ToArray()
+			;
 	}
 }

@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -21,5 +23,11 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override ValueType Type => ValueType.Float64;
+
+		internal override byte Size => 8;
+
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_R8;
 	}
 }

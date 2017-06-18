@@ -92,6 +92,8 @@ namespace WebAssembly.Instructions
 
 		internal virtual System.Reflection.Emit.OpCode EmittedOpCode => throw new NotImplementedException($"{this.OpCode} does not currently support compilation.");
 
+		internal virtual System.Reflection.Emit.OpCode ConversionOpCode => OpCodes.Nop;
+
 		internal sealed override void Compile(CompilationContext context)
 		{
 			var stack = context.Stack;
@@ -142,6 +144,9 @@ namespace WebAssembly.Instructions
 				context.Emit(OpCodes.Unaligned, alignment);
 
 			context.Emit(this.EmittedOpCode);
+			var conversion = this.ConversionOpCode;
+			if (conversion != OpCodes.Nop)
+				context.Emit(conversion);
 
 			stack.Push(this.Type);
 		}

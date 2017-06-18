@@ -5,20 +5,20 @@ using System.Runtime.InteropServices;
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// Tests the <see cref="Int32Load"/> instruction.
+	/// Tests the <see cref="Int64Load32Unsigned"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class Int32LoadTests
+	public class Int64Load32UnsignedTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int32Load"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int64Load32Unsigned"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Int32Load_Compiled_Offset0()
+		public void Int64Load32Unsigned_Compiled_Offset0()
 		{
-			var compiled = MemoryReadTestBase<int>.CreateInstance(
+			var compiled = MemoryReadTestBase<long>.CreateInstance(
 				new GetLocal(),
-				new Int32Load(),
+				new Int64Load32Unsigned(),
 				new End()
 			);
 
@@ -39,9 +39,9 @@ namespace WebAssembly.Instructions
 				Assert.AreEqual(117835012, exports.Test(3));
 				Assert.AreEqual(134678021, exports.Test(4));
 				Assert.AreEqual(1023936262, exports.Test(5));
-				Assert.AreEqual(-667088889, exports.Test(6));
+				Assert.AreEqual(3627878407, exports.Test(6));
 				Assert.AreEqual(702037256, exports.Test(7));
-				Assert.AreEqual(-601237443, exports.Test(8));
+				Assert.AreEqual(3693729853, exports.Test(8));
 
 				Assert.AreEqual(0, exports.Test((int)Memory.PageSize - 4));
 
@@ -71,14 +71,14 @@ namespace WebAssembly.Instructions
 		}
 
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int32Load"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int64Load32Unsigned"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Int32Load_Compiled_Offset1()
+		public void Int64Load32Unsigned_Compiled_Offset1()
 		{
-			var compiled = MemoryReadTestBase<int>.CreateInstance(
+			var compiled = MemoryReadTestBase<long>.CreateInstance(
 				new GetLocal(),
-				new Int32Load
+				new Int64Load32Unsigned
 				{
 					Offset = 1,
 				},
@@ -101,9 +101,9 @@ namespace WebAssembly.Instructions
 				Assert.AreEqual(117835012, exports.Test(2));
 				Assert.AreEqual(134678021, exports.Test(3));
 				Assert.AreEqual(1023936262, exports.Test(4));
-				Assert.AreEqual(-667088889, exports.Test(5));
+				Assert.AreEqual(3627878407, exports.Test(5));
 				Assert.AreEqual(702037256, exports.Test(6));
-				Assert.AreEqual(-601237443, exports.Test(7));
+				Assert.AreEqual(3693729853, exports.Test(7));
 				Assert.AreEqual(14428632, exports.Test(8));
 
 				Assert.AreEqual(0, exports.Test((int)Memory.PageSize - 5));

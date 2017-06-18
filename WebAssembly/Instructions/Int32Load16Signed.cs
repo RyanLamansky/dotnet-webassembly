@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -21,5 +23,11 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override ValueType Type => ValueType.Int32;
+
+		internal override byte Size => 2;
+
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I2;
 	}
 }

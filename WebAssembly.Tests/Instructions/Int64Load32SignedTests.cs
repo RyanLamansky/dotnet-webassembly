@@ -5,20 +5,20 @@ using System.Runtime.InteropServices;
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// Tests the <see cref="Int32Load"/> instruction.
+	/// Tests the <see cref="Int64Load32Signed"/> instruction.
 	/// </summary>
 	[TestClass]
-	public class Int32LoadTests
+	public class Int64Load32SignedTests
 	{
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int32Load"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int64Load32Signed"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Int32Load_Compiled_Offset0()
+		public void Int64Load32Signed_Compiled_Offset0()
 		{
-			var compiled = MemoryReadTestBase<int>.CreateInstance(
+			var compiled = MemoryReadTestBase<long>.CreateInstance(
 				new GetLocal(),
-				new Int32Load(),
+				new Int64Load32Signed(),
 				new End()
 			);
 
@@ -71,14 +71,14 @@ namespace WebAssembly.Instructions
 		}
 
 		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int32Load"/> instruction.
+		/// Tests compilation and execution of the <see cref="Int64Load32Signed"/> instruction.
 		/// </summary>
 		[TestMethod]
-		public void Int32Load_Compiled_Offset1()
+		public void Int64Load32Signed_Compiled_Offset1()
 		{
-			var compiled = MemoryReadTestBase<int>.CreateInstance(
+			var compiled = MemoryReadTestBase<long>.CreateInstance(
 				new GetLocal(),
-				new Int32Load
+				new Int64Load32Signed
 				{
 					Offset = 1,
 				},
