@@ -2,7 +2,10 @@
 {
 	enum HelperMethod
 	{
-		RangeCheckInt32,
+		RangeCheck8,
+		RangeCheck16,
+		RangeCheck32,
+		RangeCheck64,
 		SelectFloat32,
 		SelectFloat64,
 		SelectInt32,

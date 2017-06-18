@@ -31,9 +31,9 @@ namespace WebAssembly.Instructions
 
 			stack.Push(ValueType.Float32);
 
-			context.Emit(OpCodes.Call, context[HelperMethod.Float32ReinterpretInt32, (helper, exportsBuilder) =>
+			context.Emit(OpCodes.Call, context[HelperMethod.Float32ReinterpretInt32, (helper, c) =>
 			{
-				var builder = exportsBuilder.DefineMethod(
+				var builder = c.ExportsBuilder.DefineMethod(
 					"☣ Float32ReinterpretInt32",
 					CompilationContext.HelperMethodAttributes,
 					typeof(float),

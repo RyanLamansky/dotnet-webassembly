@@ -1,3 +1,4 @@
+using System;
 using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
@@ -24,29 +25,10 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
-		{
-			var stack = context.Stack;
-			if (stack.Count == 0)
-				throw new StackTooSmallException(OpCode.Int32Load, 1, 0);
+		internal override ValueType Type => ValueType.Int32;
 
-			var type = stack.Peek();  //Assuming validation passes, the remaining type will be this.
-			if (type != ValueType.Int32)
-				throw new StackTypeInvalidException(OpCode.Int32Load, ValueType.Int32, type);
+		internal override byte Size => 4;
 
-			if (this.Offset != 0)
-			{
-				Int32Constant.Emit(context, (int)this.Offset);
-				context.Emit(OpCodes.Add_Ovf_Un);
-			}
-
-			context.EmitLoadThis();
-			context.Emit(OpCodes.Call, context[HelperMethod.RangeCheckInt32]);
-
-			context.EmitLoadThis();
-			context.Emit(OpCodes.Ldfld, context.LinearMemoryStart);
-			context.Emit(OpCodes.Add);
-			context.Emit(OpCodes.Ldind_I4);
-		}
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I4;
 	}
 }

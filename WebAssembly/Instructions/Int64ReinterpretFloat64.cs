@@ -31,9 +31,9 @@ namespace WebAssembly.Instructions
 
 			stack.Push(ValueType.Int64);
 
-			context.Emit(OpCodes.Call, context[HelperMethod.Int64ReinterpretFloat64, (helper, exportsBuilder) =>
+			context.Emit(OpCodes.Call, context[HelperMethod.Int64ReinterpretFloat64, (helper, c) =>
 			{
-				var builder = exportsBuilder.DefineMethod(
+				var builder = c.ExportsBuilder.DefineMethod(
 					"☣ Int64ReinterpretFloat64",
 					CompilationContext.HelperMethodAttributes,
 					typeof(long),

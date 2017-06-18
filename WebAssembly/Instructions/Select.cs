@@ -53,9 +53,9 @@ namespace WebAssembly.Instructions
 			context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
 		}
 
-		static MethodBuilder CreateSelectHelper(HelperMethod helper, TypeBuilder exportsBuilder)
+		static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
 		{
-			Assert(exportsBuilder != null);
+			Assert(context != null);
 
 			MethodBuilder builder;
 			switch (helper)
@@ -64,7 +64,7 @@ namespace WebAssembly.Instructions
 					Fail("Attempted to obtain an unknown helper method.");
 					return null;
 				case HelperMethod.SelectInt32:
-					builder = exportsBuilder.DefineMethod(
+					builder = context.ExportsBuilder.DefineMethod(
 						"☣ Select Int32",
 						CompilationContext.HelperMethodAttributes,
 						typeof(int),
@@ -78,7 +78,7 @@ namespace WebAssembly.Instructions
 					break;
 
 				case HelperMethod.SelectInt64:
-					builder = exportsBuilder.DefineMethod(
+					builder = context.ExportsBuilder.DefineMethod(
 						"☣ Select Int64",
 						CompilationContext.HelperMethodAttributes,
 						typeof(long),
@@ -92,7 +92,7 @@ namespace WebAssembly.Instructions
 					break;
 
 				case HelperMethod.SelectFloat32:
-					builder = exportsBuilder.DefineMethod(
+					builder = context.ExportsBuilder.DefineMethod(
 						"☣ Select Float32",
 						CompilationContext.HelperMethodAttributes,
 						typeof(float),
@@ -106,7 +106,7 @@ namespace WebAssembly.Instructions
 					break;
 
 				case HelperMethod.SelectFloat64:
-					builder = exportsBuilder.DefineMethod(
+					builder = context.ExportsBuilder.DefineMethod(
 						"☣ Select Float64",
 						CompilationContext.HelperMethodAttributes,
 						typeof(double),

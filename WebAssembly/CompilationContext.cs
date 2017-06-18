@@ -223,54 +223,12 @@ namespace WebAssembly
 				if (this.helperMethods.TryGetValue(helper, out var builder))
 					return builder;
 
-				var exportsBuilder = this.ExportsBuilder;
-
-				switch (helper)
-				{
-					case HelperMethod.RangeCheckInt32:
-						builder = exportsBuilder.DefineMethod(
-							"☣ Range Check Int32",
-							HelperMethodAttributes,
-							typeof(uint),
-							new[] { typeof(uint), exportsBuilder.AsType() }
-							);
-						{
-							var il = builder.GetILGenerator();
-							il.Emit(OpCodes.Ldarg_1);
-							il.Emit(OpCodes.Ldfld, this.LinearMemorySize);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ldc_I4_4);
-							il.Emit(OpCodes.Add_Ovf_Un);
-							var outOfRange = il.DefineLabel();
-							il.Emit(OpCodes.Blt_Un_S, outOfRange);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ret);
-							il.MarkLabel(outOfRange);
-							il.Emit(OpCodes.Ldarg_0);
-							il.Emit(OpCodes.Ldc_I4_4);
-							il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
-								.GetTypeInfo()
-								.DeclaredConstructors
-								.First(c =>
-								{
-									var parms = c.GetParameters();
-									return parms.Length == 2
-									&& parms[0].ParameterType == typeof(uint)
-									&& parms[1].ParameterType == typeof(uint)
-									;
-								}));
-							il.Emit(OpCodes.Throw);
-						}
-						helperMethods.Add(HelperMethod.RangeCheckInt32, builder);
-						return builder;
-				}
-
 				Fail("Attempted to obtain an unknown helper method.");
 				return null;
 			}
 		}
 
-		public MethodInfo this[HelperMethod helper, Func<HelperMethod, TypeBuilder, MethodBuilder> creator]
+		public MethodInfo this[HelperMethod helper, Func<HelperMethod, CompilationContext, MethodBuilder> creator]
 		{
 			get
 			{
@@ -281,7 +239,7 @@ namespace WebAssembly
 				if (this.helperMethods.TryGetValue(helper, out var builder))
 					return builder;
 
-				this.helperMethods.Add(helper, builder = creator(helper, this.ExportsBuilder));
+				this.helperMethods.Add(helper, builder = creator(helper, this));
 				Assert(builder != null, "Helper method creator returned null.");
 				return builder;
 			}
@@ -343,6 +301,8 @@ namespace WebAssembly
 		}
 
 		public void Emit(System.Reflection.Emit.OpCode opcode) => generator.Emit(opcode);
+
+		public void Emit(System.Reflection.Emit.OpCode opcode, byte arg) => generator.Emit(opcode, arg);
 
 		public void Emit(System.Reflection.Emit.OpCode opcode, int arg) => generator.Emit(opcode, arg);
 

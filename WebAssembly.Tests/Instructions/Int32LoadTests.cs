@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,44 +18,11 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Int32Load_Compiled_Offset0()
 		{
-			var module = new Module();
-			module.Memories.Add(new Memory(1, 1));
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
-				{
-					ValueType.Int32,
-				},
-				Returns = new[]
-	{
-					ValueType.Int32,
-				}
-			});
-			module.Functions.Add(new Function
-			{
-			});
-			module.Exports.Add(new Export
-			{
-				Name = nameof(MemoryReadTestBase<int>.Test),
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetLocal(),
-					new Int32Load(),
-					new End(),
-				},
-			});
-
-			Instance<MemoryReadTestBase<int>> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<MemoryReadTestBase<int>>(memory)();
-			}
+			var compiled = MemoryReadTestBase<int>.CreateInstance(
+				new GetLocal(),
+				new Int32Load(),
+				new End()
+			);
 
 			using (compiled)
 			{
@@ -115,47 +81,14 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Int32Load_Compiled_Offset1()
 		{
-			var module = new Module();
-			module.Memories.Add(new Memory(1, 1));
-			module.Types.Add(new Type
-			{
-				Parameters = new ValueType[]
+			var compiled = MemoryReadTestBase<int>.CreateInstance(
+				new GetLocal(),
+				new Int32Load
 				{
-					ValueType.Int32,
+					Offset = 1,
 				},
-				Returns = new[]
-	{
-					ValueType.Int32,
-				}
-			});
-			module.Functions.Add(new Function
-			{
-			});
-			module.Exports.Add(new Export
-			{
-				Name = nameof(MemoryReadTestBase<int>.Test),
-			});
-			module.Codes.Add(new FunctionBody
-			{
-				Code = new Instruction[]
-				{
-					new GetLocal(),
-					new Int32Load
-					{
-						Offset = 1,
-					},
-					new End(),
-				},
-			});
-
-			Instance<MemoryReadTestBase<int>> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<MemoryReadTestBase<int>>(memory)();
-			}
+				new End()
+			);
 
 			using (compiled)
 			{
