@@ -35,9 +35,9 @@ This will evolve as the project takes shape.
 - [x] Compile remaining specialized instructions: `select`, `drop`, `unreachable`, `nop`
 - [x] Compile `call`
 - [x] Compile `call_indirect`
-- [ ] 🔜 Compile `get_global`, `set_global`
+- [x] Compile `get_global`, `set_global`
 - [ ] Implement imports
-- [ ] Implement any remaining instructions not yet built to support development of other features
+- [ ] 🔜 Implement any remaining instructions not yet built to support development of other features
 - [ ] Implement less-commonly-used features to achieve full compliance with the specification
 - [ ] Compiler passes all tests at https://github.com/WebAssembly/spec/tree/master/test/core
 - [ ] Final breaking changes to API
