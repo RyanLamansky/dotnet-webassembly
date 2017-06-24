@@ -1,9 +1,11 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// (No conversion) store 8 bytes.
 	/// </summary>
-	public class Int64Store : MemoryImmediateInstruction
+	public class Int64Store : MemoryWriteInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Store"/>.
@@ -21,5 +23,11 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override ValueType Type => ValueType.Int64;
+
+		internal override byte Size => 8;
+
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I8;
 	}
 }

@@ -5,7 +5,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Load 8 bytes as f64.
 	/// </summary>
-	public class Float64Load : MemoryImmediateInstruction
+	public class Float64Load : MemoryReadInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float64Load"/>.

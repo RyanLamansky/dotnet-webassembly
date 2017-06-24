@@ -5,7 +5,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Load 1 byte and sign-extend i8 to i64.
 	/// </summary>
-	public class Int64Load8Signed : MemoryImmediateInstruction
+	public class Int64Load8Signed : MemoryReadInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int64Load8Signed"/>.

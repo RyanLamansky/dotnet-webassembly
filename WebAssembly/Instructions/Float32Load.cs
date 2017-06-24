@@ -5,7 +5,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Load 4 bytes as f32.
 	/// </summary>
-	public class Float32Load : MemoryImmediateInstruction
+	public class Float32Load : MemoryReadInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Load"/>.

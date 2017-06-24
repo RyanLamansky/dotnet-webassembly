@@ -1,9 +1,11 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Wrap i32 to i8 and store 1 byte.
 	/// </summary>
-	public class Int32Store8 : MemoryImmediateInstruction
+	public class Int32Store8 : MemoryWriteInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Store8"/>.
@@ -21,5 +23,11 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override ValueType Type => ValueType.Int32;
+
+		internal override byte Size => 1;
+
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I1;
 	}
 }

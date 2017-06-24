@@ -1,9 +1,11 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// (No conversion) store 4 bytes.
 	/// </summary>
-	public class Int32Store : MemoryImmediateInstruction
+	public class Int32Store : MemoryWriteInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Int32Store"/>.
@@ -21,5 +23,11 @@ namespace WebAssembly.Instructions
 			: base(reader)
 		{
 		}
+
+		internal override ValueType Type => ValueType.Int32;
+
+		internal override byte Size => 4;
+
+		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I4;
 	}
 }
