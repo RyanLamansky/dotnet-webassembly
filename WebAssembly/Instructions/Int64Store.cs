@@ -29,5 +29,7 @@ namespace WebAssembly.Instructions
 		internal override byte Size => 8;
 
 		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I8;
+
+		internal sealed override HelperMethod StoreHelper => HelperMethod.StoreInt64FromInt64;
 	}
 }

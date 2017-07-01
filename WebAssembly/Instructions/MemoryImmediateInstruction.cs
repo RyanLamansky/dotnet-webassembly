@@ -92,26 +92,32 @@ namespace WebAssembly.Instructions
 
 		internal abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
+		internal HelperMethod RangeCheckHelper
+		{
+			get
+			{
+				switch (this.Size)
+				{
+					default:
+#if DEBUG
+						Fail("Invalid size.");
+						goto case 1; //Won't actually happen.
+#endif
+					case 1: return HelperMethod.RangeCheck8;
+					case 2: return HelperMethod.RangeCheck16;
+					case 4: return HelperMethod.RangeCheck32;
+					case 8: return HelperMethod.RangeCheck64;
+				}
+			}
+		}
+
 		internal void EmitRangeCheck(CompilationContext context)
 		{
 			context.EmitLoadThis();
-			HelperMethod helper;
-			switch (this.Size)
-			{
-				default:
-#if DEBUG
-					Fail("Invalid size.");
-					return;
-#endif
-				case 1: helper = HelperMethod.RangeCheck8; break;
-				case 2: helper = HelperMethod.RangeCheck16; break;
-				case 4: helper = HelperMethod.RangeCheck32; break;
-				case 8: helper = HelperMethod.RangeCheck64; break;
-			}
-			context.Emit(OpCodes.Call, context[helper, CreateRangeCheck]);
+			context.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);
 		}
 
-		static MethodBuilder CreateRangeCheck(HelperMethod helper, CompilationContext context)
+		internal static MethodBuilder CreateRangeCheck(HelperMethod helper, CompilationContext context)
 		{
 			byte size;
 			System.Reflection.Emit.OpCode opCode;

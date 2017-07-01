@@ -1,4 +1,4 @@
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions
 {
@@ -29,5 +29,7 @@ namespace WebAssembly.Instructions
 		internal override byte Size => 4;
 
 		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I4;
+
+		internal sealed override HelperMethod StoreHelper => HelperMethod.StoreInt32FromInt32;
 	}
 }
