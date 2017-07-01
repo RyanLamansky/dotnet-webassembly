@@ -1,9 +1,11 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
 	/// Negation.
 	/// </summary>
-	public class Float32Negate : SimpleInstruction
+	public class Float32Negate : ValueOneToOneInstruction
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Float32Negate"/>.
@@ -16,5 +18,9 @@ namespace WebAssembly.Instructions
 		public Float32Negate()
 		{
 		}
+
+		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Neg;
+
+		internal sealed override ValueType ValueType => ValueType.Float32;
 	}
 }

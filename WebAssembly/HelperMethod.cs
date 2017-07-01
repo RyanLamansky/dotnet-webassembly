@@ -24,5 +24,7 @@
 		StoreInt64FromInt64,
 		StoreFloat32,
 		StoreFloat64,
+		Float32CopySign,
+		Float64CopySign,
 	}
 }
