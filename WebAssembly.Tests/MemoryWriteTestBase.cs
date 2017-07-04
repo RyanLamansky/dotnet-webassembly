@@ -26,7 +26,7 @@
 		/// </summary>
 		/// <param name="instructions">The instructions that form the body of the <see cref="Test"/> function.</param>
 		/// <returns>The created instance.</returns>
-		public static Instance<MemoryWriteTestBase<T>> CreateInstance(params Instruction[] instructions)
+		public static Instance<MemoryWriteTestBase<T>, object> CreateInstance(params Instruction[] instructions)
 		{
 			var module = new Module();
 			module.Memories.Add(new Memory(1, 1));
@@ -50,13 +50,13 @@
 				Code = instructions,
 			});
 
-			Instance<MemoryWriteTestBase<T>> compiled;
+			Instance<MemoryWriteTestBase<T>, object> compiled;
 			using (var memory = new System.IO.MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				var maker = Compile.FromBinary<MemoryWriteTestBase<T>>(memory);
+				var maker = Compile.FromBinary<MemoryWriteTestBase<T>, object>(memory);
 				compiled = maker();
 			}
 

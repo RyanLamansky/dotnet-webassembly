@@ -6,8 +6,11 @@ namespace WebAssembly
 	/// <summary>
 	/// A compiled WebAssembly instance.
 	/// </summary>
-	public abstract class Instance<TExports> : IDisposable
+	/// <typeparam name="TExports">Contains the exported features of the assembly.</typeparam>
+	/// <typeparam name="TImports">Contains features imported into the assembly.</typeparam>
+	public abstract class Instance<TExports, TImports> : IDisposable
 		where TExports : class
+		where TImports : class
 	{
 		/// <summary>
 		/// This is used by compiled WebAssembly files and should not be used by any other code.

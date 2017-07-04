@@ -14,8 +14,10 @@ namespace WebAssembly
 	public static class Compile
 	{
 		/// <summary>
-		/// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
+		/// Uses streaming compilation to create an executable <see cref="Instance{TExports, TImports}"/> from a binary WebAssembly source.
 		/// </summary>
+		/// <typeparam name="TExports">Contains the exported features of the assembly.</typeparam>
+		/// <typeparam name="TImports">Contains features imported into the assembly.</typeparam>
 		/// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
 		/// <returns>The module.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="path"/> cannot be null.</exception>
@@ -30,23 +32,27 @@ namespace WebAssembly
 		/// The specified path, file name, or both exceed the system-defined maximum length.
 		/// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-		public static Func<Instance<TExports>> FromBinary<TExports>(string path)
-		where TExports : class
+		public static Func<Instance<TExports, TImports>> FromBinary<TExports, TImports>(string path)
+			where TExports : class
+			where TImports : class
 		{
 			using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
 			{
-				return FromBinary<TExports>(stream);
+				return FromBinary<TExports, TImports>(stream);
 			}
 		}
 
 		/// <summary>
-		/// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
+		/// Uses streaming compilation to create an executable <see cref="Instance{TExports, TImports}"/> from a binary WebAssembly source.
 		/// </summary>
+		/// <typeparam name="TExports">Contains the exported features of the assembly.</typeparam>
+		/// <typeparam name="TImports">Contains features imported into the assembly.</typeparam>
 		/// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
 		/// <returns>A function that creates instances on demand.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
-		public static Func<Instance<TExports>> FromBinary<TExports>(Stream input)
-		where TExports : class
+		public static Func<Instance<TExports, TImports>> FromBinary<TExports, TImports>(Stream input)
+			where TExports : class
+			where TImports : class
 		{
 			var exportInfo = typeof(TExports).GetTypeInfo();
 			if (!exportInfo.IsPublic && !exportInfo.IsNestedPublic)
@@ -57,7 +63,7 @@ namespace WebAssembly
 			{
 				try
 				{
-					constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports));
+					constructor = FromBinary(reader, typeof(Instance<TExports, TImports>), typeof(TExports));
 				}
 				catch (OverflowException x)
 				{
@@ -79,7 +85,7 @@ namespace WebAssembly
 				}
 			}
 
-			return () => (Instance<TExports>)constructor.Invoke(null);
+			return () => (Instance<TExports, TImports>)constructor.Invoke(null);
 		}
 
 		private struct Local

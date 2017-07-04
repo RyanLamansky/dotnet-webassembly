@@ -92,13 +92,13 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<CompilerTestBase<int>> compiled;
+			Instance<CompilerTestBase<int>, object> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<CompilerTestBase<int>>(memory)();
+				compiled = Compile.FromBinary<CompilerTestBase<int>, object>(memory)();
 			}
 
 			var exports = compiled.Exports;

@@ -187,13 +187,13 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase> compiled;
+			Instance<TestBase, object> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<TestBase>(memory)();
+				compiled = Compile.FromBinary<TestBase, object>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -359,13 +359,13 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase> compiled;
+			Instance<TestBase, object> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<TestBase>(memory)();
+				compiled = Compile.FromBinary<TestBase, object>(memory)();
 			}
 
 			var exports = compiled.Exports;
