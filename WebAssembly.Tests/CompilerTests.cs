@@ -25,7 +25,7 @@ namespace WebAssembly
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				var result = Compile.FromBinary<object, object>(memory)();
+				var result = Compile.FromBinary<object>(memory)();
 				Assert.IsNotNull(result);
 			}
 		}
@@ -55,13 +55,13 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic, object> compiled;
+			Instance<dynamic> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<dynamic, object>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			compiled.Exports.Start();
@@ -88,13 +88,13 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic, object> compiled;
+			Instance<dynamic> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<dynamic, object>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 		}
 
@@ -128,13 +128,13 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic, object> compiled;
+			Instance<dynamic> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<dynamic, object>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -183,13 +183,13 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<HelloWorldExports, object> compiled;
+			Instance<HelloWorldExports> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<HelloWorldExports, object>(memory)();
+				compiled = Compile.FromBinary<HelloWorldExports>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -266,7 +266,7 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<HelloWorldExports, object> compiled;
+			Instance<HelloWorldExports> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
@@ -274,7 +274,7 @@ namespace WebAssembly
 
 				using (var readOnly = new ForwardReadOnlyStream(memory.ToArray()))
 				{
-					compiled = Compile.FromBinary<HelloWorldExports, object>(readOnly)();
+					compiled = Compile.FromBinary<HelloWorldExports>(readOnly)();
 				}
 			}
 
@@ -306,13 +306,13 @@ namespace WebAssembly
 		{
 			var module = new Module();
 
-			Instance<HelloWorldExportsWithConstructor, object> compiled;
+			Instance<HelloWorldExportsWithConstructor> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<HelloWorldExportsWithConstructor, object>(memory)();
+				compiled = Compile.FromBinary<HelloWorldExportsWithConstructor>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -328,13 +328,13 @@ namespace WebAssembly
 			var module = new Module();
 			module.Memories.Add(new Memory(1, 1));
 
-			Instance<dynamic, object> compiled;
+			Instance<dynamic> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<dynamic, object>(memory)();
+				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
 			using (compiled)

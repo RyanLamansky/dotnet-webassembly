@@ -22,7 +22,7 @@ namespace WebAssembly.Instructions
 			public abstract T Test(T a, T b, int c);
 		}
 
-		static Instance<SelectTester<T>, object> CreateTester<T>(ValueType type)
+		static Instance<SelectTester<T>> CreateTester<T>(ValueType type)
 			where T : struct
 		{
 			var module = new Module();
@@ -63,7 +63,7 @@ namespace WebAssembly.Instructions
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				return Compile.FromBinary<SelectTester<T>, object>(memory)();
+				return Compile.FromBinary<SelectTester<T>>(memory)();
 			}
 		}
 

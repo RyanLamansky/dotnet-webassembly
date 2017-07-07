@@ -195,13 +195,13 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase, object> compiled;
+			Instance<TestBase> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<TestBase, object>(memory)();
+				compiled = Compile.FromBinary<TestBase>(memory)();
 			}
 
 			var exports = compiled.Exports;
@@ -500,13 +500,13 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<RoundTripTestBase, object> compiled;
+			Instance<RoundTripTestBase> compiled;
 			using (var memory = new MemoryStream())
 			{
 				module.WriteToBinary(memory);
 				memory.Position = 0;
 
-				compiled = Compile.FromBinary<RoundTripTestBase, object>(memory)();
+				compiled = Compile.FromBinary<RoundTripTestBase>(memory)();
 			}
 
 			var exports = compiled.Exports;
