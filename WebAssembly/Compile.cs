@@ -17,6 +17,7 @@ namespace WebAssembly
 		/// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
 		/// </summary>
 		/// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
+		/// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
 		/// <returns>The module.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="path"/> cannot be null.</exception>
 		/// <exception cref="ArgumentException">
@@ -30,12 +31,12 @@ namespace WebAssembly
 		/// The specified path, file name, or both exceed the system-defined maximum length.
 		/// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-		public static Func<Instance<TExports>> FromBinary<TExports>(string path)
+		public static Func<Instance<TExports>> FromBinary<TExports>(string path, IEnumerable<RuntimeImport> imports = null)
 		where TExports : class
 		{
 			using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
 			{
-				return FromBinary<TExports>(stream);
+				return FromBinary<TExports>(stream, imports);
 			}
 		}
 
@@ -43,9 +44,10 @@ namespace WebAssembly
 		/// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
 		/// </summary>
 		/// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
+		/// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
 		/// <returns>A function that creates instances on demand.</returns>
 		/// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
-		public static Func<Instance<TExports>> FromBinary<TExports>(Stream input)
+		public static Func<Instance<TExports>> FromBinary<TExports>(Stream input, IEnumerable<RuntimeImport> imports = null)
 		where TExports : class
 		{
 			var exportInfo = typeof(TExports).GetTypeInfo();
@@ -57,7 +59,7 @@ namespace WebAssembly
 			{
 				try
 				{
-					constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports));
+					constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports), imports);
 				}
 				catch (OverflowException x)
 				{
@@ -127,7 +129,9 @@ namespace WebAssembly
 		private static ConstructorInfo FromBinary(
 			Reader reader,
 			System.Type instanceContainer,
-			System.Type exportContainer)
+			System.Type exportContainer,
+			IEnumerable<RuntimeImport> imports
+			)
 		{
 			if (reader.ReadUInt32() != Module.Magic)
 				throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
@@ -212,7 +216,8 @@ namespace WebAssembly
 			}
 
 			var exports = exportsBuilder.AsType();
-			MethodBuilder[] internalFunctions = null;
+			var importedFunctions = 0;
+			MethodInfo[] internalFunctions = null;
 			Indirect[] functionElements = null;
 			GlobalInfo[] globalGetters = null;
 			GlobalInfo[] globalSetters = null;
@@ -235,16 +240,68 @@ namespace WebAssembly
 						}
 						break;
 
+					case Section.Import:
+						{
+							if (imports == null)
+								imports = Enumerable.Empty<RuntimeImport>();
+
+							var importsByName = imports.ToDictionary(import => new Tuple<string, string>(import.ModuleName, import.FieldName));
+
+							var count = reader.ReadVarUInt32();
+							var functionImports = new List<MethodInfo>(checked((int)count));
+
+							for (var i = 0; i < count; i++)
+							{
+								var moduleName = reader.ReadString(reader.ReadVarUInt32());
+								var fieldName = reader.ReadString(reader.ReadVarUInt32());
+
+								if (!importsByName.TryGetValue(new Tuple<string, string>(moduleName, fieldName), out var import))
+									throw new CompilerException($"Import not found for {moduleName}::{fieldName}.");
+
+								var kind = (ExternalKind)reader.ReadByte();
+
+								switch (kind)
+								{
+									case ExternalKind.Function:
+										var typeIndex = reader.ReadVarUInt32();
+										if (!(import is FunctionImport functionImport))
+											throw new CompilerException($"{moduleName}::{fieldName} is expected to be a function, but provided import was not.");
+
+										if (!signatures[typeIndex].Equals(functionImport.Type))
+											throw new CompilerException($"{moduleName}::{fieldName} did not match the required type signature.");
+
+										functionImports.Add(functionImport.Method);
+										break;
+
+									case ExternalKind.Table:
+									case ExternalKind.Memory:
+									case ExternalKind.Global:
+										throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", reader.Offset);
+
+									default:
+										throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", reader.Offset);
+								}
+							}
+
+							importedFunctions = functionImports.Count;
+							internalFunctions = functionImports.ToArray();
+						}
+						break;
+
 					case Section.Function:
 						{
 							functionSignatures = new Signature[reader.ReadVarUInt32()];
-							internalFunctions = new MethodBuilder[functionSignatures.Length];
+							var importedFunctionCount = internalFunctions == null ? 0 : internalFunctions.Length;
+							if (importedFunctionCount != 0)
+								Array.Resize(ref internalFunctions, checked(importedFunctionCount + functionSignatures.Length));
+							else
+								internalFunctions = new MethodInfo[functionSignatures.Length];
 
 							for (var i = 0; i < functionSignatures.Length; i++)
 							{
 								var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
 								var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
-								internalFunctions[i] = exportsBuilder.DefineMethod(
+								internalFunctions[importedFunctionCount + i] = exportsBuilder.DefineMethod(
 									$"👻 {i}",
 									internalFunctionAttributes,
 									CallingConventions.Standard,
@@ -451,7 +508,10 @@ namespace WebAssembly
 								for (var j = 0; j < functionElements.Length; j++)
 								{
 									var functionIndex = reader.ReadVarUInt32();
-									functionElements[j] = new Indirect(functionSignatures[functionIndex].TypeIndex, internalFunctions[functionIndex]);
+									functionElements[j] = new Indirect(
+										functionSignatures[functionIndex].TypeIndex,
+										(MethodBuilder)internalFunctions[importedFunctions + functionIndex]
+										);
 								}
 							}
 						}
@@ -492,7 +552,7 @@ namespace WebAssembly
 								for (var l = 0; l < locals.Length; i++)
 									locals[l] = new Local(reader);
 
-								var il = internalFunctions[i].GetILGenerator();
+								var il = ((MethodBuilder)internalFunctions[importedFunctions + i]).GetILGenerator();
 
 								context.Reset(
 									il,
@@ -527,7 +587,7 @@ namespace WebAssembly
 				for (var i = 0; i < exportedFunctions.Length; i++)
 				{
 					var exported = exportedFunctions[i];
-					var signature = functionSignatures[exported.Value];
+					var signature = functionSignatures[exported.Value - importedFunctions];
 
 					var method = exportsBuilder.DefineMethod(
 						exported.Key,

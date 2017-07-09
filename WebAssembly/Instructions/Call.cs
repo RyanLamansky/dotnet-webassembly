@@ -90,8 +90,10 @@ namespace WebAssembly.Instructions
 			for (var i = 0; i < returnTypes.Length; i++)
 				stack.Push(returnTypes[i]);
 
-			context.EmitLoadThis();
-			context.Emit(OpCodes.Call, context.Methods[this.Index]);
+			var target = context.Methods[this.Index];
+			if (target is MethodBuilder) //Indicates a dynamically generated method.
+				context.EmitLoadThis();
+			context.Emit(OpCodes.Call, target);
 		}
 	}
 }

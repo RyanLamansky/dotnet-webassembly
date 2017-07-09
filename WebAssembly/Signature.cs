@@ -1,6 +1,6 @@
 ﻿namespace WebAssembly
 {
-	internal sealed class Signature
+	internal sealed class Signature : System.IEquatable<Type>
 	{
 		public readonly uint TypeIndex;
 		public readonly System.Type[] ParameterTypes;
@@ -48,6 +48,31 @@
 
 			for (var i = 0; i < returns.Length; i++)
 				returns[i] = (rawReturns[i] = (ValueType)reader.ReadVarInt7()).ToSystemType();
+		}
+
+		public bool Equals(Type other)
+		{
+			var thisReturns = this.RawReturnTypes;
+			var otherReturns = other.Returns;
+
+			if (thisReturns.Length != otherReturns.Count)
+				return false;
+
+			var thisParameters = this.RawParameterTypes;
+			var otherParameters = other.Parameters;
+
+			if (thisParameters.Length != otherParameters.Count)
+				return false;
+
+			for (var i = 0; i < thisReturns.Length; i++)
+				if (thisReturns[i] != otherReturns[i])
+					return false;
+
+			for (var i = 0; i < thisParameters.Length; i++)
+				if (thisParameters[i] != otherParameters[i])
+					return false;
+
+			return true;
 		}
 	}
 }

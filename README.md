@@ -23,11 +23,10 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 ## Development Status
 
 - Post-"MVP" features of WebAssembly (garbage collection, threads, SIMD, etc) will be added after the 1.0 release of this library.
-- Current development focus is on deciding the best way to implement import functionality.
-This is the last major chunk of work; release 1.0 won't be far behind.
+- Current development focus is addressing the known issues listed below.
 - 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
 - 91% of instructions can be compiled.
-- 196 unit tests (at the time of writing) provide strong quality assurance.
+- 197 unit tests (at the time of writing) provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
 
 ## Known Issues
@@ -52,10 +51,12 @@ Everything on this list will be fixed before 1.0 is published.
 `i64.extend_u/i32`
 * `block` instructions that yield a value are not supported by the compiler.
 * `end` and `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
-* Can't import globals, memory, or tables via either the parser (`WebAssembly.Module`) or the compiler.
-* Can't import functions via the compiler.
+* The following section types are not supported by the compiler: Custom, Start, Data.
+* The following import types are not supported: Global, Memory, Table.
 * Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.
 * `WebAssembly.Module` will let you write WASM files that it can't read back: specifically, a function or initializer expression that's not terminated with an `end` instruction.
+* Function exports that expose an import are not supported by the compiler.
+* Passing a MethodBuilder as an imported function will cause the compiler to generate incorrect code.
 * Thorough documentation is needed.
 
 ## API Issues
@@ -74,6 +75,8 @@ This is partially forced by the names themselves, which include characters like 
 The other reason is to conform with [.NET Framework Design Guidelines](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/names-of-classes-structs-and-interfaces), which discourage the use of acronyms and abbreviations.
 * Consistent with the native encoding of WebAssembly, most integers are unsigned.
 This can make interaction with .NET Framework  classes less convenient, as they mostly use signed integers even for values that are never negative, such as the count of entries in a list.
+* The `Import` class has specific types as nested classes, which can be awkward to use.
+* The `Import` class used by the parser can easily be confused with the `RuntimeImport` class used by the compiler.
 
 ## Potential Future Features
 

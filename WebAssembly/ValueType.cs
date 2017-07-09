@@ -1,4 +1,6 @@
-﻿namespace WebAssembly
+﻿using System.Collections.Generic;
+
+namespace WebAssembly
 {
 	/// <summary>
 	/// Types suitable when a value is expected.
@@ -36,5 +38,16 @@
 				default: throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(ValueType)} {valueType} not recognized.");
 			}
 		}
+
+		private static readonly RegeneratingWeakReference<Dictionary<System.Type, ValueType>> systemTypeToValueType
+			= new RegeneratingWeakReference<Dictionary<System.Type, ValueType>>(() => new Dictionary<System.Type, ValueType>
+			{
+				{ typeof(int), ValueType.Int32 },
+				{ typeof(long), ValueType.Int64 },
+				{ typeof(float), ValueType.Float32 },
+				{ typeof(double), ValueType.Float64 },
+			});
+
+		public static bool TryConvertToValueType(this System.Type type, out ValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);
 	}
 }

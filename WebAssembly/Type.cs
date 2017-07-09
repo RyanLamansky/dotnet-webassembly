@@ -8,7 +8,7 @@ namespace WebAssembly
 	/// <summary>
 	/// Describes the signature of a function.
 	/// </summary>
-	public class Type
+	public class Type : IEquatable<Type>
 	{
 		/// <summary>
 		/// The type of function.  The only accepted value in the initial binary format is <see cref="FunctionType.Function"/>, which is the default.
@@ -121,6 +121,76 @@ namespace WebAssembly
 			writer.WriteVar((uint)returns.Count);
 			foreach (var @return in returns)
 				writer.WriteVar((sbyte)@return);
+		}
+
+		/// <summary>
+		/// Creates a hash code based on the parameters and returns of this instance.
+		/// </summary>
+		/// <returns>The hash code.</returns>
+		public override int GetHashCode()
+		{
+			//Adler32 hash algorithm.
+			const uint prime = 65521; // The largest prime smaller than 65536.
+			uint a = 1, b = 0;
+
+			foreach (var value in this.returns)
+			{
+				a = (a + (uint)value) % prime;
+				b = (b + a) % prime;
+			}
+
+			foreach (var value in this.parameters)
+			{
+				a = (a + (uint)value) % prime;
+				b = (b + a) % prime;
+			}
+
+			return (int)((b << 16) | a);
+		}
+
+		/// <summary>
+		/// Compares the values of this instance for equality with those of another.
+		/// </summary>
+		/// <param name="obj">The other instance to compare against.</param>
+		/// <returns>True if the two instances have the same values, otherwise false.</returns>
+		public override bool Equals(object obj) => this.Equals(obj as Type);
+
+		/// <summary>
+		/// Compares the values of this instance for equality with those of another.
+		/// </summary>
+		/// <param name="other">The other instance to compare against.</param>
+		/// <returns>True if the two instances have the same values, otherwise false.</returns>
+		public bool Equals(Type other)
+		{
+			if (ReferenceEquals(this, other))
+				return true;
+
+			if (other == null)
+				return false;
+
+			var thisReturns = this.Returns;
+			var otherReturns = other.Returns;
+
+			if (thisReturns.Count != otherReturns.Count)
+				return false;
+
+			var thisParameters = this.Parameters;
+			var otherParameters = other.Parameters;
+
+			if (thisParameters.Count != otherParameters.Count)
+				return false;
+
+			var count = thisReturns.Count;
+			for (var i = 0; i < count; i++)
+				if (thisReturns[i] != otherReturns[i])
+					return false;
+
+			count = thisParameters.Count;
+			for (var i = 0; i < count; i++)
+				if (thisParameters[i] != otherParameters[i])
+					return false;
+
+			return true;
 		}
 	}
 }
