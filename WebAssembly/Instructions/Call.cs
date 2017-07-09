@@ -80,7 +80,7 @@ namespace WebAssembly.Instructions
 			if (stack.Count < paramTypes.Length)
 				throw new StackTooSmallException(this.OpCode, paramTypes.Length, stack.Count);
 
-			for (var i = 0; i < paramTypes.Length; i++)
+			for (var i = paramTypes.Length - 1; i >= 0; i--)
 			{
 				var type = stack.Pop();
 				if (type != paramTypes[i])
