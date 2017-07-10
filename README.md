@@ -33,7 +33,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* 15 instructions are not supported by the compiler: 
+* 12 instructions are not supported by the compiler: 
 `current_memory`
 `grow_memory`
 `i32.clz`
@@ -41,14 +41,11 @@ Everything on this list will be fixed before 1.0 is published.
 `i32.ctz`
 `i32.rotl`
 `i32.rotr`
-`i32.wrap/i64`
 `i64.clz`
 `i64.popcnt`
 `i64.ctz`
 `i64.rotl`
 `i64.rotr`
-`i64.extend_s/i32`
-`i64.extend_u/i32`
 * `block` instructions that yield a value are not supported by the compiler.
 * `end` and `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
 * The following section types are not supported by the compiler: Custom, Start, Data.

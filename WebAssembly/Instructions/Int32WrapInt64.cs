@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -15,6 +17,22 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public Int32WrapInt64()
 		{
+		}
+
+		internal sealed override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(this.OpCode, 1, stack.Count);
+
+			var type = stack.Pop();
+
+			if (type != ValueType.Int64)
+				throw new StackTypeInvalidException(this.OpCode, ValueType.Int64, type);
+
+			context.Emit(OpCodes.Conv_I4);
+
+			stack.Push(ValueType.Int32);
 		}
 	}
 }
