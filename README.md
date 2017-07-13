@@ -80,7 +80,7 @@ This can make interaction with .NET Framework  classes less convenient, as they 
 These features are under consideration for development after all the core work is done.
 
 - Use the known custom section "name" to provide human-readable names to the generated functions.
-Due to streaming compilation, this section would have to be before the Function section for names to be applied.
+Since this section is required to be at the end of the file by the WebAssembly standard, its use will be disabled by default for more efficient streaming compilation.
 - ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.
 - 🤔 Add support for automatic implementation of interfaces as an alternative to existing abstract class code.
 - 🚀 Extensible optimization framework.
