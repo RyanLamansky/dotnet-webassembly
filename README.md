@@ -33,8 +33,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* 12 instructions are not supported by the compiler: 
-`current_memory`
+* 11 instructions are not supported by the compiler:
 `grow_memory`
 `i32.clz`
 `i32.popcnt`

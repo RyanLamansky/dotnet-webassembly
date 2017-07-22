@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -48,5 +50,15 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Reserved);
+
+		internal sealed override void Compile(CompilationContext context)
+		{
+			context.EmitLoadThis();
+			context.Emit(OpCodes.Ldfld, context.LinearMemorySize);
+			context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
+			context.Emit(OpCodes.Div_Un);
+
+			context.Stack.Push(ValueType.Int32);
+		}
 	}
 }
