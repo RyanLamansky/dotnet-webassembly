@@ -23,9 +23,9 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 ## Development Status
 
 - Post-"MVP" features of WebAssembly (garbage collection, threads, SIMD, etc) will be added after the 1.0 release of this library.
-- Current development focus is addressing the known issues listed below.
+- The current development focus is implementing `grow_memory`, which requires significant refactoring.
 - 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
-- 91% of instructions can be compiled.
+- 94% of instructions can be compiled.
 - 197 unit tests (at the time of writing) provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
 
