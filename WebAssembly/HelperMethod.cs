@@ -26,5 +26,6 @@
 		StoreFloat64,
 		Float32CopySign,
 		Float64CopySign,
+		GrowMemory,
 	}
 }

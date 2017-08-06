@@ -1,3 +1,5 @@
+﻿using System.Reflection.Emit;
+
 namespace WebAssembly.Instructions
 {
 	/// <summary>
@@ -48,5 +50,41 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Reserved);
+
+		internal sealed override void Compile(CompilationContext context)
+		{
+			var stack = context.Stack;
+			if (stack.Count < 1)
+				throw new StackTooSmallException(OpCode.GrowMemory, 1, stack.Count);
+
+			var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.GrowMemory, ValueType.Int32, type);
+
+			context.EmitLoadThis();
+			context.Emit(OpCodes.Ldfld, context.Memory);
+			context.Emit(OpCodes.Call, context[HelperMethod.GrowMemory, (helper, c) =>
+			{
+				var builder = c.ExportsBuilder.DefineMethod(
+					"☣ GrowMemory",
+					CompilationContext.HelperMethodAttributes,
+					typeof(uint),
+					new[]
+					{
+						typeof(uint), //Delta
+						typeof(Runtime.UnmanagedMemory),
+					}
+					);
+
+				var il = builder.GetILGenerator();
+				il.Emit(OpCodes.Ldarg_1);
+				il.Emit(OpCodes.Ldarg_0);
+				il.Emit(OpCodes.Call, Runtime.UnmanagedMemory.GrowMethod);
+				il.Emit(OpCodes.Ret);
+
+				return builder;
+			}
+			]);
+		}
 	}
 }

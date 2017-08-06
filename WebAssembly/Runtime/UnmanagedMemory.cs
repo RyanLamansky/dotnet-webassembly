@@ -14,6 +14,8 @@ namespace WebAssembly.Runtime
 			=> typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.Where(prop => prop.Name == nameof(Size)).First().GetMethod);
 		internal static readonly RegeneratingWeakReference<MethodInfo> StartGetter = new RegeneratingWeakReference<MethodInfo>(()
 			=> typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.Where(prop => prop.Name == nameof(Start)).First().GetMethod);
+		internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(()
+			=> typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.Where(prop => prop.Name == nameof(Grow)).First());
 		private static readonly RegeneratingWeakReference<long[]> emptyPage = new RegeneratingWeakReference<long[]>(() => new long[Memory.PageSize / 8]);
 
 		/// <summary>
@@ -71,9 +73,41 @@ namespace WebAssembly.Runtime
 		public IntPtr Start { get; private set; }
 
 		/// <summary>
-		/// The number of pages of size <see cref="Memory.PageSize"/> allocated.
+		/// The current amount of memory allocated.
 		/// </summary>
 		public uint Size { get; private set; }
+
+		/// <summary>
+		/// Grows memory by <paramref name="delta"/> multiplied by <see cref="Memory.PageSize"/>.
+		/// </summary>
+		/// <param name="delta">The amount of memory pages to allocate.</param>
+		/// <returns>The previous <see cref="Current"/> size value, or -1 (unchecked wrap to unsigned 32-bit integer) in the event of a failure.</returns>
+		public uint Grow(uint delta)
+		{
+			var oldCurrent = this.Current;
+			if (delta == 0)
+				return oldCurrent;
+
+			const uint failed = unchecked((uint)-1);
+			try
+			{
+				if (checked(oldCurrent + delta) > this.Maximum)
+					return failed;
+
+				var newCurrent = oldCurrent + delta;
+				var newSize = newCurrent * Memory.PageSize;
+				this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
+				GC.AddMemoryPressure(newSize - this.Size);
+				this.Size = newSize;
+
+				return oldCurrent;
+			}
+			catch
+			{
+			}
+
+			return failed;
+		}
 
 		/// <summary>
 		/// Calls <see cref="Dispose"/>.

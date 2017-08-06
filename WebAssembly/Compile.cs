@@ -339,6 +339,11 @@ namespace WebAssembly
 							instanceConstructorIL.Emit(OpCodes.Ldarg_0);
 							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
 							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
+							instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
+							{
+								var parms = info.GetParameters();
+								return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+							}).First());
 							instanceConstructorIL.Emit(OpCodes.Newobj, typeof(Runtime.UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
 							{
 								var parms = info.GetParameters();
