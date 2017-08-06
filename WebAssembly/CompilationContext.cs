@@ -14,8 +14,7 @@ namespace WebAssembly
 
 		public CompilationContext(
 			TypeBuilder exportsBuilder,
-			FieldBuilder linearMemoryStart,
-			FieldBuilder linearMemorySize,
+			FieldBuilder memory,
 			Signature[] functionSignatures,
 			MethodInfo[] methods,
 			Signature[] types,
@@ -26,16 +25,13 @@ namespace WebAssembly
 			)
 		{
 			Assert(exportsBuilder != null);
-			Assert(linearMemoryStart != null);
-			Assert(linearMemorySize != null);
 			Assert(functionSignatures != null);
 			Assert(methods != null);
 			Assert(types != null);
 			Assert(module != null);
 
 			this.ExportsBuilder = exportsBuilder;
-			this.LinearMemoryStart = linearMemoryStart;
-			this.LinearMemorySize = linearMemorySize;
+			this.Memory = memory;
 			this.FunctionSignatures = functionSignatures;
 			this.Methods = methods;
 			this.Types = types;
@@ -247,9 +243,7 @@ namespace WebAssembly
 
 		public Signature Signature;
 
-		public readonly FieldBuilder LinearMemoryStart;
-
-		public readonly FieldBuilder LinearMemorySize;
+		public readonly FieldBuilder Memory;
 
 		public ValueType[] Locals;
 

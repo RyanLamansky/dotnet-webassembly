@@ -327,6 +327,11 @@ namespace WebAssembly
 		{
 			var module = new Module();
 			module.Memories.Add(new Memory(1, 1));
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
+			});
 
 			Instance<dynamic> compiled;
 			using (var memory = new MemoryStream())
@@ -337,19 +342,21 @@ namespace WebAssembly
 				compiled = Compile.FromBinary<dynamic>(memory)();
 			}
 
+			Runtime.UnmanagedMemory linearMemory;
 			using (compiled)
 			{
 				Assert.IsNotNull(compiled);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
-				Assert.AreEqual(Memory.PageSize, compiled.End.ToInt64() - compiled.Start.ToInt64());
+				var exports = compiled.Exports;
+				Assert.IsNotNull(exports);
+				linearMemory = exports.Memory;
+				Assert.IsNotNull(linearMemory);
+				Assert.AreNotEqual(IntPtr.Zero, linearMemory.Start);
 
 				for (var i = 0; i < Memory.PageSize; i += 8)
-					Assert.AreEqual(0, Marshal.ReadInt64(compiled.Start + 8));
+					Assert.AreEqual(0, Marshal.ReadInt64(linearMemory.Start + 8));
 			}
 
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
+			Assert.AreEqual(IntPtr.Zero, linearMemory.Start);
 		}
 	}
 }

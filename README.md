@@ -26,7 +26,7 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 - The current development focus is implementing `grow_memory`, which requires significant refactoring.
 - 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
 - 94% of instructions can be compiled.
-- 197 unit tests (at the time of writing) provide strong quality assurance.
+- Over 200 code tests provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
 
 ## Known Issues
@@ -48,6 +48,7 @@ Everything on this list will be fixed before 1.0 is published.
 * `block` instructions that yield a value are not supported by the compiler.
 * `end` and `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
 * The following section types are not supported by the compiler: Custom, Start, Data.
+* The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.
 * Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.
 * `WebAssembly.Module` will let you write WASM files that it can't read back: specifically, a function or initializer expression that's not terminated with an `end` instruction.

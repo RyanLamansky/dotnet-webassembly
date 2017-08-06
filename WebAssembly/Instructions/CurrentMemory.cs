@@ -53,8 +53,12 @@ namespace WebAssembly.Instructions
 
 		internal sealed override void Compile(CompilationContext context)
 		{
+			if (context.Memory == null)
+				throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
+
 			context.EmitLoadThis();
-			context.Emit(OpCodes.Ldfld, context.LinearMemorySize);
+			context.Emit(OpCodes.Ldfld, context.Memory);
+			context.Emit(OpCodes.Call, Runtime.UnmanagedMemory.SizeGetter);
 			context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
 			context.Emit(OpCodes.Div_Un);
 

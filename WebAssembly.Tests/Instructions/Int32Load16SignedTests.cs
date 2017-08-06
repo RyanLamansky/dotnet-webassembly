@@ -25,14 +25,15 @@ namespace WebAssembly.Instructions
 			using (compiled)
 			{
 				Assert.IsNotNull(compiled);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				Assert.AreEqual(0, exports.Test(0));
 
 				var testData = Samples.Memory;
-				Marshal.Copy(testData, 0, compiled.Start, testData.Length);
+				Marshal.Copy(testData, 0, memory.Start, testData.Length);
 				Assert.AreEqual(766, exports.Test(0));
 				Assert.AreEqual(770, exports.Test(1));
 				Assert.AreEqual(1027, exports.Test(2));
@@ -57,9 +58,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 
 		/// <summary>
@@ -80,14 +78,15 @@ namespace WebAssembly.Instructions
 			using (compiled)
 			{
 				Assert.IsNotNull(compiled);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				Assert.AreEqual(0, exports.Test(0));
 
 				var testData = Samples.Memory;
-				Marshal.Copy(testData, 0, compiled.Start, testData.Length);
+				Marshal.Copy(testData, 0, memory.Start, testData.Length);
 				Assert.AreEqual(770, exports.Test(0));
 				Assert.AreEqual(1027, exports.Test(1));
 				Assert.AreEqual(1284, exports.Test(2));
@@ -112,9 +111,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 	}
 }

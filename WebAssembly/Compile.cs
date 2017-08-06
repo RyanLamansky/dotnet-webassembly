@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
 
 namespace WebAssembly
 {
@@ -187,15 +186,11 @@ namespace WebAssembly
 				;
 
 			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
-			var linearMemoryStart = exportsBuilder.DefineField("☣ Linear Memory Start", typeof(void*), FieldAttributes.Private);
-			var linearMemorySize = exportsBuilder.DefineField("☣ Linear Memory Size", typeof(uint), FieldAttributes.Private);
+			FieldBuilder memory = null;
 
 			ILGenerator instanceConstructorIL;
 			{
-				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, new System.Type[] {
-					typeof(IntPtr), //linearMemoryStart
-					typeof(uint), //linearMemorySize
-				});
+				var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, System.Type.EmptyTypes);
 				instanceConstructorIL = instanceConstructor.GetILGenerator();
 				{
 					var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
@@ -204,14 +199,6 @@ namespace WebAssembly
 						instanceConstructorIL.Emit(OpCodes.Ldarg_0);
 						instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
 					}
-
-					instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-					instanceConstructorIL.Emit(OpCodes.Ldarg_1);
-					instanceConstructorIL.Emit(OpCodes.Stfld, linearMemoryStart);
-
-					instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-					instanceConstructorIL.Emit(OpCodes.Ldarg_2);
-					instanceConstructorIL.Emit(OpCodes.Stfld, linearMemorySize);
 				}
 			}
 
@@ -343,9 +330,44 @@ namespace WebAssembly
 							var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
 							memoryPagesMinimum = reader.ReadVarUInt32();
 							if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
-								memoryPagesMaximum = reader.ReadVarUInt32();
+								memoryPagesMaximum = Math.Min(reader.ReadVarUInt32(), uint.MaxValue / Memory.PageSize);
 							else
-								memoryPagesMaximum = memoryPagesMinimum;
+								memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
+
+							memory = exportsBuilder.DefineField("☣ Memory", typeof(Runtime.UnmanagedMemory), FieldAttributes.Private | FieldAttributes.InitOnly);
+
+							instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
+							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
+							instanceConstructorIL.Emit(OpCodes.Newobj, typeof(Runtime.UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
+							{
+								var parms = info.GetParameters();
+								return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
+							}).First());
+							instanceConstructorIL.Emit(OpCodes.Stfld, memory);
+
+							exportsBuilder.AddInterfaceImplementation(typeof(IDisposable));
+
+							var dispose = exportsBuilder.DefineMethod(
+								"Dispose",
+								MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+								CallingConventions.HasThis,
+								typeof(void),
+								System.Type.EmptyTypes
+								);
+
+							var disposeIL = dispose.GetILGenerator();
+							disposeIL.Emit(OpCodes.Ldarg_0);
+							disposeIL.Emit(OpCodes.Ldfld, memory);
+							disposeIL.Emit(OpCodes.Call, typeof(Runtime.UnmanagedMemory)
+								.GetTypeInfo()
+								.DeclaredMethods
+								.Where(info =>
+								info.ReturnType == typeof(void)
+								&& info.GetParameters().Length == 0
+								&& info.Name == nameof(Runtime.UnmanagedMemory.Dispose))
+								.First());
+							disposeIL.Emit(OpCodes.Ret);
 						}
 						break;
 
@@ -357,8 +379,7 @@ namespace WebAssembly
 
 							context = new CompilationContext(
 								exportsBuilder,
-								linearMemoryStart,
-								linearMemorySize,
+								memory,
 								functionSignatures,
 								internalFunctions,
 								signatures,
@@ -469,10 +490,31 @@ namespace WebAssembly
 								var name = reader.ReadString(reader.ReadVarUInt32());
 
 								var kind = (ExternalKind)reader.ReadByte();
+								var index = reader.ReadVarUInt32();
 								switch (kind)
 								{
 									case ExternalKind.Function:
-										xFunctions.Add(new KeyValuePair<string, uint>(name, reader.ReadVarUInt32()));
+										xFunctions.Add(new KeyValuePair<string, uint>(name, index));
+										break;
+									case ExternalKind.Memory:
+										if (index != 0)
+											throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", reader.Offset);
+										if (memory == null)
+											throw new CompilerException("Cannot export linear memory when linear memory is not defined.");
+
+										var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
+											MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final,
+											CallingConventions.HasThis,
+											typeof(Runtime.UnmanagedMemory),
+											System.Type.EmptyTypes
+											);
+										var getterIL = memoryGetter.GetILGenerator();
+										getterIL.Emit(OpCodes.Ldarg_0);
+										getterIL.Emit(OpCodes.Ldfld, memory);
+										getterIL.Emit(OpCodes.Ret);
+
+										exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(Runtime.UnmanagedMemory), System.Type.EmptyTypes)
+											.SetGetMethod(memoryGetter);
 										break;
 									default:
 										throw new NotSupportedException($"Unsupported or unrecognized export kind {kind}.");
@@ -530,8 +572,7 @@ namespace WebAssembly
 							{
 								context = new CompilationContext(
 									exportsBuilder,
-									linearMemoryStart,
-									linearMemorySize,
+									memory,
 									functionSignatures,
 									internalFunctions,
 									signatures,
@@ -617,41 +658,8 @@ namespace WebAssembly
 				var il = instanceConstructor.GetILGenerator();
 				var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
 
-				if (memoryAllocated > 0)
-				{
-					var start = il.DeclareLocal(typeof(IntPtr));
-					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
-					il.Emit(OpCodes.Call, typeof(Marshal)
-						.GetTypeInfo()
-						.GetDeclaredMethods(nameof(Marshal.AllocHGlobal))
-						.First(m =>
-						{
-							var parms = m.GetParameters();
-							return parms.Length == 1 && parms[0].ParameterType == typeof(int);
-						})
-						);
-					il.Emit(OpCodes.Stloc_0);
-
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldloc_0);
-					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
-					il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
-
-					il.Emit(OpCodes.Ldloc_0);
-					il.Emit(OpCodes.Ldloc_0);
-					il.Emit(OpCodes.Ldc_I4, memoryAllocated);
-					il.Emit(OpCodes.Add);
-				}
-				else
-				{
-					il.Emit(OpCodes.Ldarg_0);
-					il.Emit(OpCodes.Ldc_I4_0);
-					il.Emit(OpCodes.Ldc_I4_0);
-					il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
-
-					il.Emit(OpCodes.Ldc_I4_0);
-					il.Emit(OpCodes.Ldc_I4_0);
-				}
+				il.Emit(OpCodes.Ldarg_0);
+				il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
 				il.Emit(OpCodes.Call, instanceContainer
 					.GetTypeInfo()
 					.DeclaredConstructors

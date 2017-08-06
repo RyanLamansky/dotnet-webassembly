@@ -15,11 +15,6 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void CurrentMemory_Compiled()
 		{
-			Assert.AreEqual<int>(0, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
-				new CurrentMemory(),
-				new End()
-				).Test());
-
 			var module = new Module();
 			module.Types.Add(new Type
 			{

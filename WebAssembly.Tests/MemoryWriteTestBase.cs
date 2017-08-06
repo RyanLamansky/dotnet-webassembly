@@ -22,6 +22,11 @@
 		public abstract void Test(int offset, T value);
 
 		/// <summary>
+		/// The memory associated with the instance.
+		/// </summary>
+		public abstract Runtime.UnmanagedMemory Memory { get; }
+
+		/// <summary>
 		/// Provides a <see cref="MemoryWriteTestBase{T}"/> for the provided instructions.
 		/// </summary>
 		/// <param name="instructions">The instructions that form the body of the <see cref="Test"/> function.</param>
@@ -44,6 +49,11 @@
 			module.Exports.Add(new Export
 			{
 				Name = nameof(MemoryWriteTestBase<T>.Test),
+			});
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
 			});
 			module.Codes.Add(new FunctionBody
 			{

@@ -26,17 +26,18 @@ namespace WebAssembly.Instructions
 
 			using (compiled)
 			{
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				exports.Test(0, 128);
-				Assert.AreEqual(128, Marshal.ReadInt32(compiled.Start));
-				Assert.AreEqual(0, Marshal.ReadInt32(compiled.Start, 1));
+				Assert.AreEqual(128, Marshal.ReadInt32(memory.Start));
+				Assert.AreEqual(0, Marshal.ReadInt32(memory.Start, 1));
 
 				exports.Test((int)Memory.PageSize - 8, 1);
 
-				Assert.AreEqual(1, Marshal.ReadInt64(compiled.Start, (int)Memory.PageSize - 8));
+				Assert.AreEqual(1, Marshal.ReadInt64(memory.Start, (int)Memory.PageSize - 8));
 
 				MemoryAccessOutOfRangeException x;
 
@@ -46,9 +47,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 
 		/// <summary>
@@ -67,18 +65,19 @@ namespace WebAssembly.Instructions
 
 			using (compiled)
 			{
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				exports.Test(0, 128);
-				Assert.AreEqual(32768, Marshal.ReadInt32(compiled.Start));
-				Assert.AreEqual(128, Marshal.ReadInt32(compiled.Start, 1));
-				Assert.AreEqual(0, Marshal.ReadInt32(compiled.Start, 2));
+				Assert.AreEqual(32768, Marshal.ReadInt32(memory.Start));
+				Assert.AreEqual(128, Marshal.ReadInt32(memory.Start, 1));
+				Assert.AreEqual(0, Marshal.ReadInt32(memory.Start, 2));
 
 				exports.Test((int)Memory.PageSize - 8 - 1, 1);
 
-				Assert.AreEqual(1, Marshal.ReadInt64(compiled.Start, (int)Memory.PageSize - 8));
+				Assert.AreEqual(1, Marshal.ReadInt64(memory.Start, (int)Memory.PageSize - 8));
 
 				MemoryAccessOutOfRangeException x;
 
@@ -88,9 +87,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 	}
 }

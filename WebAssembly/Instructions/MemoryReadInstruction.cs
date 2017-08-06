@@ -38,7 +38,8 @@ namespace WebAssembly.Instructions
 			this.EmitRangeCheck(context);
 
 			context.EmitLoadThis();
-			context.Emit(OpCodes.Ldfld, context.LinearMemoryStart);
+			context.Emit(OpCodes.Ldfld, context.Memory);
+			context.Emit(OpCodes.Call, Runtime.UnmanagedMemory.StartGetter);
 			context.Emit(OpCodes.Add);
 
 			byte alignment;

@@ -26,8 +26,9 @@ namespace WebAssembly.Instructions
 			using (compiled)
 			{
 				Assert.IsNotNull(compiled);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				Assert.AreEqual(0, exports.Test(0));
@@ -35,7 +36,7 @@ namespace WebAssembly.Instructions
 				var invariantCulture = CultureInfo.InvariantCulture;
 
 				var testData = Samples.Memory;
-				Marshal.Copy(testData, 0, compiled.Start, testData.Length);
+				Marshal.Copy(testData, 0, memory.Start, testData.Length);
 				Assert.AreEqual("5.44760372201182E-270", exports.Test(0).ToString(invariantCulture));
 				Assert.AreEqual("1.06703248910785E-14", exports.Test(1).ToString(invariantCulture));
 				Assert.AreEqual("-1.14389371511465E+117", exports.Test(2).ToString(invariantCulture));
@@ -68,9 +69,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 
 		/// <summary>
@@ -91,8 +89,9 @@ namespace WebAssembly.Instructions
 			using (compiled)
 			{
 				Assert.IsNotNull(compiled);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.Start);
-				Assert.AreNotEqual(IntPtr.Zero, compiled.End);
+				Assert.IsNotNull(compiled.Exports);
+				var memory = compiled.Exports.Memory;
+				Assert.AreNotEqual(IntPtr.Zero, memory.Start);
 
 				var exports = compiled.Exports;
 				Assert.AreEqual(0, exports.Test(0));
@@ -100,7 +99,7 @@ namespace WebAssembly.Instructions
 				var invariantCulture = CultureInfo.InvariantCulture;
 
 				var testData = Samples.Memory;
-				Marshal.Copy(testData, 0, compiled.Start, testData.Length);
+				Marshal.Copy(testData, 0, memory.Start, testData.Length);
 				Assert.AreEqual("1.06703248910785E-14", exports.Test(0).ToString(invariantCulture));
 				Assert.AreEqual("-1.14389371511465E+117", exports.Test(1).ToString(invariantCulture));
 				Assert.AreEqual("4.12824598825351E-107", exports.Test(2).ToString(invariantCulture));
@@ -133,9 +132,6 @@ namespace WebAssembly.Instructions
 
 				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
-
-			Assert.AreEqual(IntPtr.Zero, compiled.Start);
-			Assert.AreEqual(IntPtr.Zero, compiled.End);
 		}
 	}
 }
