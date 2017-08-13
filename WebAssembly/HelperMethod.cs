@@ -27,5 +27,11 @@
 		Float32CopySign,
 		Float64CopySign,
 		GrowMemory,
+		Int32CountOneBits,
+		Int64CountOneBits,
+		Int32CountLeadingZeroes,
+		Int64CountLeadingZeroes,
+		Int32CountTrailingZeroes,
+		Int64CountTrailingZeroes,
 	}
 }

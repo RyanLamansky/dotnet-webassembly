@@ -23,9 +23,9 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 ## Development Status
 
 - Post-"MVP" features of WebAssembly (garbage collection, threads, SIMD, etc) will be added after the 1.0 release of this library.
-- The current development focus is implementing `grow_memory`, which requires significant refactoring.
+- The current development focus is implementing the remaining instructions.
 - 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
-- 94% of instructions can be compiled.
+- 97% of instructions can be compiled.
 - Over 200 code tests provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
 
@@ -33,15 +33,9 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* 10 instructions are not supported by the compiler:
-`i32.clz`
-`i32.popcnt`
-`i32.ctz`
+* 4 instructions are not supported by the compiler:
 `i32.rotl`
 `i32.rotr`
-`i64.clz`
-`i64.popcnt`
-`i64.ctz`
 `i64.rotl`
 `i64.rotr`
 * `block` instructions that yield a value are not supported by the compiler.
