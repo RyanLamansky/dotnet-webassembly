@@ -358,5 +358,55 @@ namespace WebAssembly
 
 			Assert.AreEqual(IntPtr.Zero, linearMemory.Start);
 		}
+
+		/// <summary>
+		/// Defends against regression of https://github.com/RyanLamansky/dotnet-webassembly/issues/4 , which revealed a bug in the local parser.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_GithubIssue3_Locals()
+		{
+			var module = new Module();
+			module.Types.Add(new Type
+			{
+				Returns = new[]
+				{
+					ValueType.Int32,
+				}
+			});
+			module.Functions.Add(new Function
+			{
+			});
+			module.Exports.Add(new Export
+			{
+				Name = "Test",
+			});
+			module.Codes.Add(new FunctionBody
+			{
+				Locals = new[]
+				{
+					new Local
+					{
+						Count = 1,
+						Type = ValueType.Int32,
+					}
+				},
+				Code = new Instruction[]
+				{
+					new GetLocal(0),
+					new End(),
+				}
+			});
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compile.FromBinary<dynamic>(memory)();
+			}
+
+			Assert.AreEqual(0, (int)compiled.Exports.Test());
+		}
 	}
 }

@@ -61,10 +61,16 @@ namespace WebAssembly
 					constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports), imports);
 				}
 				catch (OverflowException x)
+#if DEBUG
+				when (!System.Diagnostics.Debugger.IsAttached)
+#endif
 				{
 					throw new ModuleLoadException("Overflow encountered.", reader.Offset, x);
 				}
 				catch (EndOfStreamException x)
+#if DEBUG
+				when (!System.Diagnostics.Debugger.IsAttached)
+#endif
 				{
 					throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
 				}
@@ -588,17 +594,17 @@ namespace WebAssembly
 									);
 							}
 
-							for (var i = 0; i < functionBodies; i++)
+							for (var functionBodyIndex = 0; functionBodyIndex < functionBodies; functionBodyIndex++)
 							{
-								var signature = functionSignatures[i];
+								var signature = functionSignatures[functionBodyIndex];
 								var byteLength = reader.ReadVarUInt32();
 								var startingOffset = reader.Offset;
 
 								var locals = new Local[reader.ReadVarUInt32()];
-								for (var l = 0; l < locals.Length; i++)
-									locals[l] = new Local(reader);
+								for (var localIndex = 0; localIndex < locals.Length; localIndex++)
+									locals[localIndex] = new Local(reader);
 
-								var il = ((MethodBuilder)internalFunctions[importedFunctions + i]).GetILGenerator();
+								var il = ((MethodBuilder)internalFunctions[importedFunctions + functionBodyIndex]).GetILGenerator();
 
 								context.Reset(
 									il,
@@ -608,6 +614,11 @@ namespace WebAssembly
 										.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
 										).ToArray()
 									);
+
+								foreach (var local in locals.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type)))
+								{
+									il.DeclareLocal(local.ToSystemType());
+								}
 
 								foreach (var instruction in Instruction.Parse(reader))
 								{
