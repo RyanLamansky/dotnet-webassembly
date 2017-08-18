@@ -33,5 +33,9 @@
 		Int64CountLeadingZeroes,
 		Int32CountTrailingZeroes,
 		Int64CountTrailingZeroes,
+		Int32RotateLeft,
+		Int32RotateRight,
+		Int64RotateLeft,
+		Int64RotateRight,
 	}
 }
