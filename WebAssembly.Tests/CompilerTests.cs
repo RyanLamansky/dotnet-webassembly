@@ -363,7 +363,7 @@ namespace WebAssembly
 		/// Defends against regression of https://github.com/RyanLamansky/dotnet-webassembly/issues/4 , which revealed a bug in the local parser.
 		/// </summary>
 		[TestMethod]
-		public void Compiler_GithubIssue3_Locals()
+		public void Compiler_GithubIssue4_Locals()
 		{
 			var module = new Module();
 			module.Types.Add(new Type
