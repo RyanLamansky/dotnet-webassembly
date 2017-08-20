@@ -20,21 +20,28 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
+			Assert(context != null);
 			Assert(context.Depth > 0);
+
+			var stack = context.Stack;
+			Assert(stack != null);
+
 			if (--context.Depth == 0)
 			{
 				if (context.Previous == OpCode.Return)
 					return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
 
 				var returns = context.Signature.RawReturnTypes;
-				if (returns.Length != 0)
-				{
-					var stack = context.Stack;
-					if (stack.Count == 0)
-						throw new StackTooSmallException(OpCode.End, 1, 0);
+				var returnsLength = returns.Length;
+				if (returnsLength != stack.Count)
+					throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
+				Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
+
+				if (returnsLength == 1)
+				{
 					var type = stack.Pop();
 					if (type != returns[0])
 						throw new StackTypeInvalidException(OpCode.End, returns[0], type);

@@ -34,7 +34,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 Everything on this list will be fixed before 1.0 is published.
 
 * `block` instructions that yield a value are not supported by the compiler.
-* `end` and `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
+* `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
 * The following section types are not supported by the compiler: Custom, Start, Data.
 * The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.
