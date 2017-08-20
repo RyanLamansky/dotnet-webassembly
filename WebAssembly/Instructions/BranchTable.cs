@@ -110,7 +110,7 @@ namespace WebAssembly.Instructions
 			HashCode.Combine(this.Labels.Select(label => (int)label))
 			);
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			var stack = context.Stack;
 			if (stack.Count == 0)

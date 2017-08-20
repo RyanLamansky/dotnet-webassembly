@@ -19,6 +19,6 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override MethodInfo MethodInfo => Float64Truncate.Method;
+		internal sealed override MethodInfo MethodInfo => Float64Truncate.Method;
 	}
 }

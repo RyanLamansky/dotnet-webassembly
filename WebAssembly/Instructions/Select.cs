@@ -20,7 +20,7 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			Assert(context != null);
 

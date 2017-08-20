@@ -45,7 +45,7 @@ namespace WebAssembly.Instructions
 			Value = reader.ReadVarInt64();
 		}
 
-		internal override void WriteTo(Writer writer)
+		internal sealed override void WriteTo(Writer writer)
 		{
 			writer.Write((byte)OpCode.Int64Constant);
 			writer.WriteVar(this.Value);
@@ -67,7 +67,7 @@ namespace WebAssembly.Instructions
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Value.GetHashCode());
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			context.Stack.Push(ValueType.Int64);
 			context.Emit(OpCodes.Ldc_I8, this.Value);

@@ -24,10 +24,10 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override ValueType Type => ValueType.Int64;
+		internal sealed override ValueType Type => ValueType.Int64;
 
-		internal override byte Size => 1;
+		internal sealed override byte Size => 1;
 
-		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I1;
+		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I1;
 	}
 }

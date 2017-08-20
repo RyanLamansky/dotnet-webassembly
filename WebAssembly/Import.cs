@@ -115,7 +115,7 @@ namespace WebAssembly
 			/// <returns>A string representation of this instance.</returns>
 			public override string ToString() => $"{base.ToString()} (Function {TypeIndex}";
 
-			internal override void WriteTo(Writer writer)
+			internal sealed override void WriteTo(Writer writer)
 			{
 				base.WriteTo(writer);
 				writer.Write((byte)ExternalKind.Function);

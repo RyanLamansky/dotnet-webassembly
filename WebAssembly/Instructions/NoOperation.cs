@@ -19,7 +19,7 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			context.Emit(OpCodes.Nop);
 		}

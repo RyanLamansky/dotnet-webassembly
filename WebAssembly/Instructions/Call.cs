@@ -67,7 +67,7 @@ namespace WebAssembly.Instructions
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Index);
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			if (this.Index >= context.Methods.Length)
 				throw new CompilerException($"Function for index {this.Index} requseted, the assembly contains only {context.Methods.Length}.");

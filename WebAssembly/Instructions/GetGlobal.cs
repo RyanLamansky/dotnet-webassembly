@@ -33,7 +33,7 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			if (context.GlobalGetters == null)
 				throw new CompilerException("Can't use GetGlobal without a global section.");

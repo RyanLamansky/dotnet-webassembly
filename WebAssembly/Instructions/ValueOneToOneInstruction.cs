@@ -13,7 +13,7 @@
 
 		internal abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			var stack = context.Stack;
 			if (stack.Count < 1)

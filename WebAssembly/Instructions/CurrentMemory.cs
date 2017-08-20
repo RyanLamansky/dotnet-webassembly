@@ -29,7 +29,7 @@ namespace WebAssembly.Instructions
 			Reserved = reader.ReadVarUInt1();
 		}
 
-		internal override void WriteTo(Writer writer)
+		internal sealed override void WriteTo(Writer writer)
 		{
 			writer.Write((byte)OpCode.CurrentMemory);
 			writer.Write(this.Reserved);

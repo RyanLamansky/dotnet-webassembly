@@ -24,11 +24,11 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override ValueType Type => ValueType.Float64;
+		internal sealed override ValueType Type => ValueType.Float64;
 
-		internal override byte Size => 8;
+		internal sealed override byte Size => 8;
 
-		internal override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_R8;
+		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_R8;
 
 		internal sealed override HelperMethod StoreHelper => HelperMethod.StoreFloat64;
 	}
