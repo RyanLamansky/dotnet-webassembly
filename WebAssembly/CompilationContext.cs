@@ -317,5 +317,7 @@ namespace WebAssembly
 		public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => generator.Emit(opcode, con);
 
 		public void EmitCalli(System.Type returnType, System.Type[] parameterTypes) => generator.EmitCalli(OpCodes.Calli, CallingConventions.Standard, returnType, parameterTypes, null);
+
+		public LocalBuilder DeclareLocal(System.Type localType) => generator.DeclareLocal(localType);
 	}
 }

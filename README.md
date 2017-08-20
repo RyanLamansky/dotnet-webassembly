@@ -26,7 +26,7 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 - The current development focus is fixing the known issues listed below.
 - 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
 - 100% of instructions can be compiled to native code via the .NET CLR.
-- Over 200 code tests provide strong quality assurance.
+- Over 220 code tests provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
 
 ## Known Issues
@@ -34,7 +34,6 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 Everything on this list will be fixed before 1.0 is published.
 
 * `block` instructions that yield a value are not supported by the compiler.
-* `ret` instructions that leave leftover values on the stack will cause the .NET CLR to report an [InvalidProgramException](https://msdn.microsoft.com/en-us/library/system.invalidprogramexception.aspx).
 * The following section types are not supported by the compiler: Custom, Start, Data.
 * The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.
