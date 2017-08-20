@@ -19,13 +19,17 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			var stack = context.Stack;
 			if (stack.Count < 1)
 				throw new StackTooSmallException(OpCode.Float32CopySign, 1, stack.Count);
 
-			var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
+			var type = stack.Pop();
+			if (type != ValueType.Float32)
+				throw new StackTypeInvalidException(OpCode.Float32CopySign, ValueType.Float32, type);
+
+			type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
 			if (type != ValueType.Float32)
 				throw new StackTypeInvalidException(OpCode.Float32CopySign, ValueType.Float32, type);
 

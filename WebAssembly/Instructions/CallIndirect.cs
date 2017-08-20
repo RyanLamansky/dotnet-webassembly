@@ -71,9 +71,9 @@ namespace WebAssembly.Instructions
 		/// Returns a simple hash code based on the value of the instruction.
 		/// </summary>
 		/// <returns>The hash code.</returns>
-		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Type, this.Reserved);
+		public override int GetHashCode() => HashCode.Combine((int)OpCode.CallIndirect, (int)this.Type, this.Reserved);
 
-		internal override void Compile(CompilationContext context)
+		internal sealed override void Compile(CompilationContext context)
 		{
 			var signature = context.Types[this.Type];
 			var paramTypes = signature.RawParameterTypes;
@@ -81,13 +81,17 @@ namespace WebAssembly.Instructions
 
 			var stack = context.Stack;
 			if (stack.Count < paramTypes.Length)
-				throw new StackTooSmallException(this.OpCode, paramTypes.Length, stack.Count);
+				throw new StackTooSmallException(OpCode.CallIndirect, paramTypes.Length, stack.Count);
+
+			var type = stack.Pop();
+			if (type != ValueType.Int32)
+				throw new StackTypeInvalidException(OpCode.CallIndirect, ValueType.Int32, type);
 
 			for (var i = paramTypes.Length - 1; i >= 0; i--)
 			{
-				var type = stack.Pop();
+				type = stack.Pop();
 				if (type != paramTypes[i])
-					throw new StackTypeInvalidException(this.OpCode, paramTypes[i], type);
+					throw new StackTypeInvalidException(OpCode.CallIndirect, paramTypes[i], type);
 			}
 
 			for (var i = 0; i < returnTypes.Length; i++)
