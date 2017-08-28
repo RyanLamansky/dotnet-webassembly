@@ -5,7 +5,7 @@ using System.Linq;
 namespace WebAssembly
 {
 	/// <summary>
-	/// The elements section allows a module to initialize (at instantiation time) the elements of any imported or internally-defined table with any other definition in the module
+	/// The elements section allows a module to initialize (at instantiation time) the elements of any imported or internally-defined table with any other definition in the module.
 	/// </summary>
 	public class Element
 	{

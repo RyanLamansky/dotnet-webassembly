@@ -15,7 +15,7 @@ namespace WebAssembly
 		}
 
 		/// <summary>
-		/// This customs section is to be written after the indicated preceding section.  Defaults to <see cref="Section.None"/>, causing it to be in front of all other sections.
+		/// This custom section is to be written after the indicated preceding section.  Defaults to <see cref="Section.None"/>, causing it to be in front of all other sections.
 		/// </summary>
 		public Section PrecedingSection { get; set; }
 
