@@ -24,7 +24,7 @@ As it ultimately runs on the same CLR as C#, performance is equivalent.
 
 - Post-"MVP" features of WebAssembly (garbage collection, threads, SIMD, etc) will be added after the 1.0 release of this library.
 - The current development focus is fixing the known issues listed below.
-- 100% of instructions can be parsed by `WebAssemnbly.Module.ReadFromBinary` and written back out.
+- 100% of instructions can be parsed by `WebAssembly.Module.ReadFromBinary` and written back out.
 - 100% of instructions can be compiled to native code via the .NET CLR.
 - Over 220 code tests provide strong quality assurance.
 Following traditional [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development) practices, the tests are written first and then the library is updated to pass the test.
