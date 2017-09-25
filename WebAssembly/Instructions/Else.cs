@@ -24,8 +24,9 @@ namespace WebAssembly.Instructions
 			var afterElse = context.DefineLabel();
 			context.Emit(OpCodes.Br, afterElse);
 
-			context.MarkLabel(context.Labels[context.Depth - 1]);
-			context.Labels[context.Depth - 1] = afterElse;
+			var target = checked((uint)context.Depth.Count) - 1;
+			context.MarkLabel(context.Labels[target]);
+			context.Labels[target] = afterElse;
 		}
 	}
 }

@@ -33,7 +33,8 @@ namespace WebAssembly.Instructions
 
 		internal sealed override void Compile(CompilationContext context)
 		{
-			context.Labels.Add(context.Depth++, context.DefineLabel());
+			context.Labels.Add(checked((uint)context.Depth.Count), context.DefineLabel());
+			context.Depth.Push(Type);
 		}
 	}
 }

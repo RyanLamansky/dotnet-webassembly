@@ -74,7 +74,7 @@ namespace WebAssembly.Instructions
 			if (type != ValueType.Int32)
 				throw new StackTypeInvalidException(OpCode.If, ValueType.Int32, type);
 
-			context.Emit(OpCodes.Brtrue, context.Labels[context.Depth - this.Index - 1]);
+			context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
 		}
 	}
 }

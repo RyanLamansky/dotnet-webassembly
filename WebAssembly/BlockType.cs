@@ -26,4 +26,32 @@
 		/// </summary>
 		Empty = -0x40,
 	}
+
+	static class BlockTypeExtensions
+	{
+		public static bool TryToValueType(this BlockType blockType, out ValueType valueType)
+		{
+			switch (blockType)
+			{
+				default:
+				case BlockType.Empty:
+					valueType = ValueType.Int32;
+					return false;
+				case BlockType.Int32:
+					valueType = ValueType.Int32;
+					break;
+				case BlockType.Int64:
+					valueType = ValueType.Int64;
+					break;
+				case BlockType.Float32:
+					valueType = ValueType.Float32;
+					break;
+				case BlockType.Float64:
+					valueType = ValueType.Float64;
+					break;
+			}
+
+			return true;
+		}
+	}
 }

@@ -66,7 +66,7 @@ namespace WebAssembly.Instructions
 
 		internal sealed override void Compile(CompilationContext context)
 		{
-			context.Emit(OpCodes.Br, context.Labels[context.Depth - this.Index - 1]);
+			context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
 		}
 	}
 }

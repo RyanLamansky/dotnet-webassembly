@@ -180,12 +180,40 @@ namespace WebAssembly
 			Assert(generator != null);
 			Assert(signature != null);
 			Assert(locals != null);
+			Assert(signature.RawReturnTypes != null);
 
 			this.generator = generator;
 			this.Signature = signature;
 			this.Locals = locals;
 
-			this.Depth = 1;
+			this.Depth.Clear();
+			{
+				BlockType returnType;
+				if (signature.RawReturnTypes.Length == 0)
+				{
+					returnType = BlockType.Empty;
+				}
+				else
+				{
+					switch (signature.RawReturnTypes[0])
+					{
+						default: //Should never happen.
+						case ValueType.Int32:
+							returnType = BlockType.Int32;
+							break;
+						case ValueType.Int64:
+							returnType = BlockType.Int64;
+							break;
+						case ValueType.Float32:
+							returnType = BlockType.Float32;
+							break;
+						case ValueType.Float64:
+							returnType = BlockType.Float64;
+							break;
+					}
+				}
+				this.Depth.Push(returnType);
+			}
 			this.Previous = OpCode.NoOperation;
 			this.Labels.Clear();
 			this.LoopLabels.Clear();
@@ -247,7 +275,7 @@ namespace WebAssembly
 
 		public ValueType[] Locals;
 
-		public uint Depth;
+		public readonly Stack<BlockType> Depth = new Stack<BlockType>();
 
 		public OpCode Previous;
 

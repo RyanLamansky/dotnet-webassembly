@@ -45,7 +45,7 @@ namespace WebAssembly.Instructions
 		/// <param name="defaultLabel">The default label if the jump is out of bounds.</param>
 		/// <param name="labels">A zero-based array of labels.</param>
 		public BranchTable(uint defaultLabel, params uint[] labels)
-			:this(defaultLabel, (IList<uint>)labels)
+			: this(defaultLabel, (IList<uint>)labels)
 		{
 		}
 
@@ -120,8 +120,9 @@ namespace WebAssembly.Instructions
 			if (type != ValueType.Int32)
 				throw new StackTypeInvalidException(OpCode.BranchTable, ValueType.Int32, type);
 
-			context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[context.Depth - index - 1]).ToArray());
-			context.Emit(OpCodes.Br, context.Labels[context.Depth - this.DefaultLabel - 1]);
+			var blockDepth = checked((uint)context.Depth.Count);
+			context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[blockDepth - index - 1]).ToArray());
+			context.Emit(OpCodes.Br, context.Labels[blockDepth - this.DefaultLabel - 1]);
 		}
 	}
 }

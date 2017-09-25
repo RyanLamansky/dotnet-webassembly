@@ -44,7 +44,8 @@ namespace WebAssembly.Instructions
 				throw new StackTypeInvalidException(OpCode.If, ValueType.Int32, type);
 
 			var label = context.DefineLabel();
-			context.Labels.Add(context.Depth++, label);
+			context.Labels.Add(checked((uint)context.Depth.Count), label);
+			context.Depth.Push(Type);
 			context.Emit(OpCodes.Brfalse, label);
 		}
 	}

@@ -91,7 +91,7 @@ static class Program
 		});
 
 		//We now have enough for a usable WASM file, which we could save with module.WriteToBinary().
-		//Below, we show two ways the Compile feature can be used for .NET-based execution.
+		//Below, we show how the Compile feature can be used for .NET-based execution.
 
 		//We don't need to keep the below memory stream open for the instance creator.
 		Func<Instance<Sample>> instanceCreator;
@@ -128,7 +128,6 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* `block` instructions that yield a value are not supported by the compiler.
 * The following section types are not supported by the compiler: Custom, Start, Data.
 * The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.

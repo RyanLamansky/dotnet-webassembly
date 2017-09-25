@@ -23,12 +23,14 @@ namespace WebAssembly.Instructions
 		internal sealed override void Compile(CompilationContext context)
 		{
 			Assert(context != null);
-			Assert(context.Depth > 0);
+			Assert(context.Depth != null);
 
 			var stack = context.Stack;
 			Assert(stack != null);
 
-			if (--context.Depth == 0)
+			var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Pop();
+
+			if (context.Depth.Count == 0)
 			{
 				if (context.Previous == OpCode.Return)
 					return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
@@ -51,14 +53,22 @@ namespace WebAssembly.Instructions
 			}
 			else
 			{
-				var label = context.Labels[context.Depth];
+				if (blockType.TryToValueType(out var expectedType))
+				{
+					var type = stack.Peek();
+					if (type != expectedType)
+						throw new StackTypeInvalidException(OpCode.End, expectedType, type);
+				}
+
+				var depth = checked((uint)context.Depth.Count);
+				var label = context.Labels[depth];
 
 				if (!context.LoopLabels.Contains(label)) //Loop labels are marked where defined.
 					context.MarkLabel(label);
 				else
 					context.LoopLabels.Remove(label);
 
-				context.Labels.Remove(context.Depth);
+				context.Labels.Remove(depth);
 			}
 		}
 	}

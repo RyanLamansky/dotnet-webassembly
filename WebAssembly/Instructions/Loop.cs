@@ -34,7 +34,8 @@ namespace WebAssembly.Instructions
 		internal sealed override void Compile(CompilationContext context)
 		{
 			var loopStart = context.DefineLabel();
-			context.Labels.Add(context.Depth++, loopStart);
+			context.Labels.Add(checked((uint)context.Depth.Count), loopStart);
+			context.Depth.Push(Type);
 			context.MarkLabel(loopStart);
 			context.LoopLabels.Add(loopStart);
 		}
