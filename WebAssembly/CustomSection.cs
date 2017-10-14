@@ -15,10 +15,24 @@ namespace WebAssembly
 		{
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+		private Section precedingSection;
+
 		/// <summary>
 		/// This custom section is to be written after the indicated preceding section.  Defaults to <see cref="Section.None"/>, causing it to be in front of all other sections.
 		/// </summary>
-		public Section PrecedingSection { get; set; }
+		/// <exception cref="System.ArgumentOutOfRangeException">Value must be one of the <see cref="Section"/> values.</exception>
+		public Section PrecedingSection
+		{
+			get => this.precedingSection;
+			set
+			{
+				if (!value.IsValid())
+					throw new System.ArgumentOutOfRangeException(nameof(value), value, "Value must be one of the Section values.");
+
+				this.precedingSection = value;
+			}
+		}
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private string name;
