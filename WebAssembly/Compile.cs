@@ -224,6 +224,14 @@ namespace WebAssembly
 
 				switch ((Section)id)
 				{
+					case Section.None:
+						{
+							var preNameOffset = reader.Offset;
+							reader.ReadString(reader.ReadVarUInt32()); //Name
+							reader.ReadBytes(payloadLength - checked((uint)(reader.Offset - preNameOffset))); //Content
+						}
+						break;
+
 					case Section.Type:
 						{
 							signatures = new Signature[reader.ReadVarUInt32()];

@@ -408,5 +408,34 @@ namespace WebAssembly
 
 			Assert.AreEqual(0, (int)compiled.Exports.Test());
 		}
+
+		/// <summary>
+		/// Tests the compiler when a custom section is used.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_CustomSection()
+		{
+			var module = new Module();
+			module.CustomSections.Add(new CustomSection
+			{
+				Content = BitConverter.GetBytes(Math.PI),
+				Name = "Test",
+			});
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compile.FromBinary<dynamic>(memory)();
+			}
+
+			Assert.IsNotNull(compiled);
+
+			using (compiled)
+			{
+			}
+		}
 	}
 }
