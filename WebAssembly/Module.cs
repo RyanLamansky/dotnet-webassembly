@@ -393,6 +393,7 @@ namespace WebAssembly
 				writer.Write((uint)0x1);
 
 				var buffer = new Byte[4 * 1024];
+				WriteCustomSection(buffer, writer, Section.None, customSectionsByPrecedingSection);
 
 				if (this.types != null)
 				{
@@ -403,6 +404,7 @@ namespace WebAssembly
 							type?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Type, customSectionsByPrecedingSection);
 
 				if (this.imports != null)
 				{
@@ -413,6 +415,7 @@ namespace WebAssembly
 							import?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Import, customSectionsByPrecedingSection);
 
 				if (this.functions != null)
 				{
@@ -423,6 +426,7 @@ namespace WebAssembly
 							function?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Function, customSectionsByPrecedingSection);
 
 				if (this.tables != null)
 				{
@@ -433,6 +437,7 @@ namespace WebAssembly
 							table?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Table, customSectionsByPrecedingSection);
 
 				if (this.memories != null)
 				{
@@ -443,6 +448,7 @@ namespace WebAssembly
 							memory?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Memory, customSectionsByPrecedingSection);
 
 				if (this.globals != null)
 				{
@@ -453,6 +459,7 @@ namespace WebAssembly
 							global?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Global, customSectionsByPrecedingSection);
 
 				if (this.exports != null)
 				{
@@ -463,6 +470,7 @@ namespace WebAssembly
 							export?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Export, customSectionsByPrecedingSection);
 
 				if (this.Start != null)
 				{
@@ -471,6 +479,7 @@ namespace WebAssembly
 						sectionWriter.WriteVar(this.Start.GetValueOrDefault());
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Start, customSectionsByPrecedingSection);
 
 				if (this.elements != null)
 				{
@@ -481,6 +490,7 @@ namespace WebAssembly
 							element?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Element, customSectionsByPrecedingSection);
 
 				if (this.codes != null)
 				{
@@ -491,6 +501,7 @@ namespace WebAssembly
 							code?.WriteTo(sectionWriter, buffer);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Code, customSectionsByPrecedingSection);
 
 				if (this.data != null)
 				{
@@ -501,6 +512,7 @@ namespace WebAssembly
 							data?.WriteTo(sectionWriter);
 					});
 				}
+				WriteCustomSection(buffer, writer, Section.Data, customSectionsByPrecedingSection);
 			}
 		}
 

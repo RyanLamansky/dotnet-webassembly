@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -69,6 +70,42 @@ namespace WebAssembly
 				sample.Position = 0;
 				Assert.IsNotNull(Module.ReadFromBinary(sample));
 			}
+		}
+
+		/// <summary>
+		/// Ensures that <see cref="CustomSection"/>s are both written and readable.
+		/// </summary>
+		[TestMethod]
+		public void Module_CustomSectionRoundTrip()
+		{
+			var content = BitConverter.DoubleToInt64Bits(Math.PI);
+			var toWrite = new Module();
+			toWrite.CustomSections.Add(new CustomSection
+			{
+				Content = BitConverter.GetBytes(content),
+				Name = "Test",
+			});
+
+			Module toRead;
+			using (var memory = new MemoryStream())
+			{
+				toWrite.WriteToBinary(memory);
+				memory.Position = 0;
+
+				toRead = Module.ReadFromBinary(memory);
+			}
+
+			Assert.IsNotNull(toRead);
+			Assert.AreNotSame(toWrite, toRead);
+			Assert.IsNotNull(toRead.CustomSections);
+			Assert.AreEqual(1, toRead.CustomSections.Count);
+
+			var custom = toRead.CustomSections[0];
+			Assert.IsNotNull(custom);
+			Assert.AreEqual("Test", custom.Name);
+			Assert.IsNotNull(custom.Content);
+			Assert.AreEqual(8, custom.Content.Count);
+			Assert.AreEqual(content, BitConverter.ToInt64(custom.Content.ToArray(), 0));
 		}
 	}
 }
