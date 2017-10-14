@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace WebAssembly
 {
@@ -7,6 +8,7 @@ namespace WebAssembly
 	/// </summary>
 	public abstract class Import
 	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private string module;
 
 		/// <summary>
@@ -19,6 +21,7 @@ namespace WebAssembly
 			set => module = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private string field;
 
 		/// <summary>

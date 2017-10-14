@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace WebAssembly
 {
@@ -12,6 +13,7 @@ namespace WebAssembly
 		/// </summary>
 		public const uint PageSize = 65536;
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private ResizableLimits resizableLimits;
 
 		/// <summary>

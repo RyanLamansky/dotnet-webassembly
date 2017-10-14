@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using static System.Diagnostics.Debug;
@@ -23,6 +24,7 @@ namespace WebAssembly
 		/// </summary>
 		internal const uint Magic = 0x6d736100;
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<CustomSection> customSections;
 
 		/// <summary>
@@ -35,6 +37,7 @@ namespace WebAssembly
 			set => this.customSections = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Type> types;
 
 		/// <summary>
@@ -47,6 +50,7 @@ namespace WebAssembly
 			set => this.types = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Import> imports;
 
 		/// <summary>
@@ -59,6 +63,7 @@ namespace WebAssembly
 			set => this.imports = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Function> functions;
 
 		/// <summary>
@@ -71,6 +76,7 @@ namespace WebAssembly
 			set => this.functions = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Table> tables;
 
 		/// <summary>
@@ -83,6 +89,7 @@ namespace WebAssembly
 			set => this.tables = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Memory> memories;
 
 		/// <summary>
@@ -95,6 +102,7 @@ namespace WebAssembly
 			set => this.memories = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Global> globals;
 
 		/// <summary>
@@ -107,6 +115,7 @@ namespace WebAssembly
 			set => this.globals = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Export> exports;
 
 		/// <summary>
@@ -124,6 +133,7 @@ namespace WebAssembly
 		/// </summary>
 		public uint? Start { get; set; }
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Element> elements;
 
 		/// <summary>
@@ -136,6 +146,7 @@ namespace WebAssembly
 			set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<FunctionBody> codes;
 
 		/// <summary>
@@ -148,6 +159,7 @@ namespace WebAssembly
 			set => this.codes = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Data> data;
 
 		/// <summary>

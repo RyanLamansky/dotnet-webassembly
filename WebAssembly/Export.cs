@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace WebAssembly
 {
@@ -7,6 +8,7 @@ namespace WebAssembly
 	/// </summary>
 	public class Export
 	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private string name;
 
 		/// <summary>

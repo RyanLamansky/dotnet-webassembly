@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using static System.Diagnostics.Debug;
 
@@ -15,6 +16,7 @@ namespace WebAssembly
 		/// </summary>
 		public FunctionType Form { get; set; }
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<ValueType> parameters;
 
 		/// <summary>
@@ -27,6 +29,7 @@ namespace WebAssembly
 			set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<ValueType> returns;
 
 		/// <summary>

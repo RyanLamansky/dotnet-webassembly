@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace WebAssembly
 {
@@ -19,6 +20,7 @@ namespace WebAssembly
 		/// </summary>
 		public Section PrecedingSection { get; set; }
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private string name;
 
 		/// <summary>
@@ -30,6 +32,7 @@ namespace WebAssembly
 			set => this.name = value ?? string.Empty;
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<byte> content;
 
 		/// <summary>

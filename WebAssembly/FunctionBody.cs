@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 
 namespace WebAssembly
 {
@@ -10,6 +11,7 @@ namespace WebAssembly
 	/// </summary>
 	public class FunctionBody
 	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Local> locals;
 
 		/// <summary>
@@ -22,6 +24,7 @@ namespace WebAssembly
 			set => this.locals = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Instruction> code;
 
 		/// <summary>

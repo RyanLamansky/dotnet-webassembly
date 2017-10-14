@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace WebAssembly
@@ -19,6 +20,7 @@ namespace WebAssembly
 		/// </summary>
 		public bool IsMutable { get; set; }
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Instruction> initializerExpression;
 
 		/// <summary>

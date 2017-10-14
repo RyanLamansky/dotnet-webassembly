@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace WebAssembly
@@ -14,6 +15,7 @@ namespace WebAssembly
 		/// </summary>
 		public uint Index { get; set; }
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Instruction> initializerExpression;
 
 		/// <summary>
@@ -26,6 +28,7 @@ namespace WebAssembly
 			set => this.initializerExpression = value ?? throw new ArgumentNullException(nameof(value));
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<byte> rawData;
 
 		/// <summary>
