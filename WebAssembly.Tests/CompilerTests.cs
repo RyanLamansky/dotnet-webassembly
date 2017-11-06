@@ -437,5 +437,79 @@ namespace WebAssembly
 			{
 			}
 		}
+
+		/// <summary>
+		/// Tests the compiler when a start section is used.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_StartSection()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(1, 1));
+
+			module.Types.Add(new Type
+			{
+			});
+			module.Types.Add(new Type
+			{
+				Returns = new[]
+				{
+					ValueType.Int32,
+				}
+			});
+
+			module.Functions.Add(new Function
+			{
+			});
+			module.Functions.Add(new Function
+			{
+				Type = 1,
+			});
+
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new Int32Constant(1),
+					new Int32Constant(2),
+					new Int32Store(),
+					new End(),
+				},
+			});
+
+			module.Codes.Add(new FunctionBody
+			{
+				Code = new Instruction[]
+				{
+					new Int32Constant(1),
+					new Int32Load(),
+					new End(),
+				},
+			});
+
+			module.Start = 0;
+
+			module.Exports.Add(new Export
+			{
+				Index = 1,
+				Name = "Test",
+			});
+
+			Instance<dynamic> compiled;
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				memory.Position = 0;
+
+				compiled = Compile.FromBinary<dynamic>(memory)();
+			}
+
+			Assert.IsNotNull(compiled);
+
+			using (compiled)
+			{
+				Assert.AreEqual<int>(2, compiled.Exports.Test());
+			}
+		}
 	}
 }

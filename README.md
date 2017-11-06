@@ -128,7 +128,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* The following section types are not supported by the compiler: Start, Data.
+* The following section types are not supported by the compiler: Data.
 * The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.
 * Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.

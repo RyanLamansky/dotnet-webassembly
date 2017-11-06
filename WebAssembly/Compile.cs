@@ -215,6 +215,7 @@ namespace WebAssembly
 			GlobalInfo[] globalGetters = null;
 			GlobalInfo[] globalSetters = null;
 			CompilationContext context = null;
+			MethodInfo startFunction = null;
 
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 			{
@@ -544,6 +545,17 @@ namespace WebAssembly
 						}
 						break;
 
+					case Section.Start:
+						{
+							var preReadOffset = reader.Offset;
+							var startIndex = reader.ReadVarInt32();
+							if (startIndex >= internalFunctions.Length)
+								throw new ModuleLoadException($"Start function of index {startIndex} exceeds available functions of {internalFunctions.Length}", preReadOffset);
+
+							startFunction = internalFunctions[startIndex];
+						}
+						break;
+
 					case Section.Element:
 						{
 							if (functionElements == null)
@@ -670,6 +682,12 @@ namespace WebAssembly
 					il.Emit(OpCodes.Call, internalFunctions[exported.Value]);
 					il.Emit(OpCodes.Ret);
 				}
+			}
+
+			if (startFunction != null)
+			{
+				instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+				instanceConstructorIL.Emit(OpCodes.Call, startFunction);
 			}
 
 			instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
