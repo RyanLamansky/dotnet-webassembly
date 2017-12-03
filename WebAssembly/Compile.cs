@@ -86,7 +86,17 @@ namespace WebAssembly
 				}
 			}
 
-			return () => (Instance<TExports>)constructor.Invoke(null);
+			return () =>
+			{
+				try
+				{
+					return (Instance<TExports>)constructor.Invoke(null);
+				}
+				catch (TargetInvocationException x)
+				{
+					throw x.InnerException;
+				}
+			};
 		}
 
 		private struct Local
@@ -648,6 +658,88 @@ namespace WebAssembly
 
 								if (reader.Offset - startingOffset != byteLength)
 									throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
+							}
+						}
+						break;
+
+					case Section.Data:
+						{
+							if (memory == null)
+								throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", reader.Offset);
+
+							var count = reader.ReadVarUInt32();
+
+							if (context == null) //Would only be null if there is no Global or Code section, but have to check.
+							{
+								context = new CompilationContext(
+									exportsBuilder,
+									memory,
+									new Signature[0],
+									new MethodInfo[0],
+									new Signature[0],
+									functionElements,
+									module,
+									globalGetters,
+									globalSetters
+									);
+							}
+
+							context.Reset(
+								instanceConstructorIL,
+								Signature.Empty,
+								Signature.Empty.RawParameterTypes
+								);
+							var block = new Instructions.Block(BlockType.Int32);
+
+							var address = instanceConstructorIL.DeclareLocal(typeof(uint));
+
+							for (var i = 0; i < count; i++)
+							{
+								var startingOffset = reader.Offset;
+								{
+									var index = reader.ReadVarUInt32();
+									if (index != 0)
+										throw new ModuleLoadException($"Data index must be 0, found {index}.", startingOffset);
+								}
+
+								block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
+								foreach (var instruction in Instruction.ParseInitializerExpression(reader))
+								{
+									instruction.Compile(context);
+									context.Previous = instruction.OpCode;
+								}
+								context.Stack.Pop();
+								instanceConstructorIL.Emit(OpCodes.Stloc, address);
+
+								var data = reader.ReadBytes(reader.ReadVarUInt32());
+
+								//Ensure sufficient memory is allocated, error if max is exceeded.
+								instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+								instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
+								instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+
+								instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+
+								instanceConstructorIL.Emit(OpCodes.Call, context[HelperMethod.RangeCheck8, Instructions.MemoryImmediateInstruction.CreateRangeCheck]);
+								instanceConstructorIL.Emit(OpCodes.Pop);
+
+								if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
+									throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
+
+								var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
+
+								instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+								instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
+								instanceConstructorIL.Emit(OpCodes.Call, Runtime.UnmanagedMemory.StartGetter);
+								instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+								instanceConstructorIL.Emit(OpCodes.Conv_I);
+								instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+
+								instanceConstructorIL.Emit(OpCodes.Ldsflda, field);
+
+								instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
+
+								instanceConstructorIL.Emit(OpCodes.Cpblk);
 							}
 						}
 						break;

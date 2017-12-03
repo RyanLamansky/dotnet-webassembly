@@ -391,5 +391,128 @@ namespace WebAssembly
 				Assert.AreEqual<int>(2, compiled.Exports.Test());
 			}
 		}
+
+		/// <summary>
+		/// Tests the compiler when a data section is used.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_Data()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(1, 1));
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
+			});
+
+			module.Data.Add(new Data
+			{
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(0),
+					new End(),
+				},
+				RawData = new byte[] { 2 },
+			});
+
+			var compiled = module.ToInstance<dynamic>();
+
+			Runtime.UnmanagedMemory linearMemory;
+			using (compiled)
+			{
+				Assert.IsNotNull(compiled);
+				var exports = compiled.Exports;
+				Assert.IsNotNull(exports);
+				linearMemory = exports.Memory;
+				Assert.IsNotNull(linearMemory);
+				Assert.AreNotEqual(IntPtr.Zero, linearMemory.Start);
+
+				Assert.AreEqual(2, Marshal.ReadInt64(linearMemory.Start));
+			}
+
+			Assert.AreEqual(IntPtr.Zero, linearMemory.Start);
+		}
+
+		/// <summary>
+		/// Tests the compiler when a data section is used with overlapping segments.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_DataOverlappedSegments()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(1, 1));
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
+			});
+
+			module.Data.Add(new Data
+			{
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(0),
+					new End(),
+				},
+				RawData = new byte[] { 1, 2 },
+			});
+			module.Data.Add(new Data
+			{
+				InitializerExpression = new Instruction[]
+				 {
+					new Int32Constant(1),
+					new End(),
+				 },
+				RawData = new byte[] { 3, 4 },
+			});
+
+			var compiled = module.ToInstance<dynamic>();
+
+			Runtime.UnmanagedMemory linearMemory;
+			using (compiled)
+			{
+				Assert.IsNotNull(compiled);
+				var exports = compiled.Exports;
+				Assert.IsNotNull(exports);
+				linearMemory = exports.Memory;
+				Assert.IsNotNull(linearMemory);
+				Assert.AreNotEqual(IntPtr.Zero, linearMemory.Start);
+
+				Assert.AreEqual(0x040301, Marshal.ReadInt64(linearMemory.Start));
+			}
+
+			Assert.AreEqual(IntPtr.Zero, linearMemory.Start);
+		}
+
+		/// <summary>
+		/// Tests the compiler when a data section is used with insufficient minimum memory.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_DataMemoryMinimumTooSmall()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(0, 1));
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
+			});
+
+			module.Data.Add(new Data
+			{
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(0),
+					new End(),
+				},
+				RawData = new byte[] { 2 },
+			});
+
+			//module.ToInstance<dynamic>();
+			var x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
+			Assert.AreEqual(1u, x.Offset);
+			Assert.AreEqual(1u, x.Length);
+		}
 	}
 }

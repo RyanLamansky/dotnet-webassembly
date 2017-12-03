@@ -128,7 +128,6 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 
 Everything on this list will be fixed before 1.0 is published.
 
-* The following section types are not supported by the compiler: Data.
 * The following export types are not supported by the compiler: Table, Global.
 * The following import types are not supported: Global, Memory, Table.
 * Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.
@@ -166,3 +165,5 @@ Since this section is required to be at the end of the file by the WebAssembly s
 - 🤔 Add support for automatic implementation of interfaces as an alternative to existing abstract class code.
 - 🚀 Extensible optimization framework.
 - 🛑 Save compiled-to-.NET assemblies to files; blocked on .NET Core by https://github.com/dotnet/corefx/issues/4491, but should be possible with .NET "Classic".
+- Validation of `Module` instances.
+- Remove the compiler's Data section segment size limit of 4128768 bytes.
