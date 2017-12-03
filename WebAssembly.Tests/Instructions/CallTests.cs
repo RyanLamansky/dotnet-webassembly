@@ -57,14 +57,7 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<CompilerTestBase<int>> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<CompilerTestBase<int>>(memory)();
-			}
+			var compiled = module.ToInstance<CompilerTestBase<int>>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(1, exports.Test(0));
@@ -135,14 +128,7 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<MixedParameters> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<MixedParameters>(memory)();
-			}
+			var compiled = module.ToInstance<MixedParameters>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(1, exports.Test(0, 0));

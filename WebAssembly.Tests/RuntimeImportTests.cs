@@ -46,20 +46,10 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<CompilerTestBase2<double>> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				Assert.AreNotEqual(0, memory.Length);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<CompilerTestBase2<double>>(memory,
-					new RuntimeImport[] {
+			var compiled = module.ToInstance<CompilerTestBase2<double>>(
+				new RuntimeImport[] {
 					new FunctionImport("Math", "Pow", typeof(Math).GetTypeInfo().GetMethod("Pow"))
-					});
-				Assert.IsNotNull(maker);
-				compiled = maker();
-			}
+				});
 
 			Assert.IsNotNull(compiled);
 			Assert.IsNotNull(compiled.Exports);

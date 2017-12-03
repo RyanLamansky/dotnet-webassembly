@@ -40,17 +40,7 @@ namespace WebAssembly.Instructions
 			});
 			module.Memories.Add(new Memory(1, 1));
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				Assert.AreNotEqual(0, memory.Length);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<dynamic>(memory);
-				Assert.IsNotNull(maker);
-				compiled = maker();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			var exports = compiled.Exports;
 

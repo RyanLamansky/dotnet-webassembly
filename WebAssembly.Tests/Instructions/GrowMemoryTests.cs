@@ -66,17 +66,7 @@ namespace WebAssembly.Instructions
 			});
 			module.Memories.Add(new Memory(1, 2));
 
-			Instance<Tester> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				Assert.AreNotEqual(0, memory.Length);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<Tester>(memory);
-				Assert.IsNotNull(maker);
-				compiled = maker();
-			}
+			var compiled = module.ToInstance<Tester>();
 
 			var exports = compiled.Exports;
 

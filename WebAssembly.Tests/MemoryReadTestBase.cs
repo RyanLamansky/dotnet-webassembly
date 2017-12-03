@@ -57,17 +57,7 @@
 				Code = instructions,
 			});
 
-			Instance<MemoryReadTestBase<T>> compiled;
-			using (var memory = new System.IO.MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<MemoryReadTestBase<T>>(memory);
-				compiled = maker();
-			}
-
-			return compiled;
+			return module.ToInstance<MemoryReadTestBase<T>>();
 		}
 	}
 }

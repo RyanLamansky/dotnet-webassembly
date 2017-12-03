@@ -58,13 +58,7 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				return Compile.FromBinary<SelectTester<T>>(memory)();
-			}
+			return module.ToInstance<SelectTester<T>>();
 		}
 
 		/// <summary>

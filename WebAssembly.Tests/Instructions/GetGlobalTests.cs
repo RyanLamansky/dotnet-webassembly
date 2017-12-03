@@ -187,14 +187,7 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<TestBase>(memory)();
-			}
+			var compiled = module.ToInstance<TestBase>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(4, exports.TestInt32());
@@ -359,14 +352,7 @@ namespace WebAssembly.Instructions
 				},
 			});
 
-			Instance<TestBase> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<TestBase>(memory)();
-			}
+			var compiled = module.ToInstance<TestBase>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(4, exports.TestInt32());

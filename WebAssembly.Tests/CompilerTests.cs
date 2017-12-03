@@ -20,14 +20,7 @@ namespace WebAssembly
 		public void Compile_Empty()
 		{
 			var module = new Module();
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				var result = Compile.FromBinary<object>(memory)();
-				Assert.IsNotNull(result);
-			}
+			module.ToInstance<object>();
 		}
 
 		/// <summary>
@@ -55,14 +48,7 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			compiled.Exports.Start();
 		}
@@ -88,14 +74,7 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 		}
 
 		/// <summary>
@@ -128,14 +107,7 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(8, exports.Start());
@@ -183,57 +155,10 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<HelloWorldExports> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<HelloWorldExports>(memory)();
-			}
+			var compiled = module.ToInstance<HelloWorldExports>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(3, exports.Start());
-		}
-
-		private sealed class ForwardReadOnlyStream : Stream
-		{
-			private readonly byte[] data;
-			private int position;
-
-			public ForwardReadOnlyStream(byte[] data)
-			{
-				this.data = data;
-			}
-
-			public override bool CanRead => true;
-
-			public override bool CanSeek => false;
-
-			public override bool CanWrite => false;
-
-			public override long Length => throw new NotSupportedException();
-
-			public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-
-			public override void Flush() => throw new NotSupportedException();
-
-			public override int Read(byte[] buffer, int offset, int count)
-			{
-				count = Math.Min(count, this.data.Length - this.position);
-				if (count == 0)
-					return 0;
-
-				Array.Copy(this.data, this.position, buffer, offset, count);
-				this.position += count;
-				return count;
-			}
-
-			public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-
-			public override void SetLength(long value) => throw new NotSupportedException();
-
-			public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 		}
 
 		/// <summary>
@@ -266,17 +191,7 @@ namespace WebAssembly
 				},
 			});
 
-			Instance<HelloWorldExports> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				using (var readOnly = new ForwardReadOnlyStream(memory.ToArray()))
-				{
-					compiled = Compile.FromBinary<HelloWorldExports>(readOnly)();
-				}
-			}
+			var compiled = module.ToInstance<HelloWorldExports>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(3, exports.Start());
@@ -306,14 +221,7 @@ namespace WebAssembly
 		{
 			var module = new Module();
 
-			Instance<HelloWorldExportsWithConstructor> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<HelloWorldExportsWithConstructor>(memory)();
-			}
+			var compiled = module.ToInstance<HelloWorldExportsWithConstructor>();
 
 			var exports = compiled.Exports;
 			Assert.AreEqual(5, exports.SetByConstructor);
@@ -333,14 +241,7 @@ namespace WebAssembly
 				Kind = ExternalKind.Memory,
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			Runtime.UnmanagedMemory linearMemory;
 			using (compiled)
@@ -397,14 +298,7 @@ namespace WebAssembly
 				}
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			Assert.AreEqual(0, (int)compiled.Exports.Test());
 		}
@@ -422,14 +316,7 @@ namespace WebAssembly
 				Name = "Test",
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			Assert.IsNotNull(compiled);
 
@@ -495,14 +382,7 @@ namespace WebAssembly
 				Name = "Test",
 			});
 
-			Instance<dynamic> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				memory.Position = 0;
-
-				compiled = Compile.FromBinary<dynamic>(memory)();
-			}
+			var compiled = module.ToInstance<dynamic>();
 
 			Assert.IsNotNull(compiled);
 

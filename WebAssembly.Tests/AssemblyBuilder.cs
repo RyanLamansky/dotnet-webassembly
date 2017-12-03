@@ -37,17 +37,7 @@ namespace WebAssembly
 				Code = code
 			});
 
-			Instance<TExport> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				Assert.AreNotEqual(0, memory.Length);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<TExport>(memory);
-				Assert.IsNotNull(maker);
-				compiled = maker();
-			}
+			var compiled = module.ToInstance<TExport>();
 
 			Assert.IsNotNull(compiled);
 			Assert.IsNotNull(compiled.Exports);
@@ -85,17 +75,7 @@ namespace WebAssembly
 				Code = code
 			});
 
-			Instance<TExport> compiled;
-			using (var memory = new MemoryStream())
-			{
-				module.WriteToBinary(memory);
-				Assert.AreNotEqual(0, memory.Length);
-				memory.Position = 0;
-
-				var maker = Compile.FromBinary<TExport>(memory);
-				Assert.IsNotNull(maker);
-				compiled = maker();
-			}
+			var compiled = module.ToInstance<TExport>();
 
 			Assert.IsNotNull(compiled);
 			Assert.IsNotNull(compiled.Exports);
