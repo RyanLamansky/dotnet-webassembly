@@ -5,13 +5,13 @@
 	/// </summary>
 	public abstract class ValueOneToOneInstruction : SimpleInstruction
 	{
-		internal ValueOneToOneInstruction()
+		private protected ValueOneToOneInstruction()
 		{
 		}
 
-		internal abstract ValueType ValueType { get; }
+		private protected abstract ValueType ValueType { get; }
 
-		internal abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
+		private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
 		internal sealed override void Compile(CompilationContext context)
 		{

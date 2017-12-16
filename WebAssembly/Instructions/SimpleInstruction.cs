@@ -5,7 +5,7 @@
 	/// </summary>
 	public abstract class SimpleInstruction : Instruction
 	{
-		internal SimpleInstruction()
+		private protected SimpleInstruction()
 		{
 		}
 

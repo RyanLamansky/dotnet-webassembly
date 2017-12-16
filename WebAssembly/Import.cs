@@ -42,7 +42,7 @@ namespace WebAssembly
 		/// <summary>
 		/// Creates a new <see cref="Import"/> instance.
 		/// </summary>
-		internal Import()
+		private protected Import()
 		{
 		}
 

@@ -5,13 +5,13 @@
 	/// </summary>
 	public abstract class ValueTwoToInt32Instruction : SimpleInstruction
 	{
-		internal ValueTwoToInt32Instruction()
+		private protected ValueTwoToInt32Instruction()
 		{
 		}
 
-		internal abstract ValueType ValueType { get; }
+		private protected abstract ValueType ValueType { get; }
 
-		internal abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
+		private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
 		internal override void Compile(CompilationContext context)
 		{

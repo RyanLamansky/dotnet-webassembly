@@ -24,10 +24,10 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal sealed override ValueType Type => ValueType.Float64;
+		private protected sealed override ValueType Type => ValueType.Float64;
 
-		internal sealed override byte Size => 8;
+		private protected sealed override byte Size => 8;
 
-		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_R8;
+		private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_R8;
 	}
 }

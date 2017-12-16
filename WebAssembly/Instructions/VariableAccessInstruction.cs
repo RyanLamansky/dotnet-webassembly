@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public uint Index { get; set; }
 
-		internal VariableAccessInstruction(Reader reader)
+		private protected VariableAccessInstruction(Reader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));
@@ -24,7 +24,7 @@ namespace WebAssembly.Instructions
 		/// Creates a new <see cref="VariableAccessInstruction"/> for the provided variable index.
 		/// </summary>
 		/// <param name="index">The index of the variable to access.</param>
-		internal VariableAccessInstruction(uint index)
+		private protected VariableAccessInstruction(uint index)
 		{
 			this.Index = index;
 		}
@@ -32,7 +32,7 @@ namespace WebAssembly.Instructions
 		/// <summary>
 		/// Creates a new <see cref="VariableAccessInstruction"/> instance.
 		/// </summary>
-		internal VariableAccessInstruction()
+		private protected VariableAccessInstruction()
 		{
 		}
 

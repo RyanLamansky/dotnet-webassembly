@@ -8,11 +8,11 @@ namespace WebAssembly.Instructions
 	/// </summary>
 	public abstract class Float64CallWrapperInstruction : SimpleInstruction
 	{
-		internal Float64CallWrapperInstruction()
+		private protected Float64CallWrapperInstruction()
 		{
 		}
 
-		internal abstract MethodInfo MethodInfo { get; }
+		private protected abstract MethodInfo MethodInfo { get; }
 
 		internal sealed override void Compile(CompilationContext context)
 		{

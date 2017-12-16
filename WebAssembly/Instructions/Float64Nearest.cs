@@ -21,9 +21,9 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal sealed override MethodInfo MethodInfo => Method;
+		private protected sealed override MethodInfo MethodInfo => Method;
 
-		internal sealed override ValueType ValueType => ValueType.Float64;
+		private protected sealed override ValueType ValueType => ValueType.Float64;
 
 		internal static readonly RegeneratingWeakReference<MethodInfo> Method = new RegeneratingWeakReference<MethodInfo>(() =>
 			typeof(Math).GetTypeInfo().DeclaredMethods.First(m =>

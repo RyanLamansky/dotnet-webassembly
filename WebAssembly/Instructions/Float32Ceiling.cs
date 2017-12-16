@@ -19,6 +19,6 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal sealed override MethodInfo MethodInfo => Float64Ceiling.Method;
+		private protected sealed override MethodInfo MethodInfo => Float64Ceiling.Method;
 	}
 }

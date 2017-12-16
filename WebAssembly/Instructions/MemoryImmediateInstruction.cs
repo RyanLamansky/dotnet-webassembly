@@ -48,11 +48,11 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public uint Offset { get; set; }
 
-		internal MemoryImmediateInstruction()
+		private protected MemoryImmediateInstruction()
 		{
 		}
 
-		internal MemoryImmediateInstruction(Reader reader)
+		private protected MemoryImmediateInstruction(Reader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));
@@ -86,13 +86,13 @@ namespace WebAssembly.Instructions
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, (int)this.Offset);
 
-		internal abstract ValueType Type { get; }
+		private protected abstract ValueType Type { get; }
 
-		internal abstract byte Size { get; }
+		private protected abstract byte Size { get; }
 
-		internal abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
+		private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
-		internal HelperMethod RangeCheckHelper
+		private protected HelperMethod RangeCheckHelper
 		{
 			get
 			{
@@ -111,7 +111,7 @@ namespace WebAssembly.Instructions
 			}
 		}
 
-		internal void EmitRangeCheck(CompilationContext context)
+		private protected void EmitRangeCheck(CompilationContext context)
 		{
 			context.EmitLoadThis();
 			context.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);

@@ -7,17 +7,17 @@ namespace WebAssembly.Instructions
 	/// </summary>
 	public abstract class MemoryReadInstruction : MemoryImmediateInstruction
 	{
-		internal MemoryReadInstruction()
+		private protected MemoryReadInstruction()
 			: base()
 		{
 		}
 
-		internal MemoryReadInstruction(Reader reader)
+		private protected MemoryReadInstruction(Reader reader)
 			: base(reader)
 		{
 		}
 
-		internal virtual System.Reflection.Emit.OpCode ConversionOpCode => OpCodes.Nop;
+		private protected virtual System.Reflection.Emit.OpCode ConversionOpCode => OpCodes.Nop;
 
 		internal sealed override void Compile(CompilationContext context)
 		{

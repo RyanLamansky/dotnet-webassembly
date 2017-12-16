@@ -12,6 +12,7 @@
 		<PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
 		<Copyright>Copyright 2017 © Ryan Lamansky. All rights reserved.</Copyright>
 		<PackageTags>WebAssembly WASM JIT</PackageTags>
+		<LangVersion>7.2</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

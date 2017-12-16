@@ -10,9 +10,9 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public sealed override OpCode OpCode => OpCode.Int64GreaterThanOrEqualSigned;
 
-		internal sealed override ValueType ValueType => ValueType.Int64;
+		private protected sealed override ValueType ValueType => ValueType.Int64;
 
-		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode =>
+		private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode =>
 			System.Reflection.Emit.OpCodes.Clt; //The result is compared for equality to zero, reversing it.
 
 		/// <summary>

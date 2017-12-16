@@ -24,12 +24,12 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal sealed override ValueType Type => ValueType.Int32;
+		private protected sealed override ValueType Type => ValueType.Int32;
 
-		internal sealed override byte Size => 4;
+		private protected sealed override byte Size => 4;
 
-		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I4;
+		private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Stind_I4;
 
-		internal sealed override HelperMethod StoreHelper => HelperMethod.StoreInt32FromInt32;
+		private protected sealed override HelperMethod StoreHelper => HelperMethod.StoreInt32FromInt32;
 	}
 }

@@ -10,9 +10,9 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		public sealed override OpCode OpCode => OpCode.Float64Subtract;
 
-		internal sealed override ValueType ValueType => ValueType.Float64;
+		private protected sealed override ValueType ValueType => ValueType.Float64;
 
-		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode =>
+		private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode =>
 			System.Reflection.Emit.OpCodes.Sub;
 
 		/// <summary>

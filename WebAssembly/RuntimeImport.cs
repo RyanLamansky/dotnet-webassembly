@@ -22,7 +22,7 @@ namespace WebAssembly
 		/// </summary>
 		public string FieldName { get; private set; }
 
-		internal RuntimeImport(string moduleName, string exportName)
+		private protected RuntimeImport(string moduleName, string exportName)
 		{
 			this.ModuleName = moduleName ?? throw new ArgumentNullException(nameof(moduleName));
 			this.FieldName = exportName ?? throw new ArgumentNullException(nameof(exportName));

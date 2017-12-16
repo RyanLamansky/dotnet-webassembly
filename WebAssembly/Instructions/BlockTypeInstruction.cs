@@ -15,12 +15,12 @@ namespace WebAssembly.Instructions
 		/// <summary>
 		/// Creates a new <see cref="BlockType"/> instance.
 		/// </summary>
-		internal BlockTypeInstruction()
+		private protected BlockTypeInstruction()
 		{
 			this.Type = BlockType.Empty;
 		}
 
-		internal BlockTypeInstruction(BlockType type)
+		private protected BlockTypeInstruction(BlockType type)
 		{
 			this.Type = type;
 		}
@@ -30,7 +30,7 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <param name="reader">Reads the bytes of a web assembly binary file.</param>
 		/// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
-		internal BlockTypeInstruction(Reader reader)
+		private protected BlockTypeInstruction(Reader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));

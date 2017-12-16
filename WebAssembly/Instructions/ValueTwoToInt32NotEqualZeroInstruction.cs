@@ -7,7 +7,7 @@ namespace WebAssembly.Instructions
 	/// </summary>
 	public abstract class ValueTwoToInt32NotEqualZeroInstruction : ValueTwoToInt32Instruction
 	{
-		internal ValueTwoToInt32NotEqualZeroInstruction()
+		private protected ValueTwoToInt32NotEqualZeroInstruction()
 		{
 		}
 

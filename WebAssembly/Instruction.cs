@@ -14,7 +14,7 @@ namespace WebAssembly
 		/// <summary>
 		/// Creates a new <see cref="Instruction"/> instance.
 		/// </summary>
-		internal Instruction()
+		private protected Instruction()
 		{
 		}
 

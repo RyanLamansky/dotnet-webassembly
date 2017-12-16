@@ -8,13 +8,13 @@ namespace WebAssembly.Instructions
 	/// </summary>
 	public abstract class ValueTwoToOneCallInstruction : SimpleInstruction
 	{
-		internal ValueTwoToOneCallInstruction()
+		private protected ValueTwoToOneCallInstruction()
 		{
 		}
 
-		internal abstract ValueType ValueType { get; }
+		private protected abstract ValueType ValueType { get; }
 
-		internal abstract MethodInfo MethodInfo { get; }
+		private protected abstract MethodInfo MethodInfo { get; }
 
 		internal sealed override void Compile(CompilationContext context)
 		{

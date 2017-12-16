@@ -7,17 +7,17 @@ namespace WebAssembly.Instructions
 	/// </summary>
 	public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
 	{
-		internal MemoryWriteInstruction()
+		private protected MemoryWriteInstruction()
 			: base()
 		{
 		}
 
-		internal MemoryWriteInstruction(Reader reader)
+		private protected MemoryWriteInstruction(Reader reader)
 			: base(reader)
 		{
 		}
 
-		internal abstract HelperMethod StoreHelper { get; }
+		private protected abstract HelperMethod StoreHelper { get; }
 
 		internal sealed override void Compile(CompilationContext context)
 		{

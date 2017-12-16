@@ -19,8 +19,8 @@ namespace WebAssembly.Instructions
 		{
 		}
 
-		internal sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Neg;
+		private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Neg;
 
-		internal sealed override ValueType ValueType => ValueType.Float32;
+		private protected sealed override ValueType ValueType => ValueType.Float32;
 	}
 }
