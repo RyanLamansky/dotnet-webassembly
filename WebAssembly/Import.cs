@@ -81,9 +81,28 @@ namespace WebAssembly
 					};
 
 				case ExternalKind.Table:
+					return new Table
+					{
+						Module = module,
+						Field = field,
+						Type = new WebAssembly.Table(reader),
+					};
+
 				case ExternalKind.Memory:
+					return new Memory
+					{
+						Module = module,
+						Field = field,
+						Type = new WebAssembly.Memory(reader),
+					};
+
 				case ExternalKind.Global:
-					throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", reader.Offset);
+					return new Global
+					{
+						Module = module,
+						Field = field,
+						Type = new WebAssembly.Global(reader),
+					};
 
 				default:
 					throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", reader.Offset);
@@ -123,6 +142,114 @@ namespace WebAssembly
 				base.WriteTo(writer);
 				writer.Write((byte)ExternalKind.Function);
 				writer.WriteVar(this.TypeIndex);
+			}
+		}
+
+		/// <summary>
+		/// Describes an imported table.
+		/// </summary>
+		public class Table : Import
+		{
+			/// <summary>
+			/// Always <see cref="ExternalKind.Table"/>.
+			/// </summary>
+			public sealed override ExternalKind Kind => ExternalKind.Table;
+
+			/// <summary>
+			/// Type of the imported table.
+			/// </summary>
+			public WebAssembly.Table Type { get; set; }
+
+			/// <summary>
+			/// Creates a new <see cref="Table"/> instance.
+			/// </summary>
+			public Table()
+			{
+			}
+
+			/// <summary>
+			/// Expresses the value of this instance as a string.
+			/// </summary>
+			/// <returns>A string representation of this instance.</returns>
+			public override string ToString() => $"{base.ToString()} (Function {Type}";
+
+			internal sealed override void WriteTo(Writer writer)
+			{
+				base.WriteTo(writer);
+				writer.Write((byte)ExternalKind.Table);
+				Type.WriteTo(writer);
+			}
+		}
+
+		/// <summary>
+		/// Describes an imported memory.
+		/// </summary>
+		public class Memory : Import
+		{
+			/// <summary>
+			/// Always <see cref="ExternalKind.Memory"/>.
+			/// </summary>
+			public sealed override ExternalKind Kind => ExternalKind.Memory;
+
+			/// <summary>
+			/// Type of the imported memory.
+			/// </summary>
+			public WebAssembly.Memory Type { get; set; }
+
+			/// <summary>
+			/// Creates a new <see cref="Memory"/> instance.
+			/// </summary>
+			public Memory()
+			{
+			}
+
+			/// <summary>
+			/// Expresses the value of this instance as a string.
+			/// </summary>
+			/// <returns>A string representation of this instance.</returns>
+			public override string ToString() => $"{base.ToString()} (Function {Type}";
+
+			internal sealed override void WriteTo(Writer writer)
+			{
+				base.WriteTo(writer);
+				writer.Write((byte)ExternalKind.Memory);
+				Type.WriteTo(writer);
+			}
+		}
+
+		/// <summary>
+		/// Describes an imported global.
+		/// </summary>
+		public class Global : Import
+		{
+			/// <summary>
+			/// Always <see cref="ExternalKind.Global"/>.
+			/// </summary>
+			public sealed override ExternalKind Kind => ExternalKind.Global;
+
+			/// <summary>
+			/// Type of the imported global.
+			/// </summary>
+			public WebAssembly.Global Type { get; set; }
+
+			/// <summary>
+			/// Creates a new <see cref="Global"/> instance.
+			/// </summary>
+			public Global()
+			{
+			}
+
+			/// <summary>
+			/// Expresses the value of this instance as a string.
+			/// </summary>
+			/// <returns>A string representation of this instance.</returns>
+			public override string ToString() => $"{base.ToString()} (Function {Type}";
+
+			internal sealed override void WriteTo(Writer writer)
+			{
+				base.WriteTo(writer);
+				writer.Write((byte)ExternalKind.Global);
+				Type.WriteTo(writer);
 			}
 		}
 	}

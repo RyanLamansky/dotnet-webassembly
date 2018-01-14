@@ -107,5 +107,119 @@ namespace WebAssembly
 			Assert.AreEqual(8, custom.Content.Count);
 			Assert.AreEqual(content, BitConverter.ToInt64(custom.Content.ToArray(), 0));
 		}
+
+		/// <summary>
+		/// Verifies that the import types (<see cref="ExternalKind.Function"/>, <see cref="ExternalKind.Table"/>, <see cref="ExternalKind.Memory"/>, and <see cref="ExternalKind.Global"/> are both written and readable.
+		/// </summary>
+		[TestMethod]
+		public void Module_ImportRoundTrip()
+		{
+			var source = new Module
+			{
+				Imports = new Import[]
+				{
+					new Import.Function
+					{
+						Module = "A",
+						Field = "1",
+						TypeIndex = 2,
+					},
+					new Import.Table
+					{
+						Module = "B",
+						Field = "2",
+						Type = new Table
+						{
+							ElementType = ElementType.AnyFunction,
+							ResizableLimits = new ResizableLimits(1, 2),
+						},
+					},
+					new Import.Memory
+					{
+						Module = "C",
+						Field = "3",
+						Type = new Memory(4, 5),
+					},
+					new Import.Global
+					{
+						Module = "D",
+						Field = "4",
+						Type = new Global
+						{
+							ContentType = ValueType.Float64,
+							InitializerExpression = new Instruction[]
+							{
+								new Instructions.Int32Constant(4),
+								new Instructions.End(),
+							},
+							IsMutable = false,
+						}
+					},
+				}
+			};
+
+			Module destination;
+			using (var stream = new MemoryStream())
+			{
+				source.WriteToBinary(stream);
+				stream.Position = 0;
+
+				destination = Module.ReadFromBinary(stream);
+			}
+
+			Assert.IsNotNull(destination);
+			Assert.AreNotSame(source, destination);
+			Assert.IsNotNull(destination.Imports);
+			var imports = destination.Imports;
+			Assert.AreNotSame(source.Imports, imports);
+			Assert.AreEqual(4, imports.Count);
+
+			Assert.IsInstanceOfType(imports[0], typeof(Import.Function));
+			{
+				var function = (Import.Function)imports[0];
+				Assert.AreEqual("A", function.Module);
+				Assert.AreEqual("1", function.Field);
+				Assert.AreEqual(2u, function.TypeIndex);
+			}
+
+			Assert.IsInstanceOfType(imports[1], typeof(Import.Table));
+			{
+				var table = (Import.Table)imports[1];
+				Assert.AreEqual("B", table.Module);
+				Assert.AreEqual("2", table.Field);
+				Assert.IsNotNull(table.Type);
+				Assert.AreEqual(ElementType.AnyFunction, table.Type.ElementType);
+				Assert.IsNotNull(table.Type.ResizableLimits);
+				Assert.AreEqual(1u, table.Type.ResizableLimits.Minimum);
+				Assert.AreEqual(2u, table.Type.ResizableLimits.Maximum.GetValueOrDefault());
+			}
+
+			Assert.IsInstanceOfType(imports[2], typeof(Import.Memory));
+			{
+				var memory = (Import.Memory)imports[2];
+				Assert.AreEqual("C", memory.Module);
+				Assert.AreEqual("3", memory.Field);
+				Assert.IsNotNull(memory.Type);
+				Assert.IsNotNull(memory.Type.ResizableLimits);
+				Assert.AreEqual(4u, memory.Type.ResizableLimits.Minimum);
+				Assert.AreEqual(5u, memory.Type.ResizableLimits.Maximum.GetValueOrDefault());
+			}
+
+			Assert.IsInstanceOfType(imports[3], typeof(Import.Global));
+			{
+				var global = (Import.Global)imports[3];
+				Assert.AreEqual("D", global.Module);
+				Assert.AreEqual("4", global.Field);
+				Assert.IsNotNull(global.Type);
+				var globalType = global.Type;
+				Assert.AreEqual(ValueType.Float64, globalType.ContentType);
+				Assert.IsNotNull(globalType.InitializerExpression);
+				Assert.AreEqual(2, globalType.InitializerExpression.Count);
+				Assert.IsInstanceOfType(globalType.InitializerExpression[0], typeof(Instructions.Int32Constant));
+				Assert.AreEqual(4,((Instructions.Int32Constant)globalType.InitializerExpression[0]).Value);
+				Assert.IsInstanceOfType(globalType.InitializerExpression[1], typeof(Instructions.End));
+				Assert.IsFalse(globalType.IsMutable);
+			}
+		}
 	}
 }
