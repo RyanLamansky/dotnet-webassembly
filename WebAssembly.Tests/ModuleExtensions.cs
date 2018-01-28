@@ -23,6 +23,20 @@ namespace WebAssembly
 			}
 		}
 
+		/// <summary>
+		/// Writes a  <see cref="Module"/> to an in-memory stream with no expectation of success.
+		/// </summary>
+		/// <param name="module">The module to write.</param>
+		public static void WriteToBinaryNoOutput(this Module module)
+		{
+			Assert.IsNotNull(module);
+
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+			}
+		}
+
 		private sealed class ForwardReadOnlyStream : Stream
 		{
 			private readonly byte[] data;

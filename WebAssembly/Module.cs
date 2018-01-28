@@ -382,6 +382,63 @@ namespace WebAssembly
 		/// <exception cref="ArgumentNullException"><paramref name="output"/> cannot be null.</exception>
 		public void WriteToBinary(Stream output)
 		{
+			bool LastOpCodeIsNotEnd(IList<Instruction> instruction)
+			{
+				return
+					instruction == null ||
+					instruction.Count == 0 ||
+					instruction[instruction.Count - 1].OpCode != OpCode.End
+					;
+			};
+
+			if (this.globals != null)
+			{
+				var index = 0;
+				foreach (var global in this.globals)
+				{
+					if (LastOpCodeIsNotEnd(global.InitializerExpression))
+						throw new InvalidOperationException($"Global at index {index} has an initializer expression not terminated with OpCode.End.");
+
+					index++;
+				}
+			}
+
+			if (this.elements != null)
+			{
+				var index = 0;
+				foreach (var element in this.elements)
+				{
+					if (LastOpCodeIsNotEnd(element.InitializerExpression))
+						throw new InvalidOperationException($"Element at index {index} has an initializer expression not terminated with OpCode.End.");
+
+					index++;
+				}
+			}
+
+			if (this.codes != null)
+			{
+				var index = 0;
+				foreach (var code in this.codes)
+				{
+					if (LastOpCodeIsNotEnd(code.Code))
+						throw new InvalidOperationException($"Code at index {index} has a body not terminated with OpCode.End.");
+
+					index++;
+				}
+			}
+
+			if (this.data != null)
+			{
+				var index = 0;
+				foreach (var data in this.data)
+				{
+					if (LastOpCodeIsNotEnd(data.InitializerExpression))
+						throw new InvalidOperationException($"Data at index {index} has an initializer expression not terminated with OpCode.End.");
+
+					index++;
+				}
+			}
+
 			var customSectionsByPrecedingSection = this.customSections?
 				.Where(custom => custom != null)
 				.GroupBy(custom => custom.PrecedingSection)

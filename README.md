@@ -130,7 +130,6 @@ Everything on this list will be fixed before 1.0 is published.
 
 * The following export types are not supported by the compiler: Table, Global, Memory.
 * Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.
-* `WebAssembly.Module` will let you write WASM files that it can't read back: specifically, a function or initializer expression that's not terminated with an `end` instruction.
 * Function exports that expose an import are not supported by the compiler.
 * Passing a MethodBuilder as an imported function will cause the compiler to generate incorrect code.
 * Thorough documentation is needed.

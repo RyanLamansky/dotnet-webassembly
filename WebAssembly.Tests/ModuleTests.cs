@@ -216,10 +216,22 @@ namespace WebAssembly
 				Assert.IsNotNull(globalType.InitializerExpression);
 				Assert.AreEqual(2, globalType.InitializerExpression.Count);
 				Assert.IsInstanceOfType(globalType.InitializerExpression[0], typeof(Instructions.Int32Constant));
-				Assert.AreEqual(4,((Instructions.Int32Constant)globalType.InitializerExpression[0]).Value);
+				Assert.AreEqual(4, ((Instructions.Int32Constant)globalType.InitializerExpression[0]).Value);
 				Assert.IsInstanceOfType(globalType.InitializerExpression[1], typeof(Instructions.End));
 				Assert.IsFalse(globalType.IsMutable);
 			}
+		}
+
+		/// <summary>
+		/// Verifies that the module writing process prevents an attempt to write an unreadable assembly that contains an instruction sequence that doesn't end with <see cref="OpCode.End"/>.
+		/// </summary>
+		[TestMethod]
+		public void Module_InstructionSequenceMissingEndValidation()
+		{
+			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Globals = new[] { new Global() } }.WriteToBinaryNoOutput());
+			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Elements = new[] { new Element() } }.WriteToBinaryNoOutput());
+			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Codes = new[] { new FunctionBody() } }.WriteToBinaryNoOutput());
+			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Data = new[] { new Data() } }.WriteToBinaryNoOutput());
 		}
 	}
 }
