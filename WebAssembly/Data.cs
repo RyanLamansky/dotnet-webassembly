@@ -54,7 +54,7 @@ namespace WebAssembly
 				throw new ArgumentNullException(nameof(reader));
 
 			this.Index = reader.ReadVarUInt32();
-			this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToArray();
+			this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
 			this.rawData = reader.ReadBytes(reader.ReadVarUInt32());
 		}
 
