@@ -7,6 +7,22 @@ namespace WebAssembly
 {
 	static class ModuleExtensions
 	{
+		public static Module BinaryRoundTrip(this Module module)
+		{
+			Assert.IsNotNull(module);
+
+			using (var memory = new MemoryStream())
+			{
+				module.WriteToBinary(memory);
+				Assert.AreNotEqual(0, memory.Position);
+
+				memory.Position = 0;
+				var result = Module.ReadFromBinary(memory);
+				Assert.IsNotNull(result);
+				return result;
+			}
+		}
+
 		private sealed class ForwardReadOnlyStream : Stream
 		{
 			private readonly byte[] data;
