@@ -54,6 +54,90 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// A test class for an exported immutable global.
+		/// </summary>
+		public abstract class ExportedReadonlyGlobal
+		{
+			/// <summary>
+			/// The test global.
+			/// </summary>
+			public abstract int Test { get; }
+		}
+
+		/// <summary>
+		/// Tests a compilation of an assembly that contains a single immutable exported global.
+		/// </summary>
+		[TestMethod]
+		public void Compile_MinimalExportedImmutableGlobal()
+		{
+			var module = new Module();
+			module.Globals.Add(new Global
+			{
+				ContentType = ValueType.Int32,
+				IsMutable = false,
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(5),
+					new End()
+				}
+			});
+			module.Exports.Add(new Export
+			{
+				Name = "Test",
+				Kind = ExternalKind.Global,
+			});
+
+			var compiled = module.ToInstance<ExportedReadonlyGlobal>();
+
+			Assert.AreEqual(5, compiled.Exports.Test);
+			Assert.AreNotEqual(6, compiled.Exports.Test);
+		}
+
+		/// <summary>
+		/// A test class for an exported mutable global.
+		/// </summary>
+		public abstract class ExportedMutableGlobal
+		{
+			/// <summary>
+			/// The test global.
+			/// </summary>
+			public abstract int Test { get; set; }
+		}
+
+		/// <summary>
+		/// Tests a compilation of an assembly that contains a single mutable exported global.
+		/// </summary>
+		[TestMethod]
+		public void Compile_MinimalExportedMutableGlobal()
+		{
+			var module = new Module();
+			module.Globals.Add(new Global
+			{
+				ContentType = ValueType.Int32,
+				IsMutable = true,
+				InitializerExpression = new Instruction[]
+				{
+					new Int32Constant(3),
+					new End()
+				}
+			});
+			module.Exports.Add(new Export
+			{
+				Name = "Test",
+				Kind = ExternalKind.Global,
+			});
+
+			var compiled = module.ToInstance<ExportedMutableGlobal>();
+
+			Assert.AreEqual(3, compiled.Exports.Test);
+			Assert.AreNotEqual(4, compiled.Exports.Test);
+			compiled.Exports.Test = 7;
+			Assert.AreEqual(7, compiled.Exports.Test);
+			Assert.AreNotEqual(4, compiled.Exports.Test);
+			Assert.AreNotEqual(3, compiled.Exports.Test);
+		}
+
+		/// <summary>
 		/// Tests a compilation of an assembly that contains a single internal function that does nothing.
 		/// </summary>
 		[TestMethod]

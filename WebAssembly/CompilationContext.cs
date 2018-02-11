@@ -25,9 +25,6 @@ namespace WebAssembly
 			)
 		{
 			Assert(exportsBuilder != null);
-			Assert(functionSignatures != null);
-			Assert(methods != null);
-			Assert(types != null);
 			Assert(module != null);
 
 			this.ExportsBuilder = exportsBuilder;

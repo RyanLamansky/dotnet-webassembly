@@ -512,6 +512,7 @@ namespace WebAssembly
 
 					case Section.Export:
 						{
+							const MethodAttributes exportedPropertyAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final;
 							var totalExports = reader.ReadVarUInt32();
 							var xFunctions = new List<KeyValuePair<string, uint>>((int)Math.Min(int.MaxValue, totalExports));
 
@@ -526,28 +527,73 @@ namespace WebAssembly
 									case ExternalKind.Function:
 										xFunctions.Add(new KeyValuePair<string, uint>(name, index));
 										break;
+									case ExternalKind.Table:
+										throw new NotSupportedException($"Unsupported export kind {kind}.");
 									case ExternalKind.Memory:
 										if (index != 0)
 											throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", reader.Offset);
 										if (memory == null)
 											throw new CompilerException("Cannot export linear memory when linear memory is not defined.");
 
-										var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
-											MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final,
-											CallingConventions.HasThis,
-											typeof(Runtime.UnmanagedMemory),
-											System.Type.EmptyTypes
-											);
-										var getterIL = memoryGetter.GetILGenerator();
-										getterIL.Emit(OpCodes.Ldarg_0);
-										getterIL.Emit(OpCodes.Ldfld, memory);
-										getterIL.Emit(OpCodes.Ret);
+										{
+											var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
+												exportedPropertyAttributes,
+												CallingConventions.HasThis,
+												typeof(Runtime.UnmanagedMemory),
+												System.Type.EmptyTypes
+												);
+											var getterIL = memoryGetter.GetILGenerator();
+											getterIL.Emit(OpCodes.Ldarg_0);
+											getterIL.Emit(OpCodes.Ldfld, memory);
+											getterIL.Emit(OpCodes.Ret);
 
-										exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(Runtime.UnmanagedMemory), System.Type.EmptyTypes)
-											.SetGetMethod(memoryGetter);
+											exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(Runtime.UnmanagedMemory), System.Type.EmptyTypes)
+												.SetGetMethod(memoryGetter);
+										}
+										break;
+									case ExternalKind.Global:
+										if (index >= globalGetters.Length)
+											throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", reader.Offset);
+
+										{
+											var getter = globalGetters[i];
+											var setter = globalSetters[i];
+											var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, getter.Type.ToSystemType(), System.Type.EmptyTypes);
+											var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
+												exportedPropertyAttributes,
+												CallingConventions.HasThis,
+												getter.Type.ToSystemType(),
+												System.Type.EmptyTypes
+												);
+
+											var wrappedGetIL = wrappedGet.GetILGenerator();
+											if (getter.IsMutable)
+												wrappedGetIL.Emit(OpCodes.Ldarg_0);
+											wrappedGetIL.Emit(OpCodes.Call, getter.Builder);
+											wrappedGetIL.Emit(OpCodes.Ret);
+											property.SetGetMethod(wrappedGet);
+
+											if (setter != null)
+											{
+												var wrappedSet = exportsBuilder.DefineMethod("set_" + name,
+													exportedPropertyAttributes,
+													CallingConventions.HasThis,
+													null,
+													new [] { getter.Type.ToSystemType()}
+													);
+
+												var wrappedSetIL = wrappedSet.GetILGenerator();
+												wrappedSetIL.Emit(OpCodes.Ldarg_1);
+												wrappedSetIL.Emit(OpCodes.Ldarg_0);
+												wrappedSetIL.Emit(OpCodes.Call, setter.Builder);
+												wrappedSetIL.Emit(OpCodes.Ret);
+
+												property.SetSetMethod(wrappedSet);
+											}
+										}
 										break;
 									default:
-										throw new NotSupportedException($"Unsupported or unrecognized export kind {kind}.");
+										throw new NotSupportedException($"Unrecognized export kind {kind}.");
 								}
 							}
 
