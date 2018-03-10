@@ -3,12 +3,12 @@
 namespace WebAssembly.Instructions
 {
 	/// <summary>
-	/// An instruction that access a variable.
+	/// An instruction that accesses a variable by its 0-based index.
 	/// </summary>
 	public abstract class VariableAccessInstruction : Instruction
 	{
 		/// <summary>
-		/// The index of the variable to access.
+		/// The 0-based index of the variable to access.
 		/// </summary>
 		public uint Index { get; set; }
 
