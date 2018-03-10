@@ -61,10 +61,11 @@ namespace WebAssembly
 			//As of the initial version, the set of operations valid for initializer experssions is extremely limited.
 			while (true)
 			{
+				var initialOffset = reader.Offset;
 				var opCode = (OpCode)reader.ReadByte();
 				switch (opCode)
 				{
-					default: throw new ModuleLoadException($"Opcode \"{opCode}\" is not permitted in intializer expressions.", reader.Offset);
+					default: throw new ModuleLoadException($"Opcode \"{opCode}\" is not permitted in intializer expressions.", initialOffset);
 					case OpCode.GetGlobal: yield return new GetGlobal(reader); break;
 					case OpCode.Int32Constant: yield return new Int32Constant(reader); break;
 					case OpCode.Int64Constant: yield return new Int64Constant(reader); break;
@@ -89,10 +90,11 @@ namespace WebAssembly
 			var depth = 1;
 			while (true)
 			{
+				var initialOffset = reader.Offset;
 				var opCode = (OpCode)reader.ReadByte();
 				switch (opCode)
 				{
-					default: throw new ModuleLoadException($"Don't know how to parse opcode \"{opCode}\".", reader.Offset);
+					default: throw new ModuleLoadException($"Don't know how to parse opcode \"{opCode}\".", initialOffset);
 					case OpCode.Unreachable: yield return new Unreachable(); break;
 					case OpCode.NoOperation: yield return new NoOperation(); break;
 

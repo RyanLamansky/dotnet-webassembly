@@ -226,12 +226,12 @@ namespace WebAssembly
 			GlobalInfo[] globalSetters = null;
 			CompilationContext context = null;
 			MethodInfo startFunction = null;
-
+			var preSectionOffset = reader.Offset;
 			while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 			{
-				var payloadLength = reader.ReadVarUInt32();
 				if (id != 0 && (Section)id < previousSection)
-					throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", reader.Offset);
+					throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
+				var payloadLength = reader.ReadVarUInt32();
 
 				switch ((Section)id)
 				{
@@ -270,6 +270,7 @@ namespace WebAssembly
 								if (!importsByName.TryGetValue(new Tuple<string, string>(moduleName, fieldName), out var import))
 									throw new CompilerException($"Import not found for {moduleName}::{fieldName}.");
 
+								var preKindOffset = reader.Offset;
 								var kind = (ExternalKind)reader.ReadByte();
 
 								switch (kind)
@@ -288,10 +289,10 @@ namespace WebAssembly
 									case ExternalKind.Table:
 									case ExternalKind.Memory:
 									case ExternalKind.Global:
-										throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", reader.Offset);
+										throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", preKindOffset);
 
 									default:
-										throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", reader.Offset);
+										throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", preKindOffset);
 								}
 							}
 
@@ -333,7 +334,7 @@ namespace WebAssembly
 								switch (elementType)
 								{
 									default:
-										throw new ModuleLoadException($"Element type {elementType} not supported.", reader.Offset);
+										throw new ModuleLoadException($"Element type {elementType} not supported.", reader.Offset - 1);
 
 									case ElementType.AnyFunction:
 										var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
@@ -348,9 +349,10 @@ namespace WebAssembly
 
 					case Section.Memory:
 						{
+							var preCountOffset = reader.Offset;
 							var count = reader.ReadVarUInt32();
 							if (count > 1)
-								throw new ModuleLoadException("Multiple memory values are not supported.", reader.Offset);
+								throw new ModuleLoadException("Multiple memory values are not supported.", preCountOffset);
 
 							var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
 							memoryPagesMinimum = reader.ReadVarUInt32();
@@ -519,8 +521,8 @@ namespace WebAssembly
 							for (var i = 0; i < totalExports; i++)
 							{
 								var name = reader.ReadString(reader.ReadVarUInt32());
-
 								var kind = (ExternalKind)reader.ReadByte();
+								var preIndexOffset = reader.Offset;
 								var index = reader.ReadVarUInt32();
 								switch (kind)
 								{
@@ -531,7 +533,7 @@ namespace WebAssembly
 										throw new NotSupportedException($"Unsupported export kind {kind}.");
 									case ExternalKind.Memory:
 										if (index != 0)
-											throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", reader.Offset);
+											throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", preIndexOffset);
 										if (memory == null)
 											throw new CompilerException("Cannot export linear memory when linear memory is not defined.");
 
@@ -553,7 +555,7 @@ namespace WebAssembly
 										break;
 									case ExternalKind.Global:
 										if (index >= globalGetters.Length)
-											throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", reader.Offset);
+											throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", preIndexOffset);
 
 										{
 											var getter = globalGetters[i];
@@ -615,24 +617,27 @@ namespace WebAssembly
 					case Section.Element:
 						{
 							if (functionElements == null)
-								throw new ModuleLoadException("Element section found without an associated table section.", reader.Offset);
+								throw new ModuleLoadException("Element section found without an associated table section.", preSectionOffset);
 
 							var count = reader.ReadVarUInt32();
 							for (var i = 0; i < count; i++)
 							{
+								var preIndexOffset = reader.Offset;
 								var index = reader.ReadVarUInt32();
 								if (index != 0)
-									throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", reader.Offset);
+									throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", preIndexOffset);
 
 								{
+									var preInitializerOffset = reader.Offset;
 									var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
 									if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || c.Value != 0 || !(initializer[1] is Instructions.End))
-										throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant of 0 followed by end.", reader.Offset);
+										throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant of 0 followed by end.", preInitializerOffset);
 								}
 
+								var preElementsOffset = reader.Offset;
 								var elements = reader.ReadVarUInt32();
 								if (elements != functionElements.Length)
-									throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", reader.Offset);
+									throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", preElementsOffset);
 
 								for (var j = 0; j < functionElements.Length; j++)
 								{
@@ -648,12 +653,13 @@ namespace WebAssembly
 
 					case Section.Code:
 						{
+							var preBodiesIndex = reader.Offset;
 							var functionBodies = reader.ReadVarUInt32();
 
 							if (functionBodies > 0 && functionSignatures == null)
-								throw new ModuleLoadException("Code section is invalid when Function section is missing.", reader.Offset);
+								throw new ModuleLoadException("Code section is invalid when Function section is missing.", preBodiesIndex);
 							if (functionBodies != functionSignatures.Length)
-								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", reader.Offset);
+								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", preBodiesIndex);
 
 							if (context == null) //Might have been created by the Global section, if present.
 							{
@@ -711,7 +717,7 @@ namespace WebAssembly
 					case Section.Data:
 						{
 							if (memory == null)
-								throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", reader.Offset);
+								throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
 
 							var count = reader.ReadVarUInt32();
 
@@ -791,7 +797,7 @@ namespace WebAssembly
 						break;
 
 					default:
-						throw new ModuleLoadException($"Unrecognized section type {(Section)id}.", reader.Offset);
+						throw new ModuleLoadException($"Unrecognized section type {(Section)id}.", preSectionOffset);
 				}
 
 				previousSection = (Section)id;

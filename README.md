@@ -129,8 +129,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 Everything on this list will be fixed before 1.0 is published.
 
 * The following export types are not supported by the compiler: Table.
-* The following import types are not supported by the compiler: Table, Memory.
-* Offsets reported in exceptions are mostly wrong, reflecting the position of the reader at the time of the exception rather than the start of the bad bytes.
+* The following import types are not supported by the compiler: Table, Memory, Global.
 * Function exports that expose an import are not supported by the compiler.
 * Passing a MethodBuilder as an imported function will cause the compiler to generate incorrect code.
 * Thorough documentation is needed.

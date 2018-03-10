@@ -70,6 +70,7 @@ namespace WebAssembly
 			int current;
 			var count = 0;
 			var signBits = -1;
+			var initialOffset = this.offset;
 			do
 			{
 				current = this.ReadByte();
@@ -79,7 +80,7 @@ namespace WebAssembly
 			} while (((current & 0x80) == 0x80) && count < 5);
 
 			if ((current & 0x80) == 0x80)
-				throw new ModuleLoadException("Invalid LEB128 sequence.", this.offset);
+				throw new ModuleLoadException("Invalid LEB128 sequence.", initialOffset);
 
 			if (((signBits >> 1) & result) != 0)
 				result |= signBits;
@@ -93,6 +94,7 @@ namespace WebAssembly
 			long current;
 			var count = 0;
 			var signBits = -1L;
+			var initialOffset = this.offset;
 			do
 			{
 				current = this.ReadByte();
@@ -102,7 +104,7 @@ namespace WebAssembly
 			} while (((current & 0x80) == 0x80) && count < 10);
 
 			if ((current & 0x80) == 0x80)
-				throw new ModuleLoadException("Invalid LEB128 sequence.", this.offset);
+				throw new ModuleLoadException("Invalid LEB128 sequence.", initialOffset);
 
 			if (((signBits >> 1) & result) != 0)
 				result |= signBits;

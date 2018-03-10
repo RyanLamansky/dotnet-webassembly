@@ -224,12 +224,12 @@ namespace WebAssembly
 
 					var module = new Module();
 					var previousSection = Section.None;
-
+					var preSectionOffset = reader.Offset;
 					while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
 					{
-						var payloadLength = reader.ReadVarUInt32();
 						if (id != 0 && (Section)id < previousSection)
-							throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", reader.Offset);
+							throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
+						var payloadLength = reader.ReadVarUInt32();
 
 						switch ((Section)id)
 						{
@@ -352,7 +352,7 @@ namespace WebAssembly
 								break;
 
 							default:
-								throw new ModuleLoadException($"Unrecognized section type {id}.", reader.Offset);
+								throw new ModuleLoadException($"Unrecognized section type {id}.", preSectionOffset);
 						}
 
 						previousSection = (Section)id;

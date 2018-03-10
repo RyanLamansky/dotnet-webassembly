@@ -44,7 +44,7 @@
 			var rawReturns = this.RawReturnTypes = new ValueType[returns.Length];
 
 			if (returns.Length > 1)
-				throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset);
+				throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset - 1);
 
 			for (var i = 0; i < returns.Length; i++)
 				returns[i] = (rawReturns[i] = (ValueType)reader.ReadVarInt7()).ToSystemType();

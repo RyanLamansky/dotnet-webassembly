@@ -68,6 +68,7 @@ namespace WebAssembly
 		{
 			var module = reader.ReadString(reader.ReadVarUInt32());
 			var field = reader.ReadString(reader.ReadVarUInt32());
+			var initialOffset = reader.Offset;
 			var kind = (ExternalKind)reader.ReadByte();
 
 			switch (kind)
@@ -105,7 +106,7 @@ namespace WebAssembly
 					};
 
 				default:
-					throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", reader.Offset);
+					throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", initialOffset);
 			}
 		}
 
