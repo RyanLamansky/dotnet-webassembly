@@ -57,7 +57,7 @@
 		/// <summary>
 		/// Conditionally branch to a given label in an enclosing construct.
 		/// </summary>
-		[OpCodeCharacteristics("br_f")]
+		[OpCodeCharacteristics("br_if")]
 		BranchIf = 0x0d,
 
 		/// <summary>
