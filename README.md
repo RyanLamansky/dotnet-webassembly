@@ -92,16 +92,8 @@ static class Program
 
 		//We now have enough for a usable WASM file, which we could save with module.WriteToBinary().
 		//Below, we show how the Compile feature can be used for .NET-based execution.
-
-		//We don't need to keep the below memory stream open for the instance creator.
-		Func<Instance<Sample>> instanceCreator;
-		using (var memory = new System.IO.MemoryStream())
-		{
-			//Can write to any stream, including files or ASP.NET responses, for example.
-			module.WriteToBinary(memory);
-			memory.Position = 0; //Going to read it back...
-			instanceCreator = Compile.FromBinary<Sample>(memory);
-		} //Automatically release the memory stream here.
+		//For stream-based compilation, WebAssembly.Compile should be used.
+		var instanceCreator = module.Compile<Sample>();
 
 		//Instances should be wrapped in a "using" block for automatic disposal.
 		using (var instance = instanceCreator())
@@ -143,8 +135,6 @@ The API will be frozen with the 1.0 release.
 This probably won't be changed because this is why we have namespaces, and these names are appropriate for WebAssembly.
 * The `WebAssembly.Instructions` namespace has a high number of classes--nearly 200, one per instruction plus some helper base classes.
 Additional namespaces will be created for new post-"MVP" WebAssembly instructions.
-* Can't directly compile a loaded `WebAssembly.Module` instance.
-This is intentional because the compiler is designed for streaming raw binary, but it might be convenient for some use cases.
 * Instruction names in the library have little resemblance to their native name.
 This is partially forced by the names themselves, which include characters like `/` and `.` that are not legal in C#.
 The other reason is to conform with [.NET Framework Design Guidelines](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/names-of-classes-structs-and-interfaces), which discourage the use of acronyms and abbreviations.

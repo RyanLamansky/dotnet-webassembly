@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace WebAssembly
@@ -21,12 +20,21 @@ namespace WebAssembly
 		{
 			var module = new Module();
 			module.ToInstance<object>();
-		}
+        }
 
-		/// <summary>
-		/// Tests a compilation of an assembly that contains a single exported function that does nothing.
-		/// </summary>
-		[TestMethod]
+        /// <summary>
+        /// Tests a compilation of an empty assembly compiled via <see cref="Module.Compile{TExports}(System.Collections.Generic.IEnumerable{RuntimeImport})"/>.
+        /// </summary>
+        [TestMethod]
+        public void Compile_DirectFromModule()
+        {
+            new Module().Compile<object>();
+        }
+
+        /// <summary>
+        /// Tests a compilation of an assembly that contains a single exported function that does nothing.
+        /// </summary>
+        [TestMethod]
 		public void Compile_MinimalExportedFunction()
 		{
 			var module = new Module();

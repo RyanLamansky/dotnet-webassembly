@@ -615,5 +615,24 @@ namespace WebAssembly
 					writer.Write(buffer, 0, read);
 			}
 		}
+
+        /// <summary>
+        /// Creates an executable <see cref="Instance{TExports}"/> from this instance's data.
+        /// This is intended for use with run-time code generation.  For directly compiling WebAssembly byte code, use <see cref="WebAssembly.Compile"/>.
+        /// </summary>
+		/// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
+		/// <returns>A function that creates runnable instances.</returns>
+		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
+        public Func<Instance<TExports>> Compile<TExports>(IEnumerable<RuntimeImport> imports = null)
+        where TExports : class
+        {
+            //TODO: A more direct compilation process will be faster and create less garbage.
+            using (var memory = new MemoryStream())
+            {
+                this.WriteToBinary(memory);
+                memory.Position = 0;
+                return WebAssembly.Compile.FromBinary<TExports>(memory, imports);
+            }
+        }
 	}
 }
