@@ -37,14 +37,18 @@ namespace WebAssembly
 			if (method.IsStatic == false || method.IsPublic == false)
 				throw new ArgumentException("Imported methods must be public and static.", nameof(method));
 
-			if (!method.ReturnType.TryConvertToValueType(out var type))
-				throw new ArgumentNullException($"Return type {method.ReturnType} is not compatible with WebAssembly.");
+			this.Type = new Type();
+			if (method.ReturnType != typeof(void))
+			{
+				if (!method.ReturnType.TryConvertToValueType(out var type))
+					throw new ArgumentNullException($"Return type {method.ReturnType} is not compatible with WebAssembly.");
 
-			this.Type = new Type { Returns = new[] { type } };
+				this.Type.Returns = new[] { type };
+			}
 
 			foreach (var parameter in method.GetParameters())
 			{
-				if (!parameter.ParameterType.TryConvertToValueType(out type))
+				if (!parameter.ParameterType.TryConvertToValueType(out var type))
 					throw new ArgumentNullException($"Parameter type {parameter} is not compatible with WebAssembly.");
 
 				this.Type.Parameters.Add(type);
