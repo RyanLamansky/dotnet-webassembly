@@ -3,7 +3,7 @@
   <PropertyGroup>
 		<TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
 		<Title>WebAssembly for .NET</Title>
-		<PackageVersion>0.3.2-preview</PackageVersion>
+		<PackageVersion>0.3.3-preview</PackageVersion>
 		<Authors>Ryan Lamansky</Authors>
 		<Description>Create, read, modify, write and execute WebAssembly (WASM) files.</Description>
 		<PackageLicenseUrl>https://github.com/RyanLamansky/dotnet-webassembly/blob/master/LICENSE</PackageLicenseUrl>
