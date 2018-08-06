@@ -415,7 +415,7 @@ namespace WebAssembly
 								functionSignatures,
 								internalFunctions,
 								signatures,
-								functionElements,
+								null,
 								module,
 								globalGetters,
 								globalSetters
