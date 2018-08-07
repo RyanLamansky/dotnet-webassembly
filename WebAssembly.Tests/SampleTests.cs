@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
 using System.Reflection;
 
 namespace WebAssembly
@@ -10,9 +11,9 @@ namespace WebAssembly
 	public class SampleTests
 	{
 		/// <summary>
-		/// The number of times <see cref="Receive(int)"/> was called.
+		/// The data acquired from calls to <see cref="Receive(int)"/>
 		/// </summary>
-		private static int receiveCalls;
+		private static readonly StringBuilder received = new StringBuilder();
 
 		/// <summary>
 		/// Used with <see cref="Sample_Issue7"/> to verify a call out from a WebAssembly file.
@@ -20,7 +21,7 @@ namespace WebAssembly
 		/// <param name="value">The input.</param>
 		public static void Receive(int value)
 		{
-			System.Threading.Interlocked.Increment(ref receiveCalls);
+			received.Append((char)value);
 		}
 
 		/// <summary>
@@ -32,18 +33,14 @@ namespace WebAssembly
 		{
 			using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
 			{
-				var module = Module.ReadFromBinary(stream);
-				Assert.IsNotNull(module);
-			}
-
-			using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
-			{
 				var compiled = Compile.FromBinary<dynamic>(stream,
 					new RuntimeImport[] {
 					new FunctionImport("env", "sayc", typeof(SampleTests).GetTypeInfo().GetMethod(nameof(Receive)))
 					})();
-				compiled.Exports.main();
+				Assert.AreEqual<int>(0, compiled.Exports.main());
 			}
+
+			Assert.AreEqual("Hello World (from WASM)\n", received.ToString());
 		}
 	}
 }

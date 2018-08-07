@@ -259,8 +259,9 @@ namespace WebAssembly
 
 							var importsByName = imports.ToDictionary(import => new Tuple<string, string>(import.ModuleName, import.FieldName));
 
-							var count = reader.ReadVarUInt32();
-							var functionImports = new List<MethodInfo>(checked((int)count));
+							var count = checked((int)reader.ReadVarUInt32());
+							var functionImports = new List<MethodInfo>(count);
+							var functionImportTypes = new List<Signature>(count);
 
 							for (var i = 0; i < count; i++)
 							{
@@ -280,10 +281,12 @@ namespace WebAssembly
 										if (!(import is FunctionImport functionImport))
 											throw new CompilerException($"{moduleName}::{fieldName} is expected to be a function, but provided import was not.");
 
-										if (!signatures[typeIndex].Equals(functionImport.Type))
+										var signature = signatures[typeIndex];
+										if (!signature.Equals(functionImport.Type))
 											throw new CompilerException($"{moduleName}::{fieldName} did not match the required type signature.");
 
 										functionImports.Add(functionImport.Method);
+										functionImportTypes.Add(signature);
 										break;
 
 									case ExternalKind.Table:
@@ -298,23 +301,28 @@ namespace WebAssembly
 
 							importedFunctions = functionImports.Count;
 							internalFunctions = functionImports.ToArray();
+							functionSignatures = functionImportTypes.ToArray();
 						}
 						break;
 
 					case Section.Function:
 						{
-							functionSignatures = new Signature[reader.ReadVarUInt32()];
 							var importedFunctionCount = internalFunctions == null ? 0 : internalFunctions.Length;
+							var functionIndexSize = checked((int)(importedFunctionCount + reader.ReadVarUInt32()));
+							if (functionSignatures != null)
+								Array.Resize(ref functionSignatures, functionIndexSize);
+							else
+								functionSignatures = new Signature[functionIndexSize];
 							if (importedFunctionCount != 0)
-								Array.Resize(ref internalFunctions, checked(importedFunctionCount + functionSignatures.Length));
+								Array.Resize(ref internalFunctions, checked(functionSignatures.Length));
 							else
 								internalFunctions = new MethodInfo[functionSignatures.Length];
 
-							for (var i = 0; i < functionSignatures.Length; i++)
+							for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
 							{
 								var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
 								var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
-								internalFunctions[importedFunctionCount + i] = exportsBuilder.DefineMethod(
+								internalFunctions[i] = exportsBuilder.DefineMethod(
 									$"👻 {i}",
 									internalFunctionAttributes,
 									CallingConventions.Standard,
@@ -581,7 +589,7 @@ namespace WebAssembly
 													exportedPropertyAttributes,
 													CallingConventions.HasThis,
 													null,
-													new [] { getter.Type.ToSystemType()}
+													new[] { getter.Type.ToSystemType() }
 													);
 
 												var wrappedSetIL = wrappedSet.GetILGenerator();
@@ -656,10 +664,10 @@ namespace WebAssembly
 							var preBodiesIndex = reader.Offset;
 							var functionBodies = reader.ReadVarUInt32();
 
-							if (functionBodies > 0 && functionSignatures == null)
+							if (functionBodies > 0 && (functionSignatures == null || functionSignatures.Length == importedFunctions))
 								throw new ModuleLoadException("Code section is invalid when Function section is missing.", preBodiesIndex);
-							if (functionBodies != functionSignatures.Length)
-								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length} were expected.", preBodiesIndex);
+							if (functionBodies != functionSignatures.Length - importedFunctions)
+								throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length - importedFunctions} were expected.", preBodiesIndex);
 
 							if (context == null) //Might have been created by the Global section, if present.
 							{
@@ -678,7 +686,7 @@ namespace WebAssembly
 
 							for (var functionBodyIndex = 0; functionBodyIndex < functionBodies; functionBodyIndex++)
 							{
-								var signature = functionSignatures[functionBodyIndex];
+								var signature = functionSignatures[importedFunctions + functionBodyIndex];
 								var byteLength = reader.ReadVarUInt32();
 								var startingOffset = reader.Offset;
 
@@ -808,7 +816,7 @@ namespace WebAssembly
 				for (var i = 0; i < exportedFunctions.Length; i++)
 				{
 					var exported = exportedFunctions[i];
-					var signature = functionSignatures[exported.Value - importedFunctions];
+					var signature = functionSignatures[exported.Value];
 
 					var method = exportsBuilder.DefineMethod(
 						exported.Key,
