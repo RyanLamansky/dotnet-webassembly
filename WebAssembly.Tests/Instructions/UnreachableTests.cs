@@ -14,7 +14,9 @@ namespace WebAssembly.Instructions
 		[TestMethod]
 		public void Unreachable_Compiled()
 		{
-			ExceptionAssert.Expect<UnreachableException>(() => AssemblyBuilder.CreateInstance<dynamic>("Test", null, new Unreachable(), new End()).Test());
+			Assert.ThrowsException<UnreachableException>(() => {
+                AssemblyBuilder.CreateInstance<dynamic>("Test", null, new Unreachable(), new End()).Test();
+                });
 		}
 	}
 }

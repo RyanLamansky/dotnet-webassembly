@@ -18,7 +18,7 @@ namespace WebAssembly
 		[TestMethod]
 		public void Module_ReadFromBinaryStream()
 		{
-			Assert.AreEqual("input", ExceptionAssert.Expect<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null)).ParamName);
+			Assert.AreEqual("input", Assert.ThrowsException<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null)).ParamName);
 
 			using (var sample = new MemoryStream())
 			{
@@ -29,7 +29,7 @@ namespace WebAssembly
 					writer.Write(0x6e736100); //Bad magic number.
 				}
 				sample.Position = 0;
-				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
+				Assert.IsTrue(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
 				Assert.IsTrue(sample.CanSeek, "Stream was closed but should have been left open.");
 
 				sample.Position = 0;
@@ -39,7 +39,7 @@ namespace WebAssembly
 					//Missing version.
 				}
 				sample.Position = 0;
-				Assert.IsInstanceOfType(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).InnerException, typeof(EndOfStreamException));
+				Assert.IsInstanceOfType(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).InnerException, typeof(EndOfStreamException));
 
 				sample.Position = 0;
 				using (var writer = new BinaryWriter(sample, utf8, true))
@@ -48,7 +48,7 @@ namespace WebAssembly
 					writer.Write(0x0); //Bad version
 				}
 				sample.Position = 0;
-				Assert.IsTrue(ExceptionAssert.Expect<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
+				Assert.IsTrue(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
 
 				sample.Position = 0;
 				using (var writer = new BinaryWriter(sample, utf8, true))
@@ -228,10 +228,10 @@ namespace WebAssembly
 		[TestMethod]
 		public void Module_InstructionSequenceMissingEndValidation()
 		{
-			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Globals = new[] { new Global() } }.WriteToBinaryNoOutput());
-			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Elements = new[] { new Element() } }.WriteToBinaryNoOutput());
-			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Codes = new[] { new FunctionBody() } }.WriteToBinaryNoOutput());
-			ExceptionAssert.Expect<InvalidOperationException>(() => new Module { Data = new[] { new Data() } }.WriteToBinaryNoOutput());
+			Assert.ThrowsException<InvalidOperationException>(() => new Module { Globals = new[] { new Global() } }.WriteToBinaryNoOutput());
+			Assert.ThrowsException<InvalidOperationException>(() => new Module { Elements = new[] { new Element() } }.WriteToBinaryNoOutput());
+			Assert.ThrowsException<InvalidOperationException>(() => new Module { Codes = new[] { new FunctionBody() } }.WriteToBinaryNoOutput());
+			Assert.ThrowsException<InvalidOperationException>(() => new Module { Data = new[] { new Data() } }.WriteToBinaryNoOutput());
 		}
 	}
 }

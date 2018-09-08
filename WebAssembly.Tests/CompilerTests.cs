@@ -602,7 +602,7 @@ namespace WebAssembly
 			});
 
 			//module.ToInstance<dynamic>();
-			var x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
+			var x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
 			Assert.AreEqual(1u, x.Offset);
 			Assert.AreEqual(1u, x.Length);
 		}

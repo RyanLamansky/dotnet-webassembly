@@ -48,23 +48,23 @@ namespace WebAssembly.Instructions
 
 				MemoryAccessOutOfRangeException x;
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 3));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 3));
 				Assert.AreEqual(Memory.PageSize - 3, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 2));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 2));
 				Assert.AreEqual(Memory.PageSize - 2, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
 				Assert.AreEqual(Memory.PageSize - 1, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize));
 				Assert.AreEqual(Memory.PageSize, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
+				Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
 		}
 
@@ -109,23 +109,23 @@ namespace WebAssembly.Instructions
 
 				MemoryAccessOutOfRangeException x;
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 4));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 4));
 				Assert.AreEqual(Memory.PageSize - 3, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 3));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 3));
 				Assert.AreEqual(Memory.PageSize - 2, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 2));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 2));
 				Assert.AreEqual(Memory.PageSize - 1, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
 				Assert.AreEqual(Memory.PageSize, x.Offset);
 				Assert.AreEqual(4u, x.Length);
 
-				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
+				Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
 		}
 	}

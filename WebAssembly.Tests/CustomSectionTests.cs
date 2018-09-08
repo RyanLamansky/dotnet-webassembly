@@ -24,7 +24,7 @@ namespace WebAssembly
 				custom.PrecedingSection = value;
 			}
 
-			ExceptionAssert.Expect<ArgumentOutOfRangeException>(() => custom.PrecedingSection = (Section)255);
+			Assert.ThrowsException<ArgumentOutOfRangeException>(() => custom.PrecedingSection = (Section)255);
 		}
 	}
 }

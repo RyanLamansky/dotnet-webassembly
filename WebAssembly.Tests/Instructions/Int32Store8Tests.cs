@@ -43,11 +43,11 @@ namespace WebAssembly.Instructions
 
 				MemoryAccessOutOfRangeException x;
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize, 0));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize, 0));
 				Assert.AreEqual(Memory.PageSize, x.Offset);
 				Assert.AreEqual(1u, x.Length);
 
-				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
+				Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
 			}
 		}
 
@@ -85,11 +85,11 @@ namespace WebAssembly.Instructions
 
 				MemoryAccessOutOfRangeException x;
 
-				x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1, 0));
+				x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1, 0));
 				Assert.AreEqual(Memory.PageSize, x.Offset);
 				Assert.AreEqual(1u, x.Length);
 
-				ExceptionAssert.Expect<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
+				Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue), 0));
 			}
 		}
 	}
