@@ -566,8 +566,8 @@ namespace WebAssembly
 											throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", preIndexOffset);
 
 										{
-											var getter = globalGetters[i];
-											var setter = globalSetters[i];
+											var getter = globalGetters[index];
+											var setter = globalSetters[index];
 											var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, getter.Type.ToSystemType(), System.Type.EmptyTypes);
 											var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
 												exportedPropertyAttributes,
