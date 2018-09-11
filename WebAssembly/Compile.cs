@@ -563,7 +563,7 @@ namespace WebAssembly
 										break;
 									case ExternalKind.Global:
 										if (index >= globalGetters.Length)
-											throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", preIndexOffset);
+											throw new ModuleLoadException($"Exported global index of {index} is greater than or equal to the number of globals {globalGetters.Length}.", preIndexOffset);
 
 										{
 											var getter = globalGetters[index];
