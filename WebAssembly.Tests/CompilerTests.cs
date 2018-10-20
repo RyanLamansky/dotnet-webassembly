@@ -601,10 +601,41 @@ namespace WebAssembly
 				RawData = new byte[] { 2 },
 			});
 
-			//module.ToInstance<dynamic>();
 			var x = ExceptionAssert.Expect<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
 			Assert.AreEqual(1u, x.Offset);
 			Assert.AreEqual(1u, x.Length);
+		}
+
+		private static readonly Runtime.UnmanagedMemory memory = new Runtime.UnmanagedMemory(0, 1);
+
+		/// <summary>
+		/// Used by Compiler_MemoryImportExport to provide a memory instance.
+		/// </summary>
+		public static Runtime.UnmanagedMemory GetMemoryFor_Compiler_MemoryImportExport() => memory;
+
+		/// <summary>
+		/// Verifies that memory can be imported and exported.
+		/// </summary>
+		[TestMethod]
+		public void Compiler_MemoryImportExport()
+		{
+			var module = new Module();
+			module.Memories.Add(new Memory(0, 1));
+			module.Imports.Add(new Import.Memory
+			{
+				Field = "Memory",
+				Module = "Memory",
+				Type = new Memory(0, 1)
+			});
+			module.Exports.Add(new Export
+			{
+				Name = "Memory",
+				Kind = ExternalKind.Memory,
+			});
+
+			var roundMemory = module.ToInstance<dynamic>(new[] { new MemoryImport("Memory", "Memory", typeof(CompilerTests).GetMethod(nameof(GetMemoryFor_Compiler_MemoryImportExport)))}).Exports.Memory as Runtime.UnmanagedMemory;
+			Assert.IsNotNull(roundMemory);
+			Assert.AreSame(memory, roundMemory);
 		}
 	}
 }

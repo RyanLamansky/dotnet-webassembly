@@ -121,7 +121,7 @@ Following traditional [test-driven development](https://en.wikipedia.org/wiki/Te
 Everything on this list will be fixed before 1.0 is published.
 
 * The following export types are not supported by the compiler: Table.
-* The following import types are not supported by the compiler: Table, Memory, Global.
+* The following import types are not supported by the compiler: Table, Global.
 * Passing a MethodBuilder as an imported function will cause the compiler to generate incorrect code.
 * Thorough documentation is needed.
 
@@ -146,6 +146,7 @@ This can make interaction with .NET Framework  classes less convenient, as they 
 
 These features are under consideration for development after all the core work is done.
 
+- Add compiler support for imports from sources other than static merthods.
 - Use the known custom section "name" to provide human-readable names to the generated functions.
 Since this section is required to be at the end of the file by the WebAssembly standard, its use will be disabled by default for more efficient streaming compilation.
 - ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.

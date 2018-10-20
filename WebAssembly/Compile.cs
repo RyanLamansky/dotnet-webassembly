@@ -202,6 +202,7 @@ namespace WebAssembly
 				;
 
 			var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+			MethodInfo importedMemoryProvider = null;
 			FieldBuilder memory = null;
 
 			ILGenerator instanceConstructorIL;
@@ -289,8 +290,15 @@ namespace WebAssembly
 										functionImportTypes.Add(signature);
 										break;
 
-									case ExternalKind.Table:
 									case ExternalKind.Memory:
+										var limits = new ResizableLimits(reader);
+										if (!(import is MemoryImport memoryImport))
+											throw new CompilerException($"{moduleName}::{fieldName} is expected to be memory, but provided import was not.");
+
+										importedMemoryProvider = memoryImport.Method;
+										break;
+
+									case ExternalKind.Table:
 									case ExternalKind.Global:
 										throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", preKindOffset);
 
@@ -372,18 +380,27 @@ namespace WebAssembly
 							memory = exportsBuilder.DefineField("☣ Memory", typeof(Runtime.UnmanagedMemory), FieldAttributes.Private | FieldAttributes.InitOnly);
 
 							instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
-							Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
-							instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
+							if (importedMemoryProvider == null)
 							{
-								var parms = info.GetParameters();
-								return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
-							}).First());
-							instanceConstructorIL.Emit(OpCodes.Newobj, typeof(Runtime.UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
+								Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
+								Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
+								instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
+								{
+									var parms = info.GetParameters();
+									return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+								}).First());
+
+								instanceConstructorIL.Emit(OpCodes.Newobj, typeof(Runtime.UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
+								{
+									var parms = info.GetParameters();
+									return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
+								}).First());
+							}
+							else
 							{
-								var parms = info.GetParameters();
-								return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
-							}).First());
+								instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
+							}
+
 							instanceConstructorIL.Emit(OpCodes.Stfld, memory);
 
 							exportsBuilder.AddInterfaceImplementation(typeof(IDisposable));
