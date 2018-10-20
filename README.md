@@ -6,7 +6,8 @@ A library able to create, read, modify, write and execute WebAssembly (WASM) fil
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
 
 A preview is available via NuGet at https://www.nuget.org/packages/WebAssembly .
-No further updates to the preview are planned; the next release will be 1.0 with full support for the WebAssembly "MVP".
+Incremental updates to the preview are ongoing to deliver the last missing features.
+The 1.0 release marks when 100% of the "MVP" spec level of WebAssembly features are covered.
 
 ## Overview
 
@@ -122,7 +123,6 @@ Everything on this list will be fixed before 1.0 is published.
 
 * The following export types are not supported by the compiler: Table.
 * The following import types are not supported by the compiler: Table, Global.
-* Passing a MethodBuilder as an imported function will cause the compiler to generate incorrect code.
 * Thorough documentation is needed.
 
 ## API Issues

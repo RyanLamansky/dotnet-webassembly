@@ -23,7 +23,7 @@ namespace WebAssembly.Instructions
 				Assert.AreEqual((int)value, exports.Test(value));
 
 			const float exceptional = 123445678901234f;
-			ExceptionAssert.Expect<System.OverflowException>(() => exports.Test(exceptional));
+			Assert.ThrowsException<System.OverflowException>(() => exports.Test(exceptional));
 		}
 	}
 }

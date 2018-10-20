@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace WebAssembly
 {
@@ -123,5 +124,34 @@ namespace WebAssembly
 				Assert.AreEqual(start + 1, NothingDoer.Calls);
 			}
 		}
+
+        /// <summary>
+        /// Tests runtime imports with dynamically generated code.
+        /// </summary>
+        [TestMethod]
+        public void Compile_RuntimeImportMethodBuilderIsBlocked()
+        {
+            var module = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(
+                   new AssemblyName("CompiledWebAssembly"),
+                   AssemblyBuilderAccess.RunAndCollect
+                   )
+                   .DefineDynamicModule("CompiledWebAssembly")
+                   ;
+
+            var dynamicClass = module.DefineType("TestClass");
+
+            var methodBuilder = dynamicClass.DefineMethod(
+                "TestMethod",
+                MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.HideBySig,
+                typeof(int),
+                System.Type.EmptyTypes);
+
+            var il = methodBuilder.GetILGenerator();
+            il.Emit(OpCodes.Ldc_I4_7);
+            il.Emit(OpCodes.Ret);
+
+            var x = Assert.ThrowsException<ArgumentException>(() => new FunctionImport("TestModule", "TestExportName", methodBuilder));
+            Assert.AreEqual("method", x.ParamName);
+        }
 	}
 }
