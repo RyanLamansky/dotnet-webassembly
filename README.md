@@ -138,7 +138,7 @@ Additional namespaces will be created for new post-"MVP" WebAssembly instruction
 This is partially forced by the names themselves, which include characters like `/` and `.` that are not legal in C#.
 The other reason is to conform with [.NET Framework Design Guidelines](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/names-of-classes-structs-and-interfaces), which discourage the use of acronyms and abbreviations.
 * Consistent with the native encoding of WebAssembly, most integers are unsigned.
-This can make interaction with .NET Framework  classes less convenient, as they mostly use signed integers even for values that are never negative, such as the count of entries in a list.
+This can make interaction with .NET Framework classes less convenient, as they mostly use signed integers even for values that are never negative, such as the count of entries in a list.
 * The `Import` class has specific types as nested classes, which can be awkward to use.
 * The `Import` class used by the parser can easily be confused with the `RuntimeImport` class used by the compiler.
 
@@ -146,7 +146,7 @@ This can make interaction with .NET Framework  classes less convenient, as they 
 
 These features are under consideration for development after all the core work is done.
 
-- Add compiler support for imports from sources other than static merthods.
+- Add compiler support for imports from sources other than static methods.
 - Use the known custom section "name" to provide human-readable names to the generated functions.
 Since this section is required to be at the end of the file by the WebAssembly standard, its use will be disabled by default for more efficient streaming compilation.
 - ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.
