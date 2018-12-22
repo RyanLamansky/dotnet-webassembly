@@ -98,5 +98,24 @@ namespace WebAssembly.Instructions
 			Assert.AreEqual(5, exports.Test(0));
 			Assert.AreEqual(6, exports.Test(1));
 		}
+
+		/// <summary>
+		/// Tests the <see cref="CallIndirect.Equals(Instruction)"/> and <see cref="CallIndirect.GetHashCode()"/> methods.
+		/// </summary>
+		[TestMethod]
+		public void CallIndirect_Equals()
+		{
+			TestUtility.CreateInstances<CallIndirect>(out var a, out var b);
+
+			a.Type = 1;
+			TestUtility.AreNotEqual(a, b);
+			b.Type = 1;
+			TestUtility.AreEqual(a, b);
+
+			a.Reserved = 1;
+			TestUtility.AreNotEqual(a, b);
+			b.Reserved = 1;
+			TestUtility.AreEqual(a, b);
+		}
 	}
 }

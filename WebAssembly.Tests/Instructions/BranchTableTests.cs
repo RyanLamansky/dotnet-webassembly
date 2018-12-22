@@ -48,5 +48,29 @@ namespace WebAssembly.Instructions
 			Assert.AreEqual(1, exports.Test(4));
 			Assert.AreEqual(1, exports.Test(5));
 		}
+
+		/// <summary>
+		/// Tests the <see cref="BranchTable.Equals(Instruction)"/> and <see cref="BranchTable.GetHashCode()"/> methods.
+		/// </summary>
+		[TestMethod]
+		public void BranchTable_Equals()
+		{
+			TestUtility.CreateInstances<BranchTable>(out var a, out var b);
+
+			a.DefaultLabel = 2;
+			b.DefaultLabel = 1;
+			TestUtility.AreNotEqual(a, b);
+			b.DefaultLabel = 2;
+			TestUtility.AreEqual(a, b);
+
+			b.Labels = new uint[] { };
+			TestUtility.AreEqual(a, b);
+			b.Labels = new uint[] { 1 };
+			TestUtility.AreNotEqual(a, b);
+			a.Labels = new uint[] { 1 };
+			TestUtility.AreEqual(a, b);
+			a.Labels = new uint[] { 1, 2 };
+			TestUtility.AreNotEqual(a, b);
+		}
 	}
 }

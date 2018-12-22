@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Linq;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly
@@ -132,23 +133,7 @@ namespace WebAssembly
 		/// <returns>The hash code.</returns>
 		public override int GetHashCode()
 		{
-			//Adler32 hash algorithm.
-			const uint prime = 65521; // The largest prime smaller than 65536.
-			uint a = 1, b = 0;
-
-			foreach (var value in this.returns)
-			{
-				a = (a + (uint)value) % prime;
-				b = (b + a) % prime;
-			}
-
-			foreach (var value in this.parameters)
-			{
-				a = (a + (uint)value) % prime;
-				b = (b + a) % prime;
-			}
-
-			return (int)((b << 16) | a);
+			return (int)this.Form ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v));
 		}
 
 		/// <summary>
@@ -169,6 +154,9 @@ namespace WebAssembly
 				return true;
 
 			if (other == null)
+				return false;
+
+			if (this.Form != other.Form)
 				return false;
 
 			var thisReturns = this.Returns;

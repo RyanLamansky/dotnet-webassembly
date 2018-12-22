@@ -134,5 +134,18 @@ namespace WebAssembly.Instructions
 			Assert.AreEqual(1, exports.Test(0, 0));
 			Assert.AreEqual(4, exports.Test(3, 3));
 		}
+
+		/// <summary>
+		/// Tests the <see cref="Call.Equals(Instruction)"/> and <see cref="Call.GetHashCode()"/> methods.
+		/// </summary>
+		[TestMethod]
+		public void Call_Equals()
+		{
+			TestUtility.CreateInstances<Call>(out var a, out var b);
+			a.Index = 1;
+			TestUtility.AreNotEqual(a, b);
+			b.Index = 1;
+			TestUtility.AreEqual(a, b);
+		}
 	}
 }

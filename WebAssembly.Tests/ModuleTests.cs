@@ -223,6 +223,39 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// Verifies that <see cref="Module.Types"/> contents are round-tripped correctly.
+		/// </summary>
+		[TestMethod]
+		public void Module_TypeRoundTrip()
+		{
+			var source = new Module
+			{
+				Types = new Type[]
+				{
+					new Type
+					{
+						Parameters = new[] { ValueType.Int32, ValueType.Float32 },
+						Returns = new[] { ValueType.Int64 }
+					}
+				}
+			}; ;
+
+			Module destination;
+			using (var stream = new MemoryStream())
+			{
+				source.WriteToBinary(stream);
+				stream.Position = 0;
+
+				destination = Module.ReadFromBinary(stream);
+			}
+
+			Assert.IsNotNull(destination.Types);
+			Assert.AreNotSame(source.Types, destination.Types);
+			Assert.AreEqual(1, destination.Types.Count);
+			Assert.IsTrue(source.Types[0].Equals(destination.Types[0]));
+		}
+
+		/// <summary>
 		/// Verifies that the module writing process prevents an attempt to write an unreadable assembly that contains an instruction sequence that doesn't end with <see cref="OpCode.End"/>.
 		/// </summary>
 		[TestMethod]
