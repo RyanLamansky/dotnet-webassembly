@@ -7,7 +7,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Call function indirectly.
 	/// </summary>
-	public class CallIndirect : Instruction
+	public class CallIndirect : Instruction, IEquatable<CallIndirect>
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.CallIndirect"/>.
@@ -61,10 +61,17 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <param name="other">The instruction to compare against.</param>
 		/// <returns>True if they have the same type and value, otherwise false.</returns>
-		public override bool Equals(Instruction other) =>
-			other is CallIndirect instruction
-			&& instruction.Type == this.Type
-			&& instruction.Reserved == this.Reserved
+		public override bool Equals(Instruction other) => this.Equals(other as CallIndirect);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="other">The instruction to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public bool Equals(CallIndirect other) =>
+			other != null
+			&& other.Type == this.Type
+			&& other.Reserved == this.Reserved
 			;
 
 		/// <summary>

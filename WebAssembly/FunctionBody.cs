@@ -9,7 +9,7 @@ namespace WebAssembly
 	/// <summary>
 	/// Function bodies consist of a sequence of local variable declarations followed by bytecode instructions.
 	/// </summary>
-	public class FunctionBody
+	public class FunctionBody : IEquatable<FunctionBody>
 	{
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
 		private IList<Local> locals;
@@ -66,6 +66,50 @@ namespace WebAssembly
 		/// </summary>
 		/// <returns>A string representation of this instance.</returns>
 		public override string ToString() => $"Locals: {locals?.Count}, Code: {code?.Count}";
+
+		/// <summary>
+		/// Returns a hash code based on the value of this instance.
+		/// </summary>
+		/// <returns>The hash code.</returns>
+		public override int GetHashCode()
+			=> HashCode.Combine(
+				this.Locals.Select(local => local?.GetHashCode())
+				.Concat(this.Code.Select(instruction => instruction?.GetHashCode()
+				)));
+
+		/// <summary>
+		/// Determines whether this instance is identical to another.
+		/// </summary>
+		/// <param name="obj">The object instance to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public override bool Equals(object obj) => this.Equals(obj as FunctionBody);
+
+		/// <summary>
+		/// Determines whether this instance is identical to another.
+		/// </summary>
+		/// <param name="other">The instance to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public bool Equals(FunctionBody other)
+		{
+			if (other == null)
+				return false;
+
+			using (var items = this.Code.GetEnumerator())
+			using (var others = this.code.GetEnumerator())
+			{
+				bool itemMoved, othersMoved;
+				while ((itemMoved = items.MoveNext()) & (othersMoved = others.MoveNext()))
+				{
+					if (itemMoved & !othersMoved)
+						return false;
+
+					if (!items.Current.Equals(others.Current))
+						return false;
+				}
+
+				return !itemMoved&& !othersMoved;
+			};
+		}
 
 		internal void WriteTo(Writer writer, byte[] buffer)
 		{

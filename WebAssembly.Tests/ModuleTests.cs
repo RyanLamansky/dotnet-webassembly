@@ -256,6 +256,48 @@ namespace WebAssembly
 		}
 
 		/// <summary>
+		/// Verifies that <see cref="Module.Codes"/> contents are round-tripped correctly.
+		/// </summary>
+		[TestMethod]
+		public void Module_FunctionBodyRoundTrip()
+		{
+			var source = new Module
+			{
+				Codes = new[]
+				{
+					new FunctionBody
+					{
+						Locals = new[]
+						{
+							new Local
+							{
+								Count  = 2,
+								Type = ValueType.Float64
+							}
+						},
+						Code = new Instruction[]
+						{
+							new Instructions.End()
+						}
+					}
+				}
+			};
+
+			Module destination;
+			using (var stream = new MemoryStream())
+			{
+				source.WriteToBinary(stream);
+				stream.Position = 0;
+
+				destination = Module.ReadFromBinary(stream);
+			}
+
+			Assert.IsNotNull(destination.Codes);
+			Assert.AreNotSame(source.Codes, destination.Codes);
+			TestUtility.AreEqual(source.Codes[0], destination.Codes[0]);
+		}
+
+		/// <summary>
 		/// Verifies that the module writing process prevents an attempt to write an unreadable assembly that contains an instruction sequence that doesn't end with <see cref="OpCode.End"/>.
 		/// </summary>
 		[TestMethod]

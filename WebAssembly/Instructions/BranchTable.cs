@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// A jump table which jumps to a label in an enclosing construct.
 	/// </summary>
-	public class BranchTable : Instruction
+	public class BranchTable : Instruction, IEquatable<BranchTable>
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.BranchTable"/>.
@@ -93,11 +93,18 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <param name="other">The instruction to compare against.</param>
 		/// <returns>True if they have the same type and value, otherwise false.</returns>
-		public override bool Equals(Instruction other) =>
-			other is BranchTable instruction
-			&& instruction.DefaultLabel == this.DefaultLabel
-			&& instruction.Labels.Count == this.Labels.Count
-			&& instruction.Labels.Select((value, i) => this.Labels[i] == value).All(v => v)
+		public override bool Equals(Instruction other) => this.Equals(other as BranchTable);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="other">The instruction to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public bool Equals(BranchTable other) =>
+			other != null
+			&& other.DefaultLabel == this.DefaultLabel
+			&& other.Labels.Count == this.Labels.Count
+			&& other.Labels.Select((value, i) => this.Labels[i] == value).All(v => v)
 			;
 
 		/// <summary>

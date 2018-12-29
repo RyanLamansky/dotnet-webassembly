@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Call function directly.
 	/// </summary>
-	public class Call : Instruction
+	public class Call : Instruction, IEquatable<Call>
 	{
 		/// <summary>
 		/// Always <see cref="OpCode.Call"/>.
@@ -56,9 +56,16 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <param name="other">The instruction to compare against.</param>
 		/// <returns>True if they have the same type and value, otherwise false.</returns>
-		public override bool Equals(Instruction other) =>
-			other is Call instruction
-			&& instruction.Index == this.Index
+		public override bool Equals(Instruction other) => this.Equals(other as Call);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="other">The instruction to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public bool Equals(Call other) =>
+			other != null
+			&& other.Index == this.Index
 			;
 
 		/// <summary>

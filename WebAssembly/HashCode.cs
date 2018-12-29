@@ -1,7 +1,12 @@
-﻿namespace WebAssembly
+﻿using System.Linq;
+
+namespace WebAssembly
 {
 	static class HashCode
 	{
+		public static int Combine(this System.Collections.Generic.IEnumerable<int?> hashCodes)
+			=> Combine(hashCodes.Select(code => code.GetValueOrDefault()));
+
 		public static int Combine(this System.Collections.Generic.IEnumerable<int> hashCodes)
 		{
 			var hash1 = (5381 << 16) + 5381;

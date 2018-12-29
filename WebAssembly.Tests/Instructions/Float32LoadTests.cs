@@ -133,5 +133,24 @@ namespace WebAssembly.Instructions
 				Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
 			}
 		}
+
+		/// <summary>
+		/// Tests <see cref="Float32Load.Equals(Float32Load)"/>
+		/// </summary>
+		[TestMethod]
+		public void Float32Load_Equals()
+		{
+			TestUtility.CreateInstances<Float32Load>(out var a, out var b);
+
+			a.Flags = MemoryImmediateInstruction.Options.Align2;
+			TestUtility.AreNotEqual(a, b);
+			b.Flags = MemoryImmediateInstruction.Options.Align2;
+			TestUtility.AreEqual(a, b);
+
+			a.Offset = 1;
+			TestUtility.AreNotEqual(a, b);
+			b.Offset = 1;
+			TestUtility.AreEqual(a, b);
+		}
 	}
 }

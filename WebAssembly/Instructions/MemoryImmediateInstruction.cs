@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions
 	/// <summary>
 	/// Common features of instructions that access linear memory.
 	/// </summary>
-	public abstract class MemoryImmediateInstruction : Instruction
+	public abstract class MemoryImmediateInstruction : Instruction, IEquatable<MemoryImmediateInstruction>
 	{
 		/// <summary>
 		/// Indicates options for the instruction.
@@ -73,11 +73,18 @@ namespace WebAssembly.Instructions
 		/// </summary>
 		/// <param name="other">The instruction to compare against.</param>
 		/// <returns>True if they have the same type and value, otherwise false.</returns>
-		public override bool Equals(Instruction other) =>
-			other is MemoryImmediateInstruction instruction
-			&& instruction.OpCode == this.OpCode
-			&& instruction.Flags == this.Flags
-			&& instruction.Offset == this.Offset
+		public override bool Equals(Instruction other) => this.Equals(other as MemoryImmediateInstruction);
+
+		/// <summary>
+		/// Determines whether this instruction is identical to another.
+		/// </summary>
+		/// <param name="other">The instruction to compare against.</param>
+		/// <returns>True if they have the same type and value, otherwise false.</returns>
+		public bool Equals(MemoryImmediateInstruction other) =>
+			other != null
+			&& other.OpCode == this.OpCode
+			&& other.Flags == this.Flags
+			&& other.Offset == this.Offset
 			;
 
 		/// <summary>
