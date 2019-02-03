@@ -1,4 +1,7 @@
-﻿namespace WebAssembly
+﻿using System.Text;
+using static System.Diagnostics.Debug;
+
+namespace WebAssembly
 {
     internal sealed class Signature : System.IEquatable<Type>
     {
@@ -73,6 +76,51 @@
                     return false;
 
             return true;
+        }
+
+        public override string ToString()
+        {
+            var parameters = this.ParameterTypes;
+            var returns = this.ReturnTypes;
+
+            Assert(parameters != null);
+            Assert(returns != null);
+
+            var builder = new StringBuilder();
+
+            if (parameters.Length == 0)
+            {
+                builder.Append("(No Parameters)");
+            }
+            else
+            {
+                builder.Append("Parameters: ");
+
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    if (i != 0)
+                        builder.Append(", ");
+                    builder.Append(parameters[i]);
+                }
+            }
+
+            if (returns.Length == 0)
+            {
+                builder.Append("; (No Returns)");
+            }
+            else
+            {
+                builder.Append("; Returns: ");
+
+                for (var i = 0; i < returns.Length; i++)
+                {
+                    if (i != 0)
+                        builder.Append(", ");
+                    builder.Append(returns[i]);
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }

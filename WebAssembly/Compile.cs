@@ -284,7 +284,7 @@ namespace WebAssembly
 
                                         var signature = signatures[typeIndex];
                                         if (!signature.Equals(functionImport.Type))
-                                            throw new CompilerException($"{moduleName}::{fieldName} did not match the required type signature.");
+                                            throw new CompilerException($"{moduleName}::{fieldName} did not match the required type signature of {signature}.");
 
                                         functionImports.Add(functionImport.Method);
                                         functionImportTypes.Add(signature);
@@ -300,10 +300,10 @@ namespace WebAssembly
 
                                     case ExternalKind.Table:
                                     case ExternalKind.Global:
-                                        throw new ModuleLoadException($"Imported external kind of {kind} is not currently supported.", preKindOffset);
+                                        throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
 
                                     default:
-                                        throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", preKindOffset);
+                                        throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not recognized.", preKindOffset);
                                 }
                             }
 

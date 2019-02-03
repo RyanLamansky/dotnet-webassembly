@@ -98,11 +98,10 @@ namespace WebAssembly
                     };
 
                 case ExternalKind.Global:
-                    return new Global
+                    return new Global(reader)
                     {
                         Module = module,
                         Field = field,
-                        Type = new WebAssembly.Global(reader),
                     };
 
                 default:
@@ -136,7 +135,7 @@ namespace WebAssembly
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
-            public override string ToString() => $"{base.ToString()} (Function {TypeIndex}";
+            public override string ToString() => $"{base.ToString()} ({nameof(Function)} {TypeIndex}";
 
             internal sealed override void WriteTo(Writer writer)
             {
@@ -172,7 +171,7 @@ namespace WebAssembly
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
-            public override string ToString() => $"{base.ToString()} (Function {Type}";
+            public override string ToString() => $"{base.ToString()} ({nameof(Table)} {Type}";
 
             internal sealed override void WriteTo(Writer writer)
             {
@@ -208,7 +207,7 @@ namespace WebAssembly
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
-            public override string ToString() => $"{base.ToString()} (Function {Type}";
+            public override string ToString() => $"{base.ToString()} ({nameof(Memory)} {Type}";
 
             internal sealed override void WriteTo(Writer writer)
             {
@@ -229,9 +228,14 @@ namespace WebAssembly
             public sealed override ExternalKind Kind => ExternalKind.Global;
 
             /// <summary>
-            /// Type of the imported global.
+            /// Type of the value.
             /// </summary>
-            public WebAssembly.Global Type { get; set; }
+            public ValueType ContentType { get; set; }
+
+            /// <summary>
+            /// When true, the value can be changed by running code.
+            /// </summary>
+            public bool IsMutable { get; set; }
 
             /// <summary>
             /// Creates a new <see cref="Global"/> instance.
@@ -240,17 +244,24 @@ namespace WebAssembly
             {
             }
 
+            internal Global(Reader reader)
+            {
+                this.ContentType = (ValueType)reader.ReadVarInt7();
+                this.IsMutable = reader.ReadVarUInt1() == 1;
+            }
+
             /// <summary>
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
-            public override string ToString() => $"{base.ToString()} (Function {Type}";
+            public override string ToString() => $"{base.ToString()} ({nameof(Global)} {ContentType} {(IsMutable ? "mutable" : "immutable")}";
 
             internal sealed override void WriteTo(Writer writer)
             {
                 base.WriteTo(writer);
                 writer.Write((byte)ExternalKind.Global);
-                Type.WriteTo(writer);
+                writer.WriteVar((sbyte)this.ContentType);
+                writer.WriteVar(this.IsMutable ? 1u : 0);
             }
         }
     }

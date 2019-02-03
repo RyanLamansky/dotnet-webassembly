@@ -144,16 +144,6 @@ namespace WebAssembly
                     {
                         Module = "D",
                         Field = "4",
-                        Type = new Global
-                        {
-                            ContentType = ValueType.Float64,
-                            InitializerExpression = new Instruction[]
-                            {
-                                new Instructions.Int32Constant(4),
-                                new Instructions.End(),
-                            },
-                            IsMutable = false,
-                        }
                     },
                 }
             };
@@ -210,15 +200,6 @@ namespace WebAssembly
                 var global = (Import.Global)imports[3];
                 Assert.AreEqual("D", global.Module);
                 Assert.AreEqual("4", global.Field);
-                Assert.IsNotNull(global.Type);
-                var globalType = global.Type;
-                Assert.AreEqual(ValueType.Float64, globalType.ContentType);
-                Assert.IsNotNull(globalType.InitializerExpression);
-                Assert.AreEqual(2, globalType.InitializerExpression.Count);
-                Assert.IsInstanceOfType(globalType.InitializerExpression[0], typeof(Instructions.Int32Constant));
-                Assert.AreEqual(4, ((Instructions.Int32Constant)globalType.InitializerExpression[0]).Value);
-                Assert.IsInstanceOfType(globalType.InitializerExpression[1], typeof(Instructions.End));
-                Assert.IsFalse(globalType.IsMutable);
             }
         }
 
