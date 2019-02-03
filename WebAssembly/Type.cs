@@ -7,181 +7,181 @@ using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
-	/// <summary>
-	/// Describes the signature of a function.
-	/// </summary>
-	public class Type : IEquatable<Type>
-	{
-		/// <summary>
-		/// The type of function.  The only accepted value in the initial binary format is <see cref="FunctionType.Function"/>, which is the default.
-		/// </summary>
-		public FunctionType Form { get; set; }
+    /// <summary>
+    /// Describes the signature of a function.
+    /// </summary>
+    public class Type : IEquatable<Type>
+    {
+        /// <summary>
+        /// The type of function.  The only accepted value in the initial binary format is <see cref="FunctionType.Function"/>, which is the default.
+        /// </summary>
+        public FunctionType Form { get; set; }
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-		private IList<ValueType> parameters;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+        private IList<ValueType> parameters;
 
-		/// <summary>
-		/// Parameters to the function.
-		/// </summary>
-		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
-		public IList<ValueType> Parameters
-		{
-			get => this.parameters ?? (this.parameters = new List<ValueType>());
-			set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
-		}
+        /// <summary>
+        /// Parameters to the function.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+        public IList<ValueType> Parameters
+        {
+            get => this.parameters ?? (this.parameters = new List<ValueType>());
+            set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-		private IList<ValueType> returns;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+        private IList<ValueType> returns;
 
-		/// <summary>
-		/// Return types to the function.  For the initial binary format, a maximum of 1 is allowed.
-		/// </summary>
-		/// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
-		public IList<ValueType> Returns
-		{
-			get => this.returns ?? (this.returns = new List<ValueType>());
-			set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
-		}
+        /// <summary>
+        /// Return types to the function.  For the initial binary format, a maximum of 1 is allowed.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+        public IList<ValueType> Returns
+        {
+            get => this.returns ?? (this.returns = new List<ValueType>());
+            set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
-		/// <summary>
-		/// Creates a new <see cref="Type"/> instance.
-		/// </summary>
-		public Type()
-		{
-			this.Form = FunctionType.Function;
-		}
+        /// <summary>
+        /// Creates a new <see cref="Type"/> instance.
+        /// </summary>
+        public Type()
+        {
+            this.Form = FunctionType.Function;
+        }
 
-		internal Type(Reader reader)
-		{
-			this.Form = (FunctionType)reader.ReadVarInt7();
-			int count;
+        internal Type(Reader reader)
+        {
+            this.Form = (FunctionType)reader.ReadVarInt7();
+            int count;
 
-			count = checked((int)reader.ReadVarUInt32());
-			var parameters = this.parameters = new List<ValueType>(count);
+            count = checked((int)reader.ReadVarUInt32());
+            var parameters = this.parameters = new List<ValueType>(count);
 
-			for (var i = 0; i < count; i++)
-				parameters.Add((ValueType)reader.ReadVarInt7());
+            for (var i = 0; i < count; i++)
+                parameters.Add((ValueType)reader.ReadVarInt7());
 
-			count = checked((int)reader.ReadVarUInt32());
-			var returns = this.returns = new List<ValueType>(count);
-			for (var i = 0; i < count; i++)
-				returns.Add((ValueType)reader.ReadVarInt7());
-		}
+            count = checked((int)reader.ReadVarUInt32());
+            var returns = this.returns = new List<ValueType>(count);
+            for (var i = 0; i < count; i++)
+                returns.Add((ValueType)reader.ReadVarInt7());
+        }
 
-		/// <summary>
-		/// Expresses the value of this instance as a string.
-		/// </summary>
-		/// <returns>A string representation of this instance.</returns>
-		public override string ToString()
-		{
-			var parameters = this.Parameters;
-			var returns = this.Returns;
+        /// <summary>
+        /// Expresses the value of this instance as a string.
+        /// </summary>
+        /// <returns>A string representation of this instance.</returns>
+        public override string ToString()
+        {
+            var parameters = this.Parameters;
+            var returns = this.Returns;
 
-			Assert(parameters != null);
-			Assert(returns != null);
+            Assert(parameters != null);
+            Assert(returns != null);
 
-			var builder = new StringBuilder("Form: ")
-				.Append(this.Form.ToString())
-				.Append("; Parameters: ")
-				;
+            var builder = new StringBuilder("Form: ")
+                .Append(this.Form.ToString())
+                .Append("; Parameters: ")
+                ;
 
-			for (var i = 0; i < parameters.Count; i++)
-			{
-				if (i != 0)
-					builder.Append(", ");
-				builder.Append(parameters[i]);
-			}
+            for (var i = 0; i < parameters.Count; i++)
+            {
+                if (i != 0)
+                    builder.Append(", ");
+                builder.Append(parameters[i]);
+            }
 
-			if (returns.Count == 0)
-			{
-				builder.Append("; (No Returns)");
-			}
-			else
-			{
-				builder.Append("; Returns: ");
+            if (returns.Count == 0)
+            {
+                builder.Append("; (No Returns)");
+            }
+            else
+            {
+                builder.Append("; Returns: ");
 
-				for (var i = 0; i < returns.Count; i++)
-				{
-					if (i != 0)
-						builder.Append(", ");
-					builder.Append(returns[i]);
-				}
-			}
+                for (var i = 0; i < returns.Count; i++)
+                {
+                    if (i != 0)
+                        builder.Append(", ");
+                    builder.Append(returns[i]);
+                }
+            }
 
-			return builder.ToString();
-		}
+            return builder.ToString();
+        }
 
-		internal void WriteTo(Writer writer)
-		{
-			var parameters = this.Parameters;
-			var returns = this.Returns;
+        internal void WriteTo(Writer writer)
+        {
+            var parameters = this.Parameters;
+            var returns = this.Returns;
 
-			writer.WriteVar((sbyte)this.Form);
+            writer.WriteVar((sbyte)this.Form);
 
-			writer.WriteVar((uint)parameters.Count);
-			foreach (var parameter in parameters)
-				writer.WriteVar((sbyte)parameter);
+            writer.WriteVar((uint)parameters.Count);
+            foreach (var parameter in parameters)
+                writer.WriteVar((sbyte)parameter);
 
-			writer.WriteVar((uint)returns.Count);
-			foreach (var @return in returns)
-				writer.WriteVar((sbyte)@return);
-		}
+            writer.WriteVar((uint)returns.Count);
+            foreach (var @return in returns)
+                writer.WriteVar((sbyte)@return);
+        }
 
-		/// <summary>
-		/// Creates a hash code based on the parameters and returns of this instance.
-		/// </summary>
-		/// <returns>The hash code.</returns>
-		public override int GetHashCode()
-		{
-			return (int)this.Form ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v));
-		}
+        /// <summary>
+        /// Creates a hash code based on the parameters and returns of this instance.
+        /// </summary>
+        /// <returns>The hash code.</returns>
+        public override int GetHashCode()
+        {
+            return (int)this.Form ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v));
+        }
 
-		/// <summary>
-		/// Compares the values of this instance for equality with those of another.
-		/// </summary>
-		/// <param name="obj">The other instance to compare against.</param>
-		/// <returns>True if the two instances have the same values, otherwise false.</returns>
-		public override bool Equals(object obj) => this.Equals(obj as Type);
+        /// <summary>
+        /// Compares the values of this instance for equality with those of another.
+        /// </summary>
+        /// <param name="obj">The other instance to compare against.</param>
+        /// <returns>True if the two instances have the same values, otherwise false.</returns>
+        public override bool Equals(object obj) => this.Equals(obj as Type);
 
-		/// <summary>
-		/// Compares the values of this instance for equality with those of another.
-		/// </summary>
-		/// <param name="other">The other instance to compare against.</param>
-		/// <returns>True if the two instances have the same values, otherwise false.</returns>
-		public bool Equals(Type other)
-		{
-			if (ReferenceEquals(this, other))
-				return true;
+        /// <summary>
+        /// Compares the values of this instance for equality with those of another.
+        /// </summary>
+        /// <param name="other">The other instance to compare against.</param>
+        /// <returns>True if the two instances have the same values, otherwise false.</returns>
+        public bool Equals(Type other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
 
-			if (other == null)
-				return false;
+            if (other == null)
+                return false;
 
-			if (this.Form != other.Form)
-				return false;
+            if (this.Form != other.Form)
+                return false;
 
-			var thisReturns = this.Returns;
-			var otherReturns = other.Returns;
+            var thisReturns = this.Returns;
+            var otherReturns = other.Returns;
 
-			if (thisReturns.Count != otherReturns.Count)
-				return false;
+            if (thisReturns.Count != otherReturns.Count)
+                return false;
 
-			var thisParameters = this.Parameters;
-			var otherParameters = other.Parameters;
+            var thisParameters = this.Parameters;
+            var otherParameters = other.Parameters;
 
-			if (thisParameters.Count != otherParameters.Count)
-				return false;
+            if (thisParameters.Count != otherParameters.Count)
+                return false;
 
-			var count = thisReturns.Count;
-			for (var i = 0; i < count; i++)
-				if (thisReturns[i] != otherReturns[i])
-					return false;
+            var count = thisReturns.Count;
+            for (var i = 0; i < count; i++)
+                if (thisReturns[i] != otherReturns[i])
+                    return false;
 
-			count = thisParameters.Count;
-			for (var i = 0; i < count; i++)
-				if (thisParameters[i] != otherParameters[i])
-					return false;
+            count = thisParameters.Count;
+            for (var i = 0; i < count; i++)
+                if (thisParameters[i] != otherParameters[i])
+                    return false;
 
-			return true;
-		}
-	}
+            return true;
+        }
+    }
 }

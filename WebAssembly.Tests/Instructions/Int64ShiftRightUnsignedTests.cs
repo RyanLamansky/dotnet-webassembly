@@ -2,28 +2,28 @@
 
 namespace WebAssembly.Instructions
 {
-	/// <summary>
-	/// Tests the <see cref="Int64ShiftRightUnsigned"/> instruction.
-	/// </summary>
-	[TestClass]
-	public class Int64ShiftRightUnsignedests
-	{
-		/// <summary>
-		/// Tests compilation and execution of the <see cref="Int64ShiftRightUnsigned"/> instruction.
-		/// </summary>
-		[TestMethod]
-		public void Int64ShiftRightUnsigned_Compiled()
-		{
-			const int amount = 0xF;
+    /// <summary>
+    /// Tests the <see cref="Int64ShiftRightUnsigned"/> instruction.
+    /// </summary>
+    [TestClass]
+    public class Int64ShiftRightUnsignedests
+    {
+        /// <summary>
+        /// Tests compilation and execution of the <see cref="Int64ShiftRightUnsigned"/> instruction.
+        /// </summary>
+        [TestMethod]
+        public void Int64ShiftRightUnsigned_Compiled()
+        {
+            const int amount = 0xF;
 
-			var exports = CompilerTestBase<long>.CreateInstance(
-				new GetLocal(0),
-				new Int64Constant(amount),
-				new Int64ShiftRightUnsigned(),
-				new End());
+            var exports = CompilerTestBase<long>.CreateInstance(
+                new GetLocal(0),
+                new Int64Constant(amount),
+                new Int64ShiftRightUnsigned(),
+                new End());
 
-			foreach (var value in new ulong[] { 0x00, 0x01, 0x02, 0x0F, 0xF0, 0xFF, })
-				Assert.AreEqual(value >> amount, (ulong)exports.Test((long)value));
-		}
-	}
+            foreach (var value in new ulong[] { 0x00, 0x01, 0x02, 0x0F, 0xF0, 0xFF, })
+                Assert.AreEqual(value >> amount, (ulong)exports.Test((long)value));
+        }
+    }
 }
