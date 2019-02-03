@@ -130,6 +130,7 @@ Everything on this list will be fixed before 1.0 is published.
 Feedback on these (via GitHub issue) is welcome.
 The API will be frozen with the 1.0 release.
 
+* Only static members can be used for imports.  This needs to be addressed for the library to have functional parity with browser implementations and for linking multiple WASM instances to each other.
 * Some WebAssembly class names collide with entries in System (`Type`, `ValueType`).
 This probably won't be changed because this is why we have namespaces, and these names are appropriate for WebAssembly.
 * The `WebAssembly.Instructions` namespace has a high number of classes--nearly 200, one per instruction plus some helper base classes.
@@ -146,7 +147,7 @@ This can make interaction with .NET Framework classes less convenient, as they m
 
 These features are under consideration for development after all the core work is done.
 
-- Add compiler support for imports from sources other than static methods.
+- Add extensibility points to the compiler so that the code generation process can be influenced.  Issue #10 describes a use case where an alternative code generation library generates a DLL on .NET Core, which doesn't otherwise have this capability.
 - Use the known custom section "name" to provide human-readable names to the generated functions.
 Since this section is required to be at the end of the file by the WebAssembly standard, its use will be disabled by default for more efficient streaming compilation.
 - ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.
