@@ -35,25 +35,25 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            if (context.GlobalGetters == null)
-                throw new CompilerException("Can't use GetGlobal without a global section.");
+            if (context.Globals == null)
+                throw new CompilerException("Can't use GetGlobal without a global section or global imports.");
 
-            Compile.GlobalInfo getter;
+            Compile.GlobalInfo global;
             try
             {
-                getter = context.GlobalGetters[this.Index];
+                global = context.Globals[this.Index];
             }
             catch (System.IndexOutOfRangeException x)
             {
                 throw new CompilerException($"Global at index {this.Index} does not exist.", x);
             }
 
-            if (getter.IsMutable)
+            if (global.RequiresInstance)
                 context.EmitLoadThis();
 
-            context.Emit(OpCodes.Call, getter.Builder);
+            context.Emit(OpCodes.Call, global.Getter);
 
-            context.Stack.Push(getter.Type);
+            context.Stack.Push(global.Type);
         }
     }
 }

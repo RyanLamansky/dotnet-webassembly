@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.IO;
+using System.Reflection;
 
 namespace WebAssembly.Instructions
 {
@@ -359,6 +359,55 @@ namespace WebAssembly.Instructions
             Assert.AreEqual(5, exports.TestInt64());
             Assert.AreEqual(6, exports.TestFloat32());
             Assert.AreEqual(7, exports.TestFloat64());
+        }
+
+        /// <summary>
+        /// Always returns 3, used by <see cref="GetGlobal_Imported_Compiled"/>
+        /// </summary>
+        public static int ImportedImmutableGlobalReturns3 => 3;
+
+        /// <summary>
+        /// Tests that imported globals can be read.
+        /// </summary>
+        [TestMethod]
+        public void GetGlobal_Imported_Compiled()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Returns = new[]
+                {
+                    ValueType.Int32,
+                }
+            });
+            module.Functions.Add(new Function
+            {
+            });
+            module.Imports.Add(new Import.Global
+            {
+                Module = "Imported",
+                Field = "Global",
+                ContentType = ValueType.Int32,
+            });
+            module.Exports.Add(new Export
+            {
+                Name = nameof(CompilerTestBase<int>.Test)
+            });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetGlobal(0),
+                    new End(),
+                },
+            });
+
+            var compiled = module.ToInstance<CompilerTestBase0<int>>(
+                new RuntimeImport[] {
+                    new GlobalImport("Imported", "Global", typeof(GetGlobalTests).GetTypeInfo().GetProperty(nameof(ImportedImmutableGlobalReturns3)))
+                });
+
+            Assert.AreEqual(ImportedImmutableGlobalReturns3, compiled.Exports.Test());
         }
     }
 }

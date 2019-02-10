@@ -126,18 +126,20 @@ namespace WebAssembly
         internal sealed class GlobalInfo
         {
             public readonly ValueType Type;
-            public readonly bool IsMutable;
-            public readonly MethodBuilder Builder;
+            public readonly bool RequiresInstance;
+            public readonly MethodInfo Getter;
+            public readonly MethodInfo Setter;
 
-            public GlobalInfo(ValueType type, bool isMutable, MethodBuilder builder)
+            public GlobalInfo(ValueType type, bool requiresInstance, MethodInfo getter, MethodInfo setter)
             {
                 this.Type = type;
-                this.IsMutable = isMutable;
-                this.Builder = builder;
+                this.RequiresInstance = requiresInstance;
+                this.Getter = getter;
+                this.Setter = setter;
             }
 
 #if DEBUG
-			public sealed override string ToString() => $"{this.Type} {this.IsMutable}";
+			public sealed override string ToString() => $"{this.Type} {this.RequiresInstance}";
 #endif
         }
 
@@ -221,10 +223,10 @@ namespace WebAssembly
 
             var exports = exportsBuilder.AsType();
             var importedFunctions = 0;
+            var importedGlobals = 0;
             MethodInfo[] internalFunctions = null;
             Indirect[] functionElements = null;
-            GlobalInfo[] globalGetters = null;
-            GlobalInfo[] globalSetters = null;
+            GlobalInfo[] globals = null;
             CompilationContext context = null;
             MethodInfo startFunction = null;
             var preSectionOffset = reader.Offset;
@@ -263,6 +265,7 @@ namespace WebAssembly
                             var count = checked((int)reader.ReadVarUInt32());
                             var functionImports = new List<MethodInfo>(count);
                             var functionImportTypes = new List<Signature>(count);
+                            var globalImports = new List<GlobalInfo>(count);
 
                             for (var i = 0; i < count; i++)
                             {
@@ -298,8 +301,21 @@ namespace WebAssembly
                                         importedMemoryProvider = memoryImport.Method;
                                         break;
 
-                                    case ExternalKind.Table:
+
                                     case ExternalKind.Global:
+                                        if (!(import is GlobalImport globalImport))
+                                            throw new CompilerException($"{moduleName}::{fieldName} is expected to be global, but provided import was not.");
+                                        var contentType = (ValueType)reader.ReadVarInt7();
+                                        if (globalImport.GetterType != contentType)
+                                            throw new CompilerException($"{moduleName}::{fieldName} is requires type {contentType}, but provided import was {globalImport.GetterType}.");
+
+                                        if (reader.ReadVarUInt1() == 1 && globalImport.Setter == null)
+                                            throw new CompilerException($"{moduleName}::{fieldName} is requires a set method.");
+
+                                        globalImports.Add(new GlobalInfo(contentType, false, globalImport.Getter, globalImport.Setter));
+                                        break;
+
+                                    case ExternalKind.Table:
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
 
                                     default:
@@ -310,6 +326,9 @@ namespace WebAssembly
                             importedFunctions = functionImports.Count;
                             internalFunctions = functionImports.ToArray();
                             functionSignatures = functionImportTypes.ToArray();
+
+                            importedGlobals = globalImports.Count;
+                            globals = globalImports.ToArray();
                         }
                         break;
 
@@ -431,8 +450,10 @@ namespace WebAssembly
                     case Section.Global:
                         {
                             var count = reader.ReadVarUInt32();
-                            globalGetters = new GlobalInfo[count];
-                            globalSetters = new GlobalInfo[count];
+                            if (globals != null)
+                                Array.Resize(ref globals, checked((int)(globals.Length + count)));
+                            else
+                                globals = new GlobalInfo[count];
 
                             context = new CompilationContext(
                                 exportsBuilder,
@@ -442,13 +463,12 @@ namespace WebAssembly
                                 signatures,
                                 null,
                                 module,
-                                globalGetters,
-                                globalSetters
+                                globals
                                 );
 
                             var emptySignature = Signature.Empty;
 
-                            for (var i = 0; i < globalGetters.Length; i++)
+                            for (var i = 0; i < globals.Length; i++)
                             {
                                 var contentType = (ValueType)reader.ReadVarInt7();
                                 var isMutable = reader.ReadVarUInt1() == 1;
@@ -461,10 +481,9 @@ namespace WebAssembly
                                     isMutable ? new[] { exports } : null
                                     );
 
-                                globalGetters[i] = new GlobalInfo(contentType, isMutable, getter);
-
                                 var il = getter.GetILGenerator();
                                 var getterSignature = new Signature(contentType);
+                                MethodBuilder setter;
 
                                 if (isMutable == false)
                                 {
@@ -479,6 +498,8 @@ namespace WebAssembly
                                         instruction.Compile(context);
                                         context.Previous = instruction.OpCode;
                                     }
+
+                                    setter = null;
                                 }
                                 else //Mutable
                                 {
@@ -492,7 +513,7 @@ namespace WebAssembly
                                     il.Emit(OpCodes.Ldfld, field);
                                     il.Emit(OpCodes.Ret);
 
-                                    var setter = exportsBuilder.DefineMethod(
+                                    setter = exportsBuilder.DefineMethod(
                                     $"🌍 Set {i}",
                                         internalFunctionAttributes,
                                         CallingConventions.Standard,
@@ -505,8 +526,6 @@ namespace WebAssembly
                                     il.Emit(OpCodes.Ldarg_0);
                                     il.Emit(OpCodes.Stfld, field);
                                     il.Emit(OpCodes.Ret);
-
-                                    globalSetters[i] = new GlobalInfo(contentType, isMutable, setter);
 
                                     context.Reset(
                                         instanceConstructorIL,
@@ -533,6 +552,8 @@ namespace WebAssembly
                                         context.Previous = instruction.OpCode;
                                     }
                                 }
+
+                                globals[importedGlobals + i] = new GlobalInfo(contentType, isMutable, getter, setter);
                             }
                         }
                         break;
@@ -579,40 +600,41 @@ namespace WebAssembly
                                         }
                                         break;
                                     case ExternalKind.Global:
-                                        if (index >= globalGetters.Length)
-                                            throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globalGetters.Length}.", preIndexOffset);
+                                        if (index >= globals.Length)
+                                            throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globals.Length}.", preIndexOffset);
 
                                         {
-                                            var getter = globalGetters[i];
-                                            var setter = globalSetters[i];
-                                            var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, getter.Type.ToSystemType(), System.Type.EmptyTypes);
+                                            var global = globals[i];
+                                            var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, global.Type.ToSystemType(), System.Type.EmptyTypes);
                                             var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
-                                                getter.Type.ToSystemType(),
+                                                global.Type.ToSystemType(),
                                                 System.Type.EmptyTypes
                                                 );
 
                                             var wrappedGetIL = wrappedGet.GetILGenerator();
-                                            if (getter.IsMutable)
+                                            if (global.RequiresInstance)
                                                 wrappedGetIL.Emit(OpCodes.Ldarg_0);
-                                            wrappedGetIL.Emit(OpCodes.Call, getter.Builder);
+                                            wrappedGetIL.Emit(OpCodes.Call, global.Getter);
                                             wrappedGetIL.Emit(OpCodes.Ret);
                                             property.SetGetMethod(wrappedGet);
 
+                                            var setter = global.Setter;
                                             if (setter != null)
                                             {
                                                 var wrappedSet = exportsBuilder.DefineMethod("set_" + name,
                                                     exportedPropertyAttributes,
                                                     CallingConventions.HasThis,
                                                     null,
-                                                    new[] { getter.Type.ToSystemType() }
+                                                    new[] { global.Type.ToSystemType() }
                                                     );
 
                                                 var wrappedSetIL = wrappedSet.GetILGenerator();
                                                 wrappedSetIL.Emit(OpCodes.Ldarg_1);
-                                                wrappedSetIL.Emit(OpCodes.Ldarg_0);
-                                                wrappedSetIL.Emit(OpCodes.Call, setter.Builder);
+                                                if (global.RequiresInstance)
+                                                    wrappedSetIL.Emit(OpCodes.Ldarg_0);
+                                                wrappedSetIL.Emit(OpCodes.Call, setter);
                                                 wrappedSetIL.Emit(OpCodes.Ret);
 
                                                 property.SetSetMethod(wrappedSet);
@@ -696,8 +718,7 @@ namespace WebAssembly
                                     signatures,
                                     functionElements,
                                     module,
-                                    globalGetters,
-                                    globalSetters
+                                    globals
                                     );
                             }
 
@@ -756,8 +777,7 @@ namespace WebAssembly
                                     new Signature[0],
                                     functionElements,
                                     module,
-                                    globalGetters,
-                                    globalSetters
+                                    globals
                                     );
                             }
 

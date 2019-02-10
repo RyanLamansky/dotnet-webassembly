@@ -8,17 +8,17 @@ namespace WebAssembly
     using Instructions;
 
     /// <summary>
-    /// Tests basic functionality of <see cref="RuntimeImport"/> when used with <see cref="Compile"/>.
+    /// Tests basic functionality of <see cref="FunctionImport"/> when used with <see cref="Compile"/>.
     /// </summary>
     [TestClass]
-    public class RuntimeImportTests
+    public class FunctionImportTests
     {
         /// <summary>
-        /// Verifies that <see cref="RuntimeImport"/> when used with <see cref="Compile"/> work properly together.
+        /// Verifies that <see cref="FunctionImport"/> when used with <see cref="Compile"/> work properly together.
         /// </summary>
         [TestMethod]
         [Timeout(1000)]
-        public void Compile_RuntimeImport()
+        public void Compile_FunctionImport()
         {
             var module = new Module();
             module.Types.Add(new Type
@@ -60,7 +60,7 @@ namespace WebAssembly
         }
 
         /// <summary>
-        /// Used by <see cref="Compile_RuntimeImportNoReturn"/>.
+        /// Used by <see cref="Compile_FunctionImportNoReturn"/>.
         /// </summary>
         public static class NothingDoer
         {
@@ -77,11 +77,11 @@ namespace WebAssembly
         }
 
         /// <summary>
-        /// Verifies that <see cref="RuntimeImport"/> when used with <see cref="Compile"/> work properly together.
+        /// Verifies that <see cref="FunctionImport"/> when used with <see cref="Compile"/> work properly together.
         /// </summary>
         [TestMethod]
         [Timeout(1000)]
-        public void Compile_RuntimeImportNoReturn()
+        public void Compile_FunctionImportNoReturn()
         {
             var module = new Module();
             module.Types.Add(new Type
@@ -126,10 +126,10 @@ namespace WebAssembly
         }
 
         /// <summary>
-        /// Tests runtime imports with dynamically generated code.
+        /// Tests function imports with dynamically generated code.
         /// </summary>
         [TestMethod]
-        public void Compile_RuntimeImportMethodBuilderIsBlocked()
+        public void Compile_FunctionImportMethodBuilderIsBlocked()
         {
             var module = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(
                    new AssemblyName("CompiledWebAssembly"),

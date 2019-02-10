@@ -49,5 +49,7 @@ namespace WebAssembly
             });
 
         public static bool TryConvertToValueType(this System.Type type, out ValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);
+
+        public static bool IsSupported(this System.Type type) => systemTypeToValueType.Reference.ContainsKey(type);
     }
 }

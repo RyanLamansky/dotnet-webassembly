@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.IO;
+using System.Reflection;
 
 namespace WebAssembly.Instructions
 {
@@ -505,6 +505,58 @@ namespace WebAssembly.Instructions
             Assert.AreEqual(5, exports.TestInt64());
             Assert.AreEqual(6, exports.TestFloat32());
             Assert.AreEqual(7, exports.TestFloat64());
+        }
+
+        /// <summary>
+        /// Used by <see cref="SetGlobal_Imported_Compiled"/>.
+        /// </summary>
+        public static int MutableGlobal { get; set; }
+
+        /// <summary>
+        /// Tests that imported globals can be written.
+        /// </summary>
+        [TestMethod]
+        public void SetGlobal_Imported_Compiled()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Parameters = new[]
+                {
+                    ValueType.Int32,
+                },
+            });
+            module.Functions.Add(new Function
+            {
+            });
+            module.Imports.Add(new Import.Global
+            {
+                Module = "Imported",
+                Field = "Global",
+                ContentType = ValueType.Int32,
+            });
+            module.Exports.Add(new Export
+            {
+                Name = nameof(CompilerTestBaseVoid<int>.Test)
+            });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetLocal(0),
+                    new SetGlobal(0),
+                    new End(),
+                },
+            });
+
+            var compiled = module.ToInstance<CompilerTestBaseVoid<int>>(
+                new RuntimeImport[] {
+                    new GlobalImport("Imported", "Global", typeof(SetGlobalTests).GetTypeInfo().GetProperty(nameof(MutableGlobal)))
+                });
+
+
+            compiled.Exports.Test(4);
+            Assert.AreEqual(4, MutableGlobal);
         }
     }
 }
