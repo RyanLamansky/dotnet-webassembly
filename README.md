@@ -112,7 +112,6 @@ All development is being done by one person in his spare time for free, and is t
 
 The current objective is to offer the same ("MVP"-level) WebAssembly compatibility as popular web browsers.
 
-- Support importing globals.
 - Support importing tables.
 - Support exporting tables.
 - API changes to support use of delegates for all import types.

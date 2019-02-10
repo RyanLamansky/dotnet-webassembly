@@ -3,14 +3,14 @@
   <PropertyGroup>
 		<TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
 		<Title>WebAssembly for .NET</Title>
-		<PackageVersion>0.3.6 -preview</PackageVersion>
+		<PackageVersion>0.3.7-preview</PackageVersion>
 		<Authors>Ryan Lamansky</Authors>
 		<Description>Create, read, modify, write and execute WebAssembly (WASM) files.</Description>
 		<PackageLicenseUrl>https://github.com/RyanLamansky/dotnet-webassembly/blob/master/LICENSE</PackageLicenseUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<PackageReleaseNotes>Early prototype.  API is not stable.</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
-		<Copyright>Copyright 2018 © Ryan Lamansky. All rights reserved.</Copyright>
+		<Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
 		<PackageTags>WebAssembly WASM JIT</PackageTags>
 		<LangVersion>7.3</LangVersion>
 		<RepositoryUrl>https://github.com/RyanLamansky/dotnet-webassembly</RepositoryUrl>
