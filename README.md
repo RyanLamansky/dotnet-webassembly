@@ -93,7 +93,7 @@ static class Program
         // Instances should be wrapped in a "using" block for automatic disposal.
         using (var instance = instanceCreator())
         {
-            // FYI, instanceCreator can be used multiple times to create independant instances.
+            // FYI, instanceCreator can be used multiple times to create independent instances.
             Console.WriteLine(instance.Exports.Demo(0)); // Binary 0, result 0
             Console.WriteLine(instance.Exports.Demo(1)); // Binary 1, result 1,
             Console.WriteLine(instance.Exports.Demo(42));  // Binary 101010, result 3
@@ -104,13 +104,21 @@ static class Program
 
 ## Development Status
 
-The subsections below contain the list of things I plan to do and the order I'm likely to do them.
+The `Module` class is feature-complete; it should be compatible with any "MVP"-level WASM file.
 
+The `Compile` class coverage of the "MVP"-level WebAssembly spec is still missing the following capabilities:
+
+* Import and export tables, needed for interoperable virtual functions.
+* Import delegates, needed to connect WASM files to each other, with the added benefit of making .NET usage more flexible.
+
+_Note that although delivering the above capabilities will enable this library to run any "MVP"-level WASM file, it's up to you to satisfy the application-specific imports._
+
+The subsections below contain the list of things I plan to do and the order I'm likely to do them.
 All development is being done by one person in his spare time for free, and is therefore subject to the associated motivation (and [health](https://tvtropes.org/pmwiki/pmwiki.php/Main/AuthorExistenceFailure)) risks as any other single-developer project.
 
 ### 1.0
 
-The current objective is to offer the same ("MVP"-level) WebAssembly compatibility as popular web browsers.
+The current objective is to offer the same ("MVP"-level) WebAssembly compatibility as popular web browsers and make final API changes.
 
 - Support importing tables.
 - Support exporting tables.
@@ -140,5 +148,6 @@ Since this section is required to be at the end of the file by the WebAssembly s
 - ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.
 - 🤔 Add support for automatic implementation of interfaces as an alternative to existing abstract class code.
 - 🚀 Extensible optimization framework.
-- 🛑 Save compiled-to-.NET assemblies to files; blocked on .NET Core by , but should be possible with .NET "Classic".
 - Validation of `Module` instances.
+- Parse WAT files.
+- Parse WAST files.
