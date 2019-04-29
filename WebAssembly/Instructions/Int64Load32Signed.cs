@@ -29,5 +29,7 @@ namespace WebAssembly.Instructions
         private protected sealed override byte Size => 4;
 
         private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I4;
+
+        private protected sealed override System.Reflection.Emit.OpCode ConversionOpCode => OpCodes.Conv_I8;
     }
 }
