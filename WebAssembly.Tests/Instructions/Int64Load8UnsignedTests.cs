@@ -104,5 +104,57 @@ namespace WebAssembly.Instructions
                 Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
             }
         }
+
+        /// <summary>
+        /// Tests compilation and execution of the <see cref="Int64Load8Unsigned"/> instruction.
+        /// </summary>
+        [TestMethod]
+        public void Int64Load8Unsigned_Compiled_Then_Shift()
+        {
+            // seems like the offset here needs to be different so it
+            // doesn't interfere with other tests above.  so I just
+            // picked a number.
+            const int off = 4;
+
+            const byte b = 0x9f;
+
+            // shift needs to be >23 to repro the problem
+            const int shift = 40;
+
+            // the issue here is that Ldind_U8 results in int32,
+            // not int64.  so if the shift would push things too
+            // far, it gives the wrong result.
+
+            // Int64Load8Unsigned will need to do a Conv_I8
+
+            // in fact, I believe this affects Int64LoadFoo, for 
+            // all Foo narrow than 64 bits
+
+            var compiled = MemoryReadTestBase<long>.CreateInstance(
+                new GetLocal(),
+                new Int64Load8Unsigned
+                {
+                    Offset = off,
+                },
+                new Int64Constant(shift),
+                new Int64ShiftLeft(),
+                new End()
+            );
+
+            using (compiled)
+            {
+                Assert.IsNotNull(compiled);
+                Assert.IsNotNull(compiled.Exports);
+                var memory = compiled.Exports.Memory;
+                Assert.AreNotEqual(IntPtr.Zero, memory.Start);
+
+                var exports = compiled.Exports;
+
+                Marshal.WriteByte(memory.Start + off, b);
+                var should_be = ((long)b) << shift;
+                Assert.AreEqual(should_be, exports.Test(0));
+            }
+        }
+
     }
 }
