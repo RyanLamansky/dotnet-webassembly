@@ -128,5 +128,42 @@ namespace WebAssembly.Instructions
                 Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
             }
         }
+
+        /// <summary>
+        /// Tests compilation and execution of the <see cref="Int64Load8Signed"/> instruction.
+        /// </summary>
+        [TestMethod]
+        public void Int64Load32Signed_Compiled_Then_Shift()
+        {
+            // Adapted from Int64Load8Unsigned_Compiled_Then_Shift.
+            const int off = 4;
+            const sbyte b = 0x5f;
+            const int shift = 40;
+
+            var compiled = MemoryReadTestBase<long>.CreateInstance(
+                new GetLocal(),
+                new Int64Load32Signed
+                {
+                    Offset = off,
+                },
+                new Int64Constant(shift),
+                new Int64ShiftLeft(),
+                new End()
+            );
+
+            using (compiled)
+            {
+                Assert.IsNotNull(compiled);
+                Assert.IsNotNull(compiled.Exports);
+                var memory = compiled.Exports.Memory;
+                Assert.AreNotEqual(IntPtr.Zero, memory.Start);
+
+                var exports = compiled.Exports;
+
+                Marshal.WriteByte(memory.Start + off, (byte)b);
+                const long should_be = ((long)b) << shift;
+                Assert.AreEqual(should_be, exports.Test(0));
+            }
+        }
     }
 }
