@@ -3,7 +3,6 @@
   <PropertyGroup>
 		<TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
 		<Title>WebAssembly for .NET</Title>
-		<PackageVersion>0.3.7-preview</PackageVersion>
 		<Authors>Ryan Lamansky</Authors>
 		<Description>Create, read, modify, write and execute WebAssembly (WASM) files.</Description>
 		<PackageLicenseUrl>https://github.com/RyanLamansky/dotnet-webassembly/blob/master/LICENSE</PackageLicenseUrl>
@@ -18,19 +17,10 @@
 		<SignAssembly>true</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>Properties\WebAssembly.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <DocumentationFile>bin\Release\netstandard1.4\WebAssembly.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
-    <DocumentationFile>bin\Debug\netstandard1.4\WebAssembly.xml</DocumentationFile>
-  </PropertyGroup>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<TreatSpecificWarningsAsErrors />
+		<DocumentationFile>bin\WebAssembly.xml</DocumentationFile>
+	</PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
