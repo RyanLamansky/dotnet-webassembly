@@ -16,7 +16,6 @@ namespace WebAssembly
         /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
         /// </summary>
         /// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
-        /// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
         /// <returns>The module.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="path"/> cannot be null.</exception>
         /// <exception cref="ArgumentException">
@@ -30,12 +29,12 @@ namespace WebAssembly
         /// The specified path, file name, or both exceed the system-defined maximum length.
         /// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
         /// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-        public static Func<Instance<TExports>> FromBinary<TExports>(string path, IEnumerable<RuntimeImport> imports = null)
+        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(string path)
         where TExports : class
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
             {
-                return FromBinary<TExports>(stream, imports);
+                return FromBinary<TExports>(stream);
             }
         }
 
@@ -43,10 +42,9 @@ namespace WebAssembly
         /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
         /// </summary>
         /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
-        /// <param name="imports">Functionality to integrate into the WebAssembly instance.</param>
         /// <returns>A function that creates instances on demand.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
-        public static Func<Instance<TExports>> FromBinary<TExports>(Stream input, IEnumerable<RuntimeImport> imports = null)
+        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(Stream input)
         where TExports : class
         {
             var exportInfo = typeof(TExports).GetTypeInfo();
@@ -58,7 +56,7 @@ namespace WebAssembly
             {
                 try
                 {
-                    constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports), imports);
+                    constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports));
                 }
                 catch (OverflowException x)
 #if DEBUG
@@ -86,11 +84,11 @@ namespace WebAssembly
                 }
             }
 
-            return () =>
+            return (IEnumerable<RuntimeImport> imports) =>
             {
                 try
                 {
-                    return (Instance<TExports>)constructor.Invoke(null);
+                    return (Instance<TExports>)constructor.Invoke(new object[] { imports });
                 }
                 catch (TargetInvocationException x)
                 {
@@ -146,8 +144,7 @@ namespace WebAssembly
         private static ConstructorInfo FromBinary(
             Reader reader,
             System.Type instanceContainer,
-            System.Type exportContainer,
-            IEnumerable<RuntimeImport> imports
+            System.Type exportContainer
             )
         {
             if (reader.ReadUInt32() != Module.Magic)
@@ -257,23 +254,17 @@ namespace WebAssembly
 
                     case Section.Import:
                         {
-                            if (imports == null)
-                                imports = Enumerable.Empty<RuntimeImport>();
-
-                            var importsByName = imports.ToDictionary(import => new Tuple<string, string>(import.ModuleName, import.FieldName));
-
                             var count = checked((int)reader.ReadVarUInt32());
                             var functionImports = new List<MethodInfo>(count);
                             var functionImportTypes = new List<Signature>(count);
                             var globalImports = new List<GlobalInfo>(count);
 
+#pragma warning disable CS0162 // Unreachable code detected - As part of the rewrite, imports won't initially work at all.
                             for (var i = 0; i < count; i++)
+#pragma warning restore
                             {
                                 var moduleName = reader.ReadString(reader.ReadVarUInt32());
                                 var fieldName = reader.ReadString(reader.ReadVarUInt32());
-
-                                if (!importsByName.TryGetValue(new Tuple<string, string>(moduleName, fieldName), out var import))
-                                    throw new CompilerException($"Import not found for {moduleName}::{fieldName}.");
 
                                 var preKindOffset = reader.Offset;
                                 var kind = (ExternalKind)reader.ReadByte();
@@ -281,40 +272,8 @@ namespace WebAssembly
                                 switch (kind)
                                 {
                                     case ExternalKind.Function:
-                                        var typeIndex = reader.ReadVarUInt32();
-                                        if (!(import is FunctionImport functionImport))
-                                            throw new CompilerException($"{moduleName}::{fieldName} is expected to be a function, but provided import was not.");
-
-                                        var signature = signatures[typeIndex];
-                                        if (!signature.Equals(functionImport.Type))
-                                            throw new CompilerException($"{moduleName}::{fieldName} did not match the required type signature of {signature}.");
-
-                                        functionImports.Add(functionImport.Method);
-                                        functionImportTypes.Add(signature);
-                                        break;
-
                                     case ExternalKind.Memory:
-                                        var limits = new ResizableLimits(reader);
-                                        if (!(import is MemoryImport memoryImport))
-                                            throw new CompilerException($"{moduleName}::{fieldName} is expected to be memory, but provided import was not.");
-
-                                        importedMemoryProvider = memoryImport.Method;
-                                        break;
-
-
                                     case ExternalKind.Global:
-                                        if (!(import is GlobalImport globalImport))
-                                            throw new CompilerException($"{moduleName}::{fieldName} is expected to be global, but provided import was not.");
-                                        var contentType = (ValueType)reader.ReadVarInt7();
-                                        if (globalImport.GetterType != contentType)
-                                            throw new CompilerException($"{moduleName}::{fieldName} is requires type {contentType}, but provided import was {globalImport.GetterType}.");
-
-                                        if (reader.ReadVarUInt1() == 1 && globalImport.Setter == null)
-                                            throw new CompilerException($"{moduleName}::{fieldName} is requires a set method.");
-
-                                        globalImports.Add(new GlobalInfo(contentType, false, globalImport.Getter, globalImport.Setter));
-                                        break;
-
                                     case ExternalKind.Table:
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
 
@@ -885,7 +844,11 @@ namespace WebAssembly
             TypeInfo instance;
             {
                 var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, instanceContainer);
-                var instanceConstructor = instanceBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, null);
+                var instanceConstructor = instanceBuilder.DefineConstructor(
+                    constructorAttributes,
+                    CallingConventions.Standard,
+                    new[] { typeof(IEnumerable<RuntimeImport>) }
+                    );
                 var il = instanceConstructor.GetILGenerator();
                 var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
 

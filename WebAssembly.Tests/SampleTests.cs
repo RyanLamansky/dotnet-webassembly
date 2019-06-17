@@ -58,10 +58,10 @@ namespace WebAssembly
         {
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
             {
-                var compiled = Compile.FromBinary<dynamic>(stream,
+                var compiled = Compile.FromBinary<dynamic>(stream)(
                     new RuntimeImport[] {
                     new FunctionImport("env", "sayc", typeof(SampleTests).GetTypeInfo().GetMethod(nameof(Issue7Receive)))
-                    })();
+                    });
                 Assert.AreEqual<int>(0, compiled.Exports.main());
             }
 

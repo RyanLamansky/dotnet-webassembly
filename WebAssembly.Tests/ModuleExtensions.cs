@@ -95,13 +95,13 @@ namespace WebAssembly
                     bytes = memory.ToArray();
                 }
 
-                Func<Instance<TExports>> maker;
+                Func<IEnumerable<RuntimeImport>, Instance<TExports>> maker;
                 using (var readOnly = new ForwardReadOnlyStream(bytes))
                 {
-                    maker = Compile.FromBinary<TExports>(readOnly, imports);
+                    maker = Compile.FromBinary<TExports>(readOnly);
                 }
                 Assert.IsNotNull(maker);
-                compiled = maker();
+                compiled = maker(imports);
             }
 
             Assert.IsNotNull(compiled);

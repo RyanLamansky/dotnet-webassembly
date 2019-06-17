@@ -23,7 +23,7 @@ namespace WebAssembly
         }
 
         /// <summary>
-        /// Tests a compilation of an empty assembly compiled via <see cref="Module.Compile{TExports}(System.Collections.Generic.IEnumerable{RuntimeImport})"/>.
+        /// Tests a compilation of an empty assembly compiled via <see cref="Module.Compile{TExports}"/>.
         /// </summary>
         [TestMethod]
         public void Compile_DirectFromModule()

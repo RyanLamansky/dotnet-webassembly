@@ -23,6 +23,7 @@ Compiler limitations are discussed in the Development Status section after the s
 using WebAssembly; // Acquire from https://www.nuget.org/packages/WebAssembly
 using WebAssembly.Instructions;
 using System;
+using System.Linq; // Needed for Enumerable.Empty
 
 // We need this later to call the code we're generating.
 public abstract class Sample
@@ -91,7 +92,8 @@ static class Program
         var instanceCreator = module.Compile<Sample>();
 
         // Instances should be wrapped in a "using" block for automatic disposal.
-        using (var instance = instanceCreator())
+		// This sample doesn't import anything, so we pass empty.
+        using (var instance = instanceCreator(Enumerable.Empty<RuntimeImport>()))
         {
             // FYI, instanceCreator can be used multiple times to create independent instances.
             Console.WriteLine(instance.Exports.Demo(0)); // Binary 0, result 0
