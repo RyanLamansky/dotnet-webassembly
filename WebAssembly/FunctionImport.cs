@@ -16,29 +16,25 @@ namespace WebAssembly
         /// <summary>
         /// The method to use for the import.
         /// </summary>
-        public MethodInfo Method { get; private set; }
+        public Delegate Method { get; }
 
         internal readonly Type Type;
 
         /// <summary>
-        /// Creates a new <see cref="FunctionImport"/> instance with the provided <see cref="MethodInfo"/>.
+        /// Creates a new <see cref="FunctionImport"/> instance with the provided <see cref="Delegate"/>.
         /// </summary>
         /// <param name="moduleName">The first portion of the two part name.</param>
         /// <param name="exportName">The second portion of the two-part name.</param>
-        /// <param name="method">The method to use for the import.</param>
+        /// <param name="del">The delegate to use for the import.</param>
         /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
-        /// <exception cref="ArgumentException"><paramref name="method"/> must be public, static, and cannot be a <see cref="System.Reflection.Emit.MethodBuilder"/>.</exception>
-        public FunctionImport(string moduleName, string exportName, MethodInfo method)
+        /// <exception cref="ArgumentException">A parameter or return type is not compatible with WebAssembly.</exception>
+        public FunctionImport(string moduleName, string exportName, Delegate del)
             : base(moduleName, exportName)
         {
-            if (method == null)
-                throw new ArgumentNullException(nameof(method));
+            if (del == null)
+                throw new ArgumentNullException(nameof(del));
 
-            if (method.IsStatic == false || method.IsPublic == false)
-                throw new ArgumentException("Imported methods must be public and static.", nameof(method));
-
-            if (method is System.Reflection.Emit.MethodBuilder)
-                throw new ArgumentException("Imported methods cannot be dynamic method builders.", nameof(method));
+            var method = (this.Method = del).GetMethodInfo();
 
             this.Type = new Type();
             if (method.ReturnType != typeof(void))
@@ -56,8 +52,6 @@ namespace WebAssembly
 
                 this.Type.Parameters.Add(type);
             }
-
-            this.Method = method;
         }
     }
 }

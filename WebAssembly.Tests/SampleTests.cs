@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 using System.Reflection;
+using System;
 
 namespace WebAssembly
 {
@@ -60,7 +61,7 @@ namespace WebAssembly
             {
                 var compiled = Compile.FromBinary<dynamic>(stream)(
                     new RuntimeImport[] {
-                    new FunctionImport("env", "sayc", typeof(SampleTests).GetTypeInfo().GetMethod(nameof(Issue7Receive)))
+                    new FunctionImport("env", "sayc", new Action<int>(Issue7Receive))
                     });
                 Assert.AreEqual<int>(0, compiled.Exports.main());
             }

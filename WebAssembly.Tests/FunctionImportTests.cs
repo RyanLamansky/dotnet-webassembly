@@ -48,7 +48,7 @@ namespace WebAssembly
 
             var compiled = module.ToInstance<CompilerTestBase2<double>>(
                 new RuntimeImport[] {
-                    new FunctionImport("Math", "Pow", typeof(Math).GetTypeInfo().GetMethod("Pow"))
+                    new FunctionImport("Math", "Pow", new Func<double, double, double>(Math.Pow))
                 });
 
             Assert.IsNotNull(compiled);
@@ -109,7 +109,60 @@ namespace WebAssembly
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
                 new RuntimeImport[] {
-                    new FunctionImport("Do", "Nothing", typeof(NothingDoer).GetTypeInfo().GetMethod(nameof(NothingDoer.DoNothing)))
+                    new FunctionImport("Do", "Nothing", new Action<double>(NothingDoer.DoNothing))
+                });
+
+            Assert.IsNotNull(compiled);
+            Assert.IsNotNull(compiled.Exports);
+
+            var instance = compiled.Exports;
+
+            lock (typeof(NothingDoer))
+            {
+                var start = NothingDoer.Calls;
+                instance.Test(2);
+                Assert.AreEqual(start + 1, NothingDoer.Calls);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="FunctionImport"/> when used with <see cref="Compile"/> work properly together.
+        /// </summary>
+        [TestMethod]
+        [Timeout(1000)]
+        public void Compile_FunctionImportDelegateNoReturn()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Parameters = new[] { ValueType.Float64, }
+            });
+            module.Imports.Add(new Import.Function { Module = "Do", Field = "Nothing", });
+            module.Functions.Add(new Function
+            {
+            });
+            module.Exports.Add(new Export
+            {
+                Name = "Test",
+                Index = 1,
+            });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                new GetLocal(0),
+                new Call(0),
+                new End()
+                },
+            });
+
+            var calls = 0;
+
+            void doNothing(double ignored) => System.Threading.Interlocked.Increment(ref calls);
+
+            var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
+                new RuntimeImport[] {
+                    new FunctionImport("Do", "Nothing", new Action<double>(doNothing))
                 });
 
             Assert.IsNotNull(compiled);
@@ -129,7 +182,7 @@ namespace WebAssembly
         /// Tests function imports with dynamically generated code.
         /// </summary>
         [TestMethod]
-        public void Compile_FunctionImportMethodBuilderIsBlocked()
+        public void Compile_FunctionImportMethodBuilderIsNotBlocked()
         {
             var module = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(
                    new AssemblyName("CompiledWebAssembly"),
@@ -150,8 +203,7 @@ namespace WebAssembly
             il.Emit(OpCodes.Ldc_I4_7);
             il.Emit(OpCodes.Ret);
 
-            var x = Assert.ThrowsException<ArgumentException>(() => new FunctionImport("TestModule", "TestExportName", methodBuilder));
-            Assert.AreEqual("method", x.ParamName);
+            new FunctionImport("TestModule", "TestExportName", dynamicClass.CreateType().GetMethod("TestMethod").CreateDelegate(typeof(Func<int>)));
         }
     }
 }
