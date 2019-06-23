@@ -358,7 +358,7 @@ namespace WebAssembly
                                             );
 
                                         var invokerIL = invoker.GetILGenerator();
-                                        invokerIL.EmitLoadArg(signature.ReturnTypes.Length);
+                                        invokerIL.EmitLoadArg(signature.ParameterTypes.Length);
                                         invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
 
                                         for (ushort arg = 0; arg < signature.ParameterTypes.Length; arg++)
