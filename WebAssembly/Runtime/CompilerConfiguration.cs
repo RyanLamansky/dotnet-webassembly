@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text;
+using System.Diagnostics;
 
 namespace WebAssembly.Runtime
 {
@@ -15,51 +15,18 @@ namespace WebAssembly.Runtime
         {
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+        private GetDelegateForTypeCallback getDelegateForType = GetStandardDelegateForType;
+
         /// <summary>
         /// A function that returns a generic delegate for the number of parameters and returns, used for imports.
-        /// The default implementation uses the standard .NET delegates, <see cref="Func{T, TResult}"/> and <see cref="Action"/> and their peers,
-        /// throwing a <see cref="NotSupportedException"/> if there's no matching option.
+        /// The default implementation is <see cref="GetStandardDelegateForType"/>.
         /// </summary>
-        public GetDelegateForTypeCallback GetDelegateForType { get; set; } = new GetDelegateForTypeCallback((parameters, returns) =>
+        public GetDelegateForTypeCallback GetDelegateForType
         {
-            var standardType = GetStandardDelegateForType(parameters, returns);
-            if (standardType != null)
-                return standardType;
-
-            var builder = new StringBuilder(".NET doesn't have a built-in delegate accepting ")
-                .Append(parameters)
-                .Append(" parameter")
-                ;
-
-            if (parameters != 1)
-                builder.Append('s');
-
-            builder.Append(" and ");
-
-            switch (returns)
-            {
-                case 0:
-                    builder.Append("no returns");
-                    break;
-                case 1:
-                    builder.Append("one return");
-                    break;
-                default: // Not possible in "MVP"-level WASM but maybe in the future.
-                    builder
-                        .Append(returns)
-                        .Append(" returns")
-                        ;
-                    break;
-            }
-
-            builder
-                .Append("; custom delegates returned by a custom ")
-                .Append(nameof(GetDelegateForType))
-                .Append(" implementation is required.")
-                ;
-
-            throw new NotSupportedException(builder.ToString());
-        });
+            get => getDelegateForType;
+            set => getDelegateForType = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>
         /// Returns the standard .NET delegate type, i.e. <see cref="Func{T, TResult}"/>/<see cref="Action"/> or their peers, for the provided parameter and return count.
@@ -68,7 +35,7 @@ namespace WebAssembly.Runtime
         /// <param name="returns">The number of returns; if no 0 or 1, null is returned.</param>
         /// <returns>One of the <see cref="Func{T, TResult}"/>/<see cref="Action"/> variations,
         /// or null if no variation exists for the <paramref name="parameters"/>/<paramref name="returns"/> combination.</returns>
-        /// <remarks>This is intended to help build custom <see cref="GetDelegateForType"/> solutions by covering common cases.</remarks>
+        /// <remarks>This can help build custom <see cref="GetDelegateForType"/> solutions by covering common cases.</remarks>
         public static System.Type GetStandardDelegateForType(int parameters, int returns)
         {
             switch (returns)
@@ -129,8 +96,9 @@ namespace WebAssembly.Runtime
     /// <param name="parameters">The count of parameters.</param>
     /// <param name="returns">The count of returns.</param>
     /// <returns>
-    /// A generic delegate.
+    /// A generic delegate or null if one is not available--this will lead to a <see cref="MissingDelegateTypesException"/> with the list of all misses.
     /// Typically, variants of <see cref="Func{T, TResult}"/>/<see cref="Action"/> are used, but these don't cover every possibility.
     /// If more than 16 parameters are needed, a custom delegate type must be created.</returns>
+    /// <remarks><see cref="CompilerConfiguration.GetStandardDelegateForType(int, int)"/> can be combined with custom solutions to handle common cases.</remarks>
     public delegate System.Type GetDelegateForTypeCallback(int parameters, int returns);
 }

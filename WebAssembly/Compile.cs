@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 
 namespace WebAssembly
 {
@@ -32,9 +33,33 @@ namespace WebAssembly
         public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(string path)
         where TExports : class
         {
+            return FromBinary<TExports>(path, new CompilerConfiguration());
+        }
+
+        /// <summary>
+        /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
+        /// </summary>
+        /// <param name="path">The path to the file that contains a WebAssembly binary stream.</param>
+        /// <param name="configuration">Configures the compiler.</param>
+        /// <returns>The module.</returns>
+        /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="path"/> is an empty string (""), contains only white space, or contains one or more invalid characters; or,
+        /// <paramref name="path"/> refers to a non-file device, such as "con:", "com1:", "lpt1:", etc. in an NTFS environment.
+        /// </exception>
+        /// <exception cref="NotSupportedException"><paramref name="path"/> refers to a non-file device, such as "con:", "com1:", "lpt1:", etc. in a non-NTFS environment.</exception>
+        /// <exception cref="FileNotFoundException">The file indicated by <paramref name="path"/> could not be found.</exception>
+        /// <exception cref="DirectoryNotFoundException">The specified <paramref name="path"/> is invalid, such as being on an unmapped drive.</exception>
+        /// <exception cref="PathTooLongException">
+        /// The specified path, file name, or both exceed the system-defined maximum length.
+        /// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
+        /// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
+        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(string path, CompilerConfiguration configuration)
+        where TExports : class
+        {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
             {
-                return FromBinary<TExports>(stream);
+                return FromBinary<TExports>(stream, configuration);
             }
         }
 
@@ -47,6 +72,19 @@ namespace WebAssembly
         public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(Stream input)
         where TExports : class
         {
+            return FromBinary<TExports>(input, new CompilerConfiguration());
+        }
+
+        /// <summary>
+        /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
+        /// </summary>
+        /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
+        /// <param name="configuration">Configures the compiler.</param>
+        /// <returns>A function that creates instances on demand.</returns>
+        /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
+        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(Stream input, CompilerConfiguration configuration)
+        where TExports : class
+        {
             var exportInfo = typeof(TExports).GetTypeInfo();
             if (!exportInfo.IsPublic && !exportInfo.IsNestedPublic)
                 throw new CompilerException($"Export type {exportInfo.FullName} must be public so that the compiler can inherit it.");
@@ -56,18 +94,23 @@ namespace WebAssembly
             {
                 try
                 {
-                    constructor = FromBinary(reader, typeof(Instance<TExports>), typeof(TExports));
+                    constructor = FromBinary(
+                        reader,
+                        configuration,
+                        typeof(Instance<TExports>),
+                        typeof(TExports)
+                        );
                 }
                 catch (OverflowException x)
 #if DEBUG
-				when (!System.Diagnostics.Debugger.IsAttached)
+                when (!System.Diagnostics.Debugger.IsAttached)
 #endif
                 {
                     throw new ModuleLoadException("Overflow encountered.", reader.Offset, x);
                 }
                 catch (EndOfStreamException x)
 #if DEBUG
-				when (!System.Diagnostics.Debugger.IsAttached)
+                when (!System.Diagnostics.Debugger.IsAttached)
 #endif
                 {
                     throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
@@ -76,7 +119,7 @@ namespace WebAssembly
                 !(x is CompilerException)
                 && !(x is ModuleLoadException)
 #if DEBUG
-				&& !System.Diagnostics.Debugger.IsAttached
+                && !System.Diagnostics.Debugger.IsAttached
 #endif
                 )
                 {
@@ -137,16 +180,20 @@ namespace WebAssembly
             }
 
 #if DEBUG
-			public sealed override string ToString() => $"{this.Type} {this.RequiresInstance}";
+            public sealed override string ToString() => $"{this.Type} {this.RequiresInstance}";
 #endif
         }
 
         private static ConstructorInfo FromBinary(
             Reader reader,
+            CompilerConfiguration configuration,
             System.Type instanceContainer,
             System.Type exportContainer
             )
         {
+            if (configuration == null)
+                throw new ArgumentNullException(nameof(configuration));
+
             if (reader.ReadUInt32() != Module.Magic)
                 throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
 
@@ -200,6 +247,11 @@ namespace WebAssembly
                 MethodAttributes.HideBySig
                 ;
 
+            const FieldAttributes privateReadonlyField =
+                FieldAttributes.Private |
+                FieldAttributes.InitOnly
+                ;
+
             var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
             MethodInfo importedMemoryProvider = null;
             FieldBuilder memory = null;
@@ -226,6 +278,7 @@ namespace WebAssembly
             GlobalInfo[] globals = null;
             CompilationContext context = null;
             MethodInfo startFunction = null;
+
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
@@ -258,10 +311,9 @@ namespace WebAssembly
                             var functionImports = new List<MethodInfo>(count);
                             var functionImportTypes = new List<Signature>(count);
                             var globalImports = new List<GlobalInfo>(count);
+                            var missingDelegates = new List<MissingDelegateType>();
 
-#pragma warning disable CS0162 // Unreachable code detected - As part of the rewrite, imports won't initially work at all.
                             for (var i = 0; i < count; i++)
-#pragma warning restore
                             {
                                 var moduleName = reader.ReadString(reader.ReadVarUInt32());
                                 var fieldName = reader.ReadString(reader.ReadVarUInt32());
@@ -272,6 +324,42 @@ namespace WebAssembly
                                 switch (kind)
                                 {
                                     case ExternalKind.Function:
+                                        var typeIndex = reader.ReadVarUInt32();
+                                        var signature = signatures[typeIndex];
+                                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
+                                        if (del == null)
+                                        {
+                                            missingDelegates.Add(new MissingDelegateType(moduleName, fieldName, signature));
+                                            continue;
+                                        }
+
+                                        var typedDelegate = del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray());
+                                        var delField = $"➡ {moduleName}::{fieldName}";
+                                        var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+
+                                        var invoker = exportsBuilder.DefineMethod(
+                                            $"Invoke {delField}",
+                                            internalFunctionAttributes,
+                                            CallingConventions.Standard,
+                                            signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
+                                            signature.ParameterTypes.Concat(new [] { exports }).ToArray()
+                                            );
+
+                                        var invokerIL = invoker.GetILGenerator();
+                                        invokerIL.EmitLoadArg(signature.ReturnTypes.Length);
+                                        invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
+
+                                        for (ushort arg = 0; arg < signature.ParameterTypes.Length; arg++)
+                                        {
+                                            invokerIL.EmitLoadArg(arg);
+                                        }
+
+                                        invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action.Invoke), signature.ParameterTypes));
+                                        invokerIL.Emit(OpCodes.Ret);
+
+                                        functionImports.Add(invoker);
+                                        functionImportTypes.Add(signature);
+                                        break;
                                     case ExternalKind.Memory:
                                     case ExternalKind.Global:
                                     case ExternalKind.Table:
@@ -281,6 +369,9 @@ namespace WebAssembly
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not recognized.", preKindOffset);
                                 }
                             }
+
+                            if (missingDelegates.Count != 0)
+                                throw new MissingDelegateTypesException(missingDelegates);
 
                             importedFunctions = functionImports.Count;
                             internalFunctions = functionImports.ToArray();
@@ -355,7 +446,7 @@ namespace WebAssembly
                             else
                                 memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
-                            memory = exportsBuilder.DefineField("☣ Memory", typeof(Runtime.UnmanagedMemory), FieldAttributes.Private | FieldAttributes.InitOnly);
+                            memory = exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                             if (importedMemoryProvider == null)
@@ -368,7 +459,7 @@ namespace WebAssembly
                                     return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
                                 }).First());
 
-                                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(Runtime.UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
+                                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
                                 {
                                     var parms = info.GetParameters();
                                     return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
@@ -804,6 +895,7 @@ namespace WebAssembly
                         throw new ModuleLoadException($"Unrecognized section type {(Section)id}.", preSectionOffset);
                 }
 
+                preSectionOffset = reader.Offset;
                 previousSection = (Section)id;
             }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using static System.Diagnostics.Debug;
+using WebAssembly.Runtime;
 
 namespace WebAssembly
 {
@@ -295,25 +296,7 @@ namespace WebAssembly
 
         public void MarkLabel(Label loc) => generator.MarkLabel(loc);
 
-        public void EmitLoadThis()
-        {
-            var arg = checked((ushort)this.Signature.ParameterTypes.Length);
-            System.Reflection.Emit.OpCode opCode;
-            switch (arg)
-            {
-                case 0: opCode = OpCodes.Ldarg_0; break;
-                case 1: opCode = OpCodes.Ldarg_1; break;
-                case 2: opCode = OpCodes.Ldarg_2; break;
-                case 3: opCode = OpCodes.Ldarg_3; break;
-                default:
-                    if (arg <= byte.MaxValue)
-                        generator.Emit(OpCodes.Ldarg_S, (byte)arg);
-                    else
-                        generator.Emit(OpCodes.Ldarg, arg);
-                    return;
-            }
-            generator.Emit(opCode);
-        }
+        public void EmitLoadThis() => generator.EmitLoadArg(this.Signature.ParameterTypes.Length);
 
         public void Emit(System.Reflection.Emit.OpCode opcode) => generator.Emit(opcode);
 
