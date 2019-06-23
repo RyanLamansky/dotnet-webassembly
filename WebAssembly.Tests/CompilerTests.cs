@@ -606,13 +606,6 @@ namespace WebAssembly
             Assert.AreEqual(1u, x.Length);
         }
 
-        private static readonly Runtime.UnmanagedMemory memory = new Runtime.UnmanagedMemory(0, 1);
-
-        /// <summary>
-        /// Used by Compiler_MemoryImportExport to provide a memory instance.
-        /// </summary>
-        public static Runtime.UnmanagedMemory GetMemoryFor_Compiler_MemoryImportExport() => memory;
-
         /// <summary>
         /// Verifies that memory can be imported and exported.
         /// </summary>
@@ -633,7 +626,9 @@ namespace WebAssembly
                 Kind = ExternalKind.Memory,
             });
 
-            var roundMemory = module.ToInstance<dynamic>(new[] { new MemoryImport("Memory", "Memory", typeof(CompilerTests).GetMethod(nameof(GetMemoryFor_Compiler_MemoryImportExport))) }).Exports.Memory as Runtime.UnmanagedMemory;
+            var memory = new Runtime.UnmanagedMemory(0, 1);
+
+            var roundMemory = module.ToInstance<dynamic>(new[] { new MemoryImport("Memory", "Memory", () => memory) }).Exports.Memory as Runtime.UnmanagedMemory;
             Assert.IsNotNull(roundMemory);
             Assert.AreSame(memory, roundMemory);
         }

@@ -261,7 +261,7 @@ namespace WebAssembly
                 ;
 
             var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
-            MethodInfo importedMemoryProvider = null;
+            MethodBuilder importedMemoryProvider = null;
             FieldBuilder memory = null;
 
             ILGenerator instanceConstructorIL;
@@ -336,59 +336,99 @@ namespace WebAssembly
                                 switch (kind)
                                 {
                                     case ExternalKind.Function:
-                                        var typeIndex = reader.ReadVarUInt32();
-                                        var signature = signatures[typeIndex];
-                                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
-                                        if (del == null)
                                         {
-                                            missingDelegates.Add(new MissingDelegateType(moduleName, fieldName, signature));
-                                            continue;
+                                            var typeIndex = reader.ReadVarUInt32();
+                                            var signature = signatures[typeIndex];
+                                            var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
+                                            if (del == null)
+                                            {
+                                                missingDelegates.Add(new MissingDelegateType(moduleName, fieldName, signature));
+                                                continue;
+                                            }
+
+                                            var typedDelegate = del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray());
+                                            var delField = $"➡ {moduleName}::{fieldName}";
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+
+                                            var invoker = exportsBuilder.DefineMethod(
+                                                $"Invoke {delField}",
+                                                internalFunctionAttributes,
+                                                CallingConventions.Standard,
+                                                signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
+                                                signature.ParameterTypes.Concat(new[] { exports }).ToArray()
+                                                );
+
+                                            var invokerIL = invoker.GetILGenerator();
+                                            invokerIL.EmitLoadArg(signature.ParameterTypes.Length);
+                                            invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
+
+                                            for (ushort arg = 0; arg < signature.ParameterTypes.Length; arg++)
+                                            {
+                                                invokerIL.EmitLoadArg(arg);
+                                            }
+
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action.Invoke), signature.ParameterTypes));
+                                            invokerIL.Emit(OpCodes.Ret);
+
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                            instanceConstructorIL.Emit(OpCodes.Call,
+                                                typeof(Helpers)
+                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .MakeGenericMethod(typeof(FunctionImport))
+                                                );
+                                            instanceConstructorIL.Emit(OpCodes.Callvirt,
+                                                typeof(FunctionImport)
+                                                .GetProperty(nameof(FunctionImport.Method))
+                                                .GetGetMethod());
+                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
+
+                                            functionImports.Add(invoker);
+                                            functionImportTypes.Add(signature);
                                         }
-
-                                        var typedDelegate = del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray());
-                                        var delField = $"➡ {moduleName}::{fieldName}";
-                                        var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
-
-                                        var invoker = exportsBuilder.DefineMethod(
-                                            $"Invoke {delField}",
-                                            internalFunctionAttributes,
-                                            CallingConventions.Standard,
-                                            signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
-                                            signature.ParameterTypes.Concat(new [] { exports }).ToArray()
-                                            );
-
-                                        var invokerIL = invoker.GetILGenerator();
-                                        invokerIL.EmitLoadArg(signature.ParameterTypes.Length);
-                                        invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
-
-                                        for (ushort arg = 0; arg < signature.ParameterTypes.Length; arg++)
-                                        {
-                                            invokerIL.EmitLoadArg(arg);
-                                        }
-
-                                        invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action.Invoke), signature.ParameterTypes));
-                                        invokerIL.Emit(OpCodes.Ret);
-
-                                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                                        instanceConstructorIL.Emit(OpCodes.Ldarg_1);
-                                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
-                                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                                        instanceConstructorIL.Emit(OpCodes.Call,
-                                            typeof(Helpers)
-                                            .GetMethod(nameof(Helpers.FindImport))
-                                            .MakeGenericMethod(typeof(FunctionImport))
-                                            );
-                                        instanceConstructorIL.Emit(OpCodes.Callvirt,
-                                            typeof(FunctionImport)
-                                            .GetProperty(nameof(FunctionImport.Method))
-                                            .GetGetMethod());
-                                        instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
-                                        instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
-
-                                        functionImports.Add(invoker);
-                                        functionImportTypes.Add(signature);
                                         break;
                                     case ExternalKind.Memory:
+                                        {
+                                            var limits = new ResizableLimits(reader);
+
+                                            var typedDelegate = typeof(Func<UnmanagedMemory>);
+                                            var delField = $"➡ {moduleName}::{fieldName}";
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+
+                                            importedMemoryProvider = exportsBuilder.DefineMethod(
+                                                $"Invoke {delField}",
+                                                internalFunctionAttributes,
+                                                CallingConventions.Standard,
+                                                typeof(UnmanagedMemory),
+                                                new[] { exports }
+                                                );
+
+                                            var invokerIL = importedMemoryProvider.GetILGenerator();
+                                            invokerIL.EmitLoadArg(0);
+                                            invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<UnmanagedMemory>.Invoke), System.Type.EmptyTypes));
+                                            invokerIL.Emit(OpCodes.Ret);
+
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                            instanceConstructorIL.Emit(OpCodes.Call,
+                                                typeof(Helpers)
+                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .MakeGenericMethod(typeof(MemoryImport))
+                                                );
+                                            instanceConstructorIL.Emit(OpCodes.Callvirt,
+                                                typeof(MemoryImport)
+                                                .GetProperty(nameof(MemoryImport.Method))
+                                                .GetGetMethod());
+                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
+                                        }
+                                        break;
                                     case ExternalKind.Global:
                                     case ExternalKind.Table:
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
@@ -495,6 +535,7 @@ namespace WebAssembly
                             }
                             else
                             {
+                                instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                                 instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
                             }
 
