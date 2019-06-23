@@ -158,7 +158,7 @@ namespace WebAssembly
 
             var calls = 0;
 
-            void doNothing(double ignored) => System.Threading.Interlocked.Increment(ref calls);
+            void doNothing(double ignored) => calls++;
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
                 new RuntimeImport[] {
@@ -172,9 +172,9 @@ namespace WebAssembly
 
             lock (typeof(NothingDoer))
             {
-                var start = NothingDoer.Calls;
+                var start = calls;
                 instance.Test(2);
-                Assert.AreEqual(start + 1, NothingDoer.Calls);
+                Assert.AreEqual(start + 1, calls);
             }
         }
 

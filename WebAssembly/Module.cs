@@ -622,7 +622,7 @@ namespace WebAssembly
         /// </summary>
 		/// <returns>A function that creates runnable instances.</returns>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-        public Func<IEnumerable<RuntimeImport>, Instance<TExports>> Compile<TExports>()
+        public InstanceCreator<TExports> Compile<TExports>()
         where TExports : class
         {
             //TODO: A more direct compilation process will be faster and create less garbage.

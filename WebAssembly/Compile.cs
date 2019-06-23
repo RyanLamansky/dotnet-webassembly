@@ -9,6 +9,14 @@ using WebAssembly.Runtime;
 namespace WebAssembly
 {
     /// <summary>
+    /// Creates a new instance of a compiled WebAssembly module.
+    /// </summary>
+    /// <typeparam name="TExports">The type of the exports object.</typeparam>
+    /// <param name="imports">Run-time imports.</param>
+    /// <returns>The instance.</returns>
+    public delegate Instance<TExports> InstanceCreator<TExports>(IDictionary<string, IDictionary<string, RuntimeImport>> imports) where TExports : class;
+
+    /// <summary>
     /// Provides compilation functionality.  Use <see cref="Module"/> for robust inspection and modification capability.
     /// </summary>
     public static class Compile
@@ -30,7 +38,7 @@ namespace WebAssembly
         /// The specified path, file name, or both exceed the system-defined maximum length.
         /// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
         /// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(string path)
+        public static InstanceCreator<TExports> FromBinary<TExports>(string path)
         where TExports : class
         {
             return FromBinary<TExports>(path, new CompilerConfiguration());
@@ -54,7 +62,7 @@ namespace WebAssembly
         /// The specified path, file name, or both exceed the system-defined maximum length.
         /// For example, on Windows-based platforms, paths must be less than 248 characters, and file names must be less than 260 characters.</exception>
         /// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
-        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(string path, CompilerConfiguration configuration)
+        public static InstanceCreator<TExports> FromBinary<TExports>(string path, CompilerConfiguration configuration)
         where TExports : class
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
@@ -69,7 +77,7 @@ namespace WebAssembly
         /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
         /// <returns>A function that creates instances on demand.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
-        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(Stream input)
+        public static InstanceCreator<TExports> FromBinary<TExports>(Stream input)
         where TExports : class
         {
             return FromBinary<TExports>(input, new CompilerConfiguration());
@@ -82,7 +90,7 @@ namespace WebAssembly
         /// <param name="configuration">Configures the compiler.</param>
         /// <returns>A function that creates instances on demand.</returns>
         /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
-        public static Func<IEnumerable<RuntimeImport>, Instance<TExports>> FromBinary<TExports>(Stream input, CompilerConfiguration configuration)
+        public static InstanceCreator<TExports> FromBinary<TExports>(Stream input, CompilerConfiguration configuration)
         where TExports : class
         {
             var exportInfo = typeof(TExports).GetTypeInfo();
@@ -127,7 +135,7 @@ namespace WebAssembly
                 }
             }
 
-            return (IEnumerable<RuntimeImport> imports) =>
+            return (IDictionary<string, IDictionary<string, RuntimeImport>> imports) =>
             {
                 try
                 {
@@ -258,7 +266,11 @@ namespace WebAssembly
 
             ILGenerator instanceConstructorIL;
             {
-                var instanceConstructor = exportsBuilder.DefineConstructor(constructorAttributes, CallingConventions.Standard, System.Type.EmptyTypes);
+                var instanceConstructor = exportsBuilder.DefineConstructor(
+                    constructorAttributes,
+                    CallingConventions.Standard,
+                    new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
+                    );
                 instanceConstructorIL = instanceConstructor.GetILGenerator();
                 {
                     var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
@@ -356,6 +368,22 @@ namespace WebAssembly
 
                                         invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action.Invoke), signature.ParameterTypes));
                                         invokerIL.Emit(OpCodes.Ret);
+
+                                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                        instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                        instanceConstructorIL.Emit(OpCodes.Call,
+                                            typeof(Helpers)
+                                            .GetMethod(nameof(Helpers.FindImport))
+                                            .MakeGenericMethod(typeof(FunctionImport))
+                                            );
+                                        instanceConstructorIL.Emit(OpCodes.Callvirt,
+                                            typeof(FunctionImport)
+                                            .GetProperty(nameof(FunctionImport.Method))
+                                            .GetGetMethod());
+                                        instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                        instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                                         functionImports.Add(invoker);
                                         functionImportTypes.Add(signature);
@@ -939,12 +967,13 @@ namespace WebAssembly
                 var instanceConstructor = instanceBuilder.DefineConstructor(
                     constructorAttributes,
                     CallingConventions.Standard,
-                    new[] { typeof(IEnumerable<RuntimeImport>) }
+                    new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
                     );
                 var il = instanceConstructor.GetILGenerator();
                 var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
 
                 il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
                 il.Emit(OpCodes.Call, instanceContainer
                     .GetTypeInfo()

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace WebAssembly
 {
@@ -79,7 +80,7 @@ namespace WebAssembly
 
         public static Instance<TExports> ToInstance<TExports>(this Module module)
         where TExports : class
-            => module.ToInstance<TExports>(null);
+            => module.ToInstance<TExports>(Enumerable.Empty<RuntimeImport>());
 
         public static Instance<TExports> ToInstance<TExports>(this Module module, IEnumerable<RuntimeImport> imports)
         where TExports : class
@@ -95,13 +96,13 @@ namespace WebAssembly
                     bytes = memory.ToArray();
                 }
 
-                Func<IEnumerable<RuntimeImport>, Instance<TExports>> maker;
+                InstanceCreator<TExports> maker;
                 using (var readOnly = new ForwardReadOnlyStream(bytes))
                 {
                     maker = Compile.FromBinary<TExports>(readOnly);
                 }
                 Assert.IsNotNull(maker);
-                compiled = maker(imports);
+                compiled = maker(imports.GroupBy(import => import.ModuleName).ToDictionary(group => group.Key, group => (IDictionary<string, RuntimeImport>)group.ToDictionary(import => import.FieldName)));
             }
 
             Assert.IsNotNull(compiled);

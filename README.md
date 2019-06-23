@@ -23,7 +23,7 @@ Compiler limitations are discussed in the Development Status section after the s
 using WebAssembly; // Acquire from https://www.nuget.org/packages/WebAssembly
 using WebAssembly.Instructions;
 using System;
-using System.Linq; // Needed for Enumerable.Empty
+using System.Collections.Generic;
 
 // We need this later to call the code we're generating.
 public abstract class Sample
@@ -93,7 +93,7 @@ static class Program
 
         // Instances should be wrapped in a "using" block for automatic disposal.
 		// This sample doesn't import anything, so we pass empty.
-        using (var instance = instanceCreator(Enumerable.Empty<RuntimeImport>()))
+        using (var instance = instanceCreator(new Dictionary<string, IDictionary<string, RuntimeImport>>()))
         {
             // FYI, instanceCreator can be used multiple times to create independent instances.
             Console.WriteLine(instance.Exports.Demo(0)); // Binary 0, result 0

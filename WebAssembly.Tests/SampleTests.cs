@@ -1,7 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Text;
-using System.Reflection;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 
 namespace WebAssembly
 {
@@ -22,6 +23,8 @@ namespace WebAssembly
         /// <param name="value">The input.</param>
         public static void Issue7Receive(int value)
         {
+            Assert.IsNotNull(issue7Received);
+
             issue7Received.Append((char)value);
         }
 
@@ -57,12 +60,20 @@ namespace WebAssembly
         [TestMethod]
         public void Execute_Sample_Issue7()
         {
+            Assert.AreEqual(0, issue7Received.Length);
+
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
             {
-                var compiled = Compile.FromBinary<dynamic>(stream)(
-                    new RuntimeImport[] {
-                    new FunctionImport("env", "sayc", new Action<int>(Issue7Receive))
-                    });
+                var imports = new Dictionary<string, IDictionary<string, RuntimeImport>>()
+                {
+                    {
+                        "env", new Dictionary<string, RuntimeImport>()
+                        {
+                            { "sayc", new FunctionImport("env", "sayc", new Action<int>(Issue7Receive)) }
+                        }
+                    }
+                };
+                var compiled = Compile.FromBinary<dynamic>(stream)(imports);
                 Assert.AreEqual<int>(0, compiled.Exports.main());
             }
 

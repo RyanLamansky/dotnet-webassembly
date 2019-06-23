@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-		<TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
 		<Title>WebAssembly for .NET</Title>
 		<Authors>Ryan Lamansky</Authors>
 		<Description>Create, read, modify, write and execute WebAssembly (WASM) files.</Description>
@@ -22,7 +22,7 @@
 		<DocumentationFile>bin\WebAssembly.xml</DocumentationFile>
 	</PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
