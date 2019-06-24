@@ -1,5 +1,6 @@
 using System;
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions
 {

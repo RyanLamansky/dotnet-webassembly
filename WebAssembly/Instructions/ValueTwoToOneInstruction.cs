@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Instructions
+﻿using WebAssembly.Runtime;
+
+namespace WebAssembly.Instructions
 {
     /// <summary>
     /// Identifies an instruction that uses a single CIL <see cref="System.Reflection.Emit.OpCode"/> to remove two values from the stack, replacing it with one value, all of a specific type.

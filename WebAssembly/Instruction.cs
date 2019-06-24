@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using WebAssembly.Instructions;
+using WebAssembly.Runtime;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
-    using Instructions;
-
     /// <summary>
     /// A combination of <see cref="OpCode"/> and its associated parameters.
     /// </summary>

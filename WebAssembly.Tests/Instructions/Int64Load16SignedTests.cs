@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Runtime.InteropServices;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions
 {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WebAssembly
+namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Describes an error that occurred during the compilation process.

@@ -1,5 +1,4 @@
-﻿
-namespace WebAssembly
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Used by the compiler to indicate that the item at the top of the stack is invalid for an operation.

@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions

@@ -1,11 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Runtime.InteropServices;
+using WebAssembly.Instructions;
+using WebAssembly.Runtime;
 
 namespace WebAssembly
 {
-    using Instructions;
-
     /// <summary>
     /// Validates basic features of the <see cref="Compile"/> class.
     /// </summary>

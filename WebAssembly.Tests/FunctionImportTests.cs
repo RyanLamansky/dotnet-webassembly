@@ -2,11 +2,11 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using WebAssembly.Instructions;
+using WebAssembly.Runtime;
 
 namespace WebAssembly
 {
-    using Instructions;
-
     /// <summary>
     /// Tests basic functionality of <see cref="FunctionImport"/> when used with <see cref="Compile"/>.
     /// </summary>

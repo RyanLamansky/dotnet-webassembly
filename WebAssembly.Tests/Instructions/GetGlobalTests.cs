@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions
 {

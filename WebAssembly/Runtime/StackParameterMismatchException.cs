@@ -1,9 +1,9 @@
-﻿namespace WebAssembly
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Used by the compiler to indicate that the value types being fed as parameters to an operation that requires them to match, do not match.
     /// </summary>
-    class StackParameterMismatchException : OpCodeCompilationException
+    public class StackParameterMismatchException : OpCodeCompilationException
     {
         /// <summary>
         /// Creates a new <see cref="StackParameterMismatchException"/> with the provided parameters.

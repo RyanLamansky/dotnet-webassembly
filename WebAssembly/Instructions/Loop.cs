@@ -1,3 +1,5 @@
+using WebAssembly.Runtime;
+
 namespace WebAssembly.Instructions
 {
     /// <summary>

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace WebAssembly
+namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Indicates the method(s) to use for a WebAssembly global import.

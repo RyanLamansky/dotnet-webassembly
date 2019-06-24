@@ -4,9 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using static System.Diagnostics.Debug;
-using WebAssembly.Runtime;
 
-namespace WebAssembly
+namespace WebAssembly.Runtime
 {
     internal sealed class CompilationContext
     {

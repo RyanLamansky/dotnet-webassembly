@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WebAssembly
+namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Functionality to integrate into a compiled WebAssembly instance.

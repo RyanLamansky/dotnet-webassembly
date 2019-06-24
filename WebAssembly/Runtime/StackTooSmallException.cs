@@ -1,4 +1,4 @@
-﻿namespace WebAssembly
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Used by the compiler to indicate the stack was too small to execute an operation.

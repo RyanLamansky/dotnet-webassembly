@@ -4,9 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 
-namespace WebAssembly
+namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Creates a new instance of a compiled WebAssembly module.
@@ -638,13 +637,13 @@ namespace WebAssembly
                             var disposeIL = dispose.GetILGenerator();
                             disposeIL.Emit(OpCodes.Ldarg_0);
                             disposeIL.Emit(OpCodes.Ldfld, memory);
-                            disposeIL.Emit(OpCodes.Call, typeof(Runtime.UnmanagedMemory)
+                            disposeIL.Emit(OpCodes.Call, typeof(UnmanagedMemory)
                                 .GetTypeInfo()
                                 .DeclaredMethods
                                 .Where(info =>
                                 info.ReturnType == typeof(void)
                                 && info.GetParameters().Length == 0
-                                && info.Name == nameof(Runtime.UnmanagedMemory.Dispose))
+                                && info.Name == nameof(UnmanagedMemory.Dispose))
                                 .First());
                             disposeIL.Emit(OpCodes.Ret);
                         }
@@ -790,7 +789,7 @@ namespace WebAssembly
                                             var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
-                                                typeof(Runtime.UnmanagedMemory),
+                                                typeof(UnmanagedMemory),
                                                 System.Type.EmptyTypes
                                                 );
                                             var getterIL = memoryGetter.GetILGenerator();
@@ -798,7 +797,7 @@ namespace WebAssembly
                                             getterIL.Emit(OpCodes.Ldfld, memory);
                                             getterIL.Emit(OpCodes.Ret);
 
-                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(Runtime.UnmanagedMemory), System.Type.EmptyTypes)
+                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(UnmanagedMemory), System.Type.EmptyTypes)
                                                 .SetGetMethod(memoryGetter);
                                         }
                                         break;
@@ -1030,7 +1029,7 @@ namespace WebAssembly
 
                                 instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                                 instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
-                                instanceConstructorIL.Emit(OpCodes.Call, Runtime.UnmanagedMemory.StartGetter);
+                                instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
                                 instanceConstructorIL.Emit(OpCodes.Ldloc, address);
                                 instanceConstructorIL.Emit(OpCodes.Conv_I);
                                 instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);

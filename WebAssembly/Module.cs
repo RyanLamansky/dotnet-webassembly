@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using WebAssembly.Runtime;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly
@@ -618,7 +619,7 @@ namespace WebAssembly
 
         /// <summary>
         /// Creates an executable <see cref="Instance{TExports}"/> from this instance's data.
-        /// This is intended for use with run-time code generation.  For directly compiling WebAssembly byte code, use <see cref="WebAssembly.Compile"/>.
+        /// This is intended for use with run-time code generation.  For directly compiling WebAssembly byte code, use <see cref="Runtime.Compile"/>.
         /// </summary>
 		/// <returns>A function that creates runnable instances.</returns>
 		/// <exception cref="ModuleLoadException">An error was encountered while reading the WebAssembly file.</exception>
@@ -630,7 +631,7 @@ namespace WebAssembly
             {
                 this.WriteToBinary(memory);
                 memory.Position = 0;
-                return WebAssembly.Compile.FromBinary<TExports>(memory);
+                return Runtime.Compile.FromBinary<TExports>(memory);
             }
         }
     }

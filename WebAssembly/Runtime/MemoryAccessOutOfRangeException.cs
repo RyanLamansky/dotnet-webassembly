@@ -1,4 +1,4 @@
-﻿namespace WebAssembly
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Describes an exception where an out-of-range memory access was attempted.

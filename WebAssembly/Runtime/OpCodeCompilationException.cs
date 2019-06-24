@@ -1,4 +1,4 @@
-﻿namespace WebAssembly
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Used by the compiler to describe a problem encountered while compiling an <see cref="OpCode"/>.

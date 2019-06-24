@@ -1,10 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
+using WebAssembly.Instructions;
+using WebAssembly.Runtime;
 
 namespace WebAssembly
 {
-    using Instructions;
-
     /// <summary>
     /// Tests basic functionality of <see cref="GlobalImport"/> when used with <see cref="Compile"/>.
     /// </summary>
