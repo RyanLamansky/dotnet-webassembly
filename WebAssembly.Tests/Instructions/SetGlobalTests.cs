@@ -534,6 +534,7 @@ namespace WebAssembly.Instructions
                 Module = "Imported",
                 Field = "Global",
                 ContentType = ValueType.Int32,
+                IsMutable = true
             });
             module.Exports.Add(new Export
             {
@@ -551,7 +552,7 @@ namespace WebAssembly.Instructions
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<int>>(
                 new RuntimeImport[] {
-                    new GlobalImport("Imported", "Global", typeof(SetGlobalTests).GetTypeInfo().GetProperty(nameof(MutableGlobal)))
+                    new GlobalImport("Imported", "Global", () => MutableGlobal, value => MutableGlobal = value)
                 });
 
 

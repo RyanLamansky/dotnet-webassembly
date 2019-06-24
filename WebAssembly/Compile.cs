@@ -430,6 +430,90 @@ namespace WebAssembly
                                         }
                                         break;
                                     case ExternalKind.Global:
+                                        {
+                                            var contentType = (ValueType)reader.ReadVarInt7();
+                                            var mutable = reader.ReadVarUInt1() == 1;
+
+                                            var typedDelegate = typeof(Func<>).MakeGenericType(new[] { contentType.ToSystemType() });
+                                            var delField = $"➡ Get {moduleName}::{fieldName}";
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+
+                                            var getterInvoker = exportsBuilder.DefineMethod(
+                                                $"Invoke {delField}",
+                                                internalFunctionAttributes,
+                                                CallingConventions.Standard,
+                                                contentType.ToSystemType(),
+                                                new[] { exports }
+                                                );
+
+                                            var invokerIL = getterInvoker.GetILGenerator();
+                                            invokerIL.EmitLoadArg(0);
+                                            invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<ValueType>.Invoke), System.Type.EmptyTypes));
+                                            invokerIL.Emit(OpCodes.Ret);
+
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                            instanceConstructorIL.Emit(OpCodes.Call,
+                                                typeof(Helpers)
+                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .MakeGenericMethod(typeof(GlobalImport))
+                                                );
+                                            instanceConstructorIL.Emit(OpCodes.Callvirt,
+                                                typeof(GlobalImport)
+                                                .GetProperty(nameof(GlobalImport.Getter))
+                                                .GetGetMethod());
+                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
+
+                                            MethodBuilder setterInvoker;
+                                            if (!mutable)
+                                            {
+                                                setterInvoker = null;
+                                            }
+                                            else
+                                            {
+                                                typedDelegate = typeof(Action<>).MakeGenericType(new[] { contentType.ToSystemType() });
+                                                delField = $"➡ Set {moduleName}::{fieldName}";
+                                                delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+
+                                                setterInvoker = exportsBuilder.DefineMethod(
+                                                $"Invoke {delField}",
+                                                internalFunctionAttributes,
+                                                CallingConventions.Standard,
+                                                null,
+                                                new[] { contentType.ToSystemType(), exports }
+                                                );
+
+                                                invokerIL = setterInvoker.GetILGenerator();
+                                                invokerIL.EmitLoadArg(1);
+                                                invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
+                                                invokerIL.EmitLoadArg(0);
+                                                invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<ValueType>.Invoke), new[] { contentType.ToSystemType() }));
+                                                invokerIL.Emit(OpCodes.Ret);
+
+                                                instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                                instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                                instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                                instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                                instanceConstructorIL.Emit(OpCodes.Call,
+                                                    typeof(Helpers)
+                                                    .GetMethod(nameof(Helpers.FindImport))
+                                                    .MakeGenericMethod(typeof(GlobalImport))
+                                                    );
+                                                instanceConstructorIL.Emit(OpCodes.Callvirt,
+                                                    typeof(GlobalImport)
+                                                    .GetProperty(nameof(GlobalImport.Setter))
+                                                    .GetGetMethod());
+                                                instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                                instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
+                                            }
+
+                                            globalImports.Add(new GlobalInfo(contentType, true, getterInvoker, setterInvoker));
+                                        }
+                                        break;
                                     case ExternalKind.Table:
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
 
