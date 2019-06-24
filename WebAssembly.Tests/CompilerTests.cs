@@ -628,7 +628,9 @@ namespace WebAssembly
 
             var memory = new Runtime.UnmanagedMemory(0, 1);
 
-            var roundMemory = module.ToInstance<dynamic>(new[] { new MemoryImport("Memory", "Memory", () => memory) }).Exports.Memory as Runtime.UnmanagedMemory;
+            var roundMemory = module.ToInstance<dynamic>(new ImportDictionary {
+                { "Memory", "Memory", new MemoryImport(() => memory) },
+            }).Exports.Memory as UnmanagedMemory;
             Assert.IsNotNull(roundMemory);
             Assert.AreSame(memory, roundMemory);
         }

@@ -11,7 +11,8 @@ The 1.0 release marks when 100% of the "MVP" spec level of WebAssembly features 
 
 ## Getting Started
 
-- The base namespace is simply `WebAssembly`.
+- The most commonly used items are in `WebAssembly`.
+`WebAssembly.Runtime` has the compiler and related features.
 - Use the `Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
 - Use the `Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
 
@@ -20,10 +21,11 @@ Compiler limitations are discussed in the Development Status section after the s
 ## Sample: Create and execute a WebAssembly file in memory
 
 ``` C#
-using WebAssembly; // Acquire from https://www.nuget.org/packages/WebAssembly
-using WebAssembly.Instructions;
 using System;
 using System.Collections.Generic;
+using WebAssembly; // Acquire from https://www.nuget.org/packages/WebAssembly
+using WebAssembly.Instructions;
+using WebAssembly.Runtime;
 
 // We need this later to call the code we're generating.
 public abstract class Sample
@@ -92,8 +94,8 @@ static class Program
         var instanceCreator = module.Compile<Sample>();
 
         // Instances should be wrapped in a "using" block for automatic disposal.
-		// This sample doesn't import anything, so we pass empty.
-        using (var instance = instanceCreator(new Dictionary<string, IDictionary<string, RuntimeImport>>()))
+        // This sample doesn't import anything, so we pass an empty import dictionary.
+        using (var instance = instanceCreator(new ImportDictionary()))
         {
             // FYI, instanceCreator can be used multiple times to create independent instances.
             Console.WriteLine(instance.Exports.Demo(0)); // Binary 0, result 0
@@ -106,12 +108,11 @@ static class Program
 
 ## Development Status
 
-The `Module` class is feature-complete; it should be compatible with any "MVP"-level WASM file.
+The `WebAssembly.Module` class is feature-complete; it should be compatible with any "MVP"-level WASM file.
 
-The `Compile` class coverage of the "MVP"-level WebAssembly spec is still missing the following capabilities:
+The `WebAssembly.Runtime.Compile` class coverage of the "MVP"-level WebAssembly spec is still missing the following capabilities:
 
 * Import and export tables, needed for interoperable virtual functions.
-* Import delegates, needed to connect WASM files to each other, with the added benefit of making .NET usage more flexible.
 
 _Note that although delivering the above capabilities will enable this library to run any "MVP"-level WASM file, it's up to you to satisfy the application-specific imports._
 
@@ -124,15 +125,9 @@ The current objective is to offer the same ("MVP"-level) WebAssembly compatibili
 
 - Support importing tables.
 - Support exporting tables.
-- API changes to support use of delegates for all import types.
-- Move all types needed to support compilation (other than the `Compile` class itself) to the `WebAssembly.Runtime` namespace.
 - Any other API changes deemed necessary to reduce the risk of future breaking changes and make the library more intuitive.
 
-### 1.1
-
-- Support delegates for all import types.
-
-### After 1.1
+### After 1.0
 
 - Provide WebAssembly streaming binary reader.
 - Provide WebAssembly streaming binary writer.
@@ -153,3 +148,7 @@ Since this section is required to be at the end of the file by the WebAssembly s
 - Validation of `Module` instances.
 - Parse WAT files.
 - Parse WAST files.
+
+## Other Information
+
+* [Breaking Change Information](docs/BreakingChanges.md)

@@ -552,8 +552,8 @@ namespace WebAssembly.Instructions
             });
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<int>>(
-                new RuntimeImport[] {
-                    new GlobalImport("Imported", "Global", () => MutableGlobal, value => MutableGlobal = value)
+                new ImportDictionary {
+                    { "Imported", "Global", new GlobalImport(() => MutableGlobal, value => MutableGlobal = value) },
                 });
 
 

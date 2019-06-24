@@ -47,8 +47,8 @@ namespace WebAssembly
             });
 
             var compiled = module.ToInstance<CompilerTestBase2<double>>(
-                new RuntimeImport[] {
-                    new FunctionImport("Math", "Pow", new Func<double, double, double>(Math.Pow))
+                new ImportDictionary {
+                    { "Math", "Pow", new FunctionImport(new Func<double, double, double>(Math.Pow)) },
                 });
 
             Assert.IsNotNull(compiled);
@@ -108,8 +108,8 @@ namespace WebAssembly
             });
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
-                new RuntimeImport[] {
-                    new FunctionImport("Do", "Nothing", new Action<double>(NothingDoer.DoNothing))
+                new ImportDictionary {
+                    { "Do", "Nothing", new FunctionImport(new Action<double>(NothingDoer.DoNothing)) },
                 });
 
             Assert.IsNotNull(compiled);
@@ -161,8 +161,8 @@ namespace WebAssembly
             void doNothing(double ignored) => calls++;
 
             var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
-                new RuntimeImport[] {
-                    new FunctionImport("Do", "Nothing", new Action<double>(doNothing))
+                new ImportDictionary {
+                    { "Do", "Nothing", new FunctionImport(new Action<double>(doNothing)) },
                 });
 
             Assert.IsNotNull(compiled);
@@ -203,7 +203,7 @@ namespace WebAssembly
             il.Emit(OpCodes.Ldc_I4_7);
             il.Emit(OpCodes.Ret);
 
-            new FunctionImport("TestModule", "TestExportName", dynamicClass.CreateType().GetMethod("TestMethod").CreateDelegate(typeof(Func<int>)));
+            new FunctionImport(dynamicClass.CreateType().GetMethod("TestMethod").CreateDelegate(typeof(Func<int>)));
         }
     }
 }

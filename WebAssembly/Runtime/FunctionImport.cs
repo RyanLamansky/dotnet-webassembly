@@ -23,13 +23,10 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// Creates a new <see cref="FunctionImport"/> instance with the provided <see cref="Delegate"/>.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="del">The delegate to use for the import.</param>
         /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
         /// <exception cref="ArgumentException">A parameter or return type is not compatible with WebAssembly.</exception>
-        public FunctionImport(string moduleName, string exportName, Delegate del)
-            : base(moduleName, exportName)
+        public FunctionImport(Delegate del)
         {
             if (del == null)
                 throw new ArgumentNullException(nameof(del));

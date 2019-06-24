@@ -36,8 +36,8 @@ namespace WebAssembly
             });
 
             var compiled = module.ToInstance<CompilerTestBaseExportedImmutableGlobal<int>>(
-                new RuntimeImport[] {
-                    new GlobalImport("Imported", "Global", () => ImportedImmutableGlobalReturns3)
+                new ImportDictionary {
+                    { "Imported", "Global", new GlobalImport(() => ImportedImmutableGlobalReturns3) },
                 });
 
             Assert.IsNotNull(compiled);
@@ -75,8 +75,8 @@ namespace WebAssembly
             });
 
             var compiled = module.ToInstance<CompilerTestBaseExportedMutableGlobal<int>>(
-                new RuntimeImport[] {
-                    new GlobalImport("Imported", "Global", () => MutableGlobal, value => MutableGlobal = value)
+                new ImportDictionary {
+                    { "Imported", "Global", new GlobalImport(() => MutableGlobal, value => MutableGlobal = value) },
                 });
 
             Assert.IsNotNull(compiled);

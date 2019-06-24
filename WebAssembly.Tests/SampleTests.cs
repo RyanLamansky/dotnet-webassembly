@@ -65,14 +65,9 @@ namespace WebAssembly
 
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
             {
-                var imports = new Dictionary<string, IDictionary<string, RuntimeImport>>()
+                var imports = new ImportDictionary
                 {
-                    {
-                        "env", new Dictionary<string, RuntimeImport>()
-                        {
-                            { "sayc", new FunctionImport("env", "sayc", new Action<int>(Issue7Receive)) }
-                        }
-                    }
+                    { "env", "sayc", new FunctionImport(new Action<int>(Issue7Receive)) },
                 };
                 var compiled = Compile.FromBinary<dynamic>(stream)(imports);
                 Assert.AreEqual<int>(0, compiled.Exports.main());

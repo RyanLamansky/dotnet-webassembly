@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using WebAssembly.Runtime;
 
 namespace WebAssembly
@@ -81,9 +80,9 @@ namespace WebAssembly
 
         public static Instance<TExports> ToInstance<TExports>(this Module module)
         where TExports : class
-            => module.ToInstance<TExports>(Enumerable.Empty<RuntimeImport>());
+            => module.ToInstance<TExports>(new ImportDictionary());
 
-        public static Instance<TExports> ToInstance<TExports>(this Module module, IEnumerable<RuntimeImport> imports)
+        public static Instance<TExports> ToInstance<TExports>(this Module module, IDictionary<string, IDictionary<string, RuntimeImport>> imports)
         where TExports : class
         {
             Instance<TExports> compiled;
@@ -103,7 +102,7 @@ namespace WebAssembly
                     maker = Compile.FromBinary<TExports>(readOnly);
                 }
                 Assert.IsNotNull(maker);
-                compiled = maker(imports.GroupBy(import => import.ModuleName).ToDictionary(group => group.Key, group => (IDictionary<string, RuntimeImport>)group.ToDictionary(import => import.FieldName)));
+                compiled = maker(imports);
             }
 
             Assert.IsNotNull(compiled);

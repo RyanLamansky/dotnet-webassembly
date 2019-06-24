@@ -404,8 +404,8 @@ namespace WebAssembly.Instructions
             });
 
             var compiled = module.ToInstance<CompilerTestBase0<int>>(
-                new RuntimeImport[] {
-                    new GlobalImport("Imported", "Global", () => ImportedImmutableGlobalReturns3)
+                new ImportDictionary {
+                    { "Imported", "Global", new GlobalImport(() => ImportedImmutableGlobalReturns3) },
                 });
 
             Assert.AreEqual(ImportedImmutableGlobalReturns3, compiled.Exports.Test());

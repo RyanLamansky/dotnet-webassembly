@@ -28,83 +28,70 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<int> getter, Action<int> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Int32)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<int> getter, Action<int> setter = null)
+            : this( getter, setter, ValueType.Int32)
         {
         }
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<uint> getter, Action<uint> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Int32)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<uint> getter, Action<uint> setter = null)
+            : this(getter, setter, ValueType.Int32)
         {
         }
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<long> getter, Action<long> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Int64)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<long> getter, Action<long> setter = null)
+            : this(getter, setter, ValueType.Int64)
         {
         }
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<ulong> getter, Action<ulong> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Int64)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<ulong> getter, Action<ulong> setter = null)
+            : this(getter, setter, ValueType.Int64)
         {
         }
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<float> getter, Action<float> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Float32)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<float> getter, Action<float> setter = null)
+            : this(getter, setter, ValueType.Float32)
         {
         }
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="getter">The method to use for read requests.</param>
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
-        /// <exception cref="ArgumentNullException"><paramref name="moduleName"/>, <paramref name="exportName"/>, and <paramref name="getter"/> cannot be null.</exception>
-        public GlobalImport(string moduleName, string exportName, Func<double> getter, Action<double> setter = null)
-            : this(moduleName, exportName, getter, setter, ValueType.Float64)
+        /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
+        public GlobalImport(Func<double> getter, Action<double> setter = null)
+            : this(getter, setter, ValueType.Float64)
         {
         }
 
-        private GlobalImport(string moduleName, string exportName, Delegate getter, Delegate setter, ValueType type)
-            : base(moduleName, exportName)
+        private GlobalImport(Delegate getter, Delegate setter, ValueType type)
         {
             this.Getter = getter;
             this.Setter = setter;

@@ -21,12 +21,9 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// Creates a new <see cref="MemoryImport"/> instance with the provided <see cref="UnmanagedMemory"/>.
         /// </summary>
-        /// <param name="moduleName">The first portion of the two part name.</param>
-        /// <param name="exportName">The second portion of the two-part name.</param>
         /// <param name="method">A function to provide the memory to use for the import.</param>
         /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
-        public MemoryImport(string moduleName, string exportName, Func<UnmanagedMemory> method)
-            : base(moduleName, exportName)
+        public MemoryImport(Func<UnmanagedMemory> method)
         {
             this.Method = method ?? throw new ArgumentNullException(nameof(method));
         }
