@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime
 {
@@ -157,38 +158,6 @@ namespace WebAssembly.Runtime
 
             public readonly uint Count;
             public readonly ValueType Type;
-        }
-
-        internal struct Indirect
-        {
-            public Indirect(uint type, MethodBuilder function)
-            {
-                this.type = type;
-                this.function = function;
-            }
-
-            public readonly uint type;
-            public readonly MethodBuilder function;
-        }
-
-        internal sealed class GlobalInfo
-        {
-            public readonly ValueType Type;
-            public readonly bool RequiresInstance;
-            public readonly MethodInfo Getter;
-            public readonly MethodInfo Setter;
-
-            public GlobalInfo(ValueType type, bool requiresInstance, MethodInfo getter, MethodInfo setter)
-            {
-                this.Type = type;
-                this.RequiresInstance = requiresInstance;
-                this.Getter = getter;
-                this.Setter = setter;
-            }
-
-#if DEBUG
-            public sealed override string ToString() => $"{this.Type} {this.RequiresInstance}";
-#endif
         }
 
         private static ConstructorInfo FromBinary(

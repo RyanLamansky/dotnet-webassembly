@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using static System.Diagnostics.Debug;
 
-namespace WebAssembly.Runtime
+namespace WebAssembly.Runtime.Compilation
 {
     internal sealed class Signature : System.IEquatable<Type>
     {

@@ -1,10 +1,10 @@
 ﻿using System.Reflection.Emit;
 
-namespace WebAssembly.Runtime
+namespace WebAssembly.Runtime.Compilation
 {
     static class ILGeneratorExtensions
     {
-        public static void EmitLoadArg(this ILGenerator il, int arg) => EmitLoadArg(il, checked((ushort)arg));
+        public static void EmitLoadArg(this ILGenerator il, int arg) => il.EmitLoadArg(checked((ushort)arg));
 
         public static void EmitLoadArg(this ILGenerator il, ushort arg)
         {

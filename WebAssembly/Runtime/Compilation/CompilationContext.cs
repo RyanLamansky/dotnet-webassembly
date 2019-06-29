@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using static System.Diagnostics.Debug;
 
-namespace WebAssembly.Runtime
+namespace WebAssembly.Runtime.Compilation
 {
     internal sealed class CompilationContext
     {
@@ -18,9 +18,9 @@ namespace WebAssembly.Runtime
             Signature[] functionSignatures,
             MethodInfo[] methods,
             Signature[] types,
-            Compile.Indirect[] functionElements,
+            Indirect[] functionElements,
             ModuleBuilder module,
-            Compile.GlobalInfo[] globals
+            GlobalInfo[] globals
             )
         {
             Assert(exportsBuilder != null);
@@ -90,8 +90,8 @@ namespace WebAssembly.Runtime
                 var fe = functionElements[i];
                 il.Emit(OpCodes.Dup);
                 Instructions.Int32Constant.Emit(this, i);
-                Instructions.Int32Constant.Emit(this, checked((int)fe.type));
-                il.Emit(OpCodes.Ldftn, fe.function);
+                Instructions.Int32Constant.Emit(this, checked((int)fe.Type));
+                il.Emit(OpCodes.Ldftn, fe.Function);
                 il.Emit(OpCodes.Newobj, indirectConstructorBuilder);
                 il.Emit(OpCodes.Stelem, indirectBuilder.AsType());
             }
@@ -221,7 +221,7 @@ namespace WebAssembly.Runtime
 
         public readonly Signature[] Types;
 
-        public readonly Compile.GlobalInfo[] Globals;
+        public readonly GlobalInfo[] Globals;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |

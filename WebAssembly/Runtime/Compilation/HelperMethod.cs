@@ -1,4 +1,4 @@
-﻿namespace WebAssembly.Runtime
+﻿namespace WebAssembly.Runtime.Compilation
 {
     enum HelperMethod
     {

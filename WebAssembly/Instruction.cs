@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using WebAssembly.Instructions;
-using WebAssembly.Runtime;
+using WebAssembly.Runtime.Compilation;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly

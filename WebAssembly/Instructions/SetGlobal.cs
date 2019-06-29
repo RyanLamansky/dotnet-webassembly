@@ -1,5 +1,6 @@
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
 {
@@ -43,7 +44,7 @@ namespace WebAssembly.Instructions
             if (stack.Count < 1)
                 throw new StackTooSmallException(OpCode.SetGlobal, 1, stack.Count);
 
-            Compile.GlobalInfo global;
+            GlobalInfo global;
             try
             {
                 global = context.Globals[this.Index];

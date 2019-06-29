@@ -1,5 +1,6 @@
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
 {
@@ -39,7 +40,7 @@ namespace WebAssembly.Instructions
             if (context.Globals == null)
                 throw new CompilerException("Can't use GetGlobal without a global section or global imports.");
 
-            Compile.GlobalInfo global;
+            GlobalInfo global;
             try
             {
                 global = context.Globals[this.Index];

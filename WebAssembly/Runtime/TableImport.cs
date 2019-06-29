@@ -1,7 +1,7 @@
 ﻿namespace WebAssembly.Runtime
 {
     /// <summary>
-    /// The base class for all table imports, which for the initial specification, is always <see cref="FunctionTableImport"/>.
+    /// The base class for all table imports, which for the initial specification, is always <see cref="FunctionTable"/>.
     /// </summary>
     public abstract class TableImport : RuntimeImport
     {
