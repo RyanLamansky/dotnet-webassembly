@@ -3,10 +3,10 @@
 namespace WebAssembly.Runtime
 {
     /// <summary>
-    /// An array-like structure representing a table import, which for the initial specification of WebAssembly is always a function list.
+    /// An array-like structure representing a table import/export, which for the initial specification of WebAssembly is always a function list.
     /// Its behavior mimics the JavaScript version, where the import object is actually modified by the instantiation process.
     /// </summary>
-    public class FunctionTableImport : TableImport
+    public class FunctionTable : TableImport
     {
         /// <summary>
         /// Always <see cref="ElementType.AnyFunction"/>.
@@ -16,26 +16,22 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// The initial number of elements.
         /// </summary>
-        public int Initial { get; }
+        public uint Initial { get; }
 
         /// <summary>
         /// The maximum number of elements the table is allowed to grow to.
         /// </summary>
-        public int? Maximum { get; }
+        public uint? Maximum { get; }
 
         /// <summary>
-        /// Creates a new <see cref="FunctionTableImport"/> with the provided initial and maximum size.
+        /// Creates a new <see cref="FunctionTable"/> with the provided initial and maximum size.
         /// </summary>
         /// <param name="initial">The initial number of elements.</param>
         /// <param name="maximum">The maximum number of elements the table is allowed to grow to.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="initial"/> must be at least 0.</exception>
         /// <exception cref="ArgumentException"><paramref name="initial"/> cannot exceed <paramref name="maximum"/>.</exception>
-        public FunctionTableImport(int initial, int? maximum = null)
+        public FunctionTable(uint initial, uint? maximum = null)
         {
-            if (initial < 0)
-                throw new ArgumentOutOfRangeException(nameof(initial), "initial must be at least 0.");
-
-            if (initial > maximum.GetValueOrDefault(int.MaxValue))
+            if (initial > maximum.GetValueOrDefault(uint.MaxValue))
                 throw new ArgumentException("initial cannot exceed maximum.", nameof(initial));
 
             this.Initial = initial;
@@ -60,7 +56,7 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// Gets the current size of the table.
         /// </summary>
-        public int Length => this.delegates.Length;
+        public uint Length => (uint)this.delegates.Length;
 
         /// <summary>
         /// Increases the size of the instance by a specified number of elements.
@@ -70,18 +66,15 @@ namespace WebAssembly.Runtime
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="number"/> must be at least 0 and, when added to <see cref="Length"/>, cannot exceed <see cref="Maximum"/>.
         /// </exception>
-        public int Grow(int number)
+        public uint Grow(uint number)
         {
-            if (number < 0)
-                throw new ArgumentOutOfRangeException(nameof(number), "number must be at least 0.");
-
             var count = this.Length;
             var newSize = count + number;
 
-            if (newSize > this.Maximum.GetValueOrDefault(int.MaxValue))
+            if (newSize > this.Maximum.GetValueOrDefault(uint.MaxValue))
                 throw new ArgumentOutOfRangeException(nameof(number), "Adding number to the current Count would exceed the defined Maximum.");
 
-            Array.Resize(ref delegates, newSize);
+            Array.Resize(ref delegates, checked((int)newSize));
 
             return count;
         }
