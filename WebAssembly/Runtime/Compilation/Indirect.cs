@@ -1,16 +1,16 @@
-﻿using System.Reflection.Emit;
+﻿using System.Reflection;
 
 namespace WebAssembly.Runtime.Compilation
 {
     internal struct Indirect
     {
-        public Indirect(uint type, MethodBuilder function)
+        public Indirect(uint type, MethodInfo function)
         {
             this.Type = type;
             this.Function = function;
         }
 
         public readonly uint Type;
-        public readonly MethodBuilder Function;
+        public readonly MethodInfo Function;
     }
 }

@@ -89,8 +89,8 @@ namespace WebAssembly.Instructions
             var returnTypes = signature.RawReturnTypes;
 
             var stack = context.Stack;
-            if (stack.Count < paramTypes.Length)
-                throw new StackTooSmallException(OpCode.CallIndirect, paramTypes.Length, stack.Count);
+            if (stack.Count < paramTypes.Length + 1)
+                throw new StackTooSmallException(OpCode.CallIndirect, paramTypes.Length + 1, stack.Count);
 
             var type = stack.Pop();
             if (type != ValueType.Int32)

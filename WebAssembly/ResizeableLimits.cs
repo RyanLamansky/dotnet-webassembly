@@ -42,7 +42,7 @@ namespace WebAssembly
         /// </summary>
         /// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
         /// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>
-        public ResizableLimits(uint minimum, uint? maximum)
+        public ResizableLimits(uint minimum, uint? maximum = null)
         {
             this.Minimum = minimum;
             this.Maximum = maximum;

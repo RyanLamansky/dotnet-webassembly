@@ -863,7 +863,7 @@ namespace WebAssembly.Runtime
                                     var functionIndex = reader.ReadVarUInt32();
                                     functionElements[j] = new Indirect(
                                         functionSignatures[functionIndex].TypeIndex,
-                                        (MethodBuilder)internalFunctions[importedFunctions + functionIndex]
+                                        internalFunctions[functionIndex]
                                         );
                                 }
                             }
