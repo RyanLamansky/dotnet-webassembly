@@ -14,6 +14,7 @@ namespace WebAssembly.Runtime
     /// <typeparam name="TExports">The type of the exports object.</typeparam>
     /// <param name="imports">Run-time imports.</param>
     /// <returns>The instance.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="imports" /> cannot be null.</exception>
     public delegate Instance<TExports> InstanceCreator<TExports>(IDictionary<string, IDictionary<string, RuntimeImport>> imports) where TExports : class;
 
     /// <summary>

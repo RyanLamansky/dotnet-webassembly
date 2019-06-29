@@ -15,6 +15,13 @@ namespace WebAssembly.Runtime
         public static T FindImport<T>(IDictionary<string, IDictionary<string, RuntimeImport>> imports, string module, string field)
             where T : RuntimeImport
         {
+            if (imports == null)
+                throw new ArgumentNullException(nameof(imports));
+            if (module == null)
+                throw new ArgumentNullException(nameof(module));
+            if (field == null)
+                throw new ArgumentNullException(nameof(field));
+
             if (!imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import) || import == null)
             {
                 throw new ArgumentException($"Missing import for {module}::{field}.", "imports");
