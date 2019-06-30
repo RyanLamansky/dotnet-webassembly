@@ -886,12 +886,12 @@ namespace WebAssembly.Runtime
                                 var elements = reader.ReadVarUInt32();
                                 // TODO: Grow table to fit elements.
 
-                                for (var j = 0; j < elements; j++)
+                                for (var j = 0u; j < elements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
 
                                     instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-                                    instanceConstructorIL.EmitLoadConstant(functionIndex);
+                                    instanceConstructorIL.EmitLoadConstant(offset + j);
 
                                     if (existingDelegates.TryGetValue(functionIndex, out var existing))
                                     {
@@ -901,17 +901,18 @@ namespace WebAssembly.Runtime
                                     }
                                     else
                                     {
-                                        existingDelegates.Add(functionIndex, elements + offset);
+                                        existingDelegates.Add(functionIndex, offset + j);
 
                                         var signature = functionSignatures[functionIndex];
                                         var parms = signature.ParameterTypes;
                                         var returns = signature.ReturnTypes;
                                         var wrapper = exportsBuilder.DefineMethod(
                                             $"📦 {functionIndex}",
-                                            internalFunctionAttributes,
+                                            MethodAttributes.Private | MethodAttributes.HideBySig,
                                             returns.Length == 0 ? typeof(void) : returns[0],
-                                            parms.Concat(new[] { exports }).ToArray()
+                                            parms
                                             );
+
                                         var il = wrapper.GetILGenerator();
                                         for (var k = 0; k < parms.Length; k++)
                                             il.EmitLoadArg(k + 1);
@@ -924,7 +925,7 @@ namespace WebAssembly.Runtime
                                             var del = configuration
                                                 .GetDelegateForType(parms.Length, returns.Length)
                                                 .MakeGenericType(parms.Concat(returns).ToArray());
-                                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke)));
+                                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
                                         }
 
                                         instanceConstructorIL.EmitLoadArg(0);
