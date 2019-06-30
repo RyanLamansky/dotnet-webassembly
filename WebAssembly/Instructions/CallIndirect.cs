@@ -106,15 +106,12 @@ namespace WebAssembly.Instructions
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);
 
-            Int32Constant.Emit(context, checked((int)this.Type));
-            context.Emit(OpCodes.Call, context[HelperMethod.GetFunctionPointer]);
-            context.Emit(OpCodes.Stloc, context.IndirectPointerLocal.LocalIndex);
+            context.Emit(OpCodes.Stloc, context.IndirectPointerLocal);
             context.EmitLoadThis();
-            context.Emit(OpCodes.Ldloc, context.IndirectPointerLocal.LocalIndex);
-            context.EmitCalli(
-                signature.ReturnTypes.Length == 0 ? typeof(void) : signature.ReturnTypes[0],
-                signature.ParameterTypes.Concat(new[] { context.ExportsBuilder.AsType() }).ToArray(
-                ));
+            context.Emit(OpCodes.Ldfld, context.FunctionTable);
+            context.Emit(OpCodes.Ldloc, context.IndirectPointerLocal);
+            context.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+            context.Emit(OpCodes.Call, context.DelegateInvokersByTypeIndex[this.Type]);
         }
     }
 }

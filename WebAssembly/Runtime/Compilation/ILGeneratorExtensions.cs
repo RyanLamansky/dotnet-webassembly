@@ -24,5 +24,26 @@ namespace WebAssembly.Runtime.Compilation
             }
             il.Emit(opCode);
         }
+
+        public static void EmitLoadConstant(this ILGenerator il, uint? value)
+        {
+            if (value == null)
+            {
+                il.Emit(OpCodes.Ldnull);
+                return;
+            }
+
+            il.EmitLoadConstant((int)value);
+        }
+
+        public static void EmitLoadConstant(this ILGenerator il, uint value)
+        {
+            il.EmitLoadConstant((int)value);
+        }
+
+        public static void EmitLoadConstant(this ILGenerator il, int value)
+        {
+            Instructions.Int32Constant.Emit(il, value);
+        }
     }
 }

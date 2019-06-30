@@ -255,10 +255,11 @@ namespace WebAssembly.Runtime
             var importedFunctions = 0;
             var importedGlobals = 0;
             MethodInfo[] internalFunctions = null;
-            Indirect[] functionElements = null;
+            FieldBuilder functionTable = null;
             GlobalInfo[] globals = null;
             CompilationContext context = null;
             MethodInfo startFunction = null;
+            var delegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
 
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -483,9 +484,6 @@ namespace WebAssembly.Runtime
                                             globalImports.Add(new GlobalInfo(contentType, true, getterInvoker, setterInvoker));
                                         }
                                         break;
-                                    case ExternalKind.Table:
-                                        throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not currently supported.", preKindOffset);
-
                                     default:
                                         throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not recognized.", preKindOffset);
                                 }
@@ -533,21 +531,34 @@ namespace WebAssembly.Runtime
 
                     case Section.Table:
                         {
+                            var preCountOffset = reader.Offset;
                             var count = reader.ReadVarUInt32();
+
                             for (var i = 0; i < count; i++)
                             {
+                                var preElementTypeOffset = reader.Offset;
                                 var elementType = (ElementType)reader.ReadVarInt7();
-                                switch (elementType)
-                                {
-                                    default:
-                                        throw new ModuleLoadException($"Element type {elementType} not supported.", reader.Offset - 1);
+                                if (elementType != ElementType.AnyFunction)
+                                    throw new ModuleLoadException($"The only supported table element type is {nameof(ElementType.AnyFunction)}, found {elementType}", preElementTypeOffset);
 
-                                    case ElementType.AnyFunction:
-                                        var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
-                                        functionElements = new Indirect[reader.ReadVarUInt32()];
-                                        if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
-                                            reader.ReadVarUInt32(); //Not used.
-                                        break;
+                                if (functionTable == null)
+                                {
+                                    // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
+                                    var limits = new ResizableLimits(reader);
+                                    functionTable = CreateFunctionTableField(exportsBuilder);
+                                    instanceConstructorIL.EmitLoadArg(0);
+                                    instanceConstructorIL.EmitLoadConstant(limits.Minimum);
+                                    if (limits.Maximum.HasValue)
+                                    {
+                                        instanceConstructorIL.EmitLoadConstant(limits.Maximum);
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetConstructor(new[] { typeof(uint) }));
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable).GetConstructor(new[] { typeof(uint), typeof(uint?) }));
+                                    }
+                                    else
+                                    {
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable).GetConstructor(new[] { typeof(uint) }));
+                                    }
+                                    instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
                                 }
                             }
                         }
@@ -635,7 +646,8 @@ namespace WebAssembly.Runtime
                                 signatures,
                                 null,
                                 module,
-                                globals
+                                globals,
+                                delegateInvokersByTypeIndex
                                 );
 
                             var emptySignature = Signature.Empty;
@@ -835,10 +847,25 @@ namespace WebAssembly.Runtime
 
                     case Section.Element:
                         {
-                            if (functionElements == null)
-                                throw new ModuleLoadException("Element section found without an associated table section.", preSectionOffset);
+                            if (functionTable == null)
+                                throw new ModuleLoadException("Element section found without an associated table section or import.", preSectionOffset);
+
+                            // Holds the function table index of where an exsting function index has been mapped, for re-use.
+                            var existingDelegates = new Dictionary<uint, uint>();
 
                             var count = reader.ReadVarUInt32();
+
+                            if (count == 0)
+                                break;
+
+                            var localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                            instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable);
+                            instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
+
+                            var getter = FunctionTable.IndexGetter;
+                            var setter = FunctionTable.IndexSetter;
+
                             for (var i = 0; i < count; i++)
                             {
                                 var preIndexOffset = reader.Offset;
@@ -846,25 +873,66 @@ namespace WebAssembly.Runtime
                                 if (index != 0)
                                     throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", preIndexOffset);
 
+                                uint offset;
                                 {
                                     var preInitializerOffset = reader.Offset;
                                     var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                                    if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || c.Value != 0 || !(initializer[1] is Instructions.End))
-                                        throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant of 0 followed by end.", preInitializerOffset);
+                                    if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || !(initializer[1] is Instructions.End))
+                                        throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant followed by end.", preInitializerOffset);
+
+                                    offset = (uint)c.Value;
                                 }
 
-                                var preElementsOffset = reader.Offset;
                                 var elements = reader.ReadVarUInt32();
-                                if (elements != functionElements.Length)
-                                    throw new ModuleLoadException($"Element count {elements} does not match the indication provided by the earlier table {functionElements.Length}.", preElementsOffset);
+                                // TODO: Grow table to fit elements.
 
-                                for (var j = 0; j < functionElements.Length; j++)
+                                for (var j = 0; j < elements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
-                                    functionElements[j] = new Indirect(
-                                        functionSignatures[functionIndex].TypeIndex,
-                                        internalFunctions[functionIndex]
-                                        );
+
+                                    instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
+                                    instanceConstructorIL.EmitLoadConstant(functionIndex);
+
+                                    if (existingDelegates.TryGetValue(functionIndex, out var existing))
+                                    {
+                                        instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
+                                        instanceConstructorIL.EmitLoadConstant(existing);
+                                        instanceConstructorIL.Emit(OpCodes.Call, getter);
+                                    }
+                                    else
+                                    {
+                                        existingDelegates.Add(functionIndex, elements + offset);
+
+                                        var signature = functionSignatures[functionIndex];
+                                        var parms = signature.ParameterTypes;
+                                        var returns = signature.ReturnTypes;
+                                        var wrapper = exportsBuilder.DefineMethod(
+                                            $"📦 {functionIndex}",
+                                            internalFunctionAttributes,
+                                            returns.Length == 0 ? typeof(void) : returns[0],
+                                            parms.Concat(new[] { exports }).ToArray()
+                                            );
+                                        var il = wrapper.GetILGenerator();
+                                        for (var k = 0; k < parms.Length; k++)
+                                            il.EmitLoadArg(k + 1);
+                                        il.EmitLoadArg(0);
+                                        il.Emit(OpCodes.Call, internalFunctions[functionIndex]);
+                                        il.Emit(OpCodes.Ret);
+
+                                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                                        {
+                                            var del = configuration
+                                                .GetDelegateForType(parms.Length, returns.Length)
+                                                .MakeGenericType(parms.Concat(returns).ToArray());
+                                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke)));
+                                        }
+
+                                        instanceConstructorIL.EmitLoadArg(0);
+                                        instanceConstructorIL.Emit(OpCodes.Ldftn, wrapper);
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType.GetConstructors()[0]);
+                                    }
+
+                                    instanceConstructorIL.Emit(OpCodes.Call, setter);
                                 }
                             }
                         }
@@ -888,9 +956,10 @@ namespace WebAssembly.Runtime
                                     functionSignatures,
                                     internalFunctions,
                                     signatures,
-                                    functionElements,
+                                    functionTable,
                                     module,
-                                    globals
+                                    globals,
+                                    delegateInvokersByTypeIndex
                                     );
                             }
 
@@ -947,9 +1016,10 @@ namespace WebAssembly.Runtime
                                     new Signature[0],
                                     new MethodInfo[0],
                                     new Signature[0],
-                                    functionElements,
+                                    functionTable,
                                     module,
-                                    globals
+                                    globals,
+                                    delegateInvokersByTypeIndex
                                     );
                             }
 
@@ -1084,6 +1154,11 @@ namespace WebAssembly.Runtime
 
             module.CreateGlobalFunctions();
             return instance.DeclaredConstructors.First();
+        }
+
+        static FieldBuilder CreateFunctionTableField(TypeBuilder exportsBuilder)
+        {
+            return exportsBuilder.DefineField("☣ FunctionTable", typeof(FunctionTable), FieldAttributes.Private | FieldAttributes.InitOnly);
         }
     }
 }
