@@ -37,20 +37,43 @@ namespace WebAssembly.Runtime
             this.Initial = initial;
             this.Maximum = maximum;
             this.delegates = new Delegate[initial];
+            this.delegateTypes = new System.Type[initial];
         }
 
         private Delegate[] delegates;
+        private System.Type[] delegateTypes;
 
         /// <summary>
-        /// Gets or sets the delegate at the indicated index.
+        /// Gets or sets the delegate at the indicated index.  The first time a delegate is provided, it locks in the type for any future reassignments.
         /// </summary>
         /// <param name="index">The index within the table to target.</param>
         /// <returns>The delegate at that index, which may be null.</returns>
         /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> does not fall within the range of the table.</exception>
+        /// <exception cref="ArgumentException">The delegate is expected to be of a different type than supplied.</exception>
+        /// <remarks>Delegate types set by the compiler come from the provided (or default) <see cref="CompilerConfiguration"/>.</remarks>
         public Delegate this[int index]
         {
             get => this.delegates[index];
-            set => this.delegates[index] = value;
+            set
+            {
+                if (value != null)
+                {
+                    var expectedType = this.delegateTypes[index];
+                    var actualType = value.GetType();
+
+                    if (expectedType == null)
+                    {
+                        this.delegateTypes[index] = actualType;
+                    }
+                    else if (actualType != expectedType)
+                    {
+                        var message = $"The delegate at position {index} is expected to be of type {expectedType}, but the supplied delegate is {actualType}.";
+                        throw new ArgumentException(message, nameof(value));
+                    }
+                }
+
+                this.delegates[index] = value;
+            }
         }
 
         /// <summary>
@@ -64,19 +87,21 @@ namespace WebAssembly.Runtime
         /// <param name="number">The number of elements you want to grow the table by.</param>
         /// <returns>The previous length of the table.</returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="number"/> must be at least 0 and, when added to <see cref="Length"/>, cannot exceed <see cref="Maximum"/>.
+        /// <paramref name="number"/>, when added to <see cref="Length"/>, cannot exceed <see cref="Maximum"/>.
         /// </exception>
         public uint Grow(uint number)
         {
-            var count = this.Length;
-            var newSize = count + number;
+            var oldSize = this.Length;
+            var newSize = oldSize + number;
 
             if (newSize > this.Maximum.GetValueOrDefault(uint.MaxValue))
                 throw new ArgumentOutOfRangeException(nameof(number), "Adding number to the current Count would exceed the defined Maximum.");
 
-            Array.Resize(ref delegates, checked((int)newSize));
+            var checkedSize = checked((int)newSize);
+            Array.Resize(ref delegates, checkedSize);
+            Array.Resize(ref delegateTypes, checkedSize);
 
-            return count;
+            return oldSize;
         }
     }
 }
