@@ -361,6 +361,31 @@ namespace WebAssembly.Runtime
                                             functionImportTypes.Add(signature);
                                         }
                                         break;
+                                    case ExternalKind.Table:
+                                        {
+                                            var preElementTypeoffset = reader.Offset;
+                                            var elementType = (ElementType)reader.ReadVarInt7();
+                                            if (elementType != ElementType.AnyFunction)
+                                                throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", preElementTypeoffset);
+
+                                            var limits = new ResizableLimits(reader);
+
+                                            if (functionTable != null)
+                                                break; // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
+
+                                            functionTable = CreateFunctionTableField(exportsBuilder);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                                            instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                                            instanceConstructorIL.Emit(OpCodes.Call,
+                                                typeof(Helpers)
+                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .MakeGenericMethod(typeof(FunctionTable))
+                                                );
+                                            instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                                        }
+                                        break;
                                     case ExternalKind.Memory:
                                         {
                                             var limits = new ResizableLimits(reader);

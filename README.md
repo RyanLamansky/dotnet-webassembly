@@ -123,7 +123,6 @@ All development is being done by one person in his spare time for free, and is t
 
 The current objective is to offer the same ("MVP"-level) WebAssembly compatibility as popular web browsers and make final API changes.
 
-- Support importing tables.
 - Support exporting tables.
 - Any other API changes deemed necessary to reduce the risk of future breaking changes and make the library more intuitive.
 

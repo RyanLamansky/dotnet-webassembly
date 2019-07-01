@@ -128,7 +128,7 @@ namespace WebAssembly
                     {
                         Module = "B",
                         Field = "2",
-                        Type = new Table
+                        Definition = new Table
                         {
                             ElementType = ElementType.AnyFunction,
                             ResizableLimits = new ResizableLimits(1, 2),
@@ -177,11 +177,11 @@ namespace WebAssembly
                 var table = (Import.Table)imports[1];
                 Assert.AreEqual("B", table.Module);
                 Assert.AreEqual("2", table.Field);
-                Assert.IsNotNull(table.Type);
-                Assert.AreEqual(ElementType.AnyFunction, table.Type.ElementType);
-                Assert.IsNotNull(table.Type.ResizableLimits);
-                Assert.AreEqual(1u, table.Type.ResizableLimits.Minimum);
-                Assert.AreEqual(2u, table.Type.ResizableLimits.Maximum.GetValueOrDefault());
+                Assert.IsNotNull(table.Definition);
+                Assert.AreEqual(ElementType.AnyFunction, table.Definition.ElementType);
+                Assert.IsNotNull(table.Definition.ResizableLimits);
+                Assert.AreEqual(1u, table.Definition.ResizableLimits.Minimum);
+                Assert.AreEqual(2u, table.Definition.ResizableLimits.Maximum.GetValueOrDefault());
             }
 
             Assert.IsInstanceOfType(imports[2], typeof(Import.Memory));

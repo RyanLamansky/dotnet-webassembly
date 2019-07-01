@@ -86,7 +86,7 @@ namespace WebAssembly
                     {
                         Module = module,
                         Field = field,
-                        Type = new WebAssembly.Table(reader),
+                        Definition = new WebAssembly.Table(reader),
                     };
 
                 case ExternalKind.Memory:
@@ -156,9 +156,9 @@ namespace WebAssembly
             public sealed override ExternalKind Kind => ExternalKind.Table;
 
             /// <summary>
-            /// Type of the imported table.
+            /// Definiton of the imported table.
             /// </summary>
-            public WebAssembly.Table Type { get; set; }
+            public WebAssembly.Table Definition { get; set; }
 
             /// <summary>
             /// Creates a new <see cref="Table"/> instance.
@@ -171,13 +171,16 @@ namespace WebAssembly
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
-            public override string ToString() => $"{base.ToString()} ({nameof(Table)} {Type}";
+            public override string ToString() => $"{base.ToString()} ({nameof(Table)} {Definition}";
 
             internal sealed override void WriteTo(Writer writer)
             {
+                if (Definition == null)
+                    throw new InvalidOperationException($"Table {nameof(Definition)} property must be set before writing.");
+
                 base.WriteTo(writer);
                 writer.Write((byte)ExternalKind.Table);
-                Type.WriteTo(writer);
+                Definition.WriteTo(writer);
             }
         }
 
