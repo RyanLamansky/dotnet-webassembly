@@ -260,6 +260,7 @@ namespace WebAssembly.Runtime
             CompilationContext context = null;
             MethodInfo startFunction = null;
             var delegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
+            var delegateRemappersByType = new Dictionary<uint, MethodBuilder>();
 
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -644,10 +645,9 @@ namespace WebAssembly.Runtime
                                 functionSignatures,
                                 internalFunctions,
                                 signatures,
-                                null,
                                 module,
                                 globals,
-                                delegateInvokersByTypeIndex
+                                delegateRemappersByType
                                 );
 
                             var emptySignature = Signature.Empty;
@@ -889,6 +889,17 @@ namespace WebAssembly.Runtime
                                 for (var j = 0u; j < elements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
+                                    var signature = functionSignatures[functionIndex];
+                                    var parms = signature.ParameterTypes;
+                                    var returns = signature.ReturnTypes;
+
+                                    if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                                    {
+                                        var del = configuration
+                                            .GetDelegateForType(parms.Length, returns.Length)
+                                            .MakeGenericType(parms.Concat(returns).ToArray());
+                                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
+                                    }
 
                                     instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
                                     instanceConstructorIL.EmitLoadConstant(offset + j);
@@ -903,9 +914,6 @@ namespace WebAssembly.Runtime
                                     {
                                         existingDelegates.Add(functionIndex, offset + j);
 
-                                        var signature = functionSignatures[functionIndex];
-                                        var parms = signature.ParameterTypes;
-                                        var returns = signature.ReturnTypes;
                                         var wrapper = exportsBuilder.DefineMethod(
                                             $"📦 {functionIndex}",
                                             MethodAttributes.Private | MethodAttributes.HideBySig,
@@ -920,20 +928,35 @@ namespace WebAssembly.Runtime
                                         il.Emit(OpCodes.Call, internalFunctions[functionIndex]);
                                         il.Emit(OpCodes.Ret);
 
-                                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
-                                        {
-                                            var del = configuration
-                                                .GetDelegateForType(parms.Length, returns.Length)
-                                                .MakeGenericType(parms.Concat(returns).ToArray());
-                                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
-                                        }
-
                                         instanceConstructorIL.EmitLoadArg(0);
                                         instanceConstructorIL.Emit(OpCodes.Ldftn, wrapper);
                                         instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType.GetConstructors()[0]);
                                     }
 
                                     instanceConstructorIL.Emit(OpCodes.Call, setter);
+
+                                    if (!delegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
+                                    {
+                                        delegateRemappersByType.Add(signature.TypeIndex, remapper = exportsBuilder.DefineMethod(
+                                            $"🔁 {signature.TypeIndex}",
+                                            internalFunctionAttributes,
+                                            returns.Length == 0 ? typeof(void) : returns[0],
+                                            parms.Concat(new[] { typeof(uint), exports }).ToArray()
+                                            ));
+
+                                        var il = remapper.GetILGenerator();
+                                        il.EmitLoadArg(parms.Length + 1);
+                                        il.Emit(OpCodes.Ldfld, functionTable);
+                                        il.EmitLoadArg(parms.Length);
+                                        il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+                                        il.Emit(OpCodes.Castclass, invoker.DeclaringType);
+
+                                        for (var k = 0; k < parms.Length; k++)
+                                            il.EmitLoadArg(k);
+
+                                        il.Emit(OpCodes.Call, invoker);
+                                        il.Emit(OpCodes.Ret);
+                                    }
                                 }
                             }
                         }
@@ -957,10 +980,9 @@ namespace WebAssembly.Runtime
                                     functionSignatures,
                                     internalFunctions,
                                     signatures,
-                                    functionTable,
                                     module,
                                     globals,
-                                    delegateInvokersByTypeIndex
+                                    delegateRemappersByType
                                     );
                             }
 
@@ -1017,10 +1039,9 @@ namespace WebAssembly.Runtime
                                     new Signature[0],
                                     new MethodInfo[0],
                                     new Signature[0],
-                                    functionTable,
                                     module,
                                     globals,
-                                    delegateInvokersByTypeIndex
+                                    delegateRemappersByType
                                     );
                             }
 

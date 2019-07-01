@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -106,12 +105,8 @@ namespace WebAssembly.Instructions
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);
 
-            context.Emit(OpCodes.Stloc, context.IndirectPointerLocal);
             context.EmitLoadThis();
-            context.Emit(OpCodes.Ldfld, context.FunctionTable);
-            context.Emit(OpCodes.Ldloc, context.IndirectPointerLocal);
-            context.Emit(OpCodes.Call, FunctionTable.IndexGetter);
-            context.Emit(OpCodes.Call, context.DelegateInvokersByTypeIndex[this.Type]);
+            context.Emit(OpCodes.Call, context.DelegateRemappersByType[this.Type]);
         }
     }
 }

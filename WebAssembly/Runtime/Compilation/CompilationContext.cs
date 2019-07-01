@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using static System.Diagnostics.Debug;
@@ -18,24 +17,21 @@ namespace WebAssembly.Runtime.Compilation
             Signature[] functionSignatures,
             MethodInfo[] methods,
             Signature[] types,
-            FieldBuilder functionTable,
             ModuleBuilder module,
             GlobalInfo[] globals,
-            Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex
+            Dictionary<uint, MethodBuilder> delegateRemappersByType
             )
         {
             Assert(exportsBuilder != null);
             Assert(module != null);
-            Assert(delegateInvokersByTypeIndex != null);
 
             this.ExportsBuilder = exportsBuilder;
             this.Memory = memory;
             this.FunctionSignatures = functionSignatures;
             this.Methods = methods;
             this.Types = types;
-            this.FunctionTable = functionTable;
             this.Globals = globals;
-            this.DelegateInvokersByTypeIndex = delegateInvokersByTypeIndex;
+            this.DelegateRemappersByType = delegateRemappersByType;
         }
 
         public void Reset(
@@ -93,11 +89,9 @@ namespace WebAssembly.Runtime.Compilation
 
         public readonly Signature[] Types;
 
-        public readonly FieldBuilder FunctionTable;
-
         public readonly GlobalInfo[] Globals;
 
-        public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex;
+        public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |
@@ -153,19 +147,6 @@ namespace WebAssembly.Runtime.Compilation
         public readonly HashSet<Label> LoopLabels = new HashSet<Label>();
 
         public readonly Stack<ValueType> Stack = new Stack<ValueType>();
-
-        private LocalBuilder indirectPointerLocal;
-
-        public LocalBuilder IndirectPointerLocal
-        {
-            get
-            {
-                if (this.indirectPointerLocal != null)
-                    return this.indirectPointerLocal;
-
-                return this.indirectPointerLocal = this.generator.DeclareLocal(typeof(uint));
-            }
-        }
 
         public Label DefineLabel() => generator.DefineLabel();
 
