@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Reflection;
 using WebAssembly.Instructions;
 
 namespace WebAssembly.Runtime
@@ -74,6 +75,39 @@ namespace WebAssembly.Runtime
             var nativeDelegate = (Func<int, int>)rawDelegate;
             Assert.AreEqual(0, nativeDelegate(0));
             Assert.AreEqual(5, nativeDelegate(5));
+        }
+
+        /// <summary>
+        /// Runs the sample WASM from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Table .
+        /// </summary>
+        [TestMethod]
+        public void Execute_Sample_MDN_Table2()
+        {
+            var tbl = new FunctionTable(2);
+            Assert.AreEqual(2u, tbl.Length);
+            Assert.IsNull(tbl[0]);
+            Assert.IsNull(tbl[1]);
+
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.table2.wasm"))
+            {
+                var imports = new ImportDictionary
+                {
+                    { "js", "tbl", tbl },
+                };
+                Compile.FromBinary<dynamic>(stream)(imports);
+            }
+
+            Assert.AreEqual(2u, tbl.Length);
+
+            var f1 = tbl[0];
+            Assert.IsNotNull(f1);
+            Assert.IsInstanceOfType(f1, typeof(Func<int>));
+            Assert.AreEqual(42, ((Func<int>)f1).Invoke());
+
+            var f2 = tbl[1];
+            Assert.IsNotNull(f2);
+            Assert.IsInstanceOfType(f1, typeof(Func<int>));
+            Assert.AreEqual(83, ((Func<int>)f2).Invoke());
         }
     }
 }
