@@ -53,8 +53,8 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                new GetLocal(0),
-                new End()
+                    new GetLocal(0),
+                    new End()
                 },
             });
 
@@ -75,6 +75,63 @@ namespace WebAssembly.Runtime
             var nativeDelegate = (Func<int, int>)rawDelegate;
             Assert.AreEqual(0, nativeDelegate(0));
             Assert.AreEqual(5, nativeDelegate(5));
+        }
+
+        /// <summary>
+        /// Tests a function delegate already present on an imported table.
+        /// </summary>
+        [TestMethod]
+        public void Compile_TableImport_ExistingFunction()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Returns = new[] { ValueType.Int32 },
+                Parameters = new[] { ValueType.Int32 }
+            });
+            module.Imports.Add(new Import.Table
+            {
+                Module = "Test",
+                Field = "Test",
+                Definition = new Table
+                {
+                    ElementType = ElementType.AnyFunction,
+                    ResizableLimits = new ResizableLimits(1)
+                }
+            });
+            module.Functions.Add(new Function
+            {
+            });
+            module.Exports.Add(new Export
+            {
+                Name = "Test",
+            });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetLocal(0),
+                    new Int32Constant(0),
+                    new CallIndirect(0),
+                    new End()
+                },
+            });
+
+            var table = new FunctionTable(1);
+            var calls = 0;
+            table[0] = new Func<int, int>(value => { calls++; return value + 1; });
+
+            var compiled = module.ToInstance<CompilerTestBase<int>>(
+                new ImportDictionary {
+                    { "Test", "Test", table },
+                });
+
+            Assert.IsNotNull(compiled);
+            Assert.IsNotNull(compiled.Exports);
+
+            Assert.AreEqual(0, calls);
+            Assert.AreEqual(3, compiled.Exports.Test(2));
+            Assert.AreEqual(1, calls);
         }
 
         /// <summary>

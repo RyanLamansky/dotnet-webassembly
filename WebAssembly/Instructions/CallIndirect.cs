@@ -1,4 +1,6 @@
-using System;
+﻿using System;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -106,7 +108,42 @@ namespace WebAssembly.Instructions
                 stack.Push(returnTypes[i]);
 
             context.EmitLoadThis();
-            context.Emit(OpCodes.Call, context.DelegateRemappersByType[this.Type]);
+
+            if (!context.DelegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
+            {
+                var parms = signature.ParameterTypes;
+                var returns = signature.ReturnTypes;
+
+                if (!context.DelegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                {
+                    var del = context.Configuration
+                        .GetDelegateForType(parms.Length, returns.Length)
+                        .MakeGenericType(parms.Concat(returns).ToArray());
+                    context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
+                }
+
+                context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.ExportsBuilder.DefineMethod(
+                    $"🔁 {signature.TypeIndex}",
+                    MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
+                    returns.Length == 0 ? typeof(void) : returns[0],
+                    parms.Concat(new[] { typeof(uint), context.ExportsBuilder.AsType() }).ToArray()
+                    ));
+
+                var il = remapper.GetILGenerator();
+                il.EmitLoadArg(parms.Length + 1);
+                il.Emit(OpCodes.Ldfld, context.FunctionTable);
+                il.EmitLoadArg(parms.Length);
+                il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+                il.Emit(OpCodes.Castclass, invoker.DeclaringType);
+
+                for (var k = 0; k < parms.Length; k++)
+                    il.EmitLoadArg(k);
+
+                il.Emit(OpCodes.Call, invoker);
+                il.Emit(OpCodes.Ret);
+            }
+
+            context.Emit(OpCodes.Call, remapper);
         }
     }
 }

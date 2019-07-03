@@ -10,9 +10,12 @@ namespace WebAssembly.Runtime.Compilation
     {
         public TypeBuilder ExportsBuilder;
         private ILGenerator generator;
+        public readonly CompilerConfiguration Configuration;
 
-        public CompilationContext()
+        public CompilationContext(CompilerConfiguration configuration)
         {
+            Assert(configuration != null);
+            this.Configuration = configuration;
         }
 
         public void Reset(
@@ -72,7 +75,11 @@ namespace WebAssembly.Runtime.Compilation
 
         public GlobalInfo[] Globals;
 
-        public Dictionary<uint, MethodBuilder> DelegateRemappersByType;
+        public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
+
+        public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new Dictionary<uint, MethodBuilder>();
+
+        public FieldBuilder FunctionTable;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |
@@ -156,10 +163,6 @@ namespace WebAssembly.Runtime.Compilation
         public void Emit(System.Reflection.Emit.OpCode opcode, MethodInfo meth) => generator.Emit(opcode, meth);
 
         public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => generator.Emit(opcode, con);
-
-        public void Emit(System.Reflection.Emit.OpCode opcode, LocalBuilder local) => generator.Emit(opcode, local);
-
-        public void EmitCalli(System.Type returnType, System.Type[] parameterTypes) => generator.EmitCalli(OpCodes.Calli, CallingConventions.Standard, returnType, parameterTypes, null);
 
         public LocalBuilder DeclareLocal(System.Type localType) => generator.DeclareLocal(localType);
     }

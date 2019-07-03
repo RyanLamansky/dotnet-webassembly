@@ -229,7 +229,7 @@ namespace WebAssembly.Runtime
                 FieldAttributes.InitOnly
                 ;
 
-            var context = new CompilationContext();
+            var context = new CompilationContext(configuration);
             var exportsBuilder = context.ExportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
             MethodBuilder importedMemoryProvider = null;
             FieldBuilder memory = null;
@@ -259,8 +259,8 @@ namespace WebAssembly.Runtime
             FieldBuilder functionTable = null;
             GlobalInfo[] globals = null;
             MethodInfo startFunction = null;
-            var delegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
-            var delegateRemappersByType = context.DelegateRemappersByType = new Dictionary<uint, MethodBuilder>();
+            var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
+            var delegateRemappersByType = context.DelegateRemappersByType;
 
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -373,7 +373,7 @@ namespace WebAssembly.Runtime
                                             if (functionTable != null)
                                                 break; // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
 
-                                            functionTable = CreateFunctionTableField(exportsBuilder);
+                                            functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                                             instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
@@ -581,7 +581,7 @@ namespace WebAssembly.Runtime
                                 {
                                     // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
                                     var limits = new ResizableLimits(reader);
-                                    functionTable = CreateFunctionTableField(exportsBuilder);
+                                    functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
                                     instanceConstructorIL.EmitLoadArg(0);
                                     instanceConstructorIL.EmitLoadConstant(limits.Minimum);
                                     if (limits.Maximum.HasValue)
@@ -963,29 +963,6 @@ namespace WebAssembly.Runtime
                                     }
 
                                     instanceConstructorIL.Emit(OpCodes.Call, setter);
-
-                                    if (!delegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
-                                    {
-                                        delegateRemappersByType.Add(signature.TypeIndex, remapper = exportsBuilder.DefineMethod(
-                                            $"🔁 {signature.TypeIndex}",
-                                            internalFunctionAttributes,
-                                            returns.Length == 0 ? typeof(void) : returns[0],
-                                            parms.Concat(new[] { typeof(uint), exports }).ToArray()
-                                            ));
-
-                                        var il = remapper.GetILGenerator();
-                                        il.EmitLoadArg(parms.Length + 1);
-                                        il.Emit(OpCodes.Ldfld, functionTable);
-                                        il.EmitLoadArg(parms.Length);
-                                        il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
-                                        il.Emit(OpCodes.Castclass, invoker.DeclaringType);
-
-                                        for (var k = 0; k < parms.Length; k++)
-                                            il.EmitLoadArg(k);
-
-                                        il.Emit(OpCodes.Call, invoker);
-                                        il.Emit(OpCodes.Ret);
-                                    }
                                 }
                             }
                         }
