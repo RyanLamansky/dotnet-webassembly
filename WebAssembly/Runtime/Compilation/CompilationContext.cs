@@ -8,30 +8,11 @@ namespace WebAssembly.Runtime.Compilation
 {
     internal sealed class CompilationContext
     {
-        public readonly TypeBuilder ExportsBuilder;
+        public TypeBuilder ExportsBuilder;
         private ILGenerator generator;
 
-        public CompilationContext(
-            TypeBuilder exportsBuilder,
-            FieldBuilder memory,
-            Signature[] functionSignatures,
-            MethodInfo[] methods,
-            Signature[] types,
-            ModuleBuilder module,
-            GlobalInfo[] globals,
-            Dictionary<uint, MethodBuilder> delegateRemappersByType
-            )
+        public CompilationContext()
         {
-            Assert(exportsBuilder != null);
-            Assert(module != null);
-
-            this.ExportsBuilder = exportsBuilder;
-            this.Memory = memory;
-            this.FunctionSignatures = functionSignatures;
-            this.Methods = methods;
-            this.Types = types;
-            this.Globals = globals;
-            this.DelegateRemappersByType = delegateRemappersByType;
         }
 
         public void Reset(
@@ -83,15 +64,15 @@ namespace WebAssembly.Runtime.Compilation
             this.Stack.Clear();
         }
 
-        public readonly Signature[] FunctionSignatures;
+        public Signature[] FunctionSignatures;
 
-        public readonly MethodInfo[] Methods;
+        public MethodInfo[] Methods;
 
-        public readonly Signature[] Types;
+        public Signature[] Types;
 
-        public readonly GlobalInfo[] Globals;
+        public GlobalInfo[] Globals;
 
-        public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType;
+        public Dictionary<uint, MethodBuilder> DelegateRemappersByType;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |
@@ -134,7 +115,7 @@ namespace WebAssembly.Runtime.Compilation
 
         public Signature Signature;
 
-        public readonly FieldBuilder Memory;
+        public FieldBuilder Memory;
 
         public ValueType[] Locals;
 

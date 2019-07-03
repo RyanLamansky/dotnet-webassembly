@@ -229,7 +229,8 @@ namespace WebAssembly.Runtime
                 FieldAttributes.InitOnly
                 ;
 
-            var exportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+            var context = new CompilationContext();
+            var exportsBuilder = context.ExportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
             MethodBuilder importedMemoryProvider = null;
             FieldBuilder memory = null;
 
@@ -257,10 +258,9 @@ namespace WebAssembly.Runtime
             MethodInfo[] internalFunctions = null;
             FieldBuilder functionTable = null;
             GlobalInfo[] globals = null;
-            CompilationContext context = null;
             MethodInfo startFunction = null;
             var delegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
-            var delegateRemappersByType = new Dictionary<uint, MethodBuilder>();
+            var delegateRemappersByType = context.DelegateRemappersByType = new Dictionary<uint, MethodBuilder>();
 
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -281,7 +281,7 @@ namespace WebAssembly.Runtime
 
                     case Section.Type:
                         {
-                            signatures = new Signature[reader.ReadVarUInt32()];
+                            signatures = context.Types = new Signature[reader.ReadVarUInt32()];
 
                             for (var i = 0; i < signatures.Length; i++)
                                 signatures[i] = new Signature(reader, (uint)i);
@@ -519,11 +519,11 @@ namespace WebAssembly.Runtime
                                 throw new MissingDelegateTypesException(missingDelegates);
 
                             importedFunctions = functionImports.Count;
-                            internalFunctions = functionImports.ToArray();
-                            functionSignatures = functionImportTypes.ToArray();
+                            internalFunctions = context.Methods = functionImports.ToArray();
+                            functionSignatures = context.FunctionSignatures = functionImportTypes.ToArray();
 
                             importedGlobals = globalImports.Count;
-                            globals = globalImports.ToArray();
+                            globals = context.Globals = globalImports.ToArray();
                         }
                         break;
 
@@ -532,13 +532,23 @@ namespace WebAssembly.Runtime
                             var importedFunctionCount = internalFunctions == null ? 0 : internalFunctions.Length;
                             var functionIndexSize = checked((int)(importedFunctionCount + reader.ReadVarUInt32()));
                             if (functionSignatures != null)
+                            {
                                 Array.Resize(ref functionSignatures, functionIndexSize);
+                                context.FunctionSignatures = functionSignatures;
+                            }
                             else
-                                functionSignatures = new Signature[functionIndexSize];
+                            {
+                                functionSignatures = context.FunctionSignatures = new Signature[functionIndexSize];
+                            }
                             if (importedFunctionCount != 0)
+                            {
                                 Array.Resize(ref internalFunctions, checked(functionSignatures.Length));
+                                context.Methods = internalFunctions;
+                            }
                             else
-                                internalFunctions = new MethodInfo[functionSignatures.Length];
+                            {
+                                internalFunctions = context.Methods = new MethodInfo[functionSignatures.Length];
+                            }
 
                             for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                             {
@@ -604,7 +614,7 @@ namespace WebAssembly.Runtime
                             else
                                 memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
-                            memory = exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
+                            memory = context.Memory = exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                             if (importedMemoryProvider == null)
@@ -660,20 +670,14 @@ namespace WebAssembly.Runtime
                         {
                             var count = reader.ReadVarUInt32();
                             if (globals != null)
+                            {
                                 Array.Resize(ref globals, checked((int)(globals.Length + count)));
+                                context.Globals = globals;
+                            }
                             else
-                                globals = new GlobalInfo[count];
-
-                            context = new CompilationContext(
-                                exportsBuilder,
-                                memory,
-                                functionSignatures,
-                                internalFunctions,
-                                signatures,
-                                module,
-                                globals,
-                                delegateRemappersByType
-                                );
+                            {
+                                globals = context.Globals = new GlobalInfo[count];
+                            }
 
                             var emptySignature = Signature.Empty;
 
@@ -997,20 +1001,6 @@ namespace WebAssembly.Runtime
                             if (functionBodies != functionSignatures.Length - importedFunctions)
                                 throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length - importedFunctions} were expected.", preBodiesIndex);
 
-                            if (context == null) //Might have been created by the Global section, if present.
-                            {
-                                context = new CompilationContext(
-                                    exportsBuilder,
-                                    memory,
-                                    functionSignatures,
-                                    internalFunctions,
-                                    signatures,
-                                    module,
-                                    globals,
-                                    delegateRemappersByType
-                                    );
-                            }
-
                             for (var functionBodyIndex = 0; functionBodyIndex < functionBodies; functionBodyIndex++)
                             {
                                 var signature = functionSignatures[importedFunctions + functionBodyIndex];
@@ -1055,20 +1045,6 @@ namespace WebAssembly.Runtime
                                 throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
 
                             var count = reader.ReadVarUInt32();
-
-                            if (context == null) //Would only be null if there is no Global or Code section, but have to check.
-                            {
-                                context = new CompilationContext(
-                                    exportsBuilder,
-                                    memory,
-                                    new Signature[0],
-                                    new MethodInfo[0],
-                                    new Signature[0],
-                                    module,
-                                    globals,
-                                    delegateRemappersByType
-                                    );
-                            }
 
                             context.Reset(
                                 instanceConstructorIL,
