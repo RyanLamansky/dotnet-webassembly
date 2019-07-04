@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+using System;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions
@@ -409,6 +409,71 @@ namespace WebAssembly.Instructions
                 });
 
             Assert.AreEqual(ImportedImmutableGlobalReturns3, compiled.Exports.Test());
+        }
+
+        /// <summary>
+        /// Used by <see cref="GetGlobal_SecondExportFirstGlobal_Compiled"/>.
+        /// </summary>
+        public abstract class GlobalAndFunctionExport
+        {
+            /// <summary>
+            /// A test function.
+            /// </summary>
+            public abstract int TestFunction();
+
+            /// <summary>
+            /// A test global.
+            /// </summary>
+            public abstract int TestGlobal { get; }
+        }
+
+        /// <summary>
+        /// Verifies that global exports work if there is another export ahead of it.
+        /// </summary>
+        [TestMethod]
+        public void GetGlobal_SecondExportFirstGlobal_Compiled()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Parameters = Array.Empty<ValueType>(),
+                Returns = new[] { ValueType.Int32 },
+            });
+            module.Globals.Add(new Global
+            {
+                ContentType = ValueType.Int32,
+                IsMutable = true,
+                InitializerExpression = new Instruction[]
+                {
+                    new Int32Constant(5),
+                    new End()
+                }
+            });
+            module.Exports.Add(new Export
+            {
+                Index = 0,
+                Kind = ExternalKind.Function,
+                Name = nameof(GlobalAndFunctionExport.TestFunction),
+            });
+            module.Exports.Add(new Export
+            {
+                Index = 0,
+                Kind = ExternalKind.Global,
+                Name = nameof(GlobalAndFunctionExport.TestGlobal),
+            });
+            module.Functions.Add(new Function());
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetGlobal(0),
+                    new End()
+                },
+            });
+
+            var exports = module.ToInstance<GlobalAndFunctionExport>().Exports;
+            Assert.AreEqual(5, exports.TestGlobal);
+            Assert.AreEqual(5, exports.TestFunction());
         }
     }
 }
