@@ -222,5 +222,143 @@ namespace WebAssembly.Runtime
 
             Assert.AreSame(table, exportedTable);
         }
+
+        /// <summary>
+        /// Extends <see cref="ExportedTable"/> with a test method.
+        /// </summary>
+        public abstract class ExportedTableWithTest : ExportedTable
+        {
+            /// <summary>
+            /// Runs an exported test method.
+            /// </summary>
+            public abstract int Test(int value);
+        }
+
+        /// <summary>
+        /// Extends <see cref="ExportedTable"/> with a <see cref="Calls"/> property.
+        /// </summary>
+        public abstract class ExportedTableWithCalls : ExportedTable
+        {
+            /// <summary>
+            /// A counter for calls.
+            /// </summary>
+            public abstract int Calls { get; }
+        }
+
+        /// <summary>
+        /// Tests multiple assemblies connected via a shared table.
+        /// </summary>
+        [TestMethod]
+        public void Compile_TableImport_MultiAssemblySharedTable()
+        {
+            var module1 = new Module();
+            module1.Types.Add(new Type
+            {
+                Returns = new[] { ValueType.Int32 },
+                Parameters = new[] { ValueType.Int32 }
+            });
+            module1.Exports.Add(new Export
+            {
+                Name = nameof(ExportedTableWithCalls.Table),
+                Kind = ExternalKind.Table,
+            });
+            module1.Exports.Add(new Export
+            {
+                Name = nameof(ExportedTableWithCalls.Calls),
+                Kind = ExternalKind.Global,
+            });
+            module1.Globals.Add(new Global
+            {
+                ContentType = ValueType.Int32,
+                IsMutable = true,
+                InitializerExpression = new Instruction[]
+                {
+                    new Int32Constant(0),
+                    new End()
+                }
+            });
+            module1.Functions.Add(new Function
+            {
+            });
+            module1.Tables.Add(new Table
+            {
+                ElementType = ElementType.AnyFunction,
+                ResizableLimits = new ResizableLimits(2),
+            });
+            module1.Elements.Add(new Element
+            {
+                Elements = new uint[] { 0 },
+                InitializerExpression = new Instruction[]
+                {
+                    new Int32Constant(0),
+                    new End(),
+                },
+            });
+            module1.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetGlobal(0),
+                    new Int32Constant(1),
+                    new Int32Add(),
+                    new SetGlobal(0),
+
+                    new GetLocal(0),
+                    new End()
+                },
+            });
+
+            var exports1 = module1.ToInstance<ExportedTableWithCalls>().Exports;
+            var sharedTable = exports1.Table;
+            Assert.IsNotNull(sharedTable);
+            var del0 = sharedTable[0];
+            Assert.IsNotNull(del0);
+            Assert.IsInstanceOfType(del0, typeof(Func<int, int>));
+            var func0 = (Func<int, int>)del0;
+            Assert.AreEqual(0, exports1.Calls);
+            Assert.AreEqual(5, func0(5));
+            Assert.AreEqual(1, exports1.Calls);
+
+            var module2 = new Module
+            {
+                Types = module1.Types,
+            };
+            module2.Imports.Add(new Import.Table
+            {
+                Module = "Test",
+                Field = "Test",
+                Definition = new Table
+                {
+                    ElementType = ElementType.AnyFunction,
+                    ResizableLimits = new ResizableLimits(1)
+                }
+            });
+            module2.Functions.Add(new Function
+            {
+            });
+            module2.Exports.Add(new Export
+            {
+                Name = "Test",
+            });
+            module2.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetLocal(0),
+                    new Int32Constant(0),
+                    new CallIndirect(0),
+                    new End()
+                },
+            });
+
+            var compiled = module2.ToInstance<CompilerTestBase<int>>(
+                new ImportDictionary {
+                    { "Test", "Test", sharedTable },
+                });
+
+            Assert.AreEqual(1, exports1.Calls);
+            Assert.AreEqual(3, compiled.Exports.Test(3));
+            Assert.AreEqual(2, exports1.Calls);
+        }
     }
 }
