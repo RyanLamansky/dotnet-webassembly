@@ -26,6 +26,17 @@ namespace WebAssembly.Runtime
             .GetSetMethod()
             );
 
+        internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new RegeneratingWeakReference<MethodInfo>(() =>
+            typeof(FunctionTable)
+            .GetProperty(nameof(Length))
+            .GetGetMethod()
+            );
+
+        internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(() =>
+            typeof(FunctionTable)
+            .GetMethod(nameof(Grow))
+            );
+
         /// <summary>
         /// Always <see cref="ElementType.AnyFunction"/>.
         /// </summary>
@@ -114,15 +125,16 @@ namespace WebAssembly.Runtime
         /// <param name="number">The number of elements you want to grow the table by.</param>
         /// <returns>The previous length of the table.</returns>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="number"/>, when added to <see cref="Length"/>, cannot exceed <see cref="Maximum"/>.
+        /// <paramref name="number"/>, when added to <see cref="Length"/>, would exceed the defined <see cref="Maximum"/>.
         /// </exception>
+        /// <exception cref="OverflowException"><paramref name="number"/> added to the current size exceeds <see cref="int.MaxValue"/>.</exception>
         public uint Grow(uint number)
         {
             var oldSize = this.Length;
-            var newSize = oldSize + number;
+            var newSize = checked(oldSize + number);
 
             if (newSize > this.Maximum.GetValueOrDefault(uint.MaxValue))
-                throw new ArgumentOutOfRangeException(nameof(number), "Adding number to the current Count would exceed the defined Maximum.");
+                throw new ArgumentOutOfRangeException(nameof(number), $"{nameof(number)}, when added to {nameof(Length)}, would exceed the defined {nameof(Maximum)}.");
 
             var checkedSize = checked((int)newSize);
             Array.Resize(ref delegates, checkedSize);

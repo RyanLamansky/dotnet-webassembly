@@ -59,6 +59,7 @@ namespace WebAssembly.Runtime
             });
 
             var table = new FunctionTable(1);
+            Assert.AreEqual(1u, table.Length);
             Assert.IsNull(table[0]);
 
             var compiled = module.ToInstance<CompilerTestBase<int>>(
@@ -359,6 +360,70 @@ namespace WebAssembly.Runtime
             Assert.AreEqual(1, exports1.Calls);
             Assert.AreEqual(3, compiled.Exports.Test(3));
             Assert.AreEqual(2, exports1.Calls);
+        }
+
+        /// <summary>
+        /// Test importing a table whose initial size is too small.
+        /// </summary>
+        [TestMethod]
+        public void Compile_TableImport_UndersizedTable()
+        {
+            var module = new Module();
+            module.Types.Add(new Type
+            {
+                Returns = new[] { ValueType.Int32 },
+                Parameters = new[] { ValueType.Int32 }
+            });
+            module.Imports.Add(new Import.Table
+            {
+                Module = "Test",
+                Field = "Test",
+                Definition = new Table
+                {
+                    ElementType = ElementType.AnyFunction,
+                    ResizableLimits = new ResizableLimits(1)
+                }
+            });
+            module.Functions.Add(new Function
+            {
+            });
+            module.Exports.Add(new Export
+            {
+                Name = "Test",
+            });
+            module.Elements.Add(new Element
+            {
+                Elements = new uint[] { 0 },
+                InitializerExpression = new Instruction[]
+                {
+                    new Int32Constant(0),
+                    new End(),
+                },
+            });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GetLocal(0),
+                    new End()
+                },
+            });
+
+            var table = new FunctionTable(0, 1);
+            Assert.AreEqual(0u, table.Length);
+
+            var compiled = module.ToInstance<CompilerTestBase<int>>(
+                new ImportDictionary {
+                    { "Test", "Test", table },
+                });
+
+            Assert.AreEqual(1u, table.Length);
+            var rawDelegate = table[0];
+            Assert.IsNotNull(rawDelegate);
+            Assert.IsInstanceOfType(rawDelegate, typeof(Func<int, int>));
+            var nativeDelegate = (Func<int, int>)rawDelegate;
+            Assert.AreEqual(0, nativeDelegate(0));
+            Assert.AreEqual(5, nativeDelegate(5));
         }
     }
 }

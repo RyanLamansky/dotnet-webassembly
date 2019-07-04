@@ -934,7 +934,21 @@ namespace WebAssembly.Runtime
                                 }
 
                                 var elements = reader.ReadVarUInt32();
-                                // TODO: Grow table to fit elements.
+                                var isBigEnough = instanceConstructorIL.DefineLabel();
+                                instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
+                                instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                                instanceConstructorIL.EmitLoadConstant(checked(offset + elements));
+                                instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+
+                                instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
+                                instanceConstructorIL.EmitLoadConstant(checked(offset + elements));
+                                instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
+                                instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                                instanceConstructorIL.Emit(OpCodes.Sub);
+                                instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.GrowMethod);
+                                instanceConstructorIL.Emit(OpCodes.Pop);
+
+                                instanceConstructorIL.MarkLabel(isBigEnough);
 
                                 for (var j = 0u; j < elements; j++)
                                 {
