@@ -106,6 +106,7 @@ namespace WebAssembly
             }
 
             Assert.IsNotNull(compiled);
+            Assert.IsNotNull(compiled.Exports);
             return compiled;
         }
     }

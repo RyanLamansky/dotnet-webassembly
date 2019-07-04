@@ -780,6 +780,7 @@ namespace WebAssembly.Runtime
                             for (var i = 0; i < totalExports; i++)
                             {
                                 var name = reader.ReadString(reader.ReadVarUInt32());
+                                var preKindOffset = reader.Offset;
                                 var kind = (ExternalKind)reader.ReadByte();
                                 var preIndexOffset = reader.Offset;
                                 var index = reader.ReadVarUInt32();
@@ -789,7 +790,27 @@ namespace WebAssembly.Runtime
                                         xFunctions.Add(new KeyValuePair<string, uint>(name, index));
                                         break;
                                     case ExternalKind.Table:
-                                        throw new NotSupportedException($"Unsupported export kind {kind}.");
+                                        if (index != 0)
+                                            throw new ModuleLoadException($"Exported table must be of index 0, found {index}.", preIndexOffset);
+                                        if (functionTable == null)
+                                            throw new ModuleLoadException("Can't export a table without defining or importing one.", preKindOffset);
+
+                                        {
+                                            var tableGetter = exportsBuilder.DefineMethod("get_" + name,
+                                                exportedPropertyAttributes,
+                                                CallingConventions.HasThis,
+                                                typeof(FunctionTable),
+                                                System.Type.EmptyTypes
+                                                );
+                                            var getterIL = tableGetter.GetILGenerator();
+                                            getterIL.Emit(OpCodes.Ldarg_0);
+                                            getterIL.Emit(OpCodes.Ldfld, functionTable);
+                                            getterIL.Emit(OpCodes.Ret);
+
+                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(FunctionTable), System.Type.EmptyTypes)
+                                                .SetGetMethod(tableGetter);
+                                        }
+                                        break;
                                     case ExternalKind.Memory:
                                         if (index != 0)
                                             throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", preIndexOffset);

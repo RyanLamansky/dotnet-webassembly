@@ -66,9 +66,6 @@ namespace WebAssembly.Runtime
                     { "Test", "Test", table },
                 });
 
-            Assert.IsNotNull(compiled);
-            Assert.IsNotNull(compiled.Exports);
-
             var rawDelegate = table[0];
             Assert.IsNotNull(rawDelegate);
             Assert.IsInstanceOfType(rawDelegate, typeof(Func<int, int>));
@@ -126,9 +123,6 @@ namespace WebAssembly.Runtime
                     { "Test", "Test", table },
                 });
 
-            Assert.IsNotNull(compiled);
-            Assert.IsNotNull(compiled.Exports);
-
             Assert.AreEqual(0, calls);
             Assert.AreEqual(3, compiled.Exports.Test(2));
             Assert.AreEqual(1, calls);
@@ -165,6 +159,68 @@ namespace WebAssembly.Runtime
             Assert.IsNotNull(f2);
             Assert.IsInstanceOfType(f1, typeof(Func<int>));
             Assert.AreEqual(83, ((Func<int>)f2).Invoke());
+        }
+
+        /// <summary>
+        /// Used to test table export functionality via tests like <see cref="Compile_TableImport_ExportedButNotUsedInternally"/>.
+        /// </summary>
+        public abstract class ExportedTable
+        {
+            /// <summary>
+            /// An exported table.
+            /// </summary>
+            public abstract FunctionTable Table { get; }
+        }
+
+        /// <summary>
+        /// Tests exporting a function table that wasn't imported or defined.
+        /// </summary>
+        [TestMethod]
+        public void Compile_TableImport_ExportedButNotUsedInternally()
+        {
+            var module = new Module();
+            module.Exports.Add(new Export
+            {
+                Name = nameof(ExportedTable.Table),
+                Kind = ExternalKind.Table,
+            });
+
+            Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<ExportedTable>(new ImportDictionary()));
+        }
+
+        /// <summary>
+        /// Tests exporting a function table that was imported.
+        /// </summary>
+        [TestMethod]
+        public void Compile_TableImport_ExportedImport()
+        {
+            var module = new Module();
+            module.Imports.Add(new Import.Table
+            {
+                Module = "Test",
+                Field = "Test",
+                Definition = new Table
+                {
+                    ElementType = ElementType.AnyFunction,
+                    ResizableLimits = new ResizableLimits(1)
+                }
+            });
+            module.Exports.Add(new Export
+            {
+                Name = nameof(ExportedTable.Table),
+                Kind = ExternalKind.Table,
+            });
+
+            var table = new FunctionTable(0);
+
+            var exportedTable = module.ToInstance<ExportedTable>(
+                new ImportDictionary {
+                    { "Test", "Test", table },
+                })
+                .Exports
+                .Table;
+
+            Assert.AreSame(table, exportedTable);
         }
     }
 }

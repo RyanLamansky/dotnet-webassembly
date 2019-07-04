@@ -6,17 +6,13 @@ A library able to create, read, modify, write and execute WebAssembly (WASM) fil
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
 
 A preview is available via NuGet at https://www.nuget.org/packages/WebAssembly .
-Incremental updates to the preview are ongoing to deliver the last missing features.
-The 1.0 release marks when 100% of the "MVP" spec level of WebAssembly features are covered.
 
 ## Getting Started
 
-- The most commonly used items are in `WebAssembly`.
-`WebAssembly.Runtime` has the compiler and related features.
-- Use the `Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
-- Use the `Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
+- Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
+- Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
 
-Compiler limitations are discussed in the Development Status section after the sample.
+Please file an issue if you encounter an assembly that works in browsers but not with this library.
 
 ## Sample: Create and execute a WebAssembly file in memory
 
@@ -108,46 +104,18 @@ static class Program
 
 ## Development Status
 
-The `WebAssembly.Module` class is feature-complete; it should be compatible with any "MVP"-level WASM file.
+### Required for 1.0
 
-The `WebAssembly.Runtime.Compile` class coverage of the "MVP"-level WebAssembly spec is still missing the following capabilities:
-
-* Import and export tables, needed for interoperable virtual functions.
-
-_Note that although delivering the above capabilities will enable this library to run any "MVP"-level WASM file, it's up to you to satisfy the application-specific imports._
-
-The subsections below contain the list of things I plan to do and the order I'm likely to do them.
-All development is being done by one person in his spare time for free, and is therefore subject to the associated motivation (and [health](https://tvtropes.org/pmwiki/pmwiki.php/Main/AuthorExistenceFailure)) risks as any other single-developer project.
-
-### 1.0
-
-The current objective is to offer the same ("MVP"-level) WebAssembly compatibility as popular web browsers and make final API changes.
-
-- Support exporting tables.
-- Any other API changes deemed necessary to reduce the risk of future breaking changes and make the library more intuitive.
+- Leverage the official WebAssembly spec tests to ensure correct behavior.
+- Final API changes, particularly to align with the WebAssembly spec and JavaScript APIs.
 
 ### After 1.0
 
-- Provide WebAssembly streaming binary reader.
-- Provide WebAssembly streaming binary writer.
 - Make the compiler extensible: in particular, provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements.
 - Support saving generated assemblies as DLLs on .NET Framework 4.5+
 - If https://github.com/dotnet/corefx/issues/4491 is fixed, enable saving compiled DLLs on .NET Core builds.
 - Remove the compiler's Data section segment size limit of 4128768 bytes.
-- As they become available, leverage intrinsics added to the .NET runtime where emulation is used now.
-- As new feature levels of WebAssembly are released, support them as best as possible and document cases where .NET doesn't provide the necessary fundamental infrastructure.
-
-### Under consideration
-
-- Use the known custom section "name" to provide human-readable names to the generated functions.
-Since this section is required to be at the end of the file by the WebAssembly standard, its use will be disabled by default for more efficient streaming compilation.
-- ☣ Option to remove remove range check on linear memory access, for confident users desiring maximum performance.
-- 🤔 Add support for automatic implementation of interfaces as an alternative to existing abstract class code.
-- 🚀 Extensible optimization framework.
-- Validation of `Module` instances.
-- Parse WAT files.
-- Parse WAST files.
 
 ## Other Information
 
-* [Breaking Change Information](docs/BreakingChanges.md)
+* [Breaking Change Log](docs/BreakingChanges.md)
