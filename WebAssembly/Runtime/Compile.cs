@@ -365,7 +365,7 @@ namespace WebAssembly.Runtime
                                         {
                                             var preElementTypeoffset = reader.Offset;
                                             var elementType = (ElementType)reader.ReadVarInt7();
-                                            if (elementType != ElementType.AnyFunction)
+                                            if (elementType != ElementType.FunctionReference)
                                                 throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", preElementTypeoffset);
 
                                             var limits = new ResizableLimits(reader);
@@ -574,8 +574,8 @@ namespace WebAssembly.Runtime
                             {
                                 var preElementTypeOffset = reader.Offset;
                                 var elementType = (ElementType)reader.ReadVarInt7();
-                                if (elementType != ElementType.AnyFunction)
-                                    throw new ModuleLoadException($"The only supported table element type is {nameof(ElementType.AnyFunction)}, found {elementType}", preElementTypeOffset);
+                                if (elementType != ElementType.FunctionReference)
+                                    throw new ModuleLoadException($"The only supported table element type is {nameof(ElementType.FunctionReference)}, found {elementType}", preElementTypeOffset);
 
                                 if (functionTable == null)
                                 {

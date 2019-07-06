@@ -80,7 +80,7 @@ namespace WebAssembly.Instructions
             });
             module.Tables.Add(new Table
             {
-                ElementType = ElementType.AnyFunction,
+                ElementType = ElementType.FunctionReference,
                 ResizableLimits = new ResizableLimits(2, 2),
             });
             module.Elements.Add(new Element
@@ -158,7 +158,7 @@ namespace WebAssembly.Instructions
             });
             module.Tables.Add(new Table
             {
-                ElementType = ElementType.AnyFunction,
+                ElementType = ElementType.FunctionReference,
                 ResizableLimits = new ResizableLimits(1),
             });
             module.Elements.Add(new Element

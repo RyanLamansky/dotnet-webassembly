@@ -29,7 +29,7 @@ namespace WebAssembly.Runtime
                 Field = "Test",
                 Definition = new Table
                 {
-                    ElementType = ElementType.AnyFunction,
+                    ElementType = ElementType.FunctionReference,
                     ResizableLimits = new ResizableLimits(1)
                 }
             });
@@ -93,7 +93,7 @@ namespace WebAssembly.Runtime
                 Field = "Test",
                 Definition = new Table
                 {
-                    ElementType = ElementType.AnyFunction,
+                    ElementType = ElementType.FunctionReference,
                     ResizableLimits = new ResizableLimits(1)
                 }
             });
@@ -202,7 +202,7 @@ namespace WebAssembly.Runtime
                 Field = "Test",
                 Definition = new Table
                 {
-                    ElementType = ElementType.AnyFunction,
+                    ElementType = ElementType.FunctionReference,
                     ResizableLimits = new ResizableLimits(1)
                 }
             });
@@ -283,7 +283,7 @@ namespace WebAssembly.Runtime
             });
             module1.Tables.Add(new Table
             {
-                ElementType = ElementType.AnyFunction,
+                ElementType = ElementType.FunctionReference,
                 ResizableLimits = new ResizableLimits(2),
             });
             module1.Elements.Add(new Element
@@ -330,7 +330,7 @@ namespace WebAssembly.Runtime
                 Field = "Test",
                 Definition = new Table
                 {
-                    ElementType = ElementType.AnyFunction,
+                    ElementType = ElementType.FunctionReference,
                     ResizableLimits = new ResizableLimits(1)
                 }
             });
@@ -380,7 +380,7 @@ namespace WebAssembly.Runtime
                 Field = "Test",
                 Definition = new Table
                 {
-                    ElementType = ElementType.AnyFunction,
+                    ElementType = ElementType.FunctionReference,
                     ResizableLimits = new ResizableLimits(1)
                 }
             });

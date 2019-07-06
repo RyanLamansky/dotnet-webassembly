@@ -38,9 +38,9 @@ namespace WebAssembly.Runtime
             );
 
         /// <summary>
-        /// Always <see cref="ElementType.AnyFunction"/>.
+        /// Always <see cref="ElementType.FunctionReference"/>.
         /// </summary>
-        public sealed override ElementType Element => ElementType.AnyFunction;
+        public sealed override ElementType Element => ElementType.FunctionReference;
 
         /// <summary>
         /// The initial number of elements.

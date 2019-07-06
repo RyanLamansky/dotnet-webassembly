@@ -130,7 +130,7 @@ namespace WebAssembly
                         Field = "2",
                         Definition = new Table
                         {
-                            ElementType = ElementType.AnyFunction,
+                            ElementType = ElementType.FunctionReference,
                             ResizableLimits = new ResizableLimits(1, 2),
                         },
                     },
@@ -178,7 +178,7 @@ namespace WebAssembly
                 Assert.AreEqual("B", table.Module);
                 Assert.AreEqual("2", table.Field);
                 Assert.IsNotNull(table.Definition);
-                Assert.AreEqual(ElementType.AnyFunction, table.Definition.ElementType);
+                Assert.AreEqual(ElementType.FunctionReference, table.Definition.ElementType);
                 Assert.IsNotNull(table.Definition.ResizableLimits);
                 Assert.AreEqual(1u, table.Definition.ResizableLimits.Minimum);
                 Assert.AreEqual(2u, table.Definition.ResizableLimits.Maximum.GetValueOrDefault());

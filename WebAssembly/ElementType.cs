@@ -8,6 +8,6 @@
         /// <summary>
         /// A function with any signature.
         /// </summary>
-        AnyFunction = -0x10,
+        FunctionReference = -0x10,
     }
 }
