@@ -42,13 +42,13 @@ static class Program
             Parameters = new[]
             {
                 WebAssembly.ValueType.Int32, // This sample takes a single Int32 as input.
-				// Complex types can be passed by sending them in pieces.
-			},
+                // Complex types can be passed by sending them in pieces.
+            },
             Returns = new[]
             {
-				// Multiple returns are supported by the binary format.
-				// Standard currently allows a count of 0 or 1, though.
-				WebAssembly.ValueType.Int32,
+                // Multiple returns are supported by the binary format.
+                // Standard currently allows a count of 0 or 1, though.
+                WebAssembly.ValueType.Int32,
             },
         });
         // Types can be re-used for multiple functions to reduce WASM size.
@@ -65,13 +65,13 @@ static class Program
             Code = new Instruction[]
             {
                 new LocalGet(0), // The parameters are the first locals, in order.
-				// We defined the first parameter as Int32, so now an Int32 is at the top of the stack.
-				new Int32CountOneBits(), // Returns the number of binary bits set to 1.
-				// It takes the Int32 from the top of the stack, and pushes the return value.
-				// So, in the end, there is still a single Int32 on the stack, but it's now the result of Int32CountOneBits.
-				new End(), // All functions must end with "End".
-				// The final "End" also delivers the returned value, if the type says that a value is returned.
-			},
+                // We defined the first parameter as Int32, so now an Int32 is at the top of the stack.
+                new Int32CountOneBits(), // Returns the number of binary bits set to 1.
+                // It takes the Int32 from the top of the stack, and pushes the return value.
+                // So, in the end, there is still a single Int32 on the stack, but it's now the result of Int32CountOneBits.
+                new End(), // All functions must end with "End".
+                // The final "End" also delivers the returned value, if the type says that a value is returned.
+            },
         });
 
         // Exports enable features to be accessed by external code.
