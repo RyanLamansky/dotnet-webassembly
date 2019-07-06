@@ -99,32 +99,32 @@
         /// <summary>
         /// Read the current value of a local variable.
         /// </summary>
-        [OpCodeCharacteristics("get_local")]
-        GetLocal = 0x20,
+        [OpCodeCharacteristics("local.get")]
+        LocalGet = 0x20,
 
         /// <summary>
         /// Set the current value of a local variable.
         /// </summary>
-        [OpCodeCharacteristics("set_local")]
-        SetLocal = 0x21,
+        [OpCodeCharacteristics("local.set")]
+        LocalSet = 0x21,
 
         /// <summary>
-        /// Like <see cref="SetLocal"/>, but also returns the set value.
+        /// Like <see cref="LocalSet"/>, but also returns the set value.
         /// </summary>
-        [OpCodeCharacteristics("tee_local")]
-        TeeLocal = 0x22,
+        [OpCodeCharacteristics("local.tee")]
+        LocalTee = 0x22,
 
         /// <summary>
         /// (i32 index){T} => {T}; Read a global variable.
         /// </summary>
-        [OpCodeCharacteristics("get_global")]
-        GetGlobal = 0x23,
+        [OpCodeCharacteristics("global.get")]
+        GlobalGet = 0x23,
 
         /// <summary>
-        /// (i32 index, T value){T} => i32 index; Write a global variable.
+        /// (i32 index, T value){T}; Write a global variable.
         /// </summary>
-        [OpCodeCharacteristics("set_global")]
-        SetGlobal = 0x24,
+        [OpCodeCharacteristics("global.set")]
+        GlobalSet = 0x24,
 
         /// <summary>
         /// Load 4 bytes as i32.
@@ -267,14 +267,14 @@
         /// <summary>
         /// Return the current memory size in units of 65536-byte pages.
         /// </summary>
-        [OpCodeCharacteristics("current_memory")]
-        CurrentMemory = 0x3f,
+        [OpCodeCharacteristics("memory.size")]
+        MemorySize = 0x3f,
 
         /// <summary>
         /// Grow linear memory by a given unsigned delta of 65536-byte pages. Return the previous memory size in units of pages or -1 on failure.
         /// </summary>
-        [OpCodeCharacteristics("grow_memory")]
-        GrowMemory = 0x40,
+        [OpCodeCharacteristics("memory.grow")]
+        MemoryGrow = 0x40,
 
         /// <summary>
         /// Produce the value of an i32 immediate.
@@ -891,151 +891,151 @@
         /// <summary>
         /// Wrap a 64-bit integer to a 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.wrap/i64")]
+        [OpCodeCharacteristics("i32.wrap_i64")]
         Int32WrapInt64 = 0xa7,
 
         /// <summary>
         /// Truncate a 32-bit float to a signed 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.trunc_s/f32")]
-        Int32TruncateSignedFloat32 = 0xa8,
+        [OpCodeCharacteristics("i32.trunc_f32_s")]
+        Int32TruncateFloat32Signed = 0xa8,
 
         /// <summary>
         /// Truncate a 32-bit float to an unsigned 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.trunc_u/f32")]
-        Int32TruncateUnsignedFloat32 = 0xa9,
+        [OpCodeCharacteristics("i32.trunc_f32_u")]
+        Int32TruncateFloat32Unsigned = 0xa9,
 
         /// <summary>
         /// Truncate a 64-bit float to a signed 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.trunc_s/f64")]
-        Int32TruncateSignedFloat64 = 0xaa,
+        [OpCodeCharacteristics("i32.trunc_f64_s")]
+        Int32TruncateFloat64Signed = 0xaa,
 
         /// <summary>
         /// Truncate a 64-bit float to an unsigned 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.trunc_u/f64")]
-        Int32TruncateUnsignedFloat64 = 0xab,
+        [OpCodeCharacteristics("i32.trunc_f64_u")]
+        Int32TruncateFloat64Unsigned = 0xab,
 
         /// <summary>
         /// Extend a signed 32-bit integer to a 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.extend_s/i32")]
-        Int64ExtendSignedInt32 = 0xac,
+        [OpCodeCharacteristics("i64.extend_i32_s")]
+        Int64ExtendInt32Signed = 0xac,
 
         /// <summary>
         /// Extend an unsigned 32-bit integer to a 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.extend_u/i32")]
-        Int64ExtendUnsignedInt32 = 0xad,
+        [OpCodeCharacteristics("i64.extend_i32_u")]
+        Int64ExtendInt32Unsigned = 0xad,
 
         /// <summary>
         /// Truncate a 32-bit float to a signed 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.trunc_s/f32")]
-        Int64TruncateSignedFloat32 = 0xae,
+        [OpCodeCharacteristics("i64.trunc_f32_s")]
+        Int64TruncateFloat32Signed = 0xae,
 
         /// <summary>
         /// Truncate a 32-bit float to an unsigned 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.trunc_u/f32")]
-        Int64TruncateUnsignedFloat32 = 0xaf,
+        [OpCodeCharacteristics("i64.trunc_f32_u")]
+        Int64TruncateFloat32Unsigned = 0xaf,
 
         /// <summary>
         /// Truncate a 64-bit float to a signed 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.trunc_s/f64")]
-        Int64TruncateSignedFloat64 = 0xb0,
+        [OpCodeCharacteristics("i64.trunc_f64_s")]
+        Int64TruncateFloat64Signed = 0xb0,
 
         /// <summary>
         /// Truncate a 64-bit float to an unsigned 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.trunc_u/f64")]
-        Int64TruncateUnsignedFloat64 = 0xb1,
+        [OpCodeCharacteristics("i64.trunc_f64_u")]
+        Int64TruncateFloat64Unsigned = 0xb1,
 
         /// <summary>
         /// Convert a signed 32-bit integer to a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.convert_s/i32")]
-        Float32ConvertSignedInt32 = 0xb2,
+        [OpCodeCharacteristics("f32.convert_i32_s")]
+        Float32ConvertInt32Signed = 0xb2,
 
         /// <summary>
         /// Convert an unsigned 32-bit integer to a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.convert_u/i32")]
-        Float32ConvertUnsignedInt32 = 0xb3,
+        [OpCodeCharacteristics("f32.convert_i32_u")]
+        Float32ConvertInt32Unsigned = 0xb3,
 
         /// <summary>
         /// Convert a signed 64-bit integer to a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.convert_s/i64")]
-        Float32ConvertSignedInt64 = 0xb4,
+        [OpCodeCharacteristics("f32.convert_i64_s")]
+        Float32ConvertInt64Signed = 0xb4,
 
         /// <summary>
         /// Convert an unsigned 64-bit integer to a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.convert_u/i64")]
-        Float32ConvertUnsignedInt64 = 0xb5,
+        [OpCodeCharacteristics("f32.convert_i64_u")]
+        Float32ConvertInt64Unsigned = 0xb5,
 
         /// <summary>
         /// Demote a 64-bit float to a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.demote/f64")]
+        [OpCodeCharacteristics("f32.demote_f64")]
         Float32DemoteFloat64 = 0xb6,
 
         /// <summary>
         /// Convert a signed 32-bit integer to a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.convert_s/i32")]
-        Float64ConvertSignedInt32 = 0xb7,
+        [OpCodeCharacteristics("f64.convert_i32_s")]
+        Float64ConvertInt32Signed = 0xb7,
 
         /// <summary>
         /// Convert an unsigned 32-bit integer to a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.convert_u/i32")]
-        Float64ConvertUnsignedInt32 = 0xb8,
+        [OpCodeCharacteristics("f64.convert_i32_u")]
+        Float64ConvertInt32Unsigned = 0xb8,
 
         /// <summary>
         /// Convert a signed 64-bit integer to a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.convert_s/i64")]
-        Float64ConvertSignedInt64 = 0xb9,
+        [OpCodeCharacteristics("f64.convert_i64_s")]
+        Float64ConvertInt64Signed = 0xb9,
 
         /// <summary>
         /// Convert an unsigned 64-bit integer to a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.convert_u/i64")]
-        Float64ConvertUnsignedInt64 = 0xba,
+        [OpCodeCharacteristics("f64.convert_i64_u")]
+        Float64ConvertInt64Unsigned = 0xba,
 
         /// <summary>
         /// Promote a 32-bit float to a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.promote/f32")]
+        [OpCodeCharacteristics("f64.promote_f32")]
         Float64PromoteFloat32 = 0xbb,
 
         /// <summary>
         /// Reinterpret the bits of a 32-bit float as a 32-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i32.reinterpret/f32")]
+        [OpCodeCharacteristics("i32.reinterpret_f32")]
         Int32ReinterpretFloat32 = 0xbc,
 
         /// <summary>
         /// Reinterpret the bits of a 64-bit float as a 64-bit integer.
         /// </summary>
-        [OpCodeCharacteristics("i64.reinterpret/f64")]
+        [OpCodeCharacteristics("i64.reinterpret_f64")]
         Int64ReinterpretFloat64 = 0xbd,
 
         /// <summary>
         /// Reinterpret the bits of a 32-bit integer as a 32-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f32.reinterpret/i32")]
+        [OpCodeCharacteristics("f32.reinterpret_i32")]
         Float32ReinterpretInt32 = 0xbe,
 
         /// <summary>
         /// Reinterpret the bits of a 64-bit integer as a 64-bit float.
         /// </summary>
-        [OpCodeCharacteristics("f64.reinterpret/i64")]
+        [OpCodeCharacteristics("f64.reinterpret_i64")]
         Float64ReinterpretInt64 = 0xbf,
     }
 }

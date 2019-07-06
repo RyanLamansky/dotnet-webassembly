@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int64CountOneBits_Compiled()
         {
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64CountOneBits(),
                 new End());
 

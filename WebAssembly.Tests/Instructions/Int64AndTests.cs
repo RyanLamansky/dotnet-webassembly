@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const int and = 0xF;
 
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64Constant(and),
                 new Int64And(),
                 new End());

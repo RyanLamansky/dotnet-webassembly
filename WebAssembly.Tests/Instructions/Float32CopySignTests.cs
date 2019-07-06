@@ -15,8 +15,8 @@ namespace WebAssembly.Instructions
         public void Float32CopySign_Compiled()
         {
             var exports = CompilerTestBase2<float>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Float32CopySign(),
                 new End());
 

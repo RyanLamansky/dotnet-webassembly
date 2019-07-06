@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Else_Compiled()
         {
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new If(),
                 new Int32Constant(3),
                 new Return(),

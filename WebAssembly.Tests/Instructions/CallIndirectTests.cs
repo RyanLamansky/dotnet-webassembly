@@ -57,7 +57,7 @@ namespace WebAssembly.Instructions
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new CallIndirect(1),
                     new End(),
                 },
@@ -150,7 +150,7 @@ namespace WebAssembly.Instructions
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End(),

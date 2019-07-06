@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Float32Add_Compiled()
         {
             var exports = CompilerTestBase<float>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Float32Constant(1),
                 new Float32Add(),
                 new End());

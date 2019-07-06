@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void IInt64CountTrailingZeroes_Compiled()
         {
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64CountTrailingZeroes(),
                 new End());
 

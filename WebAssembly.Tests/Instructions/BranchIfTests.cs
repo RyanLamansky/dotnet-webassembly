@@ -16,7 +16,7 @@ namespace WebAssembly.Instructions
         {
             var exports = CompilerTestBase<int>.CreateInstance(
                 new Block(BlockType.Empty),
-                new GetLocal(0),
+                new LocalGet(0),
                 new BranchIf(0),
                 new Int32Constant(2),
                 new Return(),

@@ -29,7 +29,7 @@ namespace WebAssembly.Instructions
             {
                     ValueType.Int64,
                 },
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64EqualZero(),
                 new End());
 

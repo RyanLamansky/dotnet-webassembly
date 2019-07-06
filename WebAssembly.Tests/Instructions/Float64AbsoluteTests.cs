@@ -16,7 +16,7 @@ namespace WebAssembly.Instructions
         public void Float64Absolute_Compiled()
         {
             var exports = CompilerTestBase<double>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Float64Absolute(),
                 new End());
 

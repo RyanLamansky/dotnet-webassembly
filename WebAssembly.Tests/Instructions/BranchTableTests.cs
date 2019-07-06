@@ -24,7 +24,7 @@ namespace WebAssembly.Instructions
                 new Block(BlockType.Empty),
                 new Block(BlockType.Empty),
                 new Block(BlockType.Empty),
-                new GetLocal(0),
+                new LocalGet(0),
                 new BranchTable(0, 0, 1, 2, 3),
                 new End(),
                 new Int32Constant(1),

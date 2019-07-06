@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const int divisor = 2;
 
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64Constant(divisor),
                 new Int64DivideSigned(),
                 new End());

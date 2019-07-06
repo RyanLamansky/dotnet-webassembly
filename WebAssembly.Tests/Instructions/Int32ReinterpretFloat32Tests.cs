@@ -26,7 +26,7 @@ namespace WebAssembly.Instructions
         public void Int32ReinterpretFloat32_Compiled()
         {
             var exports = ConversionTestBase<float, int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32ReinterpretFloat32(),
                 new End());
 

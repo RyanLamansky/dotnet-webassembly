@@ -26,7 +26,7 @@ namespace WebAssembly.Instructions
         public void Int64ReinterpretFloat64_Compiled()
         {
             var exports = ConversionTestBase<double, long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64ReinterpretFloat64(),
                 new End());
 

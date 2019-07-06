@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int32WrapInt64_Compiled()
         {
             var exports = ConversionTestBase<long, int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32WrapInt64(),
                 new End());
 

@@ -53,7 +53,7 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new End()
                 },
             });
@@ -108,7 +108,7 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End()
@@ -299,12 +299,12 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                    new GetGlobal(0),
+                    new GlobalGet(0),
                     new Int32Constant(1),
                     new Int32Add(),
-                    new SetGlobal(0),
+                    new GlobalSet(0),
 
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new End()
                 },
             });
@@ -345,7 +345,7 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End()
@@ -404,7 +404,7 @@ namespace WebAssembly.Runtime
             {
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new End()
                 },
             });

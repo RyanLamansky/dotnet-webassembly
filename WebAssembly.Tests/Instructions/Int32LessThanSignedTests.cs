@@ -15,8 +15,8 @@ namespace WebAssembly.Instructions
         public void Int32LessThanSigned_Compiled()
         {
             var exports = ComparisonTestBase<int>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int32LessThanSigned(),
                 new End());
 

@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions
     /// Tests the <see cref="Int64Load8Signed"/> instruction.
     /// </summary>
     [TestClass]
-    public class Int64Load8SignedSignedTests
+    public class Int64Load8SignedTests
     {
         /// <summary>
         /// Tests compilation and execution of the <see cref="Int64Load8Signed"/> instruction.
@@ -18,7 +18,7 @@ namespace WebAssembly.Instructions
         public void Int32Load8Signed_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Signed(),
                 new End()
             );
@@ -64,7 +64,7 @@ namespace WebAssembly.Instructions
         public void Int64Load8Signed_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Signed
                 {
                     Offset = 1,
@@ -118,7 +118,7 @@ namespace WebAssembly.Instructions
             const int shift = 40;
 
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Signed
                 {
                     Offset = off,

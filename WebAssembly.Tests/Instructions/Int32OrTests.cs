@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const int comparand = 0xF;
 
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32Constant(comparand),
                 new Int32Or(),
                 new End());

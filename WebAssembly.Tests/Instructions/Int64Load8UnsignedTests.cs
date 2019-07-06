@@ -18,7 +18,7 @@ namespace WebAssembly.Instructions
         public void Int64Load8Unsigned_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Unsigned(),
                 new End()
             );
@@ -64,7 +64,7 @@ namespace WebAssembly.Instructions
         public void Int64Load8Unsigned_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Unsigned
                 {
                     Offset = 1,
@@ -132,7 +132,7 @@ namespace WebAssembly.Instructions
             // all Foo narrow than 64 bits
 
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load8Unsigned
                 {
                     Offset = off,

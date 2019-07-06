@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const uint divisor = 0xF;
 
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32Constant(divisor),
                 new Int32RemainderUnsigned(),
                 new End());

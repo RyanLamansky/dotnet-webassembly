@@ -10,20 +10,59 @@ namespace WebAssembly.Instructions
     [TestClass]
     public class InstructionTests
     {
+        private static readonly System.Type[] InstructionTypes =
+            typeof(Instruction)
+            .GetTypeInfo()
+            .Assembly
+            .GetTypes()
+            .Where(type => type.IsDescendantOf(typeof(Instruction)) && type.IsAbstract == false)
+            .ToArray();
+
         /// <summary>
         /// Ensures that all instructions are public.
         /// </summary>
         [TestMethod]
         public void Instruction_AllPublic()
         {
-            var nonPublic = string.Join(", ",
-            typeof(Instruction)
-                .GetTypeInfo()
-                .Assembly.GetTypes()
-                .Where(type => type.IsDescendantOf(typeof(Instruction)) && type.GetTypeInfo().IsPublic == false)
+            var nonPublic = string.Join(", ", InstructionTypes.Where(type => type.IsPublic == false));
+
+            Assert.AreEqual("", nonPublic, "Non-public instructions found.");
+        }
+
+        /// <summary>
+        /// Ensures that instruction names match their opcode name.
+        /// </summary>
+        [TestMethod]
+        public void Instruction_NameMatchesOpcode()
+        {
+            var mismatch = string.Join(", ",
+                InstructionTypes
+                .Select(type => (
+                OpCode: ((Instruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).OpCode.ToString(),
+                TypeName: type.Name
+                ))
+                .Where(result => result.OpCode != result.TypeName)
+                .Select(result => result.TypeName)
                 );
 
-            Assert.AreEqual("", nonPublic, $"Non-public instructions: {nonPublic}");
+            Assert.AreEqual("", mismatch, "Instructions whose name do not match their opcode found.");
+        }
+
+        /// <summary>
+        /// Ensures that every instruction has a corresponding test class.
+        /// </summary>
+        [TestMethod]
+        public void Instruction_HasTestClass()
+        {
+            var testClasses = typeof(InstructionTests)
+                .Assembly
+                .GetTypes()
+                .Where(type => type.GetCustomAttribute<TestClassAttribute>() != null)
+                .Select(type => type.Name.Substring(0, type.Name.Length - "Tests".Length));
+
+            var missing = string.Join(", ", InstructionTypes.Select(type => type.Name).Except(testClasses));
+
+            Assert.AreEqual("", missing, "Instructions with no matching test class found.");
         }
     }
 }

@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Float64Negate_Compiled()
         {
             var exports = CompilerTestBase<double>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Float64Negate(),
                 new End());
 

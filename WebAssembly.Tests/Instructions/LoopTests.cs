@@ -19,17 +19,17 @@ namespace WebAssembly.Instructions
                 new Block(BlockType.Empty),
                 new Loop(BlockType.Empty),
 
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32Constant(1),
                 new Int32Add(),
-                new SetLocal(0),
+                new LocalSet(0),
 
-                new GetLocal(1),
+                new LocalGet(1),
                 new Int32Constant(1),
                 new Int32Add(),
-                new SetLocal(1),
+                new LocalSet(1),
 
-                new GetLocal(1),
+                new LocalGet(1),
                 new If(BlockType.Empty),
                 new Branch(2),
                 new Else(),
@@ -38,7 +38,7 @@ namespace WebAssembly.Instructions
 
                 new End(), //loop
                 new End(), //block
-                new GetLocal(0),
+                new LocalGet(0),
                 new End());
 
             Assert.AreEqual(11, exports.Test(10, -2));

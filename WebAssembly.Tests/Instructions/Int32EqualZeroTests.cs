@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int32EqualZero_Compiled()
         {
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32EqualZero(),
                 new End());
 

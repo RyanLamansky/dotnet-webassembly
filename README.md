@@ -18,7 +18,6 @@ Please file an issue if you encounter an assembly that works in browsers but not
 
 ``` C#
 using System;
-using System.Collections.Generic;
 using WebAssembly; // Acquire from https://www.nuget.org/packages/WebAssembly
 using WebAssembly.Instructions;
 using WebAssembly.Runtime;
@@ -65,7 +64,7 @@ static class Program
         {
             Code = new Instruction[]
             {
-                new GetLocal(0), // The parameters are the first locals, in order.
+                new LocalGet(0), // The parameters are the first locals, in order.
 				// We defined the first parameter as Int32, so now an Int32 is at the top of the stack.
 				new Int32CountOneBits(), // Returns the number of binary bits set to 1.
 				// It takes the Int32 from the top of the stack, and pushes the return value.

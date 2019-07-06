@@ -18,7 +18,7 @@ namespace WebAssembly.Instructions
         public void Int64Load16Signed_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load16Signed(),
                 new End()
             );
@@ -68,7 +68,7 @@ namespace WebAssembly.Instructions
         public void Int64Load16Signed_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load16Signed
                 {
                     Offset = 1,
@@ -126,7 +126,7 @@ namespace WebAssembly.Instructions
             const int shift = 40;
 
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load16Signed
                 {
                     Offset = off,

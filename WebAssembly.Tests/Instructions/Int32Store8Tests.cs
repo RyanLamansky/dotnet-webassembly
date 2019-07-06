@@ -18,8 +18,8 @@ namespace WebAssembly.Instructions
         public void IInt32Store8_Compiled_Offset0()
         {
             var compiled = MemoryWriteTestBase<int>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int32Store8(),
                 new End()
             );
@@ -59,8 +59,8 @@ namespace WebAssembly.Instructions
         public void Int32Store8_Compiled_Offset1()
         {
             var compiled = MemoryWriteTestBase<int>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int32Store8() { Offset = 1 },
                 new End()
             );

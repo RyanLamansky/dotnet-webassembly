@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int64Add_Compiled()
         {
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64Constant(1),
                 new Int64Add(),
                 new End());

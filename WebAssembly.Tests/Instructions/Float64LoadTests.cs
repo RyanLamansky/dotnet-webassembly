@@ -19,7 +19,7 @@ namespace WebAssembly.Instructions
         public void Float64Load_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<double>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Float64Load(),
                 new End()
             );
@@ -79,7 +79,7 @@ namespace WebAssembly.Instructions
         public void Float64Load_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<double>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Float64Load
                 {
                     Offset = 1,

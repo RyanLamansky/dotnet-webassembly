@@ -139,7 +139,7 @@ namespace WebAssembly.Instructions
                     new Block(BlockType.Int64),
                     new Int32Constant(5),
                     new End(),
-                    new Int64ExtendSignedInt32(),
+                    new Int64ExtendInt32Signed(),
                     new End()
                     ).Test());
 

@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int32Add_Compiled()
         {
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32Constant(1),
                 new Int32Add(),
                 new End());

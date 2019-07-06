@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Float32DemoteFloat64_Compiled()
         {
             var exports = ConversionTestBase<double, float>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Float32DemoteFloat64(),
                 new End());
 

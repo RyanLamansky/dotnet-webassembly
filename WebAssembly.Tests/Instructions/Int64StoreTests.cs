@@ -18,8 +18,8 @@ namespace WebAssembly.Instructions
         public void Int64Store_Compiled_Offset0()
         {
             var compiled = MemoryWriteTestBase<long>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int64Store(),
                 new End()
             );
@@ -87,8 +87,8 @@ namespace WebAssembly.Instructions
         public void Int64Store_Compiled_Offset1()
         {
             var compiled = MemoryWriteTestBase<long>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int64Store() { Offset = 1 },
                 new End()
             );

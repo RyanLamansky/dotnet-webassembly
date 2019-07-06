@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const int or = 0xF;
 
             var exports = CompilerTestBase<int>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int32Constant(or),
                 new Int32ExclusiveOr(),
                 new End());

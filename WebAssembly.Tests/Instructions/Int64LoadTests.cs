@@ -18,7 +18,7 @@ namespace WebAssembly.Instructions
         public void Int64Load_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load(),
                 new End()
             );
@@ -76,7 +76,7 @@ namespace WebAssembly.Instructions
         public void Int64Load_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<long>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int64Load
                 {
                     Offset = 1,

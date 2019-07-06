@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions
     /// Tests the <see cref="Int64ShiftRightUnsigned"/> instruction.
     /// </summary>
     [TestClass]
-    public class Int64ShiftRightUnsignedests
+    public class Int64ShiftRightUnsignedTests
     {
         /// <summary>
         /// Tests compilation and execution of the <see cref="Int64ShiftRightUnsigned"/> instruction.
@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             const int amount = 0xF;
 
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64Constant(amount),
                 new Int64ShiftRightUnsigned(),
                 new End());

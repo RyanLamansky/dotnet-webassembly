@@ -18,7 +18,7 @@ namespace WebAssembly.Instructions
         public void Int32Load16Signed_Compiled_Offset0()
         {
             var compiled = MemoryReadTestBase<int>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int32Load16Signed(),
                 new End()
             );
@@ -68,7 +68,7 @@ namespace WebAssembly.Instructions
         public void Int32Load16Signed_Compiled_Offset1()
         {
             var compiled = MemoryReadTestBase<int>.CreateInstance(
-                new GetLocal(),
+                new LocalGet(),
                 new Int32Load16Signed
                 {
                     Offset = 1,

@@ -15,8 +15,8 @@ namespace WebAssembly.Instructions
         public void Int64NotEqual_Compiled()
         {
             var exports = ComparisonTestBase<long>.CreateInstance(
-                new GetLocal(0),
-                new GetLocal(1),
+                new LocalGet(0),
+                new LocalGet(1),
                 new Int64NotEqual(),
                 new End());
 

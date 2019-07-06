@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Int64CountLeadingZeroes_Compiled()
         {
             var exports = CompilerTestBase<long>.CreateInstance(
-                new GetLocal(0),
+                new LocalGet(0),
                 new Int64CountLeadingZeroes(),
                 new End());
 

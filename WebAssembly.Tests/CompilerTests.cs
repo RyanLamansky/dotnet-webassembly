@@ -385,7 +385,7 @@ namespace WebAssembly
                 },
                 Code = new Instruction[]
                 {
-                    new GetLocal(0),
+                    new LocalGet(0),
                     new End(),
                 }
             });
