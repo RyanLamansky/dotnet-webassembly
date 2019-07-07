@@ -12,29 +12,33 @@ namespace WebAssembly.Runtime
     {
         internal static readonly RegeneratingWeakReference<MethodInfo> IndexGetter = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
-            .GetProperties()
+            .GetTypeInfo()
+            .DeclaredProperties
             .Where(prop => prop.GetIndexParameters().Length > 0)
             .First()
-            .GetGetMethod()
+            .GetMethod
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> IndexSetter = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
-            .GetProperties()
+            .GetTypeInfo()
+            .DeclaredProperties
             .Where(prop => prop.GetIndexParameters().Length > 0)
             .First()
-            .GetSetMethod()
+            .SetMethod
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
-            .GetProperty(nameof(Length))
-            .GetGetMethod()
+            .GetTypeInfo()
+            .GetDeclaredProperty(nameof(Length))
+            .GetMethod
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
-            .GetMethod(nameof(Grow))
+            .GetTypeInfo()
+            .GetDeclaredMethod(nameof(Grow))
             );
 
         /// <summary>

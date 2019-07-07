@@ -119,7 +119,7 @@ namespace WebAssembly.Instructions
                     var del = context.Configuration
                         .GetDelegateForType(parms.Length, returns.Length)
                         .MakeGenericType(parms.Concat(returns).ToArray());
-                    context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
+                    context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
                 }
 
                 context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.ExportsBuilder.DefineMethod(

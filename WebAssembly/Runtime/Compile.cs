@@ -347,13 +347,15 @@ namespace WebAssembly.Runtime
                                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                                             instanceConstructorIL.Emit(OpCodes.Call,
                                                 typeof(Helpers)
-                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .GetTypeInfo()
+                                                .GetDeclaredMethod(nameof(Helpers.FindImport))
                                                 .MakeGenericMethod(typeof(FunctionImport))
                                                 );
                                             instanceConstructorIL.Emit(OpCodes.Callvirt,
                                                 typeof(FunctionImport)
-                                                .GetProperty(nameof(FunctionImport.Method))
-                                                .GetGetMethod());
+                                                .GetTypeInfo()
+                                                .GetDeclaredProperty(nameof(FunctionImport.Method))
+                                                .GetMethod);
                                             instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
@@ -380,7 +382,8 @@ namespace WebAssembly.Runtime
                                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                                             instanceConstructorIL.Emit(OpCodes.Call,
                                                 typeof(Helpers)
-                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .GetTypeInfo()
+                                                .GetDeclaredMethod(nameof(Helpers.FindImport))
                                                 .MakeGenericMethod(typeof(FunctionTable))
                                                 );
                                             instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
@@ -414,13 +417,15 @@ namespace WebAssembly.Runtime
                                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                                             instanceConstructorIL.Emit(OpCodes.Call,
                                                 typeof(Helpers)
-                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .GetTypeInfo()
+                                                .GetDeclaredMethod(nameof(Helpers.FindImport))
                                                 .MakeGenericMethod(typeof(MemoryImport))
                                                 );
                                             instanceConstructorIL.Emit(OpCodes.Callvirt,
                                                 typeof(MemoryImport)
-                                                .GetProperty(nameof(MemoryImport.Method))
-                                                .GetGetMethod());
+                                                .GetTypeInfo()
+                                                .GetDeclaredProperty(nameof(MemoryImport.Method))
+                                                .GetMethod);
                                             instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                                         }
@@ -454,13 +459,15 @@ namespace WebAssembly.Runtime
                                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                                             instanceConstructorIL.Emit(OpCodes.Call,
                                                 typeof(Helpers)
-                                                .GetMethod(nameof(Helpers.FindImport))
+                                                .GetTypeInfo()
+                                                .GetDeclaredMethod(nameof(Helpers.FindImport))
                                                 .MakeGenericMethod(typeof(GlobalImport))
                                                 );
                                             instanceConstructorIL.Emit(OpCodes.Callvirt,
                                                 typeof(GlobalImport)
-                                                .GetProperty(nameof(GlobalImport.Getter))
-                                                .GetGetMethod());
+                                                .GetTypeInfo()
+                                                .GetDeclaredProperty(nameof(GlobalImport.Getter))
+                                                .GetMethod);
                                             instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
@@ -496,13 +503,15 @@ namespace WebAssembly.Runtime
                                                 instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                                                 instanceConstructorIL.Emit(OpCodes.Call,
                                                     typeof(Helpers)
-                                                    .GetMethod(nameof(Helpers.FindImport))
+                                                    .GetTypeInfo()
+                                                    .GetDeclaredMethod(nameof(Helpers.FindImport))
                                                     .MakeGenericMethod(typeof(GlobalImport))
                                                     );
                                                 instanceConstructorIL.Emit(OpCodes.Callvirt,
                                                     typeof(GlobalImport)
-                                                    .GetProperty(nameof(GlobalImport.Setter))
-                                                    .GetGetMethod());
+                                                    .GetTypeInfo()
+                                                    .GetDeclaredProperty(nameof(GlobalImport.Setter))
+                                                    .GetMethod);
                                                 instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
                                                 instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                                             }
@@ -587,12 +596,38 @@ namespace WebAssembly.Runtime
                                     if (limits.Maximum.HasValue)
                                     {
                                         instanceConstructorIL.EmitLoadConstant(limits.Maximum);
-                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetConstructor(new[] { typeof(uint) }));
-                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable).GetConstructor(new[] { typeof(uint), typeof(uint?) }));
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?)
+                                            .GetTypeInfo()
+                                            .DeclaredConstructors
+                                            .Where(constructor =>
+                                            {
+                                                var parms = constructor.GetParameters();
+                                                return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                                            })
+                                            .Single()); ;
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable)
+                                            .GetTypeInfo()
+                                            .DeclaredConstructors
+                                            .Where(constructor =>
+                                            {
+                                                var parms = constructor.GetParameters();
+                                                return parms.Length == 2
+                                                    && parms[0].ParameterType == typeof(uint)
+                                                    && parms[1].ParameterType == typeof(uint?);
+                                            })
+                                            .Single());
                                     }
                                     else
                                     {
-                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable).GetConstructor(new[] { typeof(uint) }));
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable)
+                                            .GetTypeInfo()
+                                            .DeclaredConstructors
+                                            .Where(constructor =>
+                                            {
+                                                var parms = constructor.GetParameters();
+                                                return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                                            })
+                                            .Single());
                                     }
                                     instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
                                 }
@@ -962,7 +997,7 @@ namespace WebAssembly.Runtime
                                         var del = configuration
                                             .GetDelegateForType(parms.Length, returns.Length)
                                             .MakeGenericType(parms.Concat(returns).ToArray());
-                                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetMethod(nameof(Action.Invoke), parms));
+                                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
                                     }
 
                                     instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
@@ -994,7 +1029,7 @@ namespace WebAssembly.Runtime
 
                                         instanceConstructorIL.EmitLoadArg(0);
                                         instanceConstructorIL.Emit(OpCodes.Ldftn, wrapper);
-                                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType.GetConstructors()[0]);
+                                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType.GetTypeInfo().DeclaredConstructors.Single());
                                     }
 
                                     instanceConstructorIL.Emit(OpCodes.Call, setter);
