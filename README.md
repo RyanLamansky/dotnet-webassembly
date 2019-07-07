@@ -66,11 +66,11 @@ static class Program
             {
                 new LocalGet(0), // The parameters are the first locals, in order.
                 // We defined the first parameter as Int32, so now an Int32 is at the top of the stack.
-                new Int32CountOneBits(), // Returns the number of binary bits set to 1.
+                new Int32CountOneBits(), // Returns the count of binary bits set to 1.
                 // It takes the Int32 from the top of the stack, and pushes the return value.
-                // So, in the end, there is still a single Int32 on the stack, but it's now the result of Int32CountOneBits.
+                // So, in the end, there is still a single Int32 on the stack.
                 new End(), // All functions must end with "End".
-                // The final "End" also delivers the returned value, if the type says that a value is returned.
+                // The final "End" also delivers the returned value.
             },
         });
 
@@ -107,6 +107,7 @@ static class Program
 
 - Leverage the official WebAssembly spec tests to ensure correct behavior.
 - Final API changes, particularly to align with the WebAssembly spec and JavaScript APIs.
+- Implement C# 8.0 nullable reference types.
 
 ### After 1.0
 
