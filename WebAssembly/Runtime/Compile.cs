@@ -22,6 +22,7 @@ namespace WebAssembly.Runtime
     /// </summary>
     public static class Compile
     {
+#if FILESTREAM
         /// <summary>
         /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
         /// </summary>
@@ -71,6 +72,7 @@ namespace WebAssembly.Runtime
                 return FromBinary<TExports>(stream, configuration);
             }
         }
+#endif
 
         /// <summary>
         /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
@@ -261,6 +263,11 @@ namespace WebAssembly.Runtime
             MethodInfo startFunction = null;
             var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
             var delegateRemappersByType = context.DelegateRemappersByType;
+#if FILESTREAM // Supported frameworks that don't have FileStream (.NET Standard 1.1) also lack EmptyTypes.
+            var emptyTypes = System.Type.EmptyTypes;
+#else
+            var emptyTypes = new System.Type[0];
+#endif
 
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -408,7 +415,7 @@ namespace WebAssembly.Runtime
                                             var invokerIL = importedMemoryProvider.GetILGenerator();
                                             invokerIL.EmitLoadArg(0);
                                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
-                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<UnmanagedMemory>.Invoke), System.Type.EmptyTypes));
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<UnmanagedMemory>.Invoke), emptyTypes));
                                             invokerIL.Emit(OpCodes.Ret);
 
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -450,7 +457,7 @@ namespace WebAssembly.Runtime
                                             var invokerIL = getterInvoker.GetILGenerator();
                                             invokerIL.EmitLoadArg(0);
                                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
-                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<ValueType>.Invoke), System.Type.EmptyTypes));
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<ValueType>.Invoke), emptyTypes));
                                             invokerIL.Emit(OpCodes.Ret);
 
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -683,7 +690,7 @@ namespace WebAssembly.Runtime
                                 MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
                                 CallingConventions.HasThis,
                                 typeof(void),
-                                System.Type.EmptyTypes
+                                emptyTypes
                                 );
 
                             var disposeIL = dispose.GetILGenerator();
@@ -835,14 +842,14 @@ namespace WebAssembly.Runtime
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
                                                 typeof(FunctionTable),
-                                                System.Type.EmptyTypes
+                                                emptyTypes
                                                 );
                                             var getterIL = tableGetter.GetILGenerator();
                                             getterIL.Emit(OpCodes.Ldarg_0);
                                             getterIL.Emit(OpCodes.Ldfld, functionTable);
                                             getterIL.Emit(OpCodes.Ret);
 
-                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(FunctionTable), System.Type.EmptyTypes)
+                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(FunctionTable), emptyTypes)
                                                 .SetGetMethod(tableGetter);
                                         }
                                         break;
@@ -857,14 +864,14 @@ namespace WebAssembly.Runtime
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
                                                 typeof(UnmanagedMemory),
-                                                System.Type.EmptyTypes
+                                                emptyTypes
                                                 );
                                             var getterIL = memoryGetter.GetILGenerator();
                                             getterIL.Emit(OpCodes.Ldarg_0);
                                             getterIL.Emit(OpCodes.Ldfld, memory);
                                             getterIL.Emit(OpCodes.Ret);
 
-                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(UnmanagedMemory), System.Type.EmptyTypes)
+                                            exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(UnmanagedMemory), emptyTypes)
                                                 .SetGetMethod(memoryGetter);
                                         }
                                         break;
@@ -874,12 +881,12 @@ namespace WebAssembly.Runtime
 
                                         {
                                             var global = globals[index];
-                                            var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, global.Type.ToSystemType(), System.Type.EmptyTypes);
+                                            var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, global.Type.ToSystemType(), emptyTypes);
                                             var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
                                                 global.Type.ToSystemType(),
-                                                System.Type.EmptyTypes
+                                                emptyTypes
                                                 );
 
                                             var wrappedGetIL = wrappedGet.GetILGenerator();

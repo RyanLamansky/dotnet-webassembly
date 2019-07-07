@@ -98,8 +98,7 @@ namespace WebAssembly.Runtime.Compilation
                 if (this.helperMethods.TryGetValue(helper, out var builder))
                     return builder;
 
-                Fail("Attempted to obtain an unknown helper method.");
-                return null;
+                throw new InvalidOperationException(); // Shouldn't be possible.
             }
         }
 

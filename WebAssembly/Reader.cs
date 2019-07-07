@@ -130,7 +130,11 @@ namespace WebAssembly
             return result;
         }
 
-        public string ReadString(uint length) => utf8.GetString(this.ReadBytes(length));
+        public string ReadString(uint length)
+        {
+            var bytes = this.ReadBytes(length);
+            return utf8.GetString(bytes, 0, bytes.Length);
+        }
 
         public byte[] ReadBytes(uint length)
         {

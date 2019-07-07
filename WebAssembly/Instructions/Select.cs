@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System;
+using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 using static System.Diagnostics.Debug;
@@ -44,9 +45,7 @@ namespace WebAssembly.Instructions
             HelperMethod helper;
             switch (typeA)
             {
-                default: //This shouldn't be possible due to previous validations.
-                    Fail("Unknown ValueType.");
-                    return;
+                default: throw new InvalidOperationException(); // Shouldn't be possible.
                 case ValueType.Int32: helper = HelperMethod.SelectInt32; break;
                 case ValueType.Int64: helper = HelperMethod.SelectInt64; break;
                 case ValueType.Float32: helper = HelperMethod.SelectFloat32; break;
@@ -62,9 +61,7 @@ namespace WebAssembly.Instructions
             MethodBuilder builder;
             switch (helper)
             {
-                default:
-                    Fail("Attempted to obtain an unknown helper method.");
-                    return null;
+                default: throw new InvalidOperationException(); // Shouldn't be possible.
                 case HelperMethod.SelectInt32:
                     builder = context.ExportsBuilder.DefineMethod(
                         "☣ Select Int32",

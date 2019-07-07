@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions
 {
@@ -107,11 +106,7 @@ namespace WebAssembly.Instructions
             {
                 switch (this.Size)
                 {
-                    default:
-#if DEBUG
-						Fail("Invalid size.");
-						goto case 1; //Won't actually happen.
-#endif
+                    default: throw new InvalidOperationException(); // Shouldn't be possible.
                     case 1: return HelperMethod.RangeCheck8;
                     case 2: return HelperMethod.RangeCheck16;
                     case 4: return HelperMethod.RangeCheck32;
@@ -132,11 +127,7 @@ namespace WebAssembly.Instructions
             System.Reflection.Emit.OpCode opCode;
             switch (helper)
             {
-                default:
-#if DEBUG
-					Fail("Invalid size.");
-					return null;
-#endif
+                default: throw new InvalidOperationException(); // Shouldn't be possible.
                 case HelperMethod.RangeCheck8:
                     size = 1;
                     opCode = OpCodes.Ldc_I4_1;
