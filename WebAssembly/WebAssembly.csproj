@@ -26,4 +26,13 @@
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
+	<PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<AssemblyTitle>WebAssembly for .NET Standard 2.0</AssemblyTitle>
+		<DefineConstants>ARRAY_EMPTY</DefineConstants>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
+		<AssemblyTitle>WebAssembly for .NET Framework 4.5</AssemblyTitle>
+	</PropertyGroup>
+
 </Project>

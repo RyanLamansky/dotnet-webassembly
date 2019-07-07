@@ -1,9 +1,10 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Runtime.Compilation
 {
-    internal sealed class Signature : System.IEquatable<Type>
+    internal sealed class Signature : IEquatable<Type>
     {
         public readonly uint TypeIndex;
         public readonly System.Type[] ParameterTypes;
@@ -18,15 +19,18 @@ namespace WebAssembly.Runtime.Compilation
         private Signature()
         {
             this.TypeIndex = uint.MaxValue;
+#if ARRAY_EMPTY
+            this.ReturnTypes = this.ParameterTypes = Array.Empty<System.Type>();
+            this.RawReturnTypes = this.RawParameterTypes = Array.Empty<ValueType>();
+#else
             this.ReturnTypes = this.ParameterTypes = new System.Type[0];
             this.RawReturnTypes = this.RawParameterTypes = new ValueType[0];
+#endif
         }
 
         public Signature(ValueType returnType)
+            : this()
         {
-            this.TypeIndex = uint.MaxValue;
-            this.ParameterTypes = new System.Type[0];
-            this.RawParameterTypes = new ValueType[0];
             this.ReturnTypes = new[] { returnType.ToSystemType() };
             this.RawReturnTypes = new[] { returnType };
         }

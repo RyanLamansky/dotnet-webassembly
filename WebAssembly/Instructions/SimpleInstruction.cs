@@ -19,7 +19,7 @@
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) => other is SimpleInstruction && other.OpCode == this.OpCode;
+        public override bool Equals(Instruction other) => other != null && other.OpCode == this.OpCode;
 
         /// <summary>
         /// Returns the integer representation of <see cref="Instruction.OpCode"/> as a hash code.

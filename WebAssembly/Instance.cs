@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace WebAssembly
 {
@@ -14,26 +14,44 @@ namespace WebAssembly
         /// </summary>
         protected Instance(TExports exports)
         {
-            this.Exports = exports ?? throw new ArgumentNullException(nameof(exports));
+            this.exports = exports ?? throw new ArgumentNullException(nameof(exports));
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+        private TExports exports;
 
         /// <summary>
         /// Exported features of the assembly.
         /// </summary>
-        public TExports Exports { get; }
+        public TExports Exports
+        {
+            get => this.exports ?? throw new ObjectDisposedException(nameof(Instance<TExports>));
+        }
 
         /// <summary>
-        /// Calls <see cref="Dispose"/> to release unmanaged resources associated with this instance.
+        /// Frees managed and unmanaged resources associated with this instance.
         /// </summary>
-        ~Instance() => this.Dispose();
+        /// <param name="disposing">When true, the caller is a <see cref="IDisposable.Dispose"/> method, if false, a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.exports == null)
+                return;
+
+            if (disposing)
+            {
+                if (this.Exports is IDisposable disposable)
+                    disposable.Dispose();
+            }
+
+            this.exports = null;
+        }
 
         /// <summary>
         /// Releases unmanaged resources associated with this instance.
         /// </summary>
         public void Dispose()
         {
-            if (this.Exports is IDisposable disposable)
-                disposable.Dispose();
+            this.Dispose(true);
         }
     }
 }

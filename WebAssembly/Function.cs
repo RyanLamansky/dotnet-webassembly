@@ -8,7 +8,7 @@
         /// <summary>
         /// The index to the <see cref="Module.Types"/> entry that describes the function signature.
         /// </summary>
-        public uint Type;
+        public uint Type { get; set; }
 
         /// <summary>
         /// Creates a new <see cref="Function"/> instance.

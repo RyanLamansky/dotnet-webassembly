@@ -10,6 +10,7 @@ Preview changes will be less detailed due to low usage.
 * Renamed several instructions to match the published WebAssembly specification.
   This project started over a year before the final specification was released so some of the names it used became out of date.
 * `ElementType` member `AnyFunction` has been renamed to `FunctionReference` to align with the spec.
+* `Function` member `Type` was changed from a public field to a property.
 
 ### 0.5.0
 

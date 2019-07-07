@@ -37,7 +37,7 @@ namespace WebAssembly.Runtime
             if (method.ReturnType != typeof(void))
             {
                 if (!method.ReturnType.TryConvertToValueType(out var type))
-                    throw new ArgumentException($"Return type {method.ReturnType} is not compatible with WebAssembly.", nameof(method));
+                    throw new ArgumentException($"Return type {method.ReturnType} is not compatible with WebAssembly.", nameof(del));
 
                 this.Type.Returns = new[] { type };
             }
@@ -45,7 +45,7 @@ namespace WebAssembly.Runtime
             foreach (var parameter in method.GetParameters())
             {
                 if (!parameter.ParameterType.TryConvertToValueType(out var type))
-                    throw new ArgumentException($"Parameter type {parameter} is not compatible with WebAssembly.", nameof(method));
+                    throw new ArgumentException($"Parameter type {parameter} is not compatible with WebAssembly.", nameof(del));
 
                 this.Type.Parameters.Add(type);
             }
