@@ -12,6 +12,9 @@ Preview changes will be less detailed due to low usage.
 * `ElementType` member `AnyFunction` has been renamed to `FunctionReference` to align with the spec.
 * `Function` member `Type` was changed from a public field to a property.
 * The `Type` and `ValueType` types were renamed to `WebAssemblyType` and `WebAssemblyValueType`, respectively, to avoid conflicts with the popular `System` namespace.
+* .NET Standard 2.0 is now the only build produced.
+  This means .NET Framework consumers must be 4.7.2 or higher.
+  Infrastructure is still in place to support builds as old as .NET 4.5 and .NET Standard 1.1 if a compelling use case arises, but this may eventually be removed otherwise.
 
 ### 0.5.0
 

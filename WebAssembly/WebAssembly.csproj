@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.1;netstandard1.3;net45</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Title>WebAssembly for .NET</Title>
     <Authors>Ryan Lamansky</Authors>
     <Description>Create, read, modify, write and execute WebAssembly (WASM) files.</Description>
@@ -26,26 +26,13 @@
     <None Include="../LICENSE" Pack="true" PackagePath="LICENSE" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.1'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.1'">
-    <AssemblyTitle>WebAssembly for .NET Standard 1.1</AssemblyTitle>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <AssemblyTitle>WebAssembly for .NET Standard 1.3</AssemblyTitle>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <AssemblyTitle>WebAssembly for .NET Standard 2.0</AssemblyTitle>
     <DefineConstants>FILESTREAM;ARRAY_EMPTY</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net45'">
-    <AssemblyTitle>WebAssembly for .NET Framework 4.5</AssemblyTitle>
-    <DefineConstants>FILESTREAM</DefineConstants>
   </PropertyGroup>
 
 </Project>

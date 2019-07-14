@@ -112,7 +112,7 @@ static class Program
 ### After 1.0
 
 - Make the compiler extensible: in particular, provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements.
-- Support saving generated assemblies as DLLs on .NET Framework 4.5+
+- Support saving generated assemblies as DLLs on .NET Framework via the above extensibility mechanism.
 - If https://github.com/dotnet/corefx/issues/4491 is fixed, enable saving compiled DLLs on .NET Core builds.
 - Remove the compiler's Data section segment size limit of 4128768 bytes.
 
