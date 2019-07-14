@@ -11,6 +11,7 @@ Preview changes will be less detailed due to low usage.
   This project started over a year before the final specification was released so some of the names it used became out of date.
 * `ElementType` member `AnyFunction` has been renamed to `FunctionReference` to align with the spec.
 * `Function` member `Type` was changed from a public field to a property.
+* The `Type` and `ValueType` types were renamed to `WebAssemblyType` and `WebAssemblyValueType`, respectively, to avoid conflicts with the popular `System` namespace.
 
 ### 0.5.0
 

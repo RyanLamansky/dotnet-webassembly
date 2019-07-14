@@ -17,25 +17,25 @@ namespace WebAssembly.Instructions
         public void CallIndirect_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -126,15 +126,15 @@ namespace WebAssembly.Instructions
         public void CallIndirect_Compiled_ElementReferencesImportedFunction()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Imports.Add(new Import.Function { Module = "Test", Field = "Function", });

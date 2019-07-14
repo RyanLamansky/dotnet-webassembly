@@ -156,11 +156,11 @@ namespace WebAssembly.Runtime
             public Local(Reader reader)
             {
                 this.Count = reader.ReadVarUInt32();
-                this.Type = (ValueType)reader.ReadVarInt7();
+                this.Type = (WebAssemblyValueType)reader.ReadVarInt7();
             }
 
             public readonly uint Count;
-            public readonly ValueType Type;
+            public readonly WebAssemblyValueType Type;
         }
 
         private static ConstructorInfo FromBinary(
@@ -439,7 +439,7 @@ namespace WebAssembly.Runtime
                                         break;
                                     case ExternalKind.Global:
                                         {
-                                            var contentType = (ValueType)reader.ReadVarInt7();
+                                            var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
                                             var mutable = reader.ReadVarUInt1() == 1;
 
                                             var typedDelegate = typeof(Func<>).MakeGenericType(new[] { contentType.ToSystemType() });
@@ -457,7 +457,7 @@ namespace WebAssembly.Runtime
                                             var invokerIL = getterInvoker.GetILGenerator();
                                             invokerIL.EmitLoadArg(0);
                                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
-                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<ValueType>.Invoke), emptyTypes));
+                                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Func<WebAssemblyValueType>.Invoke), emptyTypes));
                                             invokerIL.Emit(OpCodes.Ret);
 
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -501,7 +501,7 @@ namespace WebAssembly.Runtime
                                                 invokerIL.EmitLoadArg(1);
                                                 invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
                                                 invokerIL.EmitLoadArg(0);
-                                                invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<ValueType>.Invoke), new[] { contentType.ToSystemType() }));
+                                                invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), new[] { contentType.ToSystemType() }));
                                                 invokerIL.Emit(OpCodes.Ret);
 
                                                 instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -725,7 +725,7 @@ namespace WebAssembly.Runtime
 
                             for (var i = 0; i < globals.Length; i++)
                             {
-                                var contentType = (ValueType)reader.ReadVarInt7();
+                                var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
                                 var isMutable = reader.ReadVarUInt1() == 1;
 
                                 var getter = exportsBuilder.DefineMethod(

@@ -9,17 +9,17 @@ namespace WebAssembly
     /// </summary>
     static class AssemblyBuilder
     {
-        public static TExport CreateInstance<TExport>(string name, ValueType? @return, params Instruction[] code)
+        public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, params Instruction[] code)
         where TExport : class
         {
             Assert.IsNotNull(name);
             Assert.IsNotNull(code);
 
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = @return.HasValue == false
-                ? new ValueType[0]
+                ? new WebAssemblyValueType[0]
                 : new[]
                 {
                     @return.GetValueOrDefault()
@@ -45,7 +45,7 @@ namespace WebAssembly
             return compiled.Exports;
         }
 
-        public static TExport CreateInstance<TExport>(string name, ValueType? @return, IList<ValueType> parameters, params Instruction[] code)
+        public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, IList<WebAssemblyValueType> parameters, params Instruction[] code)
         where TExport : class
         {
             Assert.IsNotNull(name);
@@ -53,10 +53,10 @@ namespace WebAssembly
             Assert.IsNotNull(code);
 
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = @return.HasValue == false
-                ? new ValueType[0]
+                ? new WebAssemblyValueType[0]
                 : new[]
                 {
                     @return.GetValueOrDefault()
@@ -83,14 +83,14 @@ namespace WebAssembly
             return compiled.Exports;
         }
 
-        private static readonly Dictionary<System.Type, ValueType> map = new Dictionary<System.Type, ValueType>(4)
+        private static readonly Dictionary<System.Type, WebAssemblyValueType> map = new Dictionary<System.Type, WebAssemblyValueType>(4)
         {
-            { typeof(int), ValueType.Int32 },
-            { typeof(long), ValueType.Int64 },
-            { typeof(float), ValueType.Float32 },
-            { typeof(double), ValueType.Float64 },
+            { typeof(int), WebAssemblyValueType.Int32 },
+            { typeof(long), WebAssemblyValueType.Int64 },
+            { typeof(float), WebAssemblyValueType.Float32 },
+            { typeof(double), WebAssemblyValueType.Float64 },
         };
 
-        public static ValueType Map(System.Type type) => map[type];
+        public static WebAssemblyValueType Map(System.Type type) => map[type];
     }
 }

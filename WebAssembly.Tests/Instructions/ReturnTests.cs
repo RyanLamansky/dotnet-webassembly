@@ -23,7 +23,7 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Return_Compiled_WithValue()
         {
-            Assert.AreEqual<int>(4, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+            Assert.AreEqual<int>(4, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                 new Int32Constant(4),
                 new Return(),
                 new End()
@@ -36,7 +36,7 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Return_Compiled_IncorrectStack_Expect1Actual2()
         {
-            Assert.AreEqual<int>(2, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+            Assert.AreEqual<int>(2, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Int32Constant(1),
                     new Int32Constant(2),
                     new Return(),
@@ -50,7 +50,7 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Return_Compiled_IncorrectStack_Expect1Actual3()
         {
-            Assert.AreEqual<int>(3, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+            Assert.AreEqual<int>(3, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Int32Constant(1),
                     new Int32Constant(2),
                     new Int32Constant(3),

@@ -32,8 +32,8 @@ namespace WebAssembly.Instructions
                 throw new StackTypeInvalidException(this.OpCode, this.Type, type);
 
             type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(this.OpCode, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(this.OpCode, WebAssemblyValueType.Int32, type);
 
             Int32Constant.Emit(context, (int)this.Offset);
             context.EmitLoadThis();

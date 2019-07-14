@@ -21,6 +21,6 @@ namespace WebAssembly.Instructions
 
         private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Neg;
 
-        private protected sealed override ValueType ValueType => ValueType.Float64;
+        private protected sealed override WebAssemblyValueType ValueType => WebAssemblyValueType.Float64;
     }
 }

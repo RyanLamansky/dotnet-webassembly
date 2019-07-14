@@ -28,12 +28,12 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.Float64CopySign, 1, stack.Count);
 
             var type = stack.Pop();
-            if (type != ValueType.Float64)
-                throw new StackTypeInvalidException(OpCode.Float64CopySign, ValueType.Float64, type);
+            if (type != WebAssemblyValueType.Float64)
+                throw new StackTypeInvalidException(OpCode.Float64CopySign, WebAssemblyValueType.Float64, type);
 
             type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
-            if (type != ValueType.Float64)
-                throw new StackTypeInvalidException(OpCode.Float64CopySign, ValueType.Float64, type);
+            if (type != WebAssemblyValueType.Float64)
+                throw new StackTypeInvalidException(OpCode.Float64CopySign, WebAssemblyValueType.Float64, type);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Float64CopySign, (helper, c) =>
             {

@@ -43,43 +43,43 @@ namespace WebAssembly.Instructions
         public void SetGlobal_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int64,
+                    WebAssemblyValueType.Int64,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Float32,
+                    WebAssemblyValueType.Float32,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Float64,
+                    WebAssemblyValueType.Float64,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
@@ -102,7 +102,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 InitializerExpression = new Instruction[]
                 {
                     new Int32Constant(4),
@@ -112,7 +112,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Int64,
+                ContentType = WebAssemblyValueType.Int64,
                 InitializerExpression = new Instruction[]
                 {
                     new Int64Constant(5),
@@ -122,7 +122,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Float32,
+                ContentType = WebAssemblyValueType.Float32,
                 InitializerExpression = new Instruction[]
                 {
                     new Float32Constant(6),
@@ -132,7 +132,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Float64,
+                ContentType = WebAssemblyValueType.Float64,
                 InitializerExpression = new Instruction[]
                 {
                     new Float64Constant(7),
@@ -258,84 +258,84 @@ namespace WebAssembly.Instructions
         public void SetGlobal_GetGlobal_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int64,
+                    WebAssemblyValueType.Int64,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Float32,
+                    WebAssemblyValueType.Float32,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Float64,
+                    WebAssemblyValueType.Float64,
                 },
-                Returns = new ValueType[]
+                Returns = new WebAssemblyValueType[]
                 {
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                 },
                 Returns = new[]
                 {
-                    ValueType.Int64,
+                    WebAssemblyValueType.Int64,
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                 },
                 Returns = new[]
                 {
-                    ValueType.Float32,
+                    WebAssemblyValueType.Float32,
                 }
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                 },
                 Returns = new[]
                 {
-                    ValueType.Float64,
+                    WebAssemblyValueType.Float64,
                 }
             });
             for (uint i = 0; i <= 7; i++)
@@ -348,7 +348,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 InitializerExpression = new Instruction[]
                 {
                     new Int32Constant(0),
@@ -358,7 +358,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Int64,
+                ContentType = WebAssemblyValueType.Int64,
                 InitializerExpression = new Instruction[]
                 {
                     new Int64Constant(0),
@@ -368,7 +368,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Float32,
+                ContentType = WebAssemblyValueType.Float32,
                 InitializerExpression = new Instruction[]
                 {
                     new Float32Constant(0),
@@ -378,7 +378,7 @@ namespace WebAssembly.Instructions
             module.Globals.Add(new Global
             {
                 IsMutable = true,
-                ContentType = ValueType.Float64,
+                ContentType = WebAssemblyValueType.Float64,
                 InitializerExpression = new Instruction[]
                 {
                     new Float64Constant(0),
@@ -520,11 +520,11 @@ namespace WebAssembly.Instructions
         public void SetGlobal_Imported_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
             });
             module.Functions.Add(new Function
@@ -534,7 +534,7 @@ namespace WebAssembly.Instructions
             {
                 Module = "Imported",
                 Field = "Global",
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 IsMutable = true
             });
             module.Exports.Add(new Export

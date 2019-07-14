@@ -28,13 +28,13 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.Float64ConvertInt64Unsigned, 1, 0);
 
             var type = stack.Pop();
-            if (type != ValueType.Int64)
-                throw new StackTypeInvalidException(OpCode.Float64ConvertInt64Unsigned, ValueType.Int64, type);
+            if (type != WebAssemblyValueType.Int64)
+                throw new StackTypeInvalidException(OpCode.Float64ConvertInt64Unsigned, WebAssemblyValueType.Int64, type);
 
             context.Emit(OpCodes.Conv_R_Un);
             context.Emit(OpCodes.Conv_R8);
 
-            stack.Push(ValueType.Float64);
+            stack.Push(WebAssemblyValueType.Float64);
         }
     }
 }

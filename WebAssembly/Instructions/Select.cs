@@ -33,8 +33,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.Select, 3, stack.Count);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.Select, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.Select, WebAssemblyValueType.Int32, type);
 
             var typeB = stack.Pop();
             var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
@@ -46,10 +46,10 @@ namespace WebAssembly.Instructions
             switch (typeA)
             {
                 default: throw new InvalidOperationException(); // Shouldn't be possible.
-                case ValueType.Int32: helper = HelperMethod.SelectInt32; break;
-                case ValueType.Int64: helper = HelperMethod.SelectInt64; break;
-                case ValueType.Float32: helper = HelperMethod.SelectFloat32; break;
-                case ValueType.Float64: helper = HelperMethod.SelectFloat64; break;
+                case WebAssemblyValueType.Int32: helper = HelperMethod.SelectInt32; break;
+                case WebAssemblyValueType.Int64: helper = HelperMethod.SelectInt64; break;
+                case WebAssemblyValueType.Float32: helper = HelperMethod.SelectFloat32; break;
+                case WebAssemblyValueType.Float64: helper = HelperMethod.SelectFloat64; break;
             }
             context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
         }

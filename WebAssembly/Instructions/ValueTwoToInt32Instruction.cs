@@ -4,7 +4,7 @@ using WebAssembly.Runtime.Compilation;
 namespace WebAssembly.Instructions
 {
     /// <summary>
-    /// Identifies an instruction that uses a single CIL <see cref="System.Reflection.Emit.OpCode"/> to remove two values of the same type from the stack, returning a single <see cref="ValueType.Int32"/>.
+    /// Identifies an instruction that uses a single CIL <see cref="System.Reflection.Emit.OpCode"/> to remove two values of the same type from the stack, returning a single <see cref="WebAssemblyValueType.Int32"/>.
     /// </summary>
     public abstract class ValueTwoToInt32Instruction : SimpleInstruction
     {
@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions
         {
         }
 
-        private protected abstract ValueType ValueType { get; }
+        private protected abstract WebAssemblyValueType ValueType { get; }
 
         private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
@@ -31,7 +31,7 @@ namespace WebAssembly.Instructions
             if (typeA != typeB)
                 throw new StackParameterMismatchException(this.OpCode, typeA, typeB);
 
-            stack.Push(ValueType.Int32);
+            stack.Push(WebAssemblyValueType.Int32);
 
             context.Emit(this.EmittedOpCode);
         }

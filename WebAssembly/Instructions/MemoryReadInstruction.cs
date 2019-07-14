@@ -28,8 +28,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(this.OpCode, 1, 0);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(this.OpCode, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(this.OpCode, WebAssemblyValueType.Int32, type);
 
             if (this.Offset != 0)
             {

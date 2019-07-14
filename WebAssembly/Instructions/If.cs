@@ -42,8 +42,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.If, 1, 0);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.If, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.If, WebAssemblyValueType.Int32, type);
 
             var label = context.DefineLabel();
             context.Labels.Add(checked((uint)context.Depth.Count), label);

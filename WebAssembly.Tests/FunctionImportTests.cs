@@ -21,10 +21,10 @@ namespace WebAssembly
         public void Compile_FunctionImport()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Returns = new[] { ValueType.Float64 },
-                Parameters = new[] { ValueType.Float64, ValueType.Float64, }
+                Returns = new[] { WebAssemblyValueType.Float64 },
+                Parameters = new[] { WebAssemblyValueType.Float64, WebAssemblyValueType.Float64, }
             });
             module.Imports.Add(new Import.Function { Module = "Math", Field = "Pow", });
             module.Functions.Add(new Function
@@ -84,9 +84,9 @@ namespace WebAssembly
         public void Compile_FunctionImportNoReturn()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new[] { ValueType.Float64, }
+                Parameters = new[] { WebAssemblyValueType.Float64, }
             });
             module.Imports.Add(new Import.Function { Module = "Do", Field = "Nothing", });
             module.Functions.Add(new Function
@@ -133,9 +133,9 @@ namespace WebAssembly
         public void Compile_FunctionImportDelegateNoReturn()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new[] { ValueType.Float64, }
+                Parameters = new[] { WebAssemblyValueType.Float64, }
             });
             module.Imports.Add(new Import.Function { Module = "Do", Field = "Nothing", });
             module.Functions.Add(new Function

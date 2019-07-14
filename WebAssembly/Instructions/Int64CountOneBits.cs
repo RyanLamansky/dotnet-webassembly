@@ -30,8 +30,8 @@ namespace WebAssembly.Instructions
 
             var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
 
-            if (type != ValueType.Int64)
-                throw new StackTypeInvalidException(OpCode.Int64CountOneBits, ValueType.Int64, type);
+            if (type != WebAssemblyValueType.Int64)
+                throw new StackTypeInvalidException(OpCode.Int64CountOneBits, WebAssemblyValueType.Int64, type);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int64CountOneBits, CreateHelper]);
         }

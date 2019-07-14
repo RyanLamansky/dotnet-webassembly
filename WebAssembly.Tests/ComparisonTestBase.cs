@@ -31,7 +31,7 @@
             var type = AssemblyBuilder.Map(typeof(T));
 
             return AssemblyBuilder.CreateInstance<ComparisonTestBase<T>>(nameof(ComparisonTestBase<T>.Test),
-                ValueType.Int32,
+                WebAssemblyValueType.Int32,
                 new[]
                 {
                     type,

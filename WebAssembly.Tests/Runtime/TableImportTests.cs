@@ -18,10 +18,10 @@ namespace WebAssembly.Runtime
         public void Compile_TableImport_AddFunction()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Returns = new[] { ValueType.Int32 },
-                Parameters = new[] { ValueType.Int32 }
+                Returns = new[] { WebAssemblyValueType.Int32 },
+                Parameters = new[] { WebAssemblyValueType.Int32 }
             });
             module.Imports.Add(new Import.Table
             {
@@ -82,10 +82,10 @@ namespace WebAssembly.Runtime
         public void Compile_TableImport_ExistingFunction()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Returns = new[] { ValueType.Int32 },
-                Parameters = new[] { ValueType.Int32 }
+                Returns = new[] { WebAssemblyValueType.Int32 },
+                Parameters = new[] { WebAssemblyValueType.Int32 }
             });
             module.Imports.Add(new Import.Table
             {
@@ -253,10 +253,10 @@ namespace WebAssembly.Runtime
         public void Compile_TableImport_MultiAssemblySharedTable()
         {
             var module1 = new Module();
-            module1.Types.Add(new Type
+            module1.Types.Add(new WebAssemblyType
             {
-                Returns = new[] { ValueType.Int32 },
-                Parameters = new[] { ValueType.Int32 }
+                Returns = new[] { WebAssemblyValueType.Int32 },
+                Parameters = new[] { WebAssemblyValueType.Int32 }
             });
             module1.Exports.Add(new Export
             {
@@ -270,7 +270,7 @@ namespace WebAssembly.Runtime
             });
             module1.Globals.Add(new Global
             {
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 IsMutable = true,
                 InitializerExpression = new Instruction[]
                 {
@@ -369,10 +369,10 @@ namespace WebAssembly.Runtime
         public void Compile_TableImport_UndersizedTable()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Returns = new[] { ValueType.Int32 },
-                Parameters = new[] { ValueType.Int32 }
+                Returns = new[] { WebAssemblyValueType.Int32 },
+                Parameters = new[] { WebAssemblyValueType.Int32 }
             });
             module.Imports.Add(new Import.Table
             {

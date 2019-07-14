@@ -64,7 +64,7 @@ namespace WebAssembly.Instructions
             context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
             context.Emit(OpCodes.Div_Un);
 
-            context.Stack.Push(ValueType.Int32);
+            context.Stack.Push(WebAssemblyValueType.Int32);
         }
     }
 }

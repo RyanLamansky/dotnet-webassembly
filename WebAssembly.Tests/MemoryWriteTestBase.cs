@@ -35,11 +35,11 @@
         {
             var module = new Module();
             module.Memories.Add(new Memory(1, 1));
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                     AssemblyBuilder.Map(typeof(T)),
                 },
             });

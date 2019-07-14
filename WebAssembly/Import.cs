@@ -233,7 +233,7 @@ namespace WebAssembly
             /// <summary>
             /// Type of the value.
             /// </summary>
-            public ValueType ContentType { get; set; }
+            public WebAssemblyValueType ContentType { get; set; }
 
             /// <summary>
             /// When true, the value can be changed by running code.
@@ -249,7 +249,7 @@ namespace WebAssembly
 
             internal Global(Reader reader)
             {
-                this.ContentType = (ValueType)reader.ReadVarInt7();
+                this.ContentType = (WebAssemblyValueType)reader.ReadVarInt7();
                 this.IsMutable = reader.ReadVarUInt1() == 1;
             }
 

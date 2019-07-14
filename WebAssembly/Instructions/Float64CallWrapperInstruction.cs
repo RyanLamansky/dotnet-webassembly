@@ -6,7 +6,7 @@ using WebAssembly.Runtime.Compilation;
 namespace WebAssembly.Instructions
 {
     /// <summary>
-    /// Wraps a <see cref="double"/>-only .NET API call with conversions so it can be used with <see cref="ValueType.Float32"/>.
+    /// Wraps a <see cref="double"/>-only .NET API call with conversions so it can be used with <see cref="WebAssemblyValueType.Float32"/>.
     /// </summary>
     public abstract class Float64CallWrapperInstruction : SimpleInstruction
     {
@@ -23,8 +23,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(this.OpCode, 1, 0);
 
             var type = stack.Peek();  //Assuming validation passes, the remaining type will be this.
-            if (type != ValueType.Float32)
-                throw new StackTypeInvalidException(this.OpCode, ValueType.Float32, type);
+            if (type != WebAssemblyValueType.Float32)
+                throw new StackTypeInvalidException(this.OpCode, WebAssemblyValueType.Float32, type);
 
             context.Emit(OpCodes.Conv_R8);
             context.Emit(OpCodes.Call, this.MethodInfo);

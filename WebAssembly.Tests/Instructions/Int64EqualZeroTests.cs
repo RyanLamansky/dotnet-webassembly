@@ -25,9 +25,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64EqualZero_Compiled()
         {
-            var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", ValueType.Int32, new[]
+            var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", WebAssemblyValueType.Int32, new[]
             {
-                    ValueType.Int64,
+                    WebAssemblyValueType.Int64,
                 },
                 new LocalGet(0),
                 new Int64EqualZero(),

@@ -30,8 +30,8 @@ namespace WebAssembly.Instructions
             var typeB = stack.Pop();
             var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
 
-            if (typeA != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.Int32RotateRight, ValueType.Int32, typeA);
+            if (typeA != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.Int32RotateRight, WebAssemblyValueType.Int32, typeA);
 
             if (typeA != typeB)
                 throw new StackParameterMismatchException(OpCode.Int32RotateRight, typeA, typeB);

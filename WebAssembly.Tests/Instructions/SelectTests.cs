@@ -22,17 +22,17 @@ namespace WebAssembly.Instructions
             public abstract T Test(T a, T b, int c);
         }
 
-        static Instance<SelectTester<T>> CreateTester<T>(ValueType type)
+        static Instance<SelectTester<T>> CreateTester<T>(WebAssemblyValueType type)
             where T : struct
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
-                Parameters = new ValueType[]
+                Parameters = new WebAssemblyValueType[]
                 {
                     type,
                     type,
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
                 Returns = new[]
                 {
@@ -62,12 +62,12 @@ namespace WebAssembly.Instructions
         }
 
         /// <summary>
-        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="ValueType.Int32"/> input.
+        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="WebAssemblyValueType.Int32"/> input.
         /// </summary>
         [TestMethod]
         public void Select_Compiled_Int32()
         {
-            using (var compiled = CreateTester<int>(ValueType.Int32))
+            using (var compiled = CreateTester<int>(WebAssemblyValueType.Int32))
             {
                 var exports = compiled.Exports;
                 Assert.AreEqual(1, exports.Test(1, 2, 3));
@@ -78,12 +78,12 @@ namespace WebAssembly.Instructions
         }
 
         /// <summary>
-        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="ValueType.Int64"/> input.
+        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="WebAssemblyValueType.Int64"/> input.
         /// </summary>
         [TestMethod]
         public void Select_Compiled_Int64()
         {
-            using (var compiled = CreateTester<long>(ValueType.Int64))
+            using (var compiled = CreateTester<long>(WebAssemblyValueType.Int64))
             {
                 var exports = compiled.Exports;
                 Assert.AreEqual(1, exports.Test(1, 2, 3));
@@ -94,12 +94,12 @@ namespace WebAssembly.Instructions
         }
 
         /// <summary>
-        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="ValueType.Float32"/> input.
+        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="WebAssemblyValueType.Float32"/> input.
         /// </summary>
         [TestMethod]
         public void Select_Compiled_Float32()
         {
-            using (var compiled = CreateTester<float>(ValueType.Float32))
+            using (var compiled = CreateTester<float>(WebAssemblyValueType.Float32))
             {
                 var exports = compiled.Exports;
                 Assert.AreEqual(1, exports.Test(1, 2, 3));
@@ -110,12 +110,12 @@ namespace WebAssembly.Instructions
         }
 
         /// <summary>
-        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="ValueType.Float64"/> input.
+        /// Tests compilation and execution of the <see cref="Select"/> instruction with <see cref="WebAssemblyValueType.Float64"/> input.
         /// </summary>
         [TestMethod]
         public void Select_Compiled_Float64()
         {
-            using (var compiled = CreateTester<double>(ValueType.Float64))
+            using (var compiled = CreateTester<double>(WebAssemblyValueType.Float64))
             {
                 var exports = compiled.Exports;
                 Assert.AreEqual(1, exports.Test(1, 2, 3));

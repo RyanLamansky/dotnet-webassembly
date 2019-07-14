@@ -31,7 +31,7 @@ namespace WebAssembly.Instructions
                 -(float)Math.PI,
             })
             {
-                Assert.AreEqual<float>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Float32,
+                Assert.AreEqual<float>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float32,
                     new Float32Constant(sample),
                     new End()
                     ).Test());

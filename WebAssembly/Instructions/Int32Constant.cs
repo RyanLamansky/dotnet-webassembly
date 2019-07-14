@@ -70,7 +70,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.Stack.Push(ValueType.Int32);
+            context.Stack.Push(WebAssemblyValueType.Int32);
             Emit(context, this.Value);
         }
 

@@ -37,18 +37,18 @@ static class Program
         var module = new Module(); // In this case, we're creating a new one.
 
         // Types are function signatures: the list of parameters and returns.
-        module.Types.Add(new WebAssembly.Type // The first added type gets index 0.
+        module.Types.Add(new WebAssemblyType // The first added type gets index 0.
         {
             Parameters = new[]
             {
-                WebAssembly.ValueType.Int32, // This sample takes a single Int32 as input.
+                WebAssemblyValueType.Int32, // This sample takes a single Int32 as input.
                 // Complex types can be passed by sending them in pieces.
             },
             Returns = new[]
             {
                 // Multiple returns are supported by the binary format.
                 // Standard currently allows a count of 0 or 1, though.
-                WebAssembly.ValueType.Int32,
+                WebAssemblyValueType.Int32,
             },
         });
         // Types can be re-used for multiple functions to reduce WASM size.

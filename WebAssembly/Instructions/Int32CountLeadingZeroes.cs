@@ -30,8 +30,8 @@ namespace WebAssembly.Instructions
 
             var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
 
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.Int32CountLeadingZeroes, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.Int32CountLeadingZeroes, WebAssemblyValueType.Int32, type);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int32CountLeadingZeroes, (helper, c) =>
             {

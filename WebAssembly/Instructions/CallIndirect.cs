@@ -94,8 +94,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.CallIndirect, paramTypes.Length + 1, stack.Count);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.CallIndirect, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.CallIndirect, WebAssemblyValueType.Int32, type);
 
             for (var i = paramTypes.Length - 1; i >= 0; i--)
             {

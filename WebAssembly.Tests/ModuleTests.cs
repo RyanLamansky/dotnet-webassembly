@@ -211,12 +211,12 @@ namespace WebAssembly
         {
             var source = new Module
             {
-                Types = new Type[]
+                Types = new WebAssemblyType[]
                 {
-                    new Type
+                    new WebAssemblyType
                     {
-                        Parameters = new[] { ValueType.Int32, ValueType.Float32 },
-                        Returns = new[] { ValueType.Int64 }
+                        Parameters = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 },
+                        Returns = new[] { WebAssemblyValueType.Int64 }
                     }
                 }
             }; ;
@@ -253,7 +253,7 @@ namespace WebAssembly
                             new Local
                             {
                                 Count  = 2,
-                                Type = ValueType.Float64
+                                Type = WebAssemblyValueType.Float64
                             }
                         },
                         Code = new Instruction[]

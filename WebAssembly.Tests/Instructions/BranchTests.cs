@@ -15,7 +15,7 @@ namespace WebAssembly.Instructions
         public void Branch_Compiled()
         {
             var exports = AssemblyBuilder.CreateInstance<dynamic>("Test",
-                ValueType.Int32,
+                WebAssemblyValueType.Int32,
                 new Block(BlockType.Empty),
                 new Block(BlockType.Empty),
                 new Block(BlockType.Empty),

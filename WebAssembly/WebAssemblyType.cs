@@ -10,7 +10,7 @@ namespace WebAssembly
     /// <summary>
     /// Describes the signature of a function.
     /// </summary>
-    public class Type : IEquatable<Type>
+    public class WebAssemblyType : IEquatable<WebAssemblyType>
     {
         /// <summary>
         /// The type of function.  The only accepted value in the initial binary format is <see cref="FunctionType.Function"/>, which is the default.
@@ -18,54 +18,54 @@ namespace WebAssembly
         public FunctionType Form { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<ValueType> parameters;
+        private IList<WebAssemblyValueType> parameters;
 
         /// <summary>
         /// Parameters to the function.
         /// </summary>
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
-        public IList<ValueType> Parameters
+        public IList<WebAssemblyValueType> Parameters
         {
-            get => this.parameters ?? (this.parameters = new List<ValueType>());
+            get => this.parameters ?? (this.parameters = new List<WebAssemblyValueType>());
             set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<ValueType> returns;
+        private IList<WebAssemblyValueType> returns;
 
         /// <summary>
         /// Return types to the function.  For the initial binary format, a maximum of 1 is allowed.
         /// </summary>
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
-        public IList<ValueType> Returns
+        public IList<WebAssemblyValueType> Returns
         {
-            get => this.returns ?? (this.returns = new List<ValueType>());
+            get => this.returns ?? (this.returns = new List<WebAssemblyValueType>());
             set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
-        /// Creates a new <see cref="Type"/> instance.
+        /// Creates a new <see cref="WebAssemblyType"/> instance.
         /// </summary>
-        public Type()
+        public WebAssemblyType()
         {
             this.Form = FunctionType.Function;
         }
 
-        internal Type(Reader reader)
+        internal WebAssemblyType(Reader reader)
         {
             this.Form = (FunctionType)reader.ReadVarInt7();
             int count;
 
             count = checked((int)reader.ReadVarUInt32());
-            var parameters = this.parameters = new List<ValueType>(count);
+            var parameters = this.parameters = new List<WebAssemblyValueType>(count);
 
             for (var i = 0; i < count; i++)
-                parameters.Add((ValueType)reader.ReadVarInt7());
+                parameters.Add((WebAssemblyValueType)reader.ReadVarInt7());
 
             count = checked((int)reader.ReadVarUInt32());
-            var returns = this.returns = new List<ValueType>(count);
+            var returns = this.returns = new List<WebAssemblyValueType>(count);
             for (var i = 0; i < count; i++)
-                returns.Add((ValueType)reader.ReadVarInt7());
+                returns.Add((WebAssemblyValueType)reader.ReadVarInt7());
         }
 
         /// <summary>
@@ -141,14 +141,14 @@ namespace WebAssembly
         /// </summary>
         /// <param name="obj">The other instance to compare against.</param>
         /// <returns>True if the two instances have the same values, otherwise false.</returns>
-        public override bool Equals(object obj) => this.Equals(obj as Type);
+        public override bool Equals(object obj) => this.Equals(obj as WebAssemblyType);
 
         /// <summary>
         /// Compares the values of this instance for equality with those of another.
         /// </summary>
         /// <param name="other">The other instance to compare against.</param>
         /// <returns>True if the two instances have the same values, otherwise false.</returns>
-        public bool Equals(Type other)
+        public bool Equals(WebAssemblyType other)
         {
             if (ReferenceEquals(this, other))
                 return true;

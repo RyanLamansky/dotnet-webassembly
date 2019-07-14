@@ -11,7 +11,7 @@
         /// <param name="opCode">The operation attempted.</param>
         /// <param name="expected">The expected value type.</param>
         /// <param name="actual">The actual value type.</param>
-        public StackTypeInvalidException(OpCode opCode, ValueType expected, ValueType actual)
+        public StackTypeInvalidException(OpCode opCode, WebAssemblyValueType expected, WebAssemblyValueType actual)
             : base(opCode, $"requires the top stack item to be {expected}, found {actual}.")
         {
             this.Expected = expected;
@@ -21,11 +21,11 @@
         /// <summary>
         /// The expected value type.
         /// </summary>
-        public ValueType Expected { get; }
+        public WebAssemblyValueType Expected { get; }
 
         /// <summary>
         /// The actual value type.
         /// </summary>
-        public ValueType Actual { get; }
+        public WebAssemblyValueType Actual { get; }
     }
 }

@@ -29,12 +29,12 @@ namespace WebAssembly.Instructions
 
             var type = stack.Pop();
 
-            if (type != ValueType.Int64)
-                throw new StackTypeInvalidException(this.OpCode, ValueType.Int64, type);
+            if (type != WebAssemblyValueType.Int64)
+                throw new StackTypeInvalidException(this.OpCode, WebAssemblyValueType.Int64, type);
 
             context.Emit(OpCodes.Conv_I4);
 
-            stack.Push(ValueType.Int32);
+            stack.Push(WebAssemblyValueType.Int32);
         }
     }
 }

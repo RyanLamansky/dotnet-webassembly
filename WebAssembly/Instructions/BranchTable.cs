@@ -126,8 +126,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.BranchTable, 1, 0);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.BranchTable, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.BranchTable, WebAssemblyValueType.Int32, type);
 
             var blockDepth = checked((uint)context.Depth.Count);
             context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[blockDepth - index - 1]).ToArray());

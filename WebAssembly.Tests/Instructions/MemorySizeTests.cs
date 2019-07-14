@@ -16,11 +16,11 @@ namespace WebAssembly.Instructions
         public void CurrentMemory_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
             });
             module.Functions.Add(new Function

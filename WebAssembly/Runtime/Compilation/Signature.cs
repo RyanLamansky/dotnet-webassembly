@@ -4,13 +4,13 @@ using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Runtime.Compilation
 {
-    internal sealed class Signature : IEquatable<Type>
+    internal sealed class Signature : IEquatable<WebAssemblyType>
     {
         public readonly uint TypeIndex;
         public readonly System.Type[] ParameterTypes;
-        public readonly ValueType[] RawParameterTypes;
+        public readonly WebAssemblyValueType[] RawParameterTypes;
         public readonly System.Type[] ReturnTypes;
-        public readonly ValueType[] RawReturnTypes;
+        public readonly WebAssemblyValueType[] RawReturnTypes;
 
         private static readonly RegeneratingWeakReference<Signature> empty = new RegeneratingWeakReference<Signature>(() => new Signature());
 
@@ -21,14 +21,14 @@ namespace WebAssembly.Runtime.Compilation
             this.TypeIndex = uint.MaxValue;
 #if ARRAY_EMPTY
             this.ReturnTypes = this.ParameterTypes = Array.Empty<System.Type>();
-            this.RawReturnTypes = this.RawParameterTypes = Array.Empty<ValueType>();
+            this.RawReturnTypes = this.RawParameterTypes = Array.Empty<WebAssemblyValueType>();
 #else
             this.ReturnTypes = this.ParameterTypes = new System.Type[0];
-            this.RawReturnTypes = this.RawParameterTypes = new ValueType[0];
+            this.RawReturnTypes = this.RawParameterTypes = new WebAssemblyValueType[0];
 #endif
         }
 
-        public Signature(ValueType returnType)
+        public Signature(WebAssemblyValueType returnType)
             : this()
         {
             this.ReturnTypes = new[] { returnType.ToSystemType() };
@@ -42,22 +42,22 @@ namespace WebAssembly.Runtime.Compilation
             reader.ReadVarInt7(); //Function Type
 
             var parameters = this.ParameterTypes = new System.Type[reader.ReadVarUInt32()];
-            var rawParameters = this.RawParameterTypes = new ValueType[parameters.Length];
+            var rawParameters = this.RawParameterTypes = new WebAssemblyValueType[parameters.Length];
 
             for (var i = 0; i < parameters.Length; i++)
-                parameters[i] = (rawParameters[i] = (ValueType)reader.ReadVarInt7()).ToSystemType();
+                parameters[i] = (rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
 
             var returns = this.ReturnTypes = new System.Type[reader.ReadVarUInt1()];
-            var rawReturns = this.RawReturnTypes = new ValueType[returns.Length];
+            var rawReturns = this.RawReturnTypes = new WebAssemblyValueType[returns.Length];
 
             if (returns.Length > 1)
                 throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset - 1);
 
             for (var i = 0; i < returns.Length; i++)
-                returns[i] = (rawReturns[i] = (ValueType)reader.ReadVarInt7()).ToSystemType();
+                returns[i] = (rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
         }
 
-        public bool Equals(Type other)
+        public bool Equals(WebAssemblyType other)
         {
             var thisReturns = this.RawReturnTypes;
             var otherReturns = other.Returns;

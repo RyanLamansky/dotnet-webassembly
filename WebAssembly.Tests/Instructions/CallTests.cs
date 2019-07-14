@@ -16,15 +16,15 @@ namespace WebAssembly.Instructions
         public void Call_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -85,16 +85,16 @@ namespace WebAssembly.Instructions
         public void Call_Compiled_MixedParameterTypes()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
-                    ValueType.Float64, //Not actually used, just here to verify that the call works correctly.
+                    WebAssemblyValueType.Int32,
+                    WebAssemblyValueType.Float64, //Not actually used, just here to verify that the call works correctly.
 				},
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function

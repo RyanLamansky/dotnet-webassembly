@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions
         /// </summary>
         public sealed override OpCode OpCode => OpCode.Int64Equal;
 
-        private protected sealed override ValueType ValueType => ValueType.Int64;
+        private protected sealed override WebAssemblyValueType ValueType => WebAssemblyValueType.Int64;
 
         private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode =>
             System.Reflection.Emit.OpCodes.Ceq;

@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_SingleReturn()
         {
             Assert.AreEqual<int>(5,
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Int32Constant(5),
                     new End()
                     ).Test());
@@ -38,7 +38,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_IncorrectStack_Expect1Actual2()
         {
             var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Int32Constant(5),
                     new Int32Constant(6),
                     new End()
@@ -55,7 +55,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_IncorrectStack_Expect1Actual0()
         {
             var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new End()
                     ).Test());
 
@@ -86,7 +86,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockInt32()
         {
             Assert.AreEqual<int>(5,
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Block(BlockType.Int32),
                     new Int32Constant(5),
                     new End(),
@@ -101,7 +101,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockInt32_WrongType()
         {
             var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Block(BlockType.Int32),
                     new Int64Constant(5),
                     new End(),
@@ -109,8 +109,8 @@ namespace WebAssembly.Instructions
                     new End()
                     ).Test());
 
-            Assert.AreEqual(ValueType.Int32, exception.Expected);
-            Assert.AreEqual(ValueType.Int64, exception.Actual);
+            Assert.AreEqual(WebAssemblyValueType.Int32, exception.Expected);
+            Assert.AreEqual(WebAssemblyValueType.Int64, exception.Actual);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockInt64()
         {
             Assert.AreEqual<long>(5,
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int64,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int64,
                     new Block(BlockType.Int64),
                     new Int64Constant(5),
                     new End(),
@@ -135,7 +135,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockInt64_WrongType()
         {
             var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int64,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int64,
                     new Block(BlockType.Int64),
                     new Int32Constant(5),
                     new End(),
@@ -143,8 +143,8 @@ namespace WebAssembly.Instructions
                     new End()
                     ).Test());
 
-            Assert.AreEqual(ValueType.Int64, exception.Expected);
-            Assert.AreEqual(ValueType.Int32, exception.Actual);
+            Assert.AreEqual(WebAssemblyValueType.Int64, exception.Expected);
+            Assert.AreEqual(WebAssemblyValueType.Int32, exception.Actual);
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockFloat32()
         {
             Assert.AreEqual<float>(5,
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Float32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float32,
                     new Block(BlockType.Float32),
                     new Float32Constant(5),
                     new End(),
@@ -169,7 +169,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockFloat32_WrongType()
         {
             var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Float32,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float32,
                     new Block(BlockType.Float32),
                     new Float64Constant(5),
                     new End(),
@@ -177,8 +177,8 @@ namespace WebAssembly.Instructions
                     new End()
                     ).Test());
 
-            Assert.AreEqual(ValueType.Float32, exception.Expected);
-            Assert.AreEqual(ValueType.Float64, exception.Actual);
+            Assert.AreEqual(WebAssemblyValueType.Float32, exception.Expected);
+            Assert.AreEqual(WebAssemblyValueType.Float64, exception.Actual);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockFloat64()
         {
             Assert.AreEqual<double>(5,
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Float64,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float64,
                     new Block(BlockType.Float64),
                     new Float64Constant(5),
                     new End(),
@@ -203,7 +203,7 @@ namespace WebAssembly.Instructions
         public void End_Compiled_BlockFloat64_WrongType()
         {
             var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
-                AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Float64,
+                AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float64,
                     new Block(BlockType.Float64),
                     new Float32Constant(5),
                     new End(),
@@ -211,8 +211,8 @@ namespace WebAssembly.Instructions
                     new End()
                     ).Test());
 
-            Assert.AreEqual(ValueType.Float64, exception.Expected);
-            Assert.AreEqual(ValueType.Float32, exception.Actual);
+            Assert.AreEqual(WebAssemblyValueType.Float64, exception.Expected);
+            Assert.AreEqual(WebAssemblyValueType.Float32, exception.Actual);
         }
     }
 }

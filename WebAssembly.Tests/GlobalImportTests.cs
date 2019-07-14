@@ -27,7 +27,7 @@ namespace WebAssembly
             module.Imports.Add(new Import.Global {
                 Module = "Imported",
                 Field = "Global",
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
             });
             module.Exports.Add(new Export
             {
@@ -65,7 +65,7 @@ namespace WebAssembly
             {
                 Module = "Imported",
                 Field = "Global",
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 IsMutable = true,
             });
             module.Exports.Add(new Export

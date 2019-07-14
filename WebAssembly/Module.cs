@@ -39,15 +39,15 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Type> types;
+        private IList<WebAssemblyType> types;
 
         /// <summary>
         /// Function signatures.
         /// </summary>
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
-        public IList<Type> Types
+        public IList<WebAssemblyType> Types
         {
-            get => this.types ?? (this.types = new List<Type>());
+            get => this.types ?? (this.types = new List<WebAssemblyType>());
             set => this.types = value ?? throw new ArgumentNullException(nameof(value));
         }
 
@@ -253,10 +253,10 @@ namespace WebAssembly
                             case Section.Type: //Function signature declarations
                                 {
                                     var count = reader.ReadVarUInt32();
-                                    var types = module.types = new List<Type>(checked((int)count));
+                                    var types = module.types = new List<WebAssemblyType>(checked((int)count));
 
                                     for (var i = 0; i < count; i++)
-                                        types.Add(new Type(reader));
+                                        types.Add(new WebAssemblyType(reader));
                                 }
                                 break;
 

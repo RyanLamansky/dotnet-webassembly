@@ -21,7 +21,7 @@ namespace WebAssembly.Runtime.Compilation
         public void Reset(
             ILGenerator generator,
             Signature signature,
-            ValueType[] locals
+            WebAssemblyValueType[] locals
             )
         {
             Assert(generator != null);
@@ -45,16 +45,16 @@ namespace WebAssembly.Runtime.Compilation
                     switch (signature.RawReturnTypes[0])
                     {
                         default: //Should never happen.
-                        case ValueType.Int32:
+                        case WebAssemblyValueType.Int32:
                             returnType = BlockType.Int32;
                             break;
-                        case ValueType.Int64:
+                        case WebAssemblyValueType.Int64:
                             returnType = BlockType.Int64;
                             break;
-                        case ValueType.Float32:
+                        case WebAssemblyValueType.Float32:
                             returnType = BlockType.Float32;
                             break;
-                        case ValueType.Float64:
+                        case WebAssemblyValueType.Float64:
                             returnType = BlockType.Float64;
                             break;
                     }
@@ -123,7 +123,7 @@ namespace WebAssembly.Runtime.Compilation
 
         public FieldBuilder Memory;
 
-        public ValueType[] Locals;
+        public WebAssemblyValueType[] Locals;
 
         public readonly Stack<BlockType> Depth = new Stack<BlockType>();
 
@@ -133,7 +133,7 @@ namespace WebAssembly.Runtime.Compilation
 
         public readonly HashSet<Label> LoopLabels = new HashSet<Label>();
 
-        public readonly Stack<ValueType> Stack = new Stack<ValueType>();
+        public readonly Stack<WebAssemblyValueType> Stack = new Stack<WebAssemblyValueType>();
 
         public Label DefineLabel() => generator.DefineLabel();
 

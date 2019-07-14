@@ -15,7 +15,7 @@ namespace WebAssembly
         /// <summary>
         /// Type of the variables.
         /// </summary>
-        public ValueType Type { get; set; }
+        public WebAssemblyValueType Type { get; set; }
 
         /// <summary>
         /// Creates a new <see cref="Local"/> instance.
@@ -30,7 +30,7 @@ namespace WebAssembly
                 throw new ArgumentNullException(nameof(reader));
 
             this.Count = reader.ReadVarUInt32();
-            this.Type = (ValueType)reader.ReadVarInt7();
+            this.Type = (WebAssemblyValueType)reader.ReadVarInt7();
         }
 
         /// <summary>

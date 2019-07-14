@@ -19,7 +19,7 @@ namespace WebAssembly
         private IList<Instruction> initializerExpression;
 
         /// <summary>
-        /// An <see cref="ValueType.Int32"/> initializer expression that computes the offset at which to place the data.
+        /// An <see cref="WebAssemblyValueType.Int32"/> initializer expression that computes the offset at which to place the data.
         /// </summary>
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<Instruction> InitializerExpression

@@ -38,7 +38,7 @@ namespace WebAssembly
         public void Compile_MinimalExportedFunction()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
             });
             module.Functions.Add(new Function
@@ -81,7 +81,7 @@ namespace WebAssembly
             var module = new Module();
             module.Globals.Add(new Global
             {
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 IsMutable = false,
                 InitializerExpression = new Instruction[]
                 {
@@ -121,7 +121,7 @@ namespace WebAssembly
             var module = new Module();
             module.Globals.Add(new Global
             {
-                ContentType = ValueType.Int32,
+                ContentType = WebAssemblyValueType.Int32,
                 IsMutable = true,
                 InitializerExpression = new Instruction[]
                 {
@@ -152,7 +152,7 @@ namespace WebAssembly
         public void Compile_MinimalInternalFunction()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
             });
             module.Functions.Add(new Function
@@ -176,11 +176,11 @@ namespace WebAssembly
         public void Compile_HelloWorld_Dynamic()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -224,11 +224,11 @@ namespace WebAssembly
         public void Compile_HelloWorld_Static()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -260,11 +260,11 @@ namespace WebAssembly
         public void Compile_Streaming()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -359,11 +359,11 @@ namespace WebAssembly
         public void Compiler_GithubIssue4_Locals()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
             module.Functions.Add(new Function
@@ -380,7 +380,7 @@ namespace WebAssembly
                     new Local
                     {
                         Count = 1,
-                        Type = ValueType.Int32,
+                        Type = WebAssemblyValueType.Int32,
                     }
                 },
                 Code = new Instruction[]
@@ -426,14 +426,14 @@ namespace WebAssembly
             var module = new Module();
             module.Memories.Add(new Memory(1, 1));
 
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
             });
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 }
             });
 

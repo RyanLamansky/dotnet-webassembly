@@ -18,7 +18,7 @@ namespace WebAssembly.Runtime
         /// </summary>
         public Delegate Method { get; }
 
-        internal readonly Type Type;
+        internal readonly WebAssemblyType Type;
 
         /// <summary>
         /// Creates a new <see cref="FunctionImport"/> instance with the provided <see cref="Delegate"/>.
@@ -33,7 +33,7 @@ namespace WebAssembly.Runtime
 
             var method = (this.Method = del).GetMethodInfo();
 
-            this.Type = new Type();
+            this.Type = new WebAssemblyType();
             if (method.ReturnType != typeof(void))
             {
                 if (!method.ReturnType.TryConvertToValueType(out var type))

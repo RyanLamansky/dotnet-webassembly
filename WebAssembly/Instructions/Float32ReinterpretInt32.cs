@@ -28,10 +28,10 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.Float32ReinterpretInt32, 1, stack.Count);
 
             var type = stack.Pop();
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.Float32ReinterpretInt32, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.Float32ReinterpretInt32, WebAssemblyValueType.Int32, type);
 
-            stack.Push(ValueType.Float32);
+            stack.Push(WebAssemblyValueType.Float32);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Float32ReinterpretInt32, (helper, c) =>
             {

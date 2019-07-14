@@ -60,8 +60,8 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.MemoryGrow, 1, stack.Count);
 
             var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
-            if (type != ValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.MemoryGrow, ValueType.Int32, type);
+            if (type != WebAssemblyValueType.Int32)
+                throw new StackTypeInvalidException(OpCode.MemoryGrow, WebAssemblyValueType.Int32, type);
 
             context.EmitLoadThis();
             context.Emit(OpCodes.Ldfld, context.Memory);

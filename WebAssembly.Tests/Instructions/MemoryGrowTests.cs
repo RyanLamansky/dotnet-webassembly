@@ -32,15 +32,15 @@ namespace WebAssembly.Instructions
         public void GrowMemory_Compiled()
         {
             var module = new Module();
-            module.Types.Add(new Type
+            module.Types.Add(new WebAssemblyType
             {
                 Parameters = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
                 Returns = new[]
                 {
-                    ValueType.Int32,
+                    WebAssemblyValueType.Int32,
                 },
             });
             module.Functions.Add(new Function

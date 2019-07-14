@@ -14,7 +14,7 @@ namespace WebAssembly.Instructions
         {
         }
 
-        private protected abstract ValueType ValueType { get; }
+        private protected abstract WebAssemblyValueType ValueType { get; }
 
         private protected abstract MethodInfo MethodInfo { get; }
 

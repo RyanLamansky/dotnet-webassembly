@@ -15,10 +15,10 @@ namespace WebAssembly.Instructions
         public void BranchTable_Compiled()
         {
             var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>("Test",
-                ValueType.Int32,
+                WebAssemblyValueType.Int32,
                  new[]
                  {
-                     ValueType.Int32
+                     WebAssemblyValueType.Int32
                  },
                 new Block(BlockType.Empty),
                 new Block(BlockType.Empty),

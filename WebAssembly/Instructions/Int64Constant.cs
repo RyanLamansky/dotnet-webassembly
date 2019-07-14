@@ -70,7 +70,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.Stack.Push(ValueType.Int64);
+            context.Stack.Push(WebAssemblyValueType.Int64);
             context.Emit(OpCodes.Ldc_I8, this.Value);
         }
     }

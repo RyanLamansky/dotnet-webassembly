@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
         {
         }
 
-        private protected sealed override ValueType Type => ValueType.Int32;
+        private protected sealed override WebAssemblyValueType Type => WebAssemblyValueType.Int32;
 
         private protected sealed override byte Size => 4;
 

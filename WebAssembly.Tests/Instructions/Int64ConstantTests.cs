@@ -28,7 +28,7 @@ namespace WebAssembly.Instructions
                 long.MaxValue,
             })
             {
-                Assert.AreEqual<long>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int64,
+                Assert.AreEqual<long>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int64,
                     new Int64Constant(sample),
                     new End()
                     ).Test());

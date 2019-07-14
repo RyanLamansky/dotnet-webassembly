@@ -23,7 +23,7 @@ namespace WebAssembly.Runtime
         /// </summary>
         public Delegate Setter { get; private set; }
 
-        internal readonly ValueType GetterType;
+        internal readonly WebAssemblyValueType GetterType;
 
         /// <summary>
         /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
@@ -32,7 +32,7 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<int> getter, Action<int> setter = null)
-            : this( getter, setter, ValueType.Int32)
+            : this( getter, setter, WebAssemblyValueType.Int32)
         {
         }
 
@@ -43,7 +43,7 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<uint> getter, Action<uint> setter = null)
-            : this(getter, setter, ValueType.Int32)
+            : this(getter, setter, WebAssemblyValueType.Int32)
         {
         }
 
@@ -54,7 +54,7 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<long> getter, Action<long> setter = null)
-            : this(getter, setter, ValueType.Int64)
+            : this(getter, setter, WebAssemblyValueType.Int64)
         {
         }
 
@@ -65,7 +65,7 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<ulong> getter, Action<ulong> setter = null)
-            : this(getter, setter, ValueType.Int64)
+            : this(getter, setter, WebAssemblyValueType.Int64)
         {
         }
 
@@ -76,7 +76,7 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<float> getter, Action<float> setter = null)
-            : this(getter, setter, ValueType.Float32)
+            : this(getter, setter, WebAssemblyValueType.Float32)
         {
         }
 
@@ -87,11 +87,11 @@ namespace WebAssembly.Runtime
         /// <param name="setter">The method to use for write requests, or null (the default).</param>
         /// <exception cref="ArgumentNullException"><paramref name="getter"/> cannot be null.</exception>
         public GlobalImport(Func<double> getter, Action<double> setter = null)
-            : this(getter, setter, ValueType.Float64)
+            : this(getter, setter, WebAssemblyValueType.Float64)
         {
         }
 
-        private GlobalImport(Delegate getter, Delegate setter, ValueType type)
+        private GlobalImport(Delegate getter, Delegate setter, WebAssemblyValueType type)
         {
             this.Getter = getter;
             this.Setter = setter;

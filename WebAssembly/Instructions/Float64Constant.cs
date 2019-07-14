@@ -64,7 +64,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.Stack.Push(ValueType.Float64);
+            context.Stack.Push(WebAssemblyValueType.Float64);
             context.Emit(OpCodes.Ldc_R8, this.Value);
         }
     }

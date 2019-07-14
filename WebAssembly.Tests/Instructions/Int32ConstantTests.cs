@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
                 int.MaxValue,
             })
             {
-                Assert.AreEqual<int>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", ValueType.Int32,
+                Assert.AreEqual<int>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                     new Int32Constant(sample),
                     new End()
                     ).Test());

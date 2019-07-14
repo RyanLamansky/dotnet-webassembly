@@ -11,7 +11,7 @@
         /// <param name="opCode">The operation attempted.</param>
         /// <param name="first">The first parameter type.</param>
         /// <param name="second">The second parameter type.</param>
-        public StackParameterMismatchException(OpCode opCode, ValueType first, ValueType second)
+        public StackParameterMismatchException(OpCode opCode, WebAssemblyValueType first, WebAssemblyValueType second)
             : base(opCode, $"requires the type parameters to match, found {first} and {second}.")
         {
             this.First = first;
@@ -21,11 +21,11 @@
         /// <summary>
         /// The first parameter type.
         /// </summary>
-        public ValueType First { get; }
+        public WebAssemblyValueType First { get; }
 
         /// <summary>
         /// The second parameter type.
         /// </summary>
-        public ValueType Second { get; }
+        public WebAssemblyValueType Second { get; }
     }
 }

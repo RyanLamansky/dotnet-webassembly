@@ -29,25 +29,25 @@
 
     static class BlockTypeExtensions
     {
-        public static bool TryToValueType(this BlockType blockType, out ValueType valueType)
+        public static bool TryToValueType(this BlockType blockType, out WebAssemblyValueType valueType)
         {
             switch (blockType)
             {
                 default:
                 case BlockType.Empty:
-                    valueType = ValueType.Int32;
+                    valueType = WebAssemblyValueType.Int32;
                     return false;
                 case BlockType.Int32:
-                    valueType = ValueType.Int32;
+                    valueType = WebAssemblyValueType.Int32;
                     break;
                 case BlockType.Int64:
-                    valueType = ValueType.Int64;
+                    valueType = WebAssemblyValueType.Int64;
                     break;
                 case BlockType.Float32:
-                    valueType = ValueType.Float32;
+                    valueType = WebAssemblyValueType.Float32;
                     break;
                 case BlockType.Float64:
-                    valueType = ValueType.Float64;
+                    valueType = WebAssemblyValueType.Float64;
                     break;
             }
 

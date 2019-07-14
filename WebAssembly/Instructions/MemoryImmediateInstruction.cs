@@ -94,7 +94,7 @@ namespace WebAssembly.Instructions
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, (int)this.Offset);
 
-        private protected abstract ValueType Type { get; }
+        private protected abstract WebAssemblyValueType Type { get; }
 
         private protected abstract byte Size { get; }
 
