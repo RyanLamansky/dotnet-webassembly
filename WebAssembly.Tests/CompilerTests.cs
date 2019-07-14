@@ -335,7 +335,7 @@ namespace WebAssembly
 
             var compiled = module.ToInstance<dynamic>();
 
-            Runtime.UnmanagedMemory linearMemory;
+            UnmanagedMemory linearMemory;
             using (compiled)
             {
                 Assert.IsNotNull(compiled);
@@ -510,7 +510,7 @@ namespace WebAssembly
 
             var compiled = module.ToInstance<dynamic>();
 
-            Runtime.UnmanagedMemory linearMemory;
+            UnmanagedMemory linearMemory;
             using (compiled)
             {
                 Assert.IsNotNull(compiled);
@@ -561,7 +561,7 @@ namespace WebAssembly
 
             var compiled = module.ToInstance<dynamic>();
 
-            Runtime.UnmanagedMemory linearMemory;
+            UnmanagedMemory linearMemory;
             using (compiled)
             {
                 Assert.IsNotNull(compiled);
@@ -626,7 +626,7 @@ namespace WebAssembly
                 Kind = ExternalKind.Memory,
             });
 
-            var memory = new Runtime.UnmanagedMemory(0, 1);
+            var memory = new UnmanagedMemory(0, 1);
 
             var roundMemory = module.ToInstance<dynamic>(new ImportDictionary {
                 { "Memory", "Memory", new MemoryImport(() => memory) },

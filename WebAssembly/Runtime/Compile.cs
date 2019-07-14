@@ -166,8 +166,8 @@ namespace WebAssembly.Runtime
         private static ConstructorInfo FromBinary(
             Reader reader,
             CompilerConfiguration configuration,
-            System.Type instanceContainer,
-            System.Type exportContainer
+            Type instanceContainer,
+            Type exportContainer
             )
         {
             if (configuration == null)
@@ -264,9 +264,9 @@ namespace WebAssembly.Runtime
             var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
             var delegateRemappersByType = context.DelegateRemappersByType;
 #if FILESTREAM // Supported frameworks that don't have FileStream (.NET Standard 1.1) also lack EmptyTypes.
-            var emptyTypes = System.Type.EmptyTypes;
+            var emptyTypes = Type.EmptyTypes;
 #else
-            var emptyTypes = new System.Type[0];
+            var emptyTypes = new Type[0];
 #endif
 
             var preSectionOffset = reader.Offset;

@@ -197,7 +197,7 @@ namespace WebAssembly
                 "TestMethod",
                 MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.HideBySig,
                 typeof(int),
-                System.Type.EmptyTypes);
+                Type.EmptyTypes);
 
             var il = methodBuilder.GetILGenerator();
             il.Emit(OpCodes.Ldc_I4_7);

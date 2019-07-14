@@ -60,7 +60,7 @@ namespace WebAssembly.Instructions
 
             context.EmitLoadThis();
             context.Emit(OpCodes.Ldfld, context.Memory);
-            context.Emit(OpCodes.Call, Runtime.UnmanagedMemory.SizeGetter);
+            context.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
             context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
             context.Emit(OpCodes.Div_Un);
 

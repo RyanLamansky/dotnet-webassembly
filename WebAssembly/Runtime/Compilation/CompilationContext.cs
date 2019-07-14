@@ -163,6 +163,6 @@ namespace WebAssembly.Runtime.Compilation
 
         public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => generator.Emit(opcode, con);
 
-        public LocalBuilder DeclareLocal(System.Type localType) => generator.DeclareLocal(localType);
+        public LocalBuilder DeclareLocal(Type localType) => generator.DeclareLocal(localType);
     }
 }

@@ -63,7 +63,7 @@ namespace WebAssembly.Instructions
             il.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);
             il.Emit(OpCodes.Ldarg_3);
             il.Emit(OpCodes.Ldfld, context.Memory);
-            il.Emit(OpCodes.Call, Runtime.UnmanagedMemory.StartGetter);
+            il.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
             il.Emit(OpCodes.Add);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(this.EmittedOpCode);

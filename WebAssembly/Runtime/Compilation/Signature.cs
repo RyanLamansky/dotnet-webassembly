@@ -7,9 +7,9 @@ namespace WebAssembly.Runtime.Compilation
     internal sealed class Signature : IEquatable<WebAssemblyType>
     {
         public readonly uint TypeIndex;
-        public readonly System.Type[] ParameterTypes;
+        public readonly Type[] ParameterTypes;
         public readonly WebAssemblyValueType[] RawParameterTypes;
-        public readonly System.Type[] ReturnTypes;
+        public readonly Type[] ReturnTypes;
         public readonly WebAssemblyValueType[] RawReturnTypes;
 
         private static readonly RegeneratingWeakReference<Signature> empty = new RegeneratingWeakReference<Signature>(() => new Signature());
@@ -20,10 +20,10 @@ namespace WebAssembly.Runtime.Compilation
         {
             this.TypeIndex = uint.MaxValue;
 #if ARRAY_EMPTY
-            this.ReturnTypes = this.ParameterTypes = Array.Empty<System.Type>();
+            this.ReturnTypes = this.ParameterTypes = Array.Empty<Type>();
             this.RawReturnTypes = this.RawParameterTypes = Array.Empty<WebAssemblyValueType>();
 #else
-            this.ReturnTypes = this.ParameterTypes = new System.Type[0];
+            this.ReturnTypes = this.ParameterTypes = new Type[0];
             this.RawReturnTypes = this.RawParameterTypes = new WebAssemblyValueType[0];
 #endif
         }
@@ -41,13 +41,13 @@ namespace WebAssembly.Runtime.Compilation
 
             reader.ReadVarInt7(); //Function Type
 
-            var parameters = this.ParameterTypes = new System.Type[reader.ReadVarUInt32()];
+            var parameters = this.ParameterTypes = new Type[reader.ReadVarUInt32()];
             var rawParameters = this.RawParameterTypes = new WebAssemblyValueType[parameters.Length];
 
             for (var i = 0; i < parameters.Length; i++)
                 parameters[i] = (rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
 
-            var returns = this.ReturnTypes = new System.Type[reader.ReadVarUInt1()];
+            var returns = this.ReturnTypes = new Type[reader.ReadVarUInt1()];
             var rawReturns = this.RawReturnTypes = new WebAssemblyValueType[returns.Length];
 
             if (returns.Length > 1)

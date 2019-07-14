@@ -79,11 +79,11 @@ namespace WebAssembly.Runtime
             this.Initial = initial;
             this.Maximum = maximum;
             this.delegates = new Delegate[initial];
-            this.delegateTypes = new System.Type[initial];
+            this.delegateTypes = new Type[initial];
         }
 
         private Delegate[] delegates;
-        private System.Type[] delegateTypes;
+        private Type[] delegateTypes;
 
         /// <summary>
         /// Gets or sets the delegate at the indicated index.  The first time a delegate is provided, it locks in the type for any future reassignments.

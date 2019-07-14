@@ -74,14 +74,14 @@ namespace WebAssembly.Instructions
                     new[]
                     {
                         typeof(uint), //Delta
-						typeof(Runtime.UnmanagedMemory),
+						typeof(UnmanagedMemory),
                     }
                     );
 
                 var il = builder.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Call, Runtime.UnmanagedMemory.GrowMethod);
+                il.Emit(OpCodes.Call, UnmanagedMemory.GrowMethod);
                 il.Emit(OpCodes.Ret);
 
                 return builder;

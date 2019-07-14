@@ -155,7 +155,7 @@ namespace WebAssembly.Instructions
             var il = builder.GetILGenerator();
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Ldfld, context.Memory);
-            il.Emit(OpCodes.Call, Runtime.UnmanagedMemory.SizeGetter);
+            il.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(opCode);
             il.Emit(OpCodes.Add_Ovf_Un);
