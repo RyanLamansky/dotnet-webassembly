@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.ExceptionServices;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime
@@ -146,7 +147,8 @@ namespace WebAssembly.Runtime
                 }
                 catch (TargetInvocationException x)
                 {
-                    throw x.InnerException;
+                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                    throw;
                 }
             };
         }
