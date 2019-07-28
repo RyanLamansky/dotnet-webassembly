@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -18,6 +19,124 @@ namespace WebAssembly.Runtime
         {
             var skips = new HashSet<uint> { 391, 395, 433, 437, 475, 479, 487, 495, 570, 574, 576, 580, 582, 586, 588, 589 };
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "address"), "address.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the align tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_align()
+        {
+            Func<uint, bool> skip = line => line <= 454 || (line >= 807 && line <=811) || (line >= 828 && line <= 850);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "align"), "align.json", skip);
+        }
+
+        /// <summary>
+        /// Runs the binary tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile.")]
+        public void SpecTest_binary()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json");
+        }
+
+        /// <summary>
+        /// Runs the binary-leb128 tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile, data size limit exceeded.")]
+        public void SpecTest_binary_leb128()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json");
+        }
+
+        /// <summary>
+        /// Runs the block tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
+        public void SpecTest_block()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json");
+        }
+
+        /// <summary>
+        /// Runs the br tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile.")]
+        public void SpecTest_br()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json");
+        }
+
+        /// <summary>
+        /// Runs the br_if tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile.")]
+        public void SpecTest_br_if()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json");
+        }
+
+        /// <summary>
+        /// Runs the br_table tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile.")]
+        public void SpecTest_br_table()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json");
+        }
+
+        /// <summary>
+        /// Runs the break-drop tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_break_drop()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "break-drop"), "break-drop.json");
+        }
+
+        /// <summary>
+        /// Runs the call tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
+        public void SpecTest_call()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json");
+        }
+
+        /// <summary>
+        /// Runs the call_indirect tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile.")]
+        public void SpecTest_call_indirect()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json");
+        }
+        /// <summary>
+        /// Runs the const tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_const()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "const"), "const.json");
+        }
+
+        /// <summary>
+        /// Runs the conversions tests.
+        /// </summary>
+        [TestMethod]
+        //[Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
+        public void SpecTest_conversions()
+        {
+            var skips = new HashSet<uint> { 88, 89, 93, 133, 134, 139, 183, 187, 229, 234, 236 };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "conversions"), "conversions.json", skips.Contains);
         }
 
         /// <summary>

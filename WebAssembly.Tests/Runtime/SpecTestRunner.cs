@@ -39,6 +39,7 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertInvalid), CommandType.assert_invalid)
                     .RegisterSubtype(typeof(AssertTrap), CommandType.assert_trap)
                     .RegisterSubtype(typeof(AssertMalformed), CommandType.assert_malformed)
+                    .RegisterSubtype(typeof(AssertExhaustion), CommandType.assert_exhaustion)
                     .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
@@ -94,7 +95,27 @@ namespace WebAssembly.Runtime
                                 {
                                     throw new AssertFailedException($"{command.line}: {x.Message}", x);
                                 }
-                                Assert.AreEqual(assert.expected[0].BoxedValue, result);
+                                if (assert.expected?.Length > 0)
+                                {
+                                    if (assert.expected[0].BoxedValue.Equals(result))
+                                        continue;
+
+                                    switch (assert.expected[0].type)
+                                    {
+                                        case RawValueType.f32:
+                                            {
+                                                var expected = ((Float32Value)assert.expected[0]).ActualValue;
+                                                Assert.IsTrue(Math.Abs((float)result - expected) / expected < expected * 0.000001f);
+                                            }
+                                            continue;
+                                        case RawValueType.f64:
+                                            {
+                                                var expected = ((Float64Value)assert.expected[0]).ActualValue;
+                                                Assert.IsTrue(Math.Abs((double)result - expected) / expected < expected * 0.000001);
+                                            }
+                                            continue;
+                                    }
+                                }
                                 continue;
                             default:
                                 throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
@@ -182,8 +203,11 @@ namespace WebAssembly.Runtime
                                         throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
                                     }
                                     throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                                case "alignment must not be larger than natural":
+                                    Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
+                                    continue;
                                 default:
-                                    throw new AssertFailedException($"{assert.text} doesn't have a test procedure set up.");
+                                    throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                             }
                         }
                     case AssertTrap assert:
@@ -230,6 +254,9 @@ namespace WebAssembly.Runtime
                                             throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
                                         }
                                         throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                                    case "invalid conversion to integer":
+                                        Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                        continue;
                                     default:
                                         throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                                 }
@@ -238,6 +265,35 @@ namespace WebAssembly.Runtime
                         }
                     case AssertMalformed assert:
                         continue; // Not writing a WAT parser.
+                    case AssertExhaustion assert:
+                        switch (assert.action)
+                        {
+                            case Invoke invoke:
+                                Action trapExpected = () =>
+                                {
+                                    Assert.IsNotNull(methodsByName);
+                                    Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
+                                    try
+                                    {
+                                        methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
+                                    }
+                                    catch (TargetInvocationException x)
+                                    {
+                                        ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                    }
+                                };
+
+                                switch (assert.text)
+                                {
+                                    case "call stack exhausted":
+                                        Assert.ThrowsException<StackOverflowException>(trapExpected, $"{command.line}");
+                                        continue;
+                                    default:
+                                        throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                                }
+                            default:
+                                throw new AssertFailedException($"{command.line}: {assert.action} doesn't have a test procedure set up.");
+                        }
                     default:
                         throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
                 }
@@ -257,6 +313,7 @@ namespace WebAssembly.Runtime
             assert_invalid,
             assert_trap,
             assert_malformed,
+            assert_exhaustion,
         }
 
 #pragma warning disable 649
@@ -322,14 +379,18 @@ namespace WebAssembly.Runtime
 
         class Float32Value : Int32Value
         {
-            public override object BoxedValue => BitConverter.Int32BitsToSingle(unchecked((int)value));
+            public float ActualValue => BitConverter.Int32BitsToSingle(unchecked((int)value));
+
+            public override object BoxedValue => ActualValue;
 
             public override string ToString() => $"{type}: {BoxedValue}";
         }
 
         class Float64Value : Int64Value
         {
-            public override object BoxedValue => BitConverter.Int64BitsToDouble(unchecked((long)value));
+            public double ActualValue => BitConverter.Int64BitsToDouble(unchecked((long)value));
+
+            public override object BoxedValue => ActualValue;
 
             public override string ToString() => $"{type}: {BoxedValue}";
         }
@@ -401,6 +462,11 @@ namespace WebAssembly.Runtime
             public string filename;
             public string text;
             public string module_type;
+        }
+
+        class AssertExhaustion : AssertCommand
+        {
+            public string text;
         }
 #pragma warning restore
     }
