@@ -7,12 +7,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace WebAssembly.Runtime
 {
     static class SpecTestRunner
     {
         public static void Run<TExports>(string pathBase, string json)
+            where TExports : class
+        {
+            Run<TExports>(pathBase, json, null);
+        }
+
+        public static void Run<TExports>(string pathBase, string json, Func<uint, bool> skip)
             where TExports : class
         {
             TestInfo testInfo;
@@ -26,6 +33,7 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertReturnCanonicalNan), CommandType.assert_return_canonical_nan)
                     .RegisterSubtype(typeof(AssertReturnArithmeticNan), CommandType.assert_return_arithmetic_nan)
                     .RegisterSubtype(typeof(AssertInvalid), CommandType.assert_invalid)
+                    .RegisterSubtype(typeof(AssertTrap), CommandType.assert_trap)
                     .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
@@ -50,6 +58,9 @@ namespace WebAssembly.Runtime
 
             foreach (var command in testInfo.commands)
             {
+                if (skip != null && skip(command.line))
+                    continue;
+
                 switch (command)
                 {
                     case ModuleCommand module:
@@ -63,7 +74,19 @@ namespace WebAssembly.Runtime
                             case Invoke invoke:
                                 Assert.IsNotNull(methodsByName);
                                 Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
-                                var result = methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
+                                object result;
+                                try
+                                {
+                                    result = methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
+                                }
+                                catch (TargetInvocationException x)
+                                {
+                                    throw new AssertFailedException($"{command.line}: {x.InnerException.Message}", x.InnerException);
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line}: {x.Message}", x);
+                                }
                                 Assert.AreEqual(assert.expected[0].BoxedValue, result);
                                 continue;
                             default:
@@ -112,12 +135,89 @@ namespace WebAssembly.Runtime
                                 throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
                         }
                     case AssertInvalid assert:
-                        Assert.ThrowsException<StackTypeInvalidException>(() => Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename)));
-                        continue;
+                        {
+                            Action trapExpected = () =>
+                            {
+                                try
+                                {
+                                    Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                }
+                                catch (TargetInvocationException x)
+                                {
+                                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                }
+                            };
+                            switch (assert.text)
+                            {
+                                case "type mismatch":
+                                    try
+                                    {
+                                        trapExpected();
+                                    }
+                                    catch (StackTypeInvalidException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (StackTooSmallException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (ModuleLoadException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (StackSizeIncorrectException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line} throw an unexpected exception of type {x.GetType().Name}.");
+                                    }
+                                    throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                                default:
+                                    throw new AssertFailedException($"{assert.text} doesn't have a test procedure set up.");
+                            }
+                        }
+                    case AssertTrap assert:
+                        switch (assert.action)
+                        {
+                            case Invoke invoke:
+                                Action trapExpected = () =>
+                                {
+                                    Assert.IsNotNull(methodsByName);
+                                    Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
+                                    try
+                                    {
+                                        methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
+                                    }
+                                    catch (TargetInvocationException x)
+                                    {
+                                        ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                    }
+                                };
+
+                                switch (assert.text)
+                                {
+                                    case "integer divide by zero":
+                                        Assert.ThrowsException<DivideByZeroException>(trapExpected, $"{command.line}");
+                                        continue;
+                                    case "integer overflow":
+                                        Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                        continue;
+                                    default:
+                                        throw new AssertFailedException($"{assert.text} doesn't have a test procedure set up.");
+                                }
+                            default:
+                                throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
+                        }
                     default:
                         throw new AssertFailedException($"{command} doesn't have a test procedure set up.");
                 }
             }
+
+            if (skip != null)
+                Assert.Inconclusive("Some scenarios were skipped.");
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
@@ -128,6 +228,7 @@ namespace WebAssembly.Runtime
             assert_return_canonical_nan,
             assert_return_arithmetic_nan,
             assert_invalid,
+            assert_trap,
         }
 
 #pragma warning disable 649
@@ -177,7 +278,7 @@ namespace WebAssembly.Runtime
         {
             public uint value;
 
-            public override object BoxedValue => value;
+            public override object BoxedValue => (int)value;
 
             public override string ToString() => $"{type}: {value}";
         }
@@ -186,7 +287,7 @@ namespace WebAssembly.Runtime
         {
             public ulong value;
 
-            public override object BoxedValue => value;
+            public override object BoxedValue => (long)value;
 
             public override string ToString() => $"{type}: {value}";
         }
@@ -259,6 +360,12 @@ namespace WebAssembly.Runtime
             public string module_type;
 
             public override string ToString() => $"{base.ToString()}: {filename} \"{text}\" {module_type}";
+        }
+
+        class AssertTrap : AssertCommand
+        {
+            public TypeOnly[] expected;
+            public string text;
         }
 #pragma warning restore
     }
