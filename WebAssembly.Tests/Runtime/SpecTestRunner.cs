@@ -201,17 +201,19 @@ namespace WebAssembly.Runtime
                                     continue;
                                 case "unknown memory 0":
                                 case "constant expression required":
-                                case "unknown function":
                                 case "duplicate export name":
-                                case "unknown global":
                                 case "unknown table":
                                 case "unknown local":
                                 case "multiple memories":
                                 case "size minimum must not be greater than maximum":
                                 case "memory size must be at most 65536 pages (4GiB)":
+                                case "unknown label":
+                                case "invalid result arity":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
+                                case "unknown global":
                                 case "unknown memory":
+                                case "unknown function":
                                     try
                                     {
                                         trapExpected();

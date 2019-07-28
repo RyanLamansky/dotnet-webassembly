@@ -708,6 +708,192 @@ namespace WebAssembly.Runtime
         }
 
         /// <summary>
+        /// Runs the memory_redundancy tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_memory_redundancy()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_redundancy"), "memory_redundancy.json");
+        }
+
+        /// <summary>
+        /// Runs the memory_size tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_memory_size()
+        {
+            var skips = new HashSet<uint>
+            {
+                9, // Not equal: 1 and 0
+                11, // Not equal: 5 and 0
+                13, // Not equal: 5 and 0
+                39, // Not equal: 1 and 0
+                41, // Not equal: 1 and 0
+                43, // Not equal: 1 and 0
+                45, // Not equal: 2 and 0
+            };
+
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_size"), "memory_size.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the names tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Empty names are not supported.")]
+        public void SpecTest_names()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "names"), "names.json");
+        }
+
+        /// <summary>
+        /// Runs the nop tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_nop()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "nop"), "nop.json");
+        }
+
+        /// <summary>
+        /// Runs the return tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackTooSmallException")]
+        public void SpecTest_return()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "return"), "return.json");
+        }
+
+        /// <summary>
+        /// Runs the select tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackTooSmallException")]
+        public void SpecTest_select()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "select"), "select.json");
+        }
+
+        /// <summary>
+        /// Runs the skip-stack-guard-page tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Causes CLR malfunction.")]
+        public void SpecTest_skip_stack_guard_page()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "skip-stack-guard-page"), "skip-stack-guard-page.json");
+        }
+
+        /// <summary>
+        /// Runs the stack tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_stack()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "stack"), "stack.json", line => line == 137);
+        }
+
+        /// <summary>
+        /// Runs the store tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_store()
+        {
+            var skips = new HashSet<uint>
+            {
+                168, // should have thrown an exception but did not.
+                178, // should have thrown an exception but did not.
+                188, // should have thrown an exception but did not.
+                198, // should have thrown an exception but did not.
+                248, // should have thrown an exception but did not.
+                258, // should have thrown an exception but did not.
+                268, // should have thrown an exception but did not.
+                278, // should have thrown an exception but did not.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "store"), "store.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the switch tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_switch()
+        {
+            var skips = new HashSet<uint>
+            {
+                130, // Common Language Runtime detected an invalid program.
+                131, // Common Language Runtime detected an invalid program.
+                132, // Common Language Runtime detected an invalid program.
+                133, // Common Language Runtime detected an invalid program.
+                134, // Common Language Runtime detected an invalid program.
+                135, // Common Language Runtime detected an invalid program.
+                136, // Common Language Runtime detected an invalid program.
+                138, // JIT Compiler encountered an internal limitation.
+                139, // JIT Compiler encountered an internal limitation.
+                140, // JIT Compiler encountered an internal limitation.
+                141, // JIT Compiler encountered an internal limitation.
+                142, // JIT Compiler encountered an internal limitation.
+                143, // JIT Compiler encountered an internal limitation.
+                144, // JIT Compiler encountered an internal limitation.
+                145, // JIT Compiler encountered an internal limitation.
+                146, // JIT Compiler encountered an internal limitation.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "switch"), "switch.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the traps tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_traps()
+        {
+            var skips = new HashSet<uint>
+            {
+                83, // threw an unexpected exception of type InvalidProgramException.
+                91, // threw an unexpected exception of type InvalidProgramException.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "traps"), "traps.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the type tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_type()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "type"), "type.json");
+        }
+
+        /// <summary>
+        /// Runs the unreachable tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException")]
+        public void SpecTest_unreachable()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unreachable"), "unreachable.json");
+        }
+
+        /// <summary>
+        /// Runs the unreached-invalid tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_unreached_invalid()
+        {
+            var skips = new HashSet<uint>
+            {
+                490, // should have thrown an exception but did not.
+                585, // should have thrown an exception but did not.
+                604, // should have thrown an exception but did not.
+                676, // should have thrown an exception but did not.
+                690, // should have thrown an exception but did not.
+            };
+
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unreached-invalid"), "unreached-invalid.json", skips.Contains);
+        }
+
+        /// <summary>
         /// Runs the unwind tests.
         /// </summary>
         [TestMethod]
@@ -715,6 +901,33 @@ namespace WebAssembly.Runtime
         public void SpecTest_unwind()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unwind"), "unwind.json");
+        }
+
+        /// <summary>
+        /// Runs the utf8-custom-section-id tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_utf8_custom_section_id()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "utf8-custom-section-id"), "utf8-custom-section-id.json");
+        }
+
+        /// <summary>
+        /// Runs the utf8-import-field tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_utf8_import_field()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "utf8-import-field"), "utf8-import-field.json");
+        }
+
+        /// <summary>
+        /// Runs the utf8-import-module tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_utf8_import_module()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "utf8-import-module"), "utf8-import-module.json");
         }
     }
 }
