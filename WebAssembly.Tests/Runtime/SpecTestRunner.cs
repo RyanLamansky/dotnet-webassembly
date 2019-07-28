@@ -40,11 +40,14 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertTrap), CommandType.assert_trap)
                     .RegisterSubtype(typeof(AssertMalformed), CommandType.assert_malformed)
                     .RegisterSubtype(typeof(AssertExhaustion), CommandType.assert_exhaustion)
+                    .RegisterSubtype(typeof(AssertUnlinkable), CommandType.assert_unlinkable)
+                    .RegisterSubtype(typeof(Register), CommandType.register)
                     .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
                     .Of(typeof(TestAction), "type")
                     .RegisterSubtype(typeof(Invoke), TestActionType.invoke)
+                    .RegisterSubtype(typeof(Get), TestActionType.get)
                     .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
@@ -58,113 +61,104 @@ namespace WebAssembly.Runtime
                 testInfo = (TestInfo)JsonSerializer.Create(settings).Deserialize(reader, typeof(TestInfo));
             }
 
-            Instance<TExports> instance = null;
-            TExports exports = null;
-            Dictionary<string, MethodInfo> methodsByName = null;
+            ObjectMethods methodsByName = null;
+            var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
 
+            void GetMethod(TestAction action, out MethodInfo info, out object host)
+            {
+                var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
+                Assert.IsNotNull(methodSource);
+                Assert.IsTrue(methodSource.TryGetValue(action.field, out info));
+                host = methodSource.Host;
+            }
+
+            Action trapExpected;
+            object result, obj;
+            MethodInfo methodInfo;
             foreach (var command in testInfo.commands)
             {
                 if (skip != null && skip(command.line))
                     continue;
 
-                switch (command)
+                try
                 {
-                    case ModuleCommand module:
-                        var path = Path.Combine(pathBase, module.filename);
-                        Assert.IsNotNull(Module.ReadFromBinary(path)); // Ensure the module parser can read it.
-                        instance = Compile.FromBinary<TExports>(path)(new ImportDictionary());
-                        exports = instance.Exports;
-                        methodsByName = exports.GetType().GetMethods().ToDictionary(m => m.Name);
-                        continue;
-                    case AssertReturn assert:
-                        switch (assert.action)
-                        {
-                            case Invoke invoke:
-                                Assert.IsNotNull(methodsByName);
-                                Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
-                                object result;
-                                try
-                                {
-                                    result = methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
-                                }
-                                catch (TargetInvocationException x)
-                                {
-                                    throw new AssertFailedException($"{command.line}: {x.InnerException.Message}", x.InnerException);
-                                }
-                                catch (Exception x)
-                                {
-                                    throw new AssertFailedException($"{command.line}: {x.Message}", x);
-                                }
-                                if (assert.expected?.Length > 0)
-                                {
-                                    if (assert.expected[0].BoxedValue.Equals(result))
-                                        continue;
+                    switch (command)
+                    {
+                        case ModuleCommand module:
+                            var path = Path.Combine(pathBase, module.filename);
+                            Assert.IsNotNull(Module.ReadFromBinary(path)); // Ensure the module parser can read it.
+                            methodsByName = new ObjectMethods(Compile.FromBinary<TExports>(path)(new ImportDictionary()).Exports);
+                            if (module.name != null)
+                                moduleMethodsByName[module.name] = methodsByName;
+                            continue;
+                        case AssertReturn assert:
+                            GetMethod(assert.action, out methodInfo, out obj);
+                            try
+                            {
+                                result = assert.action.Call(methodInfo, obj);
+                            }
+                            catch (TargetInvocationException x)
+                            {
+                                throw new AssertFailedException($"{command.line}: {x.InnerException.Message}", x.InnerException);
+                            }
+                            catch (Exception x)
+                            {
+                                throw new AssertFailedException($"{command.line}: {x.Message}", x);
+                            }
+                            if (assert.expected?.Length > 0)
+                            {
+                                if (assert.expected[0].BoxedValue.Equals(result))
+                                    continue;
 
-                                    switch (assert.expected[0].type)
-                                    {
-                                        case RawValueType.f32:
-                                            {
-                                                var expected = ((Float32Value)assert.expected[0]).ActualValue;
-                                                Assert.IsTrue(Math.Abs((float)result - expected) / expected < expected * 0.000001f);
-                                            }
-                                            continue;
-                                        case RawValueType.f64:
-                                            {
-                                                var expected = ((Float64Value)assert.expected[0]).ActualValue;
-                                                Assert.IsTrue(Math.Abs((double)result - expected) / expected < expected * 0.000001);
-                                            }
-                                            continue;
-                                    }
-                                }
-                                continue;
-                            default:
-                                throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
-                        }
-                    case AssertReturnCanonicalNan assert:
-                        switch (assert.action)
-                        {
-                            case Invoke invoke:
-                                Assert.IsNotNull(methodsByName);
-                                Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
-                                var result = methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
                                 switch (assert.expected[0].type)
                                 {
                                     case RawValueType.f32:
-                                        Assert.IsTrue(float.IsNaN((float)result));
+                                        {
+                                            var expected = ((Float32Value)assert.expected[0]).ActualValue;
+                                            Assert.IsTrue(Math.Abs((float)result - expected) / expected < expected * 0.000001f);
+                                        }
                                         continue;
                                     case RawValueType.f64:
-                                        Assert.IsTrue(double.IsNaN((double)result));
+                                        {
+                                            var expected = ((Float64Value)assert.expected[0]).ActualValue;
+                                            Assert.IsTrue(Math.Abs((double)result - expected) / expected < expected * 0.000001);
+                                        }
                                         continue;
-                                    default:
-                                        throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
                                 }
-                            default:
-                                throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
-                        }
-                    case AssertReturnArithmeticNan assert:
-                        switch (assert.action)
-                        {
-                            case Invoke invoke:
-                                Assert.IsNotNull(methodsByName);
-                                Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
-                                var result = methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
-                                switch (assert.expected[0].type)
-                                {
-                                    case RawValueType.f32:
-                                        Assert.IsTrue(float.IsNaN((float)result));
-                                        continue;
-                                    case RawValueType.f64:
-                                        Assert.IsTrue(double.IsNaN((double)result));
-                                        continue;
-                                    default:
-                                        throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
-                                }
-                            default:
-                                throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
-                        }
-                    case AssertInvalid assert:
-                        {
-                            Action trapExpected = () =>
+
+                                throw new AssertFailedException($"{command.line}: Not equal: {assert.expected[0].BoxedValue} and {result}");
+                            }
+                            continue;
+                        case AssertReturnCanonicalNan assert:
+                            GetMethod(assert.action, out methodInfo, out obj);
+                            result = assert.action.Call(methodInfo, obj);
+                            switch (assert.expected[0].type)
+                            {
+                                case RawValueType.f32:
+                                    Assert.IsTrue(float.IsNaN((float)result));
+                                    continue;
+                                case RawValueType.f64:
+                                    Assert.IsTrue(double.IsNaN((double)result));
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
+                            }
+                        case AssertReturnArithmeticNan assert:
+                            GetMethod(assert.action, out methodInfo, out obj);
+                            result = assert.action.Call(methodInfo, obj);
+                            switch (assert.expected[0].type)
+                            {
+                                case RawValueType.f32:
+                                    Assert.IsTrue(float.IsNaN((float)result));
+                                    continue;
+                                case RawValueType.f64:
+                                    Assert.IsTrue(double.IsNaN((double)result));
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
+                            }
+                        case AssertInvalid assert:
+                            trapExpected = () =>
                             {
                                 try
                                 {
@@ -206,101 +200,158 @@ namespace WebAssembly.Runtime
                                 case "alignment must not be larger than natural":
                                     Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
                                     continue;
+                                case "unknown memory 0":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "constant expression required":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unknown function":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "duplicate export name":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unknown global":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unknown table":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unknown memory":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                             }
-                        }
-                    case AssertTrap assert:
-                        switch (assert.action)
-                        {
-                            case Invoke invoke:
-                                Action trapExpected = () =>
+                        case AssertTrap assert:
+                            trapExpected = () =>
+                            {
+                                GetMethod(assert.action, out methodInfo, out obj);
+                                try
                                 {
-                                    Assert.IsNotNull(methodsByName);
-                                    Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
+                                    assert.action.Call(methodInfo, obj);
+                                }
+                                catch (TargetInvocationException x)
+                                {
+                                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                }
+                            };
+
+                            switch (assert.text)
+                            {
+                                case "integer divide by zero":
+                                    Assert.ThrowsException<DivideByZeroException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "integer overflow":
+                                    Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "out of bounds memory access":
                                     try
                                     {
-                                        methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
+                                        trapExpected();
                                     }
-                                    catch (TargetInvocationException x)
+                                    catch (MemoryAccessOutOfRangeException)
                                     {
-                                        ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                        continue;
                                     }
-                                };
-
-                                switch (assert.text)
+                                    catch (OverflowException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                    }
+                                    throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                                case "invalid conversion to integer":
+                                    Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                            }
+                        case AssertMalformed assert:
+                            continue; // Not writing a WAT parser.
+                        case AssertExhaustion assert:
+                            trapExpected = () =>
+                            {
+                                GetMethod(assert.action, out methodInfo, out obj);
+                                try
                                 {
-                                    case "integer divide by zero":
-                                        Assert.ThrowsException<DivideByZeroException>(trapExpected, $"{command.line}");
-                                        continue;
-                                    case "integer overflow":
-                                        Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
-                                        continue;
-                                    case "out of bounds memory access":
-                                        try
-                                        {
-                                            trapExpected();
-                                        }
-                                        catch (MemoryAccessOutOfRangeException)
-                                        {
-                                            continue;
-                                        }
-                                        catch (OverflowException)
-                                        {
-                                            continue;
-                                        }
-                                        catch (Exception x)
-                                        {
-                                            throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
-                                        }
-                                        throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
-                                    case "invalid conversion to integer":
-                                        Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
-                                        continue;
-                                    default:
-                                        throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                                    assert.action.Call(methodInfo, obj);
                                 }
-                            default:
-                                throw new AssertFailedException($"{command.line}: {assert.action} doesn't have a test procedure set up.");
-                        }
-                    case AssertMalformed assert:
-                        continue; // Not writing a WAT parser.
-                    case AssertExhaustion assert:
-                        switch (assert.action)
-                        {
-                            case Invoke invoke:
-                                Action trapExpected = () =>
+                                catch (TargetInvocationException x)
                                 {
-                                    Assert.IsNotNull(methodsByName);
-                                    Assert.IsTrue(methodsByName.TryGetValue(invoke.field, out var methodInfo));
-                                    try
-                                    {
-                                        methodInfo.Invoke(exports, invoke.args.Select(arg => arg.BoxedValue).ToArray());
-                                    }
-                                    catch (TargetInvocationException x)
-                                    {
-                                        ExceptionDispatchInfo.Capture(x.InnerException).Throw();
-                                    }
-                                };
-
-                                switch (assert.text)
-                                {
-                                    case "call stack exhausted":
-                                        Assert.ThrowsException<StackOverflowException>(trapExpected, $"{command.line}");
-                                        continue;
-                                    default:
-                                        throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
-                            default:
-                                throw new AssertFailedException($"{command.line}: {assert.action} doesn't have a test procedure set up.");
-                        }
-                    default:
-                        throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
+                            };
+
+                            switch (assert.text)
+                            {
+                                case "call stack exhausted":
+                                    Assert.ThrowsException<StackOverflowException>(trapExpected, $"{command.line}");
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                            }
+                        case AssertUnlinkable assert:
+                            trapExpected = () =>
+                            {
+                                try
+                                {
+                                    Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                }
+                                catch (TargetInvocationException x)
+                                {
+                                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                }
+                            };
+                            switch (assert.text)
+                            {
+                                case "data segment does not fit":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                            }
+                        case Register register:
+                            moduleMethodsByName[register.@as] = moduleMethodsByName[register.name];
+                            continue;
+                        default:
+                            throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
+                    }
+                }
+                catch (Exception x) when (!System.Diagnostics.Debugger.IsAttached && !(x is AssertFailedException))
+                {
+                    throw new AssertFailedException($"{command.line}: {x}", x);
                 }
             }
 
             if (skip != null)
                 Assert.Inconclusive("Some scenarios were skipped.");
+        }
+
+        class ObjectMethods : Dictionary<string, MethodInfo>
+        {
+            public readonly object Host;
+
+            public ObjectMethods(object host)
+            {
+                Assert.IsNotNull(this.Host = host);
+
+                foreach (var method in host
+                    .GetType()
+                    .GetMethods()
+                    .Select(m => new { m.Name, MethodInfo = m })
+                    .Concat(host
+                    .GetType()
+                    .GetProperties()
+                    .Where(p => p.GetGetMethod() != null)
+                    .Select(p => new { p.Name, MethodInfo = p.GetGetMethod() })))
+                {
+                    Assert.IsTrue(TryAdd(method.Name, method.MethodInfo));
+                }
+            }
         }
 
         [JsonConverter(typeof(StringEnumConverter))]
@@ -314,6 +365,8 @@ namespace WebAssembly.Runtime
             assert_trap,
             assert_malformed,
             assert_exhaustion,
+            assert_unlinkable,
+            register,
         }
 
 #pragma warning disable 649
@@ -333,6 +386,7 @@ namespace WebAssembly.Runtime
 
         class ModuleCommand : Command
         {
+            public string name;
             public string filename;
 
             public override string ToString() => $"{base.ToString()}: {filename}";
@@ -399,19 +453,36 @@ namespace WebAssembly.Runtime
         enum TestActionType
         {
             invoke,
+            get,
         }
 
         abstract class TestAction
         {
             public TestActionType type;
+            public string module;
+            public string field;
+
+            public abstract object Call(MethodInfo methodInfo, object obj);
         }
 
         class Invoke : TestAction
         {
-            public string field;
             public TypedValue[] args;
 
-            public override string ToString() => $"{field} [{string.Join(',', (IEnumerable<TypedValue>)args)}]";
+            public override object Call(MethodInfo methodInfo, object obj)
+            {
+                return methodInfo.Invoke(obj, args.Select(arg => arg.BoxedValue).ToArray());
+            }
+
+            public override string ToString() => $"{field}({module})[{string.Join(',', (IEnumerable<TypedValue>)args)}]";
+        }
+
+        class Get : TestAction
+        {
+            public override object Call(MethodInfo methodInfo, object obj)
+            {
+                return methodInfo.Invoke(obj, Array.Empty<object>());
+            }
         }
 
         abstract class AssertCommand : Command
@@ -442,7 +513,7 @@ namespace WebAssembly.Runtime
             public override string ToString() => $"{base.ToString()} = [{string.Join(',', (IEnumerable<TypeOnly>)expected)}]";
         }
 
-        class AssertInvalid : Command
+        abstract class InvalidCommand : Command
         {
             public string filename;
             public string text;
@@ -451,22 +522,33 @@ namespace WebAssembly.Runtime
             public override string ToString() => $"{base.ToString()}: {filename} \"{text}\" {module_type}";
         }
 
+        class AssertInvalid : InvalidCommand
+        {
+        }
+
         class AssertTrap : AssertCommand
         {
             public TypeOnly[] expected;
             public string text;
         }
 
-        class AssertMalformed : Command
+        class AssertMalformed : InvalidCommand
         {
-            public string filename;
-            public string text;
-            public string module_type;
         }
 
         class AssertExhaustion : AssertCommand
         {
             public string text;
+        }
+
+        class AssertUnlinkable : InvalidCommand
+        {
+        }
+
+        class Register : Command
+        {
+            public string name;
+            public string @as;
         }
 #pragma warning restore
     }
