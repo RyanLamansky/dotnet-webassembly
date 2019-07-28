@@ -13,6 +13,10 @@ namespace WebAssembly.Runtime
 {
     static class SpecTestRunner
     {
+        public static void Run(string pathBase, string json) => Run<object>(pathBase, json);
+
+        public static void Run(string pathBase, string json, Func<uint, bool> skip) => Run<object>(pathBase, json, skip);
+
         public static void Run<TExports>(string pathBase, string json)
             where TExports : class
         {
@@ -34,6 +38,7 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertReturnArithmeticNan), CommandType.assert_return_arithmetic_nan)
                     .RegisterSubtype(typeof(AssertInvalid), CommandType.assert_invalid)
                     .RegisterSubtype(typeof(AssertTrap), CommandType.assert_trap)
+                    .RegisterSubtype(typeof(AssertMalformed), CommandType.assert_malformed)
                     .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
@@ -64,7 +69,9 @@ namespace WebAssembly.Runtime
                 switch (command)
                 {
                     case ModuleCommand module:
-                        instance = Compile.FromBinary<TExports>(Path.Combine(pathBase, module.filename))(new ImportDictionary());
+                        var path = Path.Combine(pathBase, module.filename);
+                        Assert.IsNotNull(Module.ReadFromBinary(path)); // Ensure the module parser can read it.
+                        instance = Compile.FromBinary<TExports>(path)(new ImportDictionary());
                         exports = instance.Exports;
                         methodsByName = exports.GetType().GetMethods().ToDictionary(m => m.Name);
                         continue;
@@ -172,7 +179,7 @@ namespace WebAssembly.Runtime
                                     }
                                     catch (Exception x)
                                     {
-                                        throw new AssertFailedException($"{command.line} throw an unexpected exception of type {x.GetType().Name}.");
+                                        throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
                                     }
                                     throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                                 default:
@@ -205,14 +212,34 @@ namespace WebAssembly.Runtime
                                     case "integer overflow":
                                         Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
                                         continue;
+                                    case "out of bounds memory access":
+                                        try
+                                        {
+                                            trapExpected();
+                                        }
+                                        catch (MemoryAccessOutOfRangeException)
+                                        {
+                                            continue;
+                                        }
+                                        catch (OverflowException)
+                                        {
+                                            continue;
+                                        }
+                                        catch (Exception x)
+                                        {
+                                            throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                        }
+                                        throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                                     default:
-                                        throw new AssertFailedException($"{assert.text} doesn't have a test procedure set up.");
+                                        throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                                 }
                             default:
-                                throw new AssertFailedException($"{assert.action} doesn't have a test procedure set up.");
+                                throw new AssertFailedException($"{command.line}: {assert.action} doesn't have a test procedure set up.");
                         }
+                    case AssertMalformed assert:
+                        continue; // Not writing a WAT parser.
                     default:
-                        throw new AssertFailedException($"{command} doesn't have a test procedure set up.");
+                        throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
                 }
             }
 
@@ -229,6 +256,7 @@ namespace WebAssembly.Runtime
             assert_return_arithmetic_nan,
             assert_invalid,
             assert_trap,
+            assert_malformed,
         }
 
 #pragma warning disable 649
@@ -366,6 +394,13 @@ namespace WebAssembly.Runtime
         {
             public TypeOnly[] expected;
             public string text;
+        }
+
+        class AssertMalformed : Command
+        {
+            public string filename;
+            public string text;
+            public string module_type;
         }
 #pragma warning restore
     }
