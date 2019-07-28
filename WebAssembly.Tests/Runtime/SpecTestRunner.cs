@@ -43,6 +43,7 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertUnlinkable), CommandType.assert_unlinkable)
                     .RegisterSubtype(typeof(Register), CommandType.register)
                     .RegisterSubtype(typeof(AssertReturn), CommandType.action)
+                    .RegisterSubtype(typeof(AssertUninstantiable), CommandType.assert_uninstantiable)
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
                     .Of(typeof(TestAction), "type")
@@ -199,26 +200,35 @@ namespace WebAssembly.Runtime
                                     Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
                                     continue;
                                 case "unknown memory 0":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "constant expression required":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "unknown function":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "duplicate export name":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "unknown global":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "unknown table":
+                                case "unknown local":
+                                case "multiple memories":
+                                case "size minimum must not be greater than maximum":
+                                case "memory size must be at most 65536 pages (4GiB)":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
                                 case "unknown memory":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
+                                    try
+                                    {
+                                        trapExpected();
+                                    }
+                                    catch (CompilerException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (ModuleLoadException)
+                                    {
+                                        continue;
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                    }
+                                    throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                             }
@@ -313,8 +323,30 @@ namespace WebAssembly.Runtime
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                             }
                         case Register register:
-                            moduleMethodsByName[register.@as] = moduleMethodsByName[register.name];
+                            Assert.IsNotNull(
+                                moduleMethodsByName[register.@as] = register.name != null ? moduleMethodsByName[register.name] : methodsByName,
+                                $"{command.line} tried to register null as a module method source.");
                             continue;
+                        case AssertUninstantiable assert:
+                            trapExpected = () =>
+                            {
+                                try
+                                {
+                                    Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                }
+                                catch (TargetInvocationException x)
+                                {
+                                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                                }
+                            };
+                            switch (assert.text)
+                            {
+                                case "unreachable":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                default:
+                                    throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
+                            }
                         default:
                             throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
                     }
@@ -366,6 +398,7 @@ namespace WebAssembly.Runtime
             assert_unlinkable,
             register,
             action,
+            assert_uninstantiable
         }
 
 #pragma warning disable 649
@@ -541,6 +574,10 @@ namespace WebAssembly.Runtime
         }
 
         class AssertUnlinkable : InvalidCommand
+        {
+        }
+
+        class AssertUninstantiable : InvalidCommand
         {
         }
 

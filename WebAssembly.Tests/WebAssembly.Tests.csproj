@@ -38,7 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Runtime\SpecTestData\**">
+    <None Update="Runtime\SpecTestData\**\*.wasm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Runtime\SpecTestData\**\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

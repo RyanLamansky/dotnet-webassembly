@@ -457,6 +457,16 @@ namespace WebAssembly.Runtime
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func_ptrs"), "func_ptrs.json");
         }
 
+        /// <summary>
+        /// Runs the globals tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_globals()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "globals"), "globals.json");
+        }
+
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public abstract class IntegerMath<T>
         {
@@ -507,6 +517,194 @@ namespace WebAssembly.Runtime
         public void SpecTest_i64()
         {
             SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", new HashSet<uint> { 106 }.Contains);
+        }
+
+        /// <summary>
+        /// Runs the if tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_if()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "if"), "if.json");
+        }
+
+        /// <summary>
+        /// Runs the imports tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Missing import for spectest::print_i32.")]
+        public void SpecTest_imports()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json");
+        }
+
+        /// <summary>
+        /// Runs the int_exprs tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_int_exprs()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "int_exprs"), "int_exprs.json");
+        }
+
+        /// <summary>
+        /// Runs the int_literals tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_int_literals()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "int_literals"), "int_literals.json");
+        }
+
+        /// <summary>
+        /// Runs the labels tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_labels()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "labels"), "labels.json");
+        }
+
+        /// <summary>
+        /// Runs the left-to-right tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_left_to_right()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "left-to-right"), "left-to-right.json");
+        }
+
+        /// <summary>
+        /// Runs the linking tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Missing import for Mf::call.")]
+        public void SpecTest_linking()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "linking"), "linking.json");
+        }
+
+        /// <summary>
+        /// Runs the load tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_load()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "load"), "load.json");
+        }
+
+        /// <summary>
+        /// Runs the local_get tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_local_get()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_get"), "local_get.json");
+        }
+
+        /// <summary>
+        /// Runs the local_set tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_local_set()
+        {
+            var skip = new HashSet<uint>
+            {
+                194, // should have thrown an exception but did not.
+                203, // should have thrown an exception but did not.
+                212, // should have thrown an exception but did not.
+                230, // should have thrown an exception but did not.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_set"), "local_set.json", skip.Contains);
+        }
+
+        /// <summary>
+        /// Runs the local_tee tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_local_tee()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_tee"), "local_tee.json");
+        }
+
+        /// <summary>
+        /// Runs the loop tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_loop()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "loop"), "loop.json");
+        }
+
+        /// <summary>
+        /// Runs the memory tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_memory()
+        {
+            var skip = new HashSet<uint>
+            {
+                9, // No exception thrown. ModuleLoadException exception was expected.
+                11, // Segment size of 0 is not currently supported.
+                12, // failed to look up method memsize
+                13, // Segment size of 0 is not currently supported.
+                14, // failed to look up method memsize
+                49, // No exception thrown. ModuleLoadException exception was expected.
+                53, // No exception thrown. ModuleLoadException exception was expected.
+                57, // No exception thrown. ModuleLoadException exception was expected.
+                61, // No exception thrown. ModuleLoadException exception was expected.
+                65, // No exception thrown. ModuleLoadException exception was expected.
+                69, // No exception thrown. ModuleLoadException exception was expected.
+                73, // No exception thrown. ModuleLoadException exception was expected.
+                166, // Common Language Runtime detected an invalid program.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory"), "memory.json", skip.Contains);
+        }
+
+        /// <summary>
+        /// Runs the memory_grow tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_memory_grow()
+        {
+            var skips = new HashSet<uint>
+            {
+                19, // Not equal: 0 and -1
+                20, // Not equal: 1 and 0
+                21, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                22, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                23, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                26, // Not equal: 1 and -1
+                27, // Not equal: 5 and 0
+                28, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                29, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                30, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                31, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                32, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                33, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                42, // Not equal: 0 and -1
+                43, // Not equal: 1 and 0
+                44, // Not equal: 1 and -1
+                45, // Not equal: 3 and -1
+                48, // Not equal: 803 and -1
+                56, // Not equal: 0 and -1
+                57, // Not equal: 1 and -1
+                58, // Not equal: 2 and -1
+                59, // Not equal: 4 and -1
+                60, // Not equal: 10 and 0,
+                97, // Not equal: 0 and 215,
+                101, // StackSizeIncorrectException
+            };
+
+            skips.UnionWith(Enumerable.Range(259, (355 + 1) - 259).Select(i => (uint)i)); //Caused by 101 skip
+
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_grow"), "memory_grow.json", skips.Contains);
         }
 
         /// <summary>
