@@ -42,13 +42,12 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(AssertExhaustion), CommandType.assert_exhaustion)
                     .RegisterSubtype(typeof(AssertUnlinkable), CommandType.assert_unlinkable)
                     .RegisterSubtype(typeof(Register), CommandType.register)
-                    .SerializeDiscriminatorProperty()
+                    .RegisterSubtype(typeof(AssertReturn), CommandType.action)
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
                     .Of(typeof(TestAction), "type")
                     .RegisterSubtype(typeof(Invoke), TestActionType.invoke)
                     .RegisterSubtype(typeof(Get), TestActionType.get)
-                    .SerializeDiscriminatorProperty()
                     .Build());
                 settings.Converters.Add(JsonSubtypesConverterBuilder
                     .Of(typeof(TypedValue), "type")
@@ -56,21 +55,12 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(Int64Value), RawValueType.i64)
                     .RegisterSubtype(typeof(Float32Value), RawValueType.f32)
                     .RegisterSubtype(typeof(Float64Value), RawValueType.f64)
-                    .SerializeDiscriminatorProperty()
                     .Build());
                 testInfo = (TestInfo)JsonSerializer.Create(settings).Deserialize(reader, typeof(TestInfo));
             }
 
             ObjectMethods methodsByName = null;
             var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
-
-            void GetMethod(TestAction action, out MethodInfo info, out object host)
-            {
-                var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
-                Assert.IsNotNull(methodSource);
-                Assert.IsTrue(methodSource.TryGetValue(action.field, out info));
-                host = methodSource.Host;
-            }
 
             Action trapExpected;
             object result, obj;
@@ -79,6 +69,14 @@ namespace WebAssembly.Runtime
             {
                 if (skip != null && skip(command.line))
                     continue;
+
+                void GetMethod(TestAction action, out MethodInfo info, out object host)
+                {
+                    var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
+                    Assert.IsNotNull(methodSource, $"{command.line} has no method source.");
+                    Assert.IsTrue(methodSource.TryGetValue(action.field, out info), $"{command.line} failed to look up method {action.field}");
+                    host = methodSource.Host;
+                }
 
                 try
                 {
@@ -367,6 +365,7 @@ namespace WebAssembly.Runtime
             assert_exhaustion,
             assert_unlinkable,
             register,
+            action,
         }
 
 #pragma warning disable 649

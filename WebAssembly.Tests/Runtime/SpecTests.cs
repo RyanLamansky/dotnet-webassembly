@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace WebAssembly.Runtime
 {
@@ -303,6 +304,157 @@ namespace WebAssembly.Runtime
         public void SpecTest_f64_cmp()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "f64_cmp"), "f64_cmp.json");
+        }
+
+        /// <summary>
+        /// Runs the fac tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
+        public void SpecTest_fac()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "fac"), "fac.json");
+        }
+
+        /// <summary>
+        /// Runs the float_exprs tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_float_exprs()
+        {
+            var skips = new HashSet<uint>
+            {
+                511, // Arithmetic operation resulted in an overflow.
+                519, // Arithmetic operation resulted in an overflow.
+                823, // Common Language Runtime detected an invalid program.
+                824, // Common Language Runtime detected an invalid program.
+                825, // Common Language Runtime detected an invalid program.
+                826, // Common Language Runtime detected an invalid program.
+                827, // Common Language Runtime detected an invalid program.
+                828, // Common Language Runtime detected an invalid program.
+                829, // Common Language Runtime detected an invalid program.
+                830, // Common Language Runtime detected an invalid program.
+                831, // Common Language Runtime detected an invalid program.
+                929, // StackSizeIncorrectException
+                1055, // StackSizeIncorrectException
+                1430, // Common Language Runtime detected an invalid program.
+                1431, // Common Language Runtime detected an invalid program.
+                1432, // Common Language Runtime detected an invalid program.
+                1433, // Common Language Runtime detected an invalid program.
+                1434, // Common Language Runtime detected an invalid program.
+                1581, // Common Language Runtime detected an invalid program.
+                1582, // Common Language Runtime detected an invalid program.
+                2349, // Not equal: 2143289344 and 2139095040
+                2351, // Not equal: 2143289344 and 2139095040
+                2353, // Not equal: 2143289344 and 2139095040
+                2355, // Not equal: 9221120237041090560 and 9218868437227405312
+                2357, // Not equal: 9221120237041090560 and 9218868437227405312
+                2359, // Not equal: 9221120237041090560 and 9218868437227405312
+            };
+
+            skips.UnionWith(Enumerable.Range(973, (1004 + 1) - 973).Select(i => (uint)i)); //Caused by 929 skip
+            skips.UnionWith(Enumerable.Range(1099, (1130 + 1) - 1099).Select(i => (uint)i)); //Caused by 1055 skip
+
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the float_literals tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_float_literals()
+        {
+            var skips = new HashSet<uint>
+            {
+                109, // Not equal: 2141192192 and 2145386496
+                111, // Not equal: 2139169605 and 2143363909
+                112, // Not equal: 2142257232 and 2146451536
+                113, // Not equal: -5587746 and -1393442
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_literals"), "float_literals.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the float_memory tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_float_memory()
+        {
+            var skips = new HashSet<uint>
+            {
+                21, // Not equal: 2141192192 and 2145386496
+                40, // Common Language Runtime detected an invalid program.
+                41, // Common Language Runtime detected an invalid program.
+                43, // Common Language Runtime detected an invalid program.
+                44, // Common Language Runtime detected an invalid program.
+                46, // Common Language Runtime detected an invalid program.
+                47, // Common Language Runtime detected an invalid program.
+                49, // Common Language Runtime detected an invalid program.
+                50, // Common Language Runtime detected an invalid program.
+                52, // Common Language Runtime detected an invalid program.
+                53, // Common Language Runtime detected an invalid program.
+                73, // Not equal: 2141192192 and 2145386496
+                92, // Common Language Runtime detected an invalid program.
+                93, // Common Language Runtime detected an invalid program.
+                95, // Common Language Runtime detected an invalid program.
+                96, // Common Language Runtime detected an invalid program.
+                98, // Common Language Runtime detected an invalid program.
+                99, // Common Language Runtime detected an invalid program.
+                101, // Common Language Runtime detected an invalid program.
+                102, // Common Language Runtime detected an invalid program.
+                104, // Common Language Runtime detected an invalid program.
+                105, // Common Language Runtime detected an invalid program.
+                144, // Common Language Runtime detected an invalid program.
+                145, // Common Language Runtime detected an invalid program.
+                147, // Common Language Runtime detected an invalid program.
+                148, // Common Language Runtime detected an invalid program.
+                150, // Common Language Runtime detected an invalid program.
+                151, // Common Language Runtime detected an invalid program.
+                153, // Common Language Runtime detected an invalid program.
+                154, // Common Language Runtime detected an invalid program.
+                156, // Common Language Runtime detected an invalid program.
+                157, // Common Language Runtime detected an invalid program.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_memory"), "float_memory.json", skips.Contains);
+        }
+
+        /// <summary>
+        /// Runs the float_misc tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_float_misc()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_misc"), "float_misc.json");
+        }
+
+        /// <summary>
+        /// Runs the forward tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_forward()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "forward"), "forward.json");
+        }
+
+        /// <summary>
+        /// Runs the func tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        public void SpecTest_func()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json");
+        }
+
+        /// <summary>
+        /// Runs the func_ptrs tests.
+        /// </summary>
+        [TestMethod]
+        [Ignore("Missing import for spectest::print_i32.")]
+        public void SpecTest_func_ptrs()
+        {
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func_ptrs"), "func_ptrs.json");
         }
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
