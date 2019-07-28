@@ -1143,6 +1143,8 @@ namespace WebAssembly.Runtime
 
                                 if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
                                     throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
+                                if (data.Length == 0)
+                                    throw new NotSupportedException($"Segment size of 0 is not currently supported.");
 
                                 var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
 
