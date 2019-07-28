@@ -96,5 +96,62 @@ namespace WebAssembly.Runtime
         {
             SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", new HashSet<uint> { 106 }.Contains);
         }
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        public abstract class FloatBitwise<T>
+        {
+            public abstract T abs(T x);
+            public abstract T neg(T x);
+            public abstract T copysign(T x, T y);
+        }
+#pragma warning restore
+
+        /// <summary>
+        /// Runs the f32_bitwise tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_f32_bitwise()
+        {
+            SpecTestRunner.Run<FloatBitwise<float>>(Path.Combine("Runtime", "SpecTestData", "f32_bitwise"), "f32_bitwise.json");
+        }
+
+        /// <summary>
+        /// Runs the f64_bitwise tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_f64_bitwise()
+        {
+            SpecTestRunner.Run<FloatBitwise<double>>(Path.Combine("Runtime", "SpecTestData", "f64_bitwise"), "f64_bitwise.json");
+        }
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        public abstract class FloatCompare<T>
+        {
+            public abstract int eq(T x, T y);
+            public abstract int ne(T x, T y);
+            public abstract int lt(T x, T y);
+            public abstract int le(T x, T y);
+            public abstract int gt(T x, T y);
+            public abstract int ge(T x, T y);
+        }
+#pragma warning restore
+
+        /// <summary>
+        /// Runs the f32_cmp tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_f32_cmp()
+        {
+            SpecTestRunner.Run<FloatCompare<float>>(Path.Combine("Runtime", "SpecTestData", "f32_cmp"), "f32_cmp.json");
+        }
+
+        /// <summary>
+        /// Runs the f64_cmp tests.
+        /// </summary>
+        [TestMethod]
+        public void SpecTest_f64_cmp()
+        {
+            SpecTestRunner.Run<FloatCompare<double>>(Path.Combine("Runtime", "SpecTestData", "f64_cmp"), "f64_cmp.json");
+        }
     }
 }
