@@ -36,10 +36,9 @@ namespace WebAssembly.Runtime
         /// Runs the binary tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
         public void SpecTest_binary()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json", line => line == 723);
         }
 
         /// <summary>
@@ -56,7 +55,7 @@ namespace WebAssembly.Runtime
         /// Runs the block tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_block()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json");
@@ -66,7 +65,7 @@ namespace WebAssembly.Runtime
         /// Runs the br tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
+        [Ignore("StackTooSmallException")]
         public void SpecTest_br()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json");
@@ -76,7 +75,7 @@ namespace WebAssembly.Runtime
         /// Runs the br_if tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
+        [Ignore("ModuleLoadException")]
         public void SpecTest_br_if()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json");
@@ -86,7 +85,7 @@ namespace WebAssembly.Runtime
         /// Runs the br_table tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
+        [Ignore("StackTooSmallException")]
         public void SpecTest_br_table()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json");
@@ -105,17 +104,22 @@ namespace WebAssembly.Runtime
         /// Runs the call tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
         public void SpecTest_call()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json");
+            var skips = new HashSet<uint>
+            {
+                272, // Infinite loop
+                273, // Infinite loop
+                289, // IndexOutOfRangeException (expected to fail, but a better exception needed)
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json", skips.Contains);
         }
 
         /// <summary>
         /// Runs the call_indirect tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
+        [Ignore("ModuleLoadException")]
         public void SpecTest_call_indirect()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json");
@@ -196,7 +200,7 @@ namespace WebAssembly.Runtime
         /// Runs the elem tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile")]
+        [Ignore("ModuleLoadException")]
         public void SpecTest_elem()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "elem"), "elem.json");
@@ -310,10 +314,13 @@ namespace WebAssembly.Runtime
         /// Runs the fac tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile, at least one issue related to End not cleaning up waste.")]
         public void SpecTest_fac()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "fac"), "fac.json");
+            var skips = new HashSet<uint>
+            {
+                89, // Infinite loop
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "fac"), "fac.json", skips.Contains);
         }
 
         /// <summary>
@@ -441,7 +448,7 @@ namespace WebAssembly.Runtime
         /// Runs the func tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_func()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json");
@@ -461,7 +468,7 @@ namespace WebAssembly.Runtime
         /// Runs the globals tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_globals()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "globals"), "globals.json");
@@ -523,7 +530,7 @@ namespace WebAssembly.Runtime
         /// Runs the if tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_if()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "if"), "if.json");
@@ -561,7 +568,7 @@ namespace WebAssembly.Runtime
         /// Runs the labels tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_labels()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "labels"), "labels.json");
@@ -590,7 +597,7 @@ namespace WebAssembly.Runtime
         /// Runs the load tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_load()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "load"), "load.json");
@@ -600,7 +607,6 @@ namespace WebAssembly.Runtime
         /// Runs the local_get tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
         public void SpecTest_local_get()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_get"), "local_get.json");
@@ -626,7 +632,7 @@ namespace WebAssembly.Runtime
         /// Runs the local_tee tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_local_tee()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_tee"), "local_tee.json");
@@ -636,7 +642,7 @@ namespace WebAssembly.Runtime
         /// Runs the loop tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_loop()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "loop"), "loop.json");
@@ -897,7 +903,7 @@ namespace WebAssembly.Runtime
         /// Runs the unwind tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile.")]
+        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_unwind()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unwind"), "unwind.json");

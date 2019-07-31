@@ -85,7 +85,8 @@ namespace WebAssembly.Runtime
                     {
                         case ModuleCommand module:
                             var path = Path.Combine(pathBase, module.filename);
-                            Assert.IsNotNull(Module.ReadFromBinary(path)); // Ensure the module parser can read it.
+                            var parsed = Module.ReadFromBinary(path); // Ensure the module parser can read it.
+                            Assert.IsNotNull(parsed);
                             methodsByName = new ObjectMethods(Compile.FromBinary<TExports>(path)(new ImportDictionary()).Exports);
                             if (module.name != null)
                                 moduleMethodsByName[module.name] = methodsByName;
@@ -276,6 +277,9 @@ namespace WebAssembly.Runtime
                                     throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                                 case "invalid conversion to integer":
                                     Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "undefined element":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
