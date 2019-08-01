@@ -438,7 +438,6 @@ namespace WebAssembly.Runtime
         /// Runs the forward tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException due to insufficient End logic.")]
         public void SpecTest_forward()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "forward"), "forward.json");
