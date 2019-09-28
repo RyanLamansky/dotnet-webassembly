@@ -351,12 +351,6 @@ namespace WebAssembly.Runtime
                 1434, // Common Language Runtime detected an invalid program.
                 1581, // Common Language Runtime detected an invalid program.
                 1582, // Common Language Runtime detected an invalid program.
-                2349, // Not equal: 2143289344 and 2139095040
-                2351, // Not equal: 2143289344 and 2139095040
-                2353, // Not equal: 2143289344 and 2139095040
-                2355, // Not equal: 9221120237041090560 and 9218868437227405312
-                2357, // Not equal: 9221120237041090560 and 9218868437227405312
-                2359, // Not equal: 9221120237041090560 and 9218868437227405312
             };
 
             skips.UnionWith(Enumerable.Range(973, (1004 + 1) - 973).Select(i => (uint)i)); //Caused by 929 skip

@@ -39,14 +39,14 @@ namespace WebAssembly.Instructions
                 var testData = Samples.Memory;
                 Marshal.Copy(testData, 0, memory.Start, testData.Length);
                 Assert.AreEqual("1.540035E-36", exports.Test(0).ToString(invariantCulture));
-                Assert.AreEqual("6.207163E-36", exports.Test(1).ToString(invariantCulture));
-                Assert.AreEqual("2.501747E-35", exports.Test(2).ToString(invariantCulture));
-                Assert.AreEqual("1.008251E-34", exports.Test(3).ToString(invariantCulture));
+                Assert.AreEqual("6.2071626E-36", exports.Test(1).ToString(invariantCulture));
+                Assert.AreEqual("2.5017467E-35", exports.Test(2).ToString(invariantCulture));
+                Assert.AreEqual("1.0082514E-34", exports.Test(3).ToString(invariantCulture));
                 Assert.AreEqual("4.063216E-34", exports.Test(4).ToString(invariantCulture));
-                Assert.AreEqual("0.03320982", exports.Test(5).ToString(invariantCulture));
+                Assert.AreEqual("0.033209823", exports.Test(5).ToString(invariantCulture));
                 Assert.AreEqual("-8.313687E+14", exports.Test(6).ToString(invariantCulture));
                 Assert.AreEqual("9.602914E-14", exports.Test(7).ToString(invariantCulture));
-                Assert.AreEqual("-1.912281E+17", exports.Test(8).ToString(invariantCulture));
+                Assert.AreEqual("-1.9122811E+17", exports.Test(8).ToString(invariantCulture));
 
                 Assert.AreEqual(0, exports.Test((int)Memory.PageSize - 4));
 
@@ -101,14 +101,14 @@ namespace WebAssembly.Instructions
 
                 var testData = Samples.Memory;
                 Marshal.Copy(testData, 0, memory.Start, testData.Length);
-                Assert.AreEqual("6.207163E-36", exports.Test(0).ToString(invariantCulture));
-                Assert.AreEqual("2.501747E-35", exports.Test(1).ToString(invariantCulture));
-                Assert.AreEqual("1.008251E-34", exports.Test(2).ToString(invariantCulture));
+                Assert.AreEqual("6.2071626E-36", exports.Test(0).ToString(invariantCulture));
+                Assert.AreEqual("2.5017467E-35", exports.Test(1).ToString(invariantCulture));
+                Assert.AreEqual("1.0082514E-34", exports.Test(2).ToString(invariantCulture));
                 Assert.AreEqual("4.063216E-34", exports.Test(3).ToString(invariantCulture));
-                Assert.AreEqual("0.03320982", exports.Test(4).ToString(invariantCulture));
+                Assert.AreEqual("0.033209823", exports.Test(4).ToString(invariantCulture));
                 Assert.AreEqual("-8.313687E+14", exports.Test(5).ToString(invariantCulture));
                 Assert.AreEqual("9.602914E-14", exports.Test(6).ToString(invariantCulture));
-                Assert.AreEqual("-1.912281E+17", exports.Test(7).ToString(invariantCulture));
+                Assert.AreEqual("-1.9122811E+17", exports.Test(7).ToString(invariantCulture));
                 Assert.AreEqual("2.021882E-38", exports.Test(8).ToString(invariantCulture));
 
                 Assert.AreEqual(0, exports.Test((int)Memory.PageSize - 5));

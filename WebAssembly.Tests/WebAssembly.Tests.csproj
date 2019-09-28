@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>    
-    <TargetFramework>netcoreapp2.1</TargetFramework>    
+    <TargetFramework>netcoreapp3.0</TargetFramework>    
     <RootNamespace>WebAssembly</RootNamespace>
-    <LangVersion>7.3</LangVersion>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <TreatSpecificWarningsAsErrors />
   </PropertyGroup>
