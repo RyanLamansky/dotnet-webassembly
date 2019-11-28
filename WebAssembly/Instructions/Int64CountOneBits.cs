@@ -1,7 +1,6 @@
 ﻿using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions
 {
@@ -38,9 +37,7 @@ namespace WebAssembly.Instructions
 
         internal static MethodBuilder CreateHelper(HelperMethod helper, CompilationContext context)
         {
-            Assert(context != null);
-
-            var result = context.ExportsBuilder.DefineMethod(
+            var result = context.CheckedExportsBuilder.DefineMethod(
                 "☣ Int64CountOneBits",
                 CompilationContext.HelperMethodAttributes,
                 typeof(ulong),

@@ -9,7 +9,7 @@ namespace WebAssembly
     public class Export
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private string name;
+        private string? name;
 
         /// <summary>
         /// The name of the exported item.

@@ -74,14 +74,14 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) => this.Equals(other as MemoryImmediateInstruction);
+        public override bool Equals(Instruction? other) => this.Equals(other as MemoryImmediateInstruction);
 
         /// <summary>
         /// Determines whether this instruction is identical to another.
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(MemoryImmediateInstruction other) =>
+        public bool Equals(MemoryImmediateInstruction? other) =>
             other != null
             && other.OpCode == this.OpCode
             && other.Flags == this.Flags
@@ -146,11 +146,11 @@ namespace WebAssembly.Instructions
                     break;
             }
 
-            var builder = context.ExportsBuilder.DefineMethod(
+            var builder = context.CheckedExportsBuilder.DefineMethod(
                 $"☣ Range Check {size}",
                 CompilationContext.HelperMethodAttributes,
                 typeof(uint),
-                new[] { typeof(uint), context.ExportsBuilder.AsType() }
+                new[] { typeof(uint), context.CheckedExportsBuilder.AsType() }
                 );
             var il = builder.GetILGenerator();
             il.Emit(OpCodes.Ldarg_1);

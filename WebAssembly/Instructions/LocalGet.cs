@@ -37,9 +37,9 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.Stack.Push(context.Locals[this.Index]);
+            context.Stack.Push(context.CheckedLocals[this.Index]);
 
-            var localIndex = this.Index - context.Signature.ParameterTypes.Length;
+            var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;
             if (localIndex < 0)
             {
                 //Referring to a parameter.

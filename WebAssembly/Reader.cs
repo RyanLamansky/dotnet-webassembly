@@ -1,14 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
     internal sealed class Reader : IDisposable
     {
         private readonly UTF8Encoding utf8 = new UTF8Encoding(false, false);
-        private BinaryReader reader;
+        private BinaryReader? reader;
         private long offset;
 
         public Reader(Stream input)
@@ -19,11 +18,11 @@ namespace WebAssembly
 
         public long Offset => this.offset;
 
+        public BinaryReader CheckedReader => this.reader ?? throw new ObjectDisposedException(nameof(Reader));
+
         public uint ReadUInt32()
         {
-            Assert(this.reader != null);
-
-            var result = this.reader.ReadUInt32();
+            var result = CheckedReader.ReadUInt32();
             this.offset += 4;
             return result;
         }
@@ -114,18 +113,14 @@ namespace WebAssembly
 
         public float ReadFloat32()
         {
-            Assert(this.reader != null);
-
-            var result = this.reader.ReadSingle();
+            var result = CheckedReader.ReadSingle();
             this.offset += 4;
             return result;
         }
 
         public double ReadFloat64()
         {
-            Assert(this.reader != null);
-
-            var result = this.reader.ReadDouble();
+            var result = CheckedReader.ReadDouble();
             this.offset += 8;
             return result;
         }
@@ -138,18 +133,14 @@ namespace WebAssembly
 
         public byte[] ReadBytes(uint length)
         {
-            Assert(this.reader != null);
-
-            var result = this.reader.ReadBytes(checked((int)length));
+            var result = CheckedReader.ReadBytes(checked((int)length));
             this.offset += length;
             return result;
         }
 
         public byte ReadByte()
         {
-            Assert(this.reader != null);
-
-            var result = this.reader.ReadByte();
+            var result = CheckedReader.ReadByte();
             this.offset++;
             return result;
         }

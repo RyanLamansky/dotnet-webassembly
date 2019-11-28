@@ -42,7 +42,7 @@ namespace WebAssembly.Instructions
 
         private MethodBuilder CreateStoreMethod(HelperMethod helper, CompilationContext context)
         {
-            var builder = context.ExportsBuilder.DefineMethod(
+            var builder = context.CheckedExportsBuilder.DefineMethod(
                 $"☣ {helper}",
                 CompilationContext.HelperMethodAttributes,
                 typeof(void),
@@ -51,7 +51,7 @@ namespace WebAssembly.Instructions
                     typeof(uint), //Address
 					this.Type.ToSystemType(), //Value
 					typeof(uint), //Offset
-					context.ExportsBuilder.AsType(),
+					context.CheckedExportsBuilder.AsType(),
                 }
                 );
             var il = builder.GetILGenerator();

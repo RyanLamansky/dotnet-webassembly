@@ -2,19 +2,17 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Runtime.Compilation
 {
     internal sealed class CompilationContext
     {
-        public TypeBuilder ExportsBuilder;
-        private ILGenerator generator;
+        private TypeBuilder? ExportsBuilder;
+        private ILGenerator? generator;
         public readonly CompilerConfiguration Configuration;
 
         public CompilationContext(CompilerConfiguration configuration)
         {
-            Assert(configuration != null);
             this.Configuration = configuration;
         }
 
@@ -24,11 +22,6 @@ namespace WebAssembly.Runtime.Compilation
             WebAssemblyValueType[] locals
             )
         {
-            Assert(generator != null);
-            Assert(signature != null);
-            Assert(locals != null);
-            Assert(signature.RawReturnTypes != null);
-
             this.generator = generator;
             this.Signature = signature;
             this.Locals = locals;
@@ -67,19 +60,19 @@ namespace WebAssembly.Runtime.Compilation
             this.Stack.Clear();
         }
 
-        public Signature[] FunctionSignatures;
+        public Signature[]? FunctionSignatures;
 
-        public MethodInfo[] Methods;
+        public MethodInfo[]? Methods;
 
-        public Signature[] Types;
+        public Signature[]? Types;
 
-        public GlobalInfo[] Globals;
+        public GlobalInfo[]? Globals;
 
         public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
 
         public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new Dictionary<uint, MethodBuilder>();
 
-        public FieldBuilder FunctionTable;
+        public FieldBuilder? FunctionTable;
 
         internal const MethodAttributes HelperMethodAttributes =
             MethodAttributes.Private |
@@ -93,8 +86,6 @@ namespace WebAssembly.Runtime.Compilation
         {
             get
             {
-                Assert(this.helperMethods != null);
-
                 if (this.helperMethods.TryGetValue(helper, out var builder))
                     return builder;
 
@@ -106,24 +97,19 @@ namespace WebAssembly.Runtime.Compilation
         {
             get
             {
-                Assert(creator != null);
-                Assert(this.helperMethods != null);
-                Assert(this.ExportsBuilder != null);
-
                 if (this.helperMethods.TryGetValue(helper, out var builder))
                     return builder;
 
                 this.helperMethods.Add(helper, builder = creator(helper, this));
-                Assert(builder != null, "Helper method creator returned null.");
                 return builder;
             }
         }
 
-        public Signature Signature;
+        public Signature? Signature;
 
-        public FieldBuilder Memory;
+        public FieldBuilder? Memory;
 
-        public WebAssemblyValueType[] Locals;
+        public WebAssemblyValueType[]? Locals;
 
         public readonly Stack<BlockType> Depth = new Stack<BlockType>();
 
@@ -135,34 +121,60 @@ namespace WebAssembly.Runtime.Compilation
 
         public readonly Stack<WebAssemblyValueType> Stack = new Stack<WebAssemblyValueType>();
 
-        public Label DefineLabel() => generator.DefineLabel();
+        public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 
-        public void MarkLabel(Label loc) => generator.MarkLabel(loc);
+        public Signature[] CheckedFunctionSignatures => FunctionSignatures ?? throw new InvalidOperationException();
 
-        public void EmitLoadThis() => generator.EmitLoadArg(this.Signature.ParameterTypes.Length);
+        public MethodInfo[] CheckedMethods => Methods ?? throw new InvalidOperationException();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode) => generator.Emit(opcode);
+        public Signature[] CheckedTypes => Types ?? throw new InvalidOperationException();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, byte arg) => generator.Emit(opcode, arg);
+        public FieldBuilder CheckedMemory => Memory ?? throw new InvalidOperationException();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, int arg) => generator.Emit(opcode, arg);
+        public TypeBuilder CheckedExportsBuilder
+        {
+            get => this.ExportsBuilder ?? throw new InvalidOperationException();
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException(nameof(value));
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, long arg) => generator.Emit(opcode, arg);
+                this.ExportsBuilder = value;
+            }
+        }
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, float arg) => generator.Emit(opcode, arg);
+        private ILGenerator CheckedGenerator => this.generator ?? throw new InvalidOperationException();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, double arg) => generator.Emit(opcode, arg);
+        public Signature CheckedSignature => this.Signature ?? throw new InvalidOperationException();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, Label label) => generator.Emit(opcode, label);
+        public Label DefineLabel() => CheckedGenerator.DefineLabel();
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, Label[] labels) => generator.Emit(opcode, labels);
+        public void MarkLabel(Label loc) => CheckedGenerator.MarkLabel(loc);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, FieldInfo field) => generator.Emit(opcode, field);
+        public void EmitLoadThis() => CheckedGenerator.EmitLoadArg(CheckedSignature.ParameterTypes.Length);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, MethodInfo meth) => generator.Emit(opcode, meth);
+        public void Emit(System.Reflection.Emit.OpCode opcode) => CheckedGenerator.Emit(opcode);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => generator.Emit(opcode, con);
+        public void Emit(System.Reflection.Emit.OpCode opcode, byte arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public LocalBuilder DeclareLocal(Type localType) => generator.DeclareLocal(localType);
+        public void Emit(System.Reflection.Emit.OpCode opcode, int arg) => CheckedGenerator.Emit(opcode, arg);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, long arg) => CheckedGenerator.Emit(opcode, arg);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, float arg) => CheckedGenerator.Emit(opcode, arg);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, double arg) => CheckedGenerator.Emit(opcode, arg);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, Label label) => CheckedGenerator.Emit(opcode, label);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, Label[] labels) => CheckedGenerator.Emit(opcode, labels);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, FieldInfo field) => CheckedGenerator.Emit(opcode, field);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, MethodInfo meth) => CheckedGenerator.Emit(opcode, meth);
+
+        public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => CheckedGenerator.Emit(opcode, con);
+
+        public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
     }
 }

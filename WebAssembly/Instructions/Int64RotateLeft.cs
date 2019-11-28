@@ -38,7 +38,7 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int64RotateLeft, (helper, c) =>
             {
-                var builder = c.ExportsBuilder.DefineMethod(
+                var builder = c.CheckedExportsBuilder.DefineMethod(
                     "☣ Int64RotateLeft",
                     CompilationContext.HelperMethodAttributes,
                     typeof(ulong),

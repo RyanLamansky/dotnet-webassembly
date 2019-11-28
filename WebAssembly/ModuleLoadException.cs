@@ -13,7 +13,7 @@ namespace WebAssembly
         /// <param name="message">Becomes the <see cref="Exception.Message"/> value.</param>
         /// <param name="offset">The offset from the start of a data sequence where the error was encountered.</param>
         /// <param name="innerException">The wrapped exception.</param>
-        public ModuleLoadException(string message, long offset, Exception innerException)
+        public ModuleLoadException(string message, long offset, Exception? innerException)
             : base($"At offset {offset}: {message}", innerException)
         {
             this.Offset = offset;

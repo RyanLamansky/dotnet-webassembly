@@ -58,14 +58,14 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) => this.Equals(other as Call);
+        public override bool Equals(Instruction? other) => this.Equals(other as Call);
 
         /// <summary>
         /// Determines whether this instruction is identical to another.
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(Call other) =>
+        public bool Equals(Call? other) =>
             other != null
             && other.Index == this.Index
             ;
@@ -78,10 +78,10 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            if (this.Index >= context.Methods.Length)
-                throw new CompilerException($"Function for index {this.Index} requseted, the assembly contains only {context.Methods.Length}.");
+            if (this.Index >= context.CheckedMethods.Length)
+                throw new CompilerException($"Function for index {this.Index} requseted, the assembly contains only {context.CheckedMethods.Length}.");
 
-            var signature = context.FunctionSignatures[this.Index];
+            var signature = context.CheckedFunctionSignatures[this.Index];
             var paramTypes = signature.RawParameterTypes;
             var returnTypes = signature.RawReturnTypes;
 
@@ -99,7 +99,7 @@ namespace WebAssembly.Instructions
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);
 
-            var target = context.Methods[this.Index];
+            var target = context.CheckedMethods[this.Index];
             if (target is MethodBuilder) //Indicates a dynamically generated method.
                 context.EmitLoadThis();
             context.Emit(OpCodes.Call, target);

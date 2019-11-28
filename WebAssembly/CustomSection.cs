@@ -35,7 +35,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private string name;
+        private string? name;
 
         /// <summary>
         /// The name of the custom section; nulls are converted to <see cref="string.Empty"/>.
@@ -47,7 +47,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<byte> content;
+        private IList<byte>? content;
 
         /// <summary>
         /// The content of the custom section; nulls are converted to an empty modifiable collection.

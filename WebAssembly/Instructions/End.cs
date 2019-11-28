@@ -24,11 +24,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            Assert(context != null);
-            Assert(context.Depth != null);
-
             var stack = context.Stack;
-            Assert(stack != null);
 
             var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Pop();
 
@@ -37,7 +33,7 @@ namespace WebAssembly.Instructions
                 if (context.Previous == OpCode.Return)
                     return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
 
-                var returns = context.Signature.RawReturnTypes;
+                var returns = context.CheckedSignature.RawReturnTypes;
                 var returnsLength = returns.Length;
                 if (returnsLength != stack.Count)
                     throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);

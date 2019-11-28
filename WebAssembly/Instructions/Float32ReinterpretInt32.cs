@@ -35,7 +35,7 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Call, context[HelperMethod.Float32ReinterpretInt32, (helper, c) =>
             {
-                var builder = c.ExportsBuilder.DefineMethod(
+                var builder = c.CheckedExportsBuilder.DefineMethod(
                     "☣ Float32ReinterpretInt32",
                     CompilationContext.HelperMethodAttributes,
                     typeof(float),

@@ -7,9 +7,9 @@ namespace WebAssembly.Runtime.Compilation
         public readonly WebAssemblyValueType Type;
         public readonly bool RequiresInstance;
         public readonly MethodInfo Getter;
-        public readonly MethodInfo Setter;
+        public readonly MethodInfo? Setter;
 
-        public GlobalInfo(WebAssemblyValueType type, bool requiresInstance, MethodInfo getter, MethodInfo setter)
+        public GlobalInfo(WebAssemblyValueType type, bool requiresInstance, MethodInfo getter, MethodInfo? setter)
         {
             this.Type = type;
             this.RequiresInstance = requiresInstance;

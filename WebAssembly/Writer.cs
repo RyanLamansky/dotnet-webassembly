@@ -1,35 +1,31 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
     internal sealed class Writer : IDisposable
     {
         private readonly UTF8Encoding utf8 = new UTF8Encoding(false, false);
-        private BinaryWriter writer;
+        private BinaryWriter? writer;
 
         public Writer(Stream output)
         {
             this.writer = new BinaryWriter(output, utf8, true);
         }
 
-        public void Write(uint value)
-        {
-            Assert(this.writer != null);
+        private BinaryWriter CheckedWriter => this.writer ?? throw new ObjectDisposedException(nameof(Writer));
 
-            this.writer.Write(value);
-        }
+        public void Write(uint value) => CheckedWriter.Write(value);
 
         public void WriteVar(uint value)
         {
-            Assert(this.writer != null);
+            var writer = CheckedWriter;
 
             var remaining = value >> 7;
             while (remaining != 0)
             {
-                this.writer.Write((byte)((value & 0x7f) | 0x80));
+                writer.Write((byte)((value & 0x7f) | 0x80));
                 value = remaining;
                 remaining >>= 7;
             }
@@ -38,7 +34,7 @@ namespace WebAssembly
 
         public void WriteVar(ulong value)
         {
-            Assert(this.writer != null);
+            var writer = CheckedWriter;
 
             var remaining = value >> 7;
             while (remaining != 0)
@@ -52,7 +48,7 @@ namespace WebAssembly
 
         public void WriteVar(int value)
         {
-            Assert(this.writer != null);
+            var writer = CheckedWriter;
 
             var remaining = value >> 7;
             var hasMore = true;
@@ -68,7 +64,7 @@ namespace WebAssembly
 
         public void WriteVar(long value)
         {
-            Assert(this.writer != null);
+            var writer = CheckedWriter;
 
             var remaining = value >> 7;
             var hasMore = true;
@@ -82,19 +78,9 @@ namespace WebAssembly
             } while (hasMore);
         }
 
-        public void Write(float value)
-        {
-            Assert(this.writer != null);
+        public void Write(float value) => CheckedWriter.Write(value);
 
-            this.writer.Write(value);
-        }
-
-        public void Write(double value)
-        {
-            Assert(this.writer != null);
-
-            this.writer.Write(value);
-        }
+        public void Write(double value) => CheckedWriter.Write(value);
 
         public void Write(string value)
         {
@@ -103,26 +89,11 @@ namespace WebAssembly
             this.Write(bytes);
         }
 
-        public void Write(byte[] value)
-        {
-            Assert(this.writer != null);
+        public void Write(byte[] value) => CheckedWriter.Write(value);
 
-            this.writer.Write(value);
-        }
+        public void Write(byte[] buffer, int index, int count) => CheckedWriter.Write(buffer, index, count);
 
-        public void Write(byte[] buffer, int index, int count)
-        {
-            Assert(this.writer != null);
-
-            this.writer.Write(buffer, index, count);
-        }
-
-        public void Write(byte value)
-        {
-            Assert(this.writer != null);
-
-            this.writer.Write(value);
-        }
+        public void Write(byte value) => CheckedWriter.Write(value);
 
         #region IDisposable Support
         void Dispose(bool disposing)

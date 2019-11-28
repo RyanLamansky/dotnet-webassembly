@@ -24,11 +24,8 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            Assert(context != null);
-
-            var returns = context.Signature.RawReturnTypes;
+            var returns = context.CheckedSignature.RawReturnTypes;
             var stack = context.Stack;
-            Assert(stack != null);
 
             var returnsLength = returns.Length;
             Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.

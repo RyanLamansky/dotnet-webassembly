@@ -82,8 +82,8 @@ namespace WebAssembly.Runtime
             this.delegateTypes = new Type[initial];
         }
 
-        private Delegate[] delegates;
-        private Type[] delegateTypes;
+        private Delegate?[] delegates;
+        private Type?[] delegateTypes;
 
         /// <summary>
         /// Gets or sets the delegate at the indicated index.  The first time a delegate is provided, it locks in the type for any future reassignments.
@@ -93,7 +93,7 @@ namespace WebAssembly.Runtime
         /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> does not fall within the range of the table.</exception>
         /// <exception cref="ArgumentException">The delegate is expected to be of a different type than supplied.</exception>
         /// <remarks>Delegate types set by the compiler come from the provided (or default) <see cref="CompilerConfiguration"/>.</remarks>
-        public Delegate this[int index]
+        public Delegate? this[int index]
         {
             get => this.delegates[index];
             set

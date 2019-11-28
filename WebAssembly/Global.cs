@@ -21,7 +21,7 @@ namespace WebAssembly
         public bool IsMutable { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Instruction> initializerExpression;
+        private IList<Instruction>? initializerExpression;
 
         /// <summary>
         /// The initial value of the global.

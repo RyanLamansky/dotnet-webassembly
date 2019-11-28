@@ -87,9 +87,6 @@ namespace WebAssembly.Runtime.Compilation
             var parameters = this.ParameterTypes;
             var returns = this.ReturnTypes;
 
-            Assert(parameters != null);
-            Assert(returns != null);
-
             var builder = new StringBuilder();
 
             if (parameters.Length == 0)

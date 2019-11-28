@@ -36,7 +36,7 @@ namespace WebAssembly.Runtime
         /// <returns>One of the <see cref="Func{T, TResult}"/>/<see cref="Action"/> variations,
         /// or null if no variation exists for the <paramref name="parameters"/>/<paramref name="returns"/> combination.</returns>
         /// <remarks>This can help build custom <see cref="GetDelegateForType"/> solutions by covering common cases.</remarks>
-        public static Type GetStandardDelegateForType(int parameters, int returns)
+        public static Type? GetStandardDelegateForType(int parameters, int returns)
         {
             switch (returns)
             {
@@ -100,5 +100,5 @@ namespace WebAssembly.Runtime
     /// Typically, variants of <see cref="Func{T, TResult}"/>/<see cref="Action"/> are used, but these don't cover every possibility.
     /// If more than 16 parameters are needed, a custom delegate type must be created.</returns>
     /// <remarks><see cref="CompilerConfiguration.GetStandardDelegateForType(int, int)"/> can be combined with custom solutions to handle common cases.</remarks>
-    public delegate Type GetDelegateForTypeCallback(int parameters, int returns);
+    public delegate Type? GetDelegateForTypeCallback(int parameters, int returns);
 }

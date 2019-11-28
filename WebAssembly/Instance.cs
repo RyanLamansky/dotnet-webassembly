@@ -18,7 +18,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private TExports exports;
+        private TExports? exports;
 
         /// <summary>
         /// Exported features of the assembly.

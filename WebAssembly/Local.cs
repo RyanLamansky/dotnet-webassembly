@@ -57,7 +57,7 @@ namespace WebAssembly
         /// </summary>
         /// <param name="other">The instance to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(Local other)
+        public bool Equals(Local? other)
         {
             return other != null
                 && other.Type == this.Type

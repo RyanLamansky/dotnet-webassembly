@@ -190,9 +190,9 @@ namespace WebAssembly.Runtime
             uint memoryPagesMinimum = 0;
             uint memoryPagesMaximum = 0;
 
-            Signature[] signatures = null;
-            Signature[] functionSignatures = null;
-            KeyValuePair<string, uint>[] exportedFunctions = null;
+            Signature[]? signatures = null;
+            Signature[]? functionSignatures = null;
+            KeyValuePair<string, uint>[]? exportedFunctions = null;
             var previousSection = Section.None;
 
             var module = AssemblyBuilder.DefineDynamicAssembly(
@@ -234,9 +234,9 @@ namespace WebAssembly.Runtime
                 ;
 
             var context = new CompilationContext(configuration);
-            var exportsBuilder = context.ExportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
-            MethodBuilder importedMemoryProvider = null;
-            FieldBuilder memory = null;
+            var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+            MethodBuilder? importedMemoryProvider = null;
+            FieldBuilder? memory = null;
 
             ILGenerator instanceConstructorIL;
             {
@@ -259,10 +259,10 @@ namespace WebAssembly.Runtime
             var exports = exportsBuilder.AsType();
             var importedFunctions = 0;
             var importedGlobals = 0;
-            MethodInfo[] internalFunctions = null;
-            FieldBuilder functionTable = null;
-            GlobalInfo[] globals = null;
-            MethodInfo startFunction = null;
+            MethodInfo[]? internalFunctions = null;
+            FieldBuilder? functionTable = null;
+            GlobalInfo[]? globals = null;
+            MethodInfo? startFunction = null;
             var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
             var delegateRemappersByType = context.DelegateRemappersByType;
 #if FILESTREAM // Supported frameworks that don't have FileStream (.NET Standard 1.1) also lack EmptyTypes.
@@ -318,6 +318,8 @@ namespace WebAssembly.Runtime
                                     case ExternalKind.Function:
                                         {
                                             var typeIndex = reader.ReadVarUInt32();
+                                            if (signatures == null)
+                                                throw new InvalidOperationException();
                                             var signature = signatures[typeIndex];
                                             var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
                                             if (del == null)
@@ -480,7 +482,7 @@ namespace WebAssembly.Runtime
                                             instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
-                                            MethodBuilder setterInvoker;
+                                            MethodBuilder? setterInvoker;
                                             if (!mutable)
                                             {
                                                 setterInvoker = null;
@@ -567,6 +569,9 @@ namespace WebAssembly.Runtime
                             {
                                 internalFunctions = context.Methods = new MethodInfo[functionSignatures.Length];
                             }
+
+                            if (signatures == null)
+                                throw new InvalidOperationException();
 
                             for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                             {
@@ -740,7 +745,7 @@ namespace WebAssembly.Runtime
 
                                 var il = getter.GetILGenerator();
                                 var getterSignature = new Signature(contentType);
-                                MethodBuilder setter;
+                                MethodBuilder? setter;
 
                                 if (isMutable == false)
                                 {
@@ -878,6 +883,8 @@ namespace WebAssembly.Runtime
                                         }
                                         break;
                                     case ExternalKind.Global:
+                                        if (globals == null)
+                                            throw new ModuleLoadException($"Exported index {index} is global but no globals are defined.", preIndexOffset);
                                         if (index >= globals.Length)
                                             throw new ModuleLoadException($"Exported global index of {index} is greater than the number of globals {globals.Length}.", preIndexOffset);
 
@@ -930,6 +937,9 @@ namespace WebAssembly.Runtime
 
                     case Section.Start:
                         {
+                            if (internalFunctions == null)
+                                throw new ModuleLoadException("Start section created without any functions.", preSectionOffset);
+
                             var preReadOffset = reader.Offset;
                             var startIndex = reader.ReadVarInt32();
                             if (startIndex >= internalFunctions.Length)
@@ -994,6 +1004,11 @@ namespace WebAssembly.Runtime
 
                                 instanceConstructorIL.MarkLabel(isBigEnough);
 
+                                if (functionSignatures == null)
+                                    throw new InvalidOperationException();
+                                if (internalFunctions == null)
+                                    throw new InvalidOperationException();
+
                                 for (var j = 0u; j < elements; j++)
                                 {
                                     var functionIndex = reader.ReadVarUInt32();
@@ -1005,7 +1020,9 @@ namespace WebAssembly.Runtime
                                     {
                                         var del = configuration
                                             .GetDelegateForType(parms.Length, returns.Length)
-                                            .MakeGenericType(parms.Concat(returns).ToArray());
+                                            ?.MakeGenericType(parms.Concat(returns).ToArray());
+                                        if (del == null)
+                                            throw new CompilerException($"Failed to get a delegate for type {signature}.");
                                         delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
                                     }
 
@@ -1049,6 +1066,11 @@ namespace WebAssembly.Runtime
 
                     case Section.Code:
                         {
+                            if (functionSignatures == null)
+                                throw new InvalidOperationException();
+                            if (internalFunctions == null)
+                                throw new InvalidOperationException();
+
                             var preBodiesIndex = reader.Offset;
                             var functionBodies = reader.ReadVarUInt32();
 
@@ -1172,8 +1194,14 @@ namespace WebAssembly.Runtime
                 previousSection = (Section)id;
             }
 
-            if (exportedFunctions != null)
+            if (exportedFunctions != null && exportedFunctions.Length != 0)
             {
+
+                if (functionSignatures == null)
+                    throw new InvalidOperationException();
+                if (internalFunctions == null)
+                    throw new InvalidOperationException();
+
                 for (var i = 0; i < exportedFunctions.Length; i++)
                 {
                     var exported = exportedFunctions[i];

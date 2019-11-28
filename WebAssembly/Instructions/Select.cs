@@ -2,7 +2,6 @@
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions
 {
@@ -25,10 +24,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            Assert(context != null);
-
             var stack = context.Stack;
-            Assert(stack != null);
             if (stack.Count < 3)
                 throw new StackTooSmallException(OpCode.Select, 3, stack.Count);
 
@@ -56,14 +52,12 @@ namespace WebAssembly.Instructions
 
         static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
         {
-            Assert(context != null);
-
             MethodBuilder builder;
             switch (helper)
             {
                 default: throw new InvalidOperationException(); // Shouldn't be possible.
                 case HelperMethod.SelectInt32:
-                    builder = context.ExportsBuilder.DefineMethod(
+                    builder = context.CheckedExportsBuilder.DefineMethod(
                         "☣ Select Int32",
                         CompilationContext.HelperMethodAttributes,
                         typeof(int),
@@ -77,7 +71,7 @@ namespace WebAssembly.Instructions
                     break;
 
                 case HelperMethod.SelectInt64:
-                    builder = context.ExportsBuilder.DefineMethod(
+                    builder = context.CheckedExportsBuilder.DefineMethod(
                         "☣ Select Int64",
                         CompilationContext.HelperMethodAttributes,
                         typeof(long),
@@ -91,7 +85,7 @@ namespace WebAssembly.Instructions
                     break;
 
                 case HelperMethod.SelectFloat32:
-                    builder = context.ExportsBuilder.DefineMethod(
+                    builder = context.CheckedExportsBuilder.DefineMethod(
                         "☣ Select Float32",
                         CompilationContext.HelperMethodAttributes,
                         typeof(float),
@@ -105,7 +99,7 @@ namespace WebAssembly.Instructions
                     break;
 
                 case HelperMethod.SelectFloat64:
-                    builder = context.ExportsBuilder.DefineMethod(
+                    builder = context.CheckedExportsBuilder.DefineMethod(
                         "☣ Select Float64",
                         CompilationContext.HelperMethodAttributes,
                         typeof(double),

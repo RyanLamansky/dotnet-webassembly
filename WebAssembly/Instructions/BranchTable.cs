@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
         /// </summary>
         public sealed override OpCode OpCode => OpCode.BranchTable;
 
-        private IList<uint> labels;
+        private IList<uint>? labels;
 
         /// <summary>
         /// A zero-based array of labels.
@@ -95,14 +95,14 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) => this.Equals(other as BranchTable);
+        public override bool Equals(Instruction? other) => this.Equals(other as BranchTable);
 
         /// <summary>
         /// Determines whether this instruction is identical to another.
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(BranchTable other) =>
+        public bool Equals(BranchTable? other) =>
             other != null
             && other.DefaultLabel == this.DefaultLabel
             && other.Labels.Count == this.Labels.Count

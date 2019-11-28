@@ -9,7 +9,7 @@ namespace WebAssembly
     public abstract class Import
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private string module;
+        private string? module;
 
         /// <summary>
         /// The module portion of the name.
@@ -22,7 +22,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private string field;
+        private string? field;
 
         /// <summary>
         /// The field portion of the name.
@@ -158,7 +158,7 @@ namespace WebAssembly
             /// <summary>
             /// Definiton of the imported table.
             /// </summary>
-            public WebAssembly.Table Definition { get; set; }
+            public WebAssembly.Table? Definition { get; set; }
 
             /// <summary>
             /// Creates a new <see cref="Table"/> instance.
@@ -197,7 +197,7 @@ namespace WebAssembly
             /// <summary>
             /// Type of the imported memory.
             /// </summary>
-            public WebAssembly.Memory Type { get; set; }
+            public WebAssembly.Memory? Type { get; set; }
 
             /// <summary>
             /// Creates a new <see cref="Memory"/> instance.
@@ -214,6 +214,9 @@ namespace WebAssembly
 
             internal sealed override void WriteTo(Writer writer)
             {
+                if (Type == null)
+                    throw new InvalidOperationException("Type must be set before a memory import can be written.");
+
                 base.WriteTo(writer);
                 writer.Write((byte)ExternalKind.Memory);
                 Type.WriteTo(writer);

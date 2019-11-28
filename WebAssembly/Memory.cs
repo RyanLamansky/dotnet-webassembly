@@ -14,7 +14,7 @@ namespace WebAssembly
         public const uint PageSize = 65536;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private ResizableLimits resizableLimits;
+        private ResizableLimits? resizableLimits;
 
         /// <summary>
         /// A packed tuple that describes the limits of the memory.

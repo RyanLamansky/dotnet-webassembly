@@ -64,14 +64,14 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) => this.Equals(other as CallIndirect);
+        public override bool Equals(Instruction? other) => this.Equals(other as CallIndirect);
 
         /// <summary>
         /// Determines whether this instruction is identical to another.
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(CallIndirect other) =>
+        public bool Equals(CallIndirect? other) =>
             other != null
             && other.Type == this.Type
             && other.Reserved == this.Reserved
@@ -85,7 +85,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var signature = context.Types[this.Type];
+            var signature = context.CheckedTypes[this.Type];
             var paramTypes = signature.RawParameterTypes;
             var returnTypes = signature.RawReturnTypes;
 
@@ -118,15 +118,17 @@ namespace WebAssembly.Instructions
                 {
                     var del = context.Configuration
                         .GetDelegateForType(parms.Length, returns.Length)
-                        .MakeGenericType(parms.Concat(returns).ToArray());
+                        ?.MakeGenericType(parms.Concat(returns).ToArray());
+                    if (del == null)
+                        throw new CompilerException($"Failed to get a delegate for type {signature}.");
                     context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
                 }
 
-                context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.ExportsBuilder.DefineMethod(
+                context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.CheckedExportsBuilder.DefineMethod(
                     $"🔁 {signature.TypeIndex}",
                     MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                     returns.Length == 0 ? typeof(void) : returns[0],
-                    parms.Concat(new[] { typeof(uint), context.ExportsBuilder.AsType() }).ToArray()
+                    parms.Concat(new[] { typeof(uint), context.CheckedExportsBuilder.AsType() }).ToArray()
                     ));
 
                 var il = remapper.GetILGenerator();

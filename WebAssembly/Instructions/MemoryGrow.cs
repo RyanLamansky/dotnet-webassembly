@@ -42,7 +42,7 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) =>
+        public override bool Equals(Instruction? other) =>
             other is MemoryGrow instruction
             && instruction.Reserved == this.Reserved
             ;
@@ -64,10 +64,10 @@ namespace WebAssembly.Instructions
                 throw new StackTypeInvalidException(OpCode.MemoryGrow, WebAssemblyValueType.Int32, type);
 
             context.EmitLoadThis();
-            context.Emit(OpCodes.Ldfld, context.Memory);
+            context.Emit(OpCodes.Ldfld, context.CheckedMemory);
             context.Emit(OpCodes.Call, context[HelperMethod.GrowMemory, (helper, c) =>
             {
-                var builder = c.ExportsBuilder.DefineMethod(
+                var builder = c.CheckedExportsBuilder.DefineMethod(
                     "☣ GrowMemory",
                     CompilationContext.HelperMethodAttributes,
                     typeof(uint),

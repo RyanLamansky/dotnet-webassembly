@@ -37,7 +37,7 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Call, context[HelperMethod.Float32CopySign, (helper, c) =>
             {
-                var builder = c.ExportsBuilder.DefineMethod(
+                var builder = c.CheckedExportsBuilder.DefineMethod(
                     "☣ Float32CopySign",
                     CompilationContext.HelperMethodAttributes,
                     typeof(float),

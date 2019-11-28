@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using WebAssembly.Runtime;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
@@ -26,7 +25,7 @@ namespace WebAssembly
         internal const uint Magic = 0x6d736100;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<CustomSection> customSections;
+        private IList<CustomSection>? customSections;
 
         /// <summary>
         /// Custom sections.
@@ -39,7 +38,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<WebAssemblyType> types;
+        private IList<WebAssemblyType>? types;
 
         /// <summary>
         /// Function signatures.
@@ -52,7 +51,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Import> imports;
+        private IList<Import>? imports;
 
         /// <summary>
         /// Imported external features.
@@ -65,7 +64,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Function> functions;
+        private IList<Function>? functions;
 
         /// <summary>
         /// Functions defined within the assembly.
@@ -78,7 +77,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Table> tables;
+        private IList<Table>? tables;
 
         /// <summary>
         /// Tables defined within the assembly.
@@ -91,7 +90,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Memory> memories;
+        private IList<Memory>? memories;
 
         /// <summary>
         /// Linear memory areas defined within the assembly.
@@ -104,7 +103,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Global> globals;
+        private IList<Global>? globals;
 
         /// <summary>
         /// Global values defined within the assembly.
@@ -117,7 +116,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Export> exports;
+        private IList<Export>? exports;
 
         /// <summary>
         /// Features to be made available to the host environment.
@@ -135,7 +134,7 @@ namespace WebAssembly
         public uint? Start { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Element> elements;
+        private IList<Element>? elements;
 
         /// <summary>
         /// The elements section allows a module to initialize (at instantiation time) the elements of any imported or internally-defined table with any other definition in the module
@@ -148,7 +147,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<FunctionBody> codes;
+        private IList<FunctionBody>? codes;
 
         /// <summary>
         /// The code section contains a body for every function in the module.
@@ -161,7 +160,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Data> data;
+        private IList<Data>? data;
 
         /// <summary>
         /// The data section declares the initialized data that is loaded into the linear memory.
@@ -580,7 +579,7 @@ namespace WebAssembly
             byte[] buffer,
             Writer writer,
             Section precedingSection,
-            Dictionary<Section, IGrouping<Section, CustomSection>> customSectionsByPrecedingSection
+            Dictionary<Section, IGrouping<Section, CustomSection>>? customSectionsByPrecedingSection
             )
         {
             if (customSectionsByPrecedingSection == null)
@@ -599,10 +598,6 @@ namespace WebAssembly
 
         static void WriteSection(byte[] buffer, Writer writer, Section section, Action<Writer> action)
         {
-            Assert(buffer != null);
-            Assert(writer != null);
-            Assert(action != null);
-
             writer.Write((byte)section);
             using (var memory = new MemoryStream())
             {

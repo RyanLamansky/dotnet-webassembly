@@ -55,7 +55,7 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(Instruction other) =>
+        public override bool Equals(Instruction? other) =>
             other is BranchIf instruction
             && instruction.Index == this.Index
             ;

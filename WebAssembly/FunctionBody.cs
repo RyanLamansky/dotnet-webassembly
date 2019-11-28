@@ -12,7 +12,7 @@ namespace WebAssembly
     public class FunctionBody : IEquatable<FunctionBody>
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Local> locals;
+        private IList<Local>? locals;
 
         /// <summary>
         /// Local variables.
@@ -25,7 +25,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Instruction> code;
+        private IList<Instruction>? code;
 
         /// <summary>
         /// Bytecode of the function.
@@ -89,13 +89,13 @@ namespace WebAssembly
         /// </summary>
         /// <param name="other">The instance to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(FunctionBody other)
+        public bool Equals(FunctionBody? other)
         {
             if (other == null)
                 return false;
 
             using (var items = this.Code.GetEnumerator())
-            using (var others = this.code.GetEnumerator())
+            using (var others = this.Code.GetEnumerator())
             {
                 bool itemMoved, othersMoved;
                 while ((itemMoved = items.MoveNext()) & (othersMoved = others.MoveNext()))

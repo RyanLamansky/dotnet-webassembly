@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Linq;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly
 {
@@ -18,7 +17,7 @@ namespace WebAssembly
         public FunctionType Form { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<WebAssemblyValueType> parameters;
+        private IList<WebAssemblyValueType>? parameters;
 
         /// <summary>
         /// Parameters to the function.
@@ -31,7 +30,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<WebAssemblyValueType> returns;
+        private IList<WebAssemblyValueType>? returns;
 
         /// <summary>
         /// Return types to the function.  For the initial binary format, a maximum of 1 is allowed.
@@ -76,9 +75,6 @@ namespace WebAssembly
         {
             var parameters = this.Parameters;
             var returns = this.Returns;
-
-            Assert(parameters != null);
-            Assert(returns != null);
 
             var builder = new StringBuilder("Form: ")
                 .Append(this.Form.ToString())
@@ -148,7 +144,7 @@ namespace WebAssembly
         /// </summary>
         /// <param name="other">The other instance to compare against.</param>
         /// <returns>True if the two instances have the same values, otherwise false.</returns>
-        public bool Equals(WebAssemblyType other)
+        public bool Equals(WebAssemblyType? other)
         {
             if (ReferenceEquals(this, other))
                 return true;

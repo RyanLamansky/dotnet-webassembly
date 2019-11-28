@@ -16,7 +16,7 @@ namespace WebAssembly
         public uint Index { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Instruction> initializerExpression;
+        private IList<Instruction>? initializerExpression;
 
         /// <summary>
         /// An <see cref="WebAssemblyValueType.Int32"/> initializer expression that computes the offset at which to place the data.
@@ -29,7 +29,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<byte> rawData;
+        private IList<byte>? rawData;
 
         /// <summary>
         /// Raw data in byte form.

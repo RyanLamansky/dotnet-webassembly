@@ -16,7 +16,7 @@ namespace WebAssembly
         public uint Index { get; set; }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<Instruction> initializerExpression;
+        private IList<Instruction>? initializerExpression;
 
         /// <summary>
         /// An initializer expression that computes the offset at which to place the elements.
@@ -29,7 +29,7 @@ namespace WebAssembly
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-        private IList<uint> elements;
+        private IList<uint>? elements;
 
         /// <summary>
         /// A sequence of function indices.

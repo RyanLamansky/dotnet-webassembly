@@ -42,12 +42,12 @@ namespace WebAssembly.Instructions
                 throw new StackTooSmallException(OpCode.LocalTee, 1, stack.Count);
 
             var setType = stack.Peek();  //Assuming validation passes, the remaining type will be this.
-            if (setType != context.Locals[this.Index])
-                throw new StackTypeInvalidException(OpCode.LocalTee, context.Locals[this.Index], setType);
+            if (setType != context.CheckedLocals[this.Index])
+                throw new StackTypeInvalidException(OpCode.LocalTee, context.CheckedLocals[this.Index], setType);
 
             context.Emit(OpCodes.Dup);
 
-            var localIndex = this.Index - context.Signature.ParameterTypes.Length;
+            var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;
             if (localIndex < 0)
             {
                 //Referring to a parameter.

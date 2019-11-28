@@ -1,7 +1,6 @@
 ﻿using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions
 {
@@ -35,9 +34,7 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int64CountTrailingZeroes, (helper, c) =>
             {
-                Assert(c != null);
-
-                var result = context.ExportsBuilder.DefineMethod(
+                var result = context.CheckedExportsBuilder.DefineMethod(
                     "☣ Int64CountTrailingZeroes",
                     CompilationContext.HelperMethodAttributes,
                     typeof(long),
