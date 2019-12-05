@@ -697,7 +697,6 @@ namespace WebAssembly.Runtime
                 58, // Not equal: 2 and -1
                 59, // Not equal: 4 and -1
                 60, // Not equal: 10 and 0,
-                97, // Not equal: 0 and 215,
                 101, // StackSizeIncorrectException
             };
 
