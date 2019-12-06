@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
 namespace WebAssembly.Runtime
@@ -16,8 +17,56 @@ namespace WebAssembly.Runtime
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.Where(prop => prop.Name == nameof(Start)).First().GetMethod);
         internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(()
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.Where(prop => prop.Name == nameof(Grow)).First());
-        private static readonly RegeneratingWeakReference<long[]> emptyPage = new RegeneratingWeakReference<long[]>(() => new long[Memory.PageSize / 8]);
 
+        /// <summary>
+        /// Sets a <paramref name="length"/> of bytes to zero at a <paramref name="destination"/> memory location.
+        /// </summary>
+        /// <param name="destination">The write target memory location.</param>
+        /// <param name="length">The count of bytes to be copied.</param>
+        delegate void ZeroMemoryDelegate(IntPtr destination, uint length);
+
+        /// <summary>
+        /// Sets a length of bytes to the given value at a destination memory location.
+        /// See <see cref="ZeroMemoryDelegate"/> for details.
+        /// </summary>
+        static readonly ZeroMemoryDelegate ZeroMemory;
+	
+        static UnmanagedMemory()
+        {
+            const string dynamicModuleName = nameof(UnmanagedMemory) + "DynamicMethods";
+            
+            var module = AssemblyBuilder.DefineDynamicAssembly(
+                        new AssemblyName(dynamicModuleName),
+                        AssemblyBuilderAccess.RunAndCollect
+                    )
+                    .DefineDynamicModule(dynamicModuleName);
+
+            var dynClass = module.DefineType(
+                "DynamicMethods",
+                TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
+            );
+            
+            var initBlock = dynClass.DefineMethod(
+                nameof(ZeroMemory),
+                MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.Final,
+                CallingConventions.Standard,
+                typeof(void), new []{typeof(IntPtr), typeof(uint)});
+            initBlock.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
+            {
+                var il = initBlock.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldc_I4_0);
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Initblk);
+                il.Emit(OpCodes.Ret);
+            }
+            
+            var createdClass = dynClass.CreateTypeInfo();
+            
+            ZeroMemory = (ZeroMemoryDelegate)Delegate.CreateDelegate(typeof(ZeroMemoryDelegate), createdClass.GetDeclaredMethod(nameof(ZeroMemory)));
+        }
+
+        
         /// <summary>
         /// Creates a new <see cref="UnmanagedMemory"/> instance with the provided parameters.
         /// </summary>
@@ -39,17 +88,8 @@ namespace WebAssembly.Runtime
             var start = this.Start = Marshal.AllocHGlobal(new IntPtr(size));
             this.Size = size;
             GC.AddMemoryPressure(size);
-
-            var emptyPage = UnmanagedMemory.emptyPage.Reference;
-            for (var i = 0; i < minimum; i++)
-            {
-                Marshal.Copy(
-                    emptyPage,
-                    0,
-                    new IntPtr(start.ToInt64() + Memory.PageSize * i),
-                    (int)Memory.PageSize / 8
-                    );
-            }
+            
+            ZeroMemory(this.Start, size);
         }
 
         /// <summary>
@@ -96,7 +136,17 @@ namespace WebAssembly.Runtime
 
                 var newCurrent = oldCurrent + delta;
                 var newSize = newCurrent * Memory.PageSize;
-                this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
+                if (this.Start == default)
+                {
+                    //this.Start = Marshal.AllocHGlobal(new IntPtr(newSize));
+                    //InitBlock(this.Start, 0, newSize);
+                    throw new ObjectDisposedException(nameof(UnmanagedMemory));
+                }
+                else
+                {
+                    this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
+                    ZeroMemory(this.Start + checked((int) this.Size), newSize - this.Size);
+                }
                 GC.AddMemoryPressure(newSize - this.Size);
                 this.Size = newSize;
 
