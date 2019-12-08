@@ -66,6 +66,7 @@ namespace WebAssembly.Runtime
             ZeroMemory = (ZeroMemoryDelegate)Delegate.CreateDelegate(typeof(ZeroMemoryDelegate), createdClass.GetDeclaredMethod(nameof(ZeroMemory)));
         }
 
+        private bool disposed;
         
         /// <summary>
         /// Creates a new <see cref="UnmanagedMemory"/> instance with the provided parameters.
@@ -124,6 +125,9 @@ namespace WebAssembly.Runtime
         /// <returns>The previous <see cref="Current"/> size value, or -1 (unchecked wrap to unsigned 32-bit integer) in the event of a failure.</returns>
         public uint Grow(uint delta)
         {
+            if (this.disposed)
+                throw new ObjectDisposedException(nameof(UnmanagedMemory));
+
             var oldCurrent = this.Current;
             if (delta == 0)
                 return oldCurrent;
@@ -138,9 +142,8 @@ namespace WebAssembly.Runtime
                 var newSize = newCurrent * Memory.PageSize;
                 if (this.Start == default)
                 {
-                    //this.Start = Marshal.AllocHGlobal(new IntPtr(newSize));
-                    //InitBlock(this.Start, 0, newSize);
-                    throw new ObjectDisposedException(nameof(UnmanagedMemory));
+                    this.Start = Marshal.AllocHGlobal(new IntPtr(newSize));
+                    ZeroMemory(this.Start, newSize);
                 }
                 else
                 {
@@ -169,6 +172,8 @@ namespace WebAssembly.Runtime
         /// </summary>
         public void Dispose()
         {
+            this.disposed = true;
+
             if (this.Start == IntPtr.Zero)
                 return;
             if (this.Size == 0)

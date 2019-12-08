@@ -674,29 +674,7 @@ namespace WebAssembly.Runtime
         {
             var skips = new HashSet<uint>
             {
-                19, // Not equal: 0 and -1
-                20, // Not equal: 1 and 0
-                21, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                22, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                23, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                26, // Not equal: 1 and -1
-                27, // Not equal: 5 and 0
-                28, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                29, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                30, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                31, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                32, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                33, // Attempted to access 4 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                42, // Not equal: 0 and -1
-                43, // Not equal: 1 and 0
-                44, // Not equal: 1 and -1
-                45, // Not equal: 3 and -1
-                48, // Not equal: 803 and -1
-                56, // Not equal: 0 and -1
-                57, // Not equal: 1 and -1
-                58, // Not equal: 2 and -1
-                59, // Not equal: 4 and -1
-                60, // Not equal: 10 and 0,
+                47, // Not equal: -1 and 0
                 101, // StackSizeIncorrectException
             };
 
@@ -720,18 +698,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_memory_size()
         {
-            var skips = new HashSet<uint>
-            {
-                9, // Not equal: 1 and 0
-                11, // Not equal: 5 and 0
-                13, // Not equal: 5 and 0
-                39, // Not equal: 1 and 0
-                41, // Not equal: 1 and 0
-                43, // Not equal: 1 and 0
-                45, // Not equal: 2 and 0
-            };
-
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_size"), "memory_size.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_size"), "memory_size.json");
         }
 
         /// <summary>

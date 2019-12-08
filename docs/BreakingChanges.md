@@ -5,6 +5,10 @@ Preview changes will be less detailed due to low usage.
 
 ## Preview Breaking Change Summary
 
+### 0.8.0
+
+* `UnmanagedMemory` can no longer be un-disposed by calling its `Grow` method.
+
 ### 0.7.0
 
 * Renamed several instructions to match the published WebAssembly specification.
