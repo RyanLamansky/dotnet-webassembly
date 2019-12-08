@@ -51,7 +51,7 @@ namespace WebAssembly.Instructions
                     typeof(uint), //Address
 					this.Type.ToSystemType(), //Value
 					typeof(uint), //Offset
-					context.CheckedExportsBuilder.AsType(),
+					context.CheckedExportsBuilder,
                 }
                 );
             var il = builder.GetILGenerator();

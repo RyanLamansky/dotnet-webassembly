@@ -128,7 +128,7 @@ namespace WebAssembly.Instructions
                     $"🔁 {signature.TypeIndex}",
                     MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                     returns.Length == 0 ? typeof(void) : returns[0],
-                    parms.Concat(new[] { typeof(uint), context.CheckedExportsBuilder.AsType() }).ToArray()
+                    parms.Concat(new[] { typeof(uint), context.CheckedExportsBuilder }).ToArray()
                     ));
 
                 var il = remapper.GetILGenerator();

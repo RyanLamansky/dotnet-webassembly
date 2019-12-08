@@ -256,7 +256,7 @@ namespace WebAssembly.Runtime
                 }
             }
 
-            var exports = exportsBuilder.AsType();
+            var exports = exportsBuilder;
             var importedFunctions = 0;
             var importedGlobals = 0;
             MethodInfo[]? internalFunctions = null;
@@ -337,7 +337,7 @@ namespace WebAssembly.Runtime
                                                 internalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
-                                                signature.ParameterTypes.Concat(new[] { exports }).ToArray()
+                                                signature.ParameterTypes.Concat(new Type[] { exports }).ToArray()
                                                 );
 
                                             var invokerIL = invoker.GetILGenerator();
@@ -413,7 +413,7 @@ namespace WebAssembly.Runtime
                                                 internalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 typeof(UnmanagedMemory),
-                                                new[] { exports }
+                                                new Type[] { exports }
                                                 );
 
                                             var invokerIL = importedMemoryProvider.GetILGenerator();
@@ -455,7 +455,7 @@ namespace WebAssembly.Runtime
                                                 internalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 contentType.ToSystemType(),
-                                                new[] { exports }
+                                                new Type[] { exports }
                                                 );
 
                                             var invokerIL = getterInvoker.GetILGenerator();
@@ -576,7 +576,7 @@ namespace WebAssembly.Runtime
                             for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                             {
                                 var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
-                                var parms = signature.ParameterTypes.Concat(new[] { exports }).ToArray();
+                                var parms = signature.ParameterTypes.Concat(new Type[] { exports }).ToArray();
                                 internalFunctions[i] = exportsBuilder.DefineMethod(
                                     $"👻 {i}",
                                     internalFunctionAttributes,
@@ -740,7 +740,7 @@ namespace WebAssembly.Runtime
                                     internalFunctionAttributes,
                                     CallingConventions.Standard,
                                     contentType.ToSystemType(),
-                                    isMutable ? new[] { exports } : null
+                                    isMutable ? new Type[] { exports } : null
                                     );
 
                                 var il = getter.GetILGenerator();

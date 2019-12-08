@@ -150,7 +150,7 @@ namespace WebAssembly.Instructions
                 $"☣ Range Check {size}",
                 CompilationContext.HelperMethodAttributes,
                 typeof(uint),
-                new[] { typeof(uint), context.CheckedExportsBuilder.AsType() }
+                new[] { typeof(uint), context.CheckedExportsBuilder }
                 );
             var il = builder.GetILGenerator();
             il.Emit(OpCodes.Ldarg_1);

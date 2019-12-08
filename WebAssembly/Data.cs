@@ -62,7 +62,7 @@ namespace WebAssembly
         /// Expresses the value of this instance as a string.
         /// </summary>
         /// <returns>A string representation of this instance.</returns>
-        public override string ToString() => $"Index: {Index}, Length: {rawData?.Count()}";
+        public override string ToString() => $"Index: {Index}, Length: {rawData?.Count}";
 
         internal void WriteTo(Writer writer)
         {

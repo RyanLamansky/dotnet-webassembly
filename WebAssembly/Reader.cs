@@ -148,14 +148,14 @@ namespace WebAssembly
         #region IDisposable Support
         void Dispose(bool disposing)
         {
-            if (this.reader == null)
+            if (this.reader == null || !disposing)
                 return;
 
             try //Tolerate bad dispose implementations.
             {
                 this.reader.Dispose();
             }
-            catch
+            catch (ObjectDisposedException)
             {
             }
 
