@@ -75,7 +75,7 @@ namespace WebAssembly.Runtime
                 {
                     var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
                     Assert.IsNotNull(methodSource, $"{command.line} has no method source.");
-                    Assert.IsTrue(methodSource.TryGetValue(action.field, out info), $"{command.line} failed to look up method {action.field}");
+                    Assert.IsTrue(methodSource.TryGetValue(NameCleaner.CleanName(action.field), out info), $"{command.line} failed to look up method {action.field}");
                     host = methodSource.Host;
                 }
 

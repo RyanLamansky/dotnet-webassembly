@@ -1197,7 +1197,6 @@ namespace WebAssembly.Runtime
 
             if (exportedFunctions != null && exportedFunctions.Length != 0)
             {
-
                 if (functionSignatures == null)
                     throw new InvalidOperationException();
                 if (internalFunctions == null)
@@ -1209,7 +1208,7 @@ namespace WebAssembly.Runtime
                     var signature = functionSignatures[exported.Value];
 
                     var method = exportsBuilder.DefineMethod(
-                        exported.Key,
+                        NameCleaner.CleanName(exported.Key),
                         exportedFunctionAttributes,
                         CallingConventions.HasThis,
                         signature.ReturnTypes.FirstOrDefault(),

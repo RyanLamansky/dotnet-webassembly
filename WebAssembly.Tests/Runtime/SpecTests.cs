@@ -706,10 +706,15 @@ namespace WebAssembly.Runtime
         /// Runs the names tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Empty names are not supported.")]
         public void SpecTest_names()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "names"), "names.json");
+            var skips = new HashSet<uint>
+            {
+                1085, // Missing import for spectest::print_i32. (Parameter 'imports')
+                1097, // failed to look up method print32
+            };
+
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "names"), "names.json", skips.Contains);
         }
 
         /// <summary>
