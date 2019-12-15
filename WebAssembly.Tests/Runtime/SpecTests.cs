@@ -160,7 +160,6 @@ namespace WebAssembly.Runtime
         {
             var skips = new HashSet<uint>
             {
-                5, // 0-size data section
                 27, // compiler wants a memory section
                 40, // compiler wants a memory section
                 50, // Missing import for spectest::global_i32
@@ -170,13 +169,13 @@ namespace WebAssembly.Runtime
                 78, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
                 83, // compiler wants a memory section
                 89, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 131072, which would have exceeded the allocated memory.
-                94, // 0-size data section
+                94, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
                 98, // compiler wants a memory section
-                103, // 0-size data section
-                108, // 0-size data section
-                113, // 0-size data section
+                103, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
+                108, // Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
+                113, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
                 117, // compiler wants a memory section
-                122, // 0-size data section
+                122, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
                 127, // compiler wants a memory section
                 132, // compiler wants a memory section
                 137, // compiler wants a memory section
@@ -186,6 +185,8 @@ namespace WebAssembly.Runtime
                 162, // No exception thrown. ModuleLoadException exception was expected.
                 170, // No exception thrown. ModuleLoadException exception was expected.
                 178, // No exception thrown. ModuleLoadException exception was expected.
+                186, // No exception thrown. ModuleLoadException exception was expected.
+                194, // No exception thrown. ModuleLoadException exception was expected.
                 211, // No exception thrown. ModuleLoadException exception was expected.
                 220, // No exception thrown. ModuleLoadException exception was expected.
                 235, // No exception thrown. ModuleLoadException exception was expected.

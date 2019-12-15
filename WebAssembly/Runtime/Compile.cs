@@ -1153,6 +1153,9 @@ namespace WebAssembly.Runtime
 
                                 var data = reader.ReadBytes(reader.ReadVarUInt32());
 
+                                if (data.Length == 0)
+                                    continue;
+
                                 //Ensure sufficient memory is allocated, error if max is exceeded.
                                 instanceConstructorIL.Emit(OpCodes.Ldloc, address);
                                 instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
@@ -1165,8 +1168,6 @@ namespace WebAssembly.Runtime
 
                                 if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
                                     throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
-                                if (data.Length == 0)
-                                    throw new NotSupportedException($"Segment size of 0 is not currently supported.");
 
                                 var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
 
