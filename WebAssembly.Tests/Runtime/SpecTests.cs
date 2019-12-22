@@ -45,50 +45,86 @@ namespace WebAssembly.Runtime
         /// Runs the binary-leb128 tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Fails to compile, data size limit exceeded.")]
         public void SpecTest_binary_leb128()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json");
+            var skips = new HashSet<uint>
+            {
+                32, // ModuleLoadException: At offset 22: Operation is not valid due to the current state of the object.
+                74, // Missing import for spectest::print_i32.
+                86, // Missing import for spectest::print_i32.
+                98, // Missing import for spectest::print_i32.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json", skips.Contains);
         }
 
         /// <summary>
         /// Runs the block tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_block()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json");
+            // Most commmon(/exlusive?) issue: should have thrown an exception but did not.
+            var skips = new HashSet<uint>
+            {
+                373,
+                382,
+                391,
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json",
+                line =>
+                line < 306 ||
+                (line >= 597 && line <= 861) || // This is imprecise due to so many failing.
+                skips.Contains(line)
+                );
         }
 
         /// <summary>
         /// Runs the br tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackTooSmallException")]
         public void SpecTest_br()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json",
+                line =>
+                line == 3 ||
+                (line >= 334 && line <= 417) || // has no method source.
+                (line >= 420 && line <= 433) || // should have thrown an exception but did not.
+                (line >= 446 && line <= 455) // should have thrown an exception but did not.
+            );
         }
 
         /// <summary>
         /// Runs the br_if tests.
         /// </summary>
         [TestMethod]
-        [Ignore("ModuleLoadException")]
         public void SpecTest_br_if()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json",
+                line => line == 3 || // Stack empty.
+                (line >= 372 && line <= 478) || // has no method source.
+                (line >= 515 && line <= 521) || // should have thrown an exception but did not.
+                (line >= 540 && line <= 560) || // should have thrown an exception but did not.
+                (line >= 587 && line <= 593) || // should have thrown an exception but did not.
+                line == 618 // should have thrown an exception but did not.
+            );
         }
 
         /// <summary>
         /// Runs the br_table tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackTooSmallException")]
         public void SpecTest_br_table()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json",
+                line => line == 3 || // StackTooSmallException
+                (line >= 1247 && line <= 1426) || // has no method source.
+                line == 1429 || // should have thrown an exception but did not.
+                line == 1443 || // should have thrown an exception but did not.
+                line == 1457 || // should have thrown an exception but did not.
+                (line >= 1481 && line <= 1487) || // should have thrown an exception but did not.
+                line == 1502 || // should have thrown an exception but did not.
+                line == 1521 // should have thrown an exception but did not.
+            );
         }
 
         /// <summary>
@@ -119,11 +155,15 @@ namespace WebAssembly.Runtime
         /// Runs the call_indirect tests.
         /// </summary>
         [TestMethod]
-        [Ignore("ModuleLoadException")]
         public void SpecTest_call_indirect()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json",
+                line =>
+                line <= 589 || // WASM broken by System.Action is not a GenericTypeDefinition.
+                line >= 886 // should have thrown an exception but did not.
+            );
         }
+
         /// <summary>
         /// Runs the const tests.
         /// </summary>
@@ -201,10 +241,15 @@ namespace WebAssembly.Runtime
         /// Runs the elem tests.
         /// </summary>
         [TestMethod]
-        [Ignore("ModuleLoadException")]
         public void SpecTest_elem()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "elem"), "elem.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "elem"), "elem.json",
+                line =>
+                line <= 60 || // WASM broken by System.Action is not a GenericTypeDefinition.
+                (line >= 86 && line <= 134) || // WASM broken by System.Action is not a GenericTypeDefinition.
+                (line >= 318 && line <= 329) || // Missing import for spectest::table.
+                (line >= 353) // Multiple issues with loading these WASMs.
+            );
         }
 
         /// <summary>
@@ -442,10 +487,13 @@ namespace WebAssembly.Runtime
         /// Runs the func tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_func()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json");
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json",
+                line =>
+                line <= 284 || // WASM broken by StackSizeIncorrectException
+                (line >= 315 && line <= 381)// System.Action is not a GenericTypeDefinition
+            );
         }
 
         /// <summary>

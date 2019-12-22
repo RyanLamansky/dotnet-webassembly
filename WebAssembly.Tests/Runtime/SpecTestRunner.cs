@@ -210,11 +210,13 @@ namespace WebAssembly.Runtime
                                 case "memory size must be at most 65536 pages (4GiB)":
                                 case "unknown label":
                                 case "invalid result arity":
+                                case "unknown type":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
                                 case "unknown global":
                                 case "unknown memory":
                                 case "unknown function":
+                                case "unknown table 0":
                                     try
                                     {
                                         trapExpected();
@@ -279,6 +281,7 @@ namespace WebAssembly.Runtime
                                     Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
                                     continue;
                                 case "undefined element":
+                                case "uninitialized element 7":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
@@ -323,6 +326,9 @@ namespace WebAssembly.Runtime
                             switch (assert.text)
                             {
                                 case "data segment does not fit":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "elements segment does not fit":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
