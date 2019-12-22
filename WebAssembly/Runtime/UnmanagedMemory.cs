@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
 namespace WebAssembly.Runtime
@@ -18,54 +17,6 @@ namespace WebAssembly.Runtime
         internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(()
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.Where(prop => prop.Name == nameof(Grow)).First());
 
-        /// <summary>
-        /// Sets a <paramref name="length"/> of bytes to zero at a <paramref name="destination"/> memory location.
-        /// </summary>
-        /// <param name="destination">The write target memory location.</param>
-        /// <param name="length">The count of bytes to be copied.</param>
-        delegate void ZeroMemoryDelegate(IntPtr destination, uint length);
-
-        /// <summary>
-        /// Sets a length of bytes to the given value at a destination memory location.
-        /// See <see cref="ZeroMemoryDelegate"/> for details.
-        /// </summary>
-        static readonly ZeroMemoryDelegate ZeroMemory;
-	
-        static UnmanagedMemory()
-        {
-            const string dynamicModuleName = nameof(UnmanagedMemory) + "DynamicMethods";
-            
-            var module = AssemblyBuilder.DefineDynamicAssembly(
-                        new AssemblyName(dynamicModuleName),
-                        AssemblyBuilderAccess.RunAndCollect
-                    )
-                    .DefineDynamicModule(dynamicModuleName);
-
-            var dynClass = module.DefineType(
-                "DynamicMethods",
-                TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
-            );
-            
-            var initBlock = dynClass.DefineMethod(
-                nameof(ZeroMemory),
-                MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.Final,
-                CallingConventions.Standard,
-                typeof(void), new []{typeof(IntPtr), typeof(uint)});
-            initBlock.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
-            {
-                var il = initBlock.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldc_I4_0);
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Initblk);
-                il.Emit(OpCodes.Ret);
-            }
-            
-            var createdClass = dynClass.CreateTypeInfo();
-            
-            ZeroMemory = (ZeroMemoryDelegate)Delegate.CreateDelegate(typeof(ZeroMemoryDelegate), createdClass.GetDeclaredMethod(nameof(ZeroMemory)));
-        }
-
         private bool disposed;
         
         /// <summary>
@@ -81,16 +32,10 @@ namespace WebAssembly.Runtime
             this.Minimum = minimum;
             this.Maximum = Math.Min(maximum.GetValueOrDefault(uint.MaxValue / Memory.PageSize), uint.MaxValue / Memory.PageSize);
 
-            var size = checked(minimum * Memory.PageSize);
-
-            if (size == 0)
+            if (minimum == 0)
                 return;
 
-            var start = this.Start = Marshal.AllocHGlobal(new IntPtr(size));
-            this.Size = size;
-            GC.AddMemoryPressure(size);
-            
-            ZeroMemory(this.Start, size);
+            this.Grow(minimum);
         }
 
         /// <summary>
@@ -131,6 +76,28 @@ namespace WebAssembly.Runtime
             var oldCurrent = this.Current;
             if (delta == 0)
                 return oldCurrent;
+
+            unsafe void ZeroMemory(IntPtr s, uint n)
+            {
+                // CIL `initblk` can't be generated from C# (as of v8.0).
+                // Using run-time code generation here would interfere with AoT efforts.
+                // The logic below is 95% as fast as `initblk`.
+                var p = (ulong*)s;
+                var limit = n / 8;
+                var init = 0ul; // Not const for smaller CIL size and potentially more favorable JIT optimization.
+
+                for (var i = 0; i < limit; i += 8)
+                {
+                    p[i] = init;
+                    p[i + 1] = init;
+                    p[i + 2] = init;
+                    p[i + 3] = init;
+                    p[i + 4] = init;
+                    p[i + 5] = init;
+                    p[i + 6] = init;
+                    p[i + 7] = init;
+                }
+            }
 
             const uint failed = unchecked((uint)-1);
             try
