@@ -115,13 +115,13 @@ namespace WebAssembly.Runtime
                                     case RawValueType.f32:
                                         {
                                             var expected = ((Float32Value)assert.expected[0]).ActualValue;
-                                            Assert.IsTrue(Math.Abs((float)result - expected) / expected < expected * 0.000001f);
+                                            Assert.AreEqual(expected, (float)result, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
                                         }
                                         continue;
                                     case RawValueType.f64:
                                         {
                                             var expected = ((Float64Value)assert.expected[0]).ActualValue;
-                                            Assert.IsTrue(Math.Abs((double)result - expected) / expected < expected * 0.000001);
+                                            Assert.AreEqual(expected, (double)result, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                         }
                                         continue;
                                 }

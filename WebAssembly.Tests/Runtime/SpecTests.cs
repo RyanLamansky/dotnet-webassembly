@@ -180,6 +180,8 @@ namespace WebAssembly.Runtime
         public void SpecTest_conversions()
         {
             var skips = new HashSet<uint> { 88, 89, 93, 133, 134, 139, 183, 187, 229, 234, 236 };
+            if (!Environment.Is64BitProcess) // 32-bit JIT operates differently as of .NET Core 3.1.
+                skips.UnionWith(new uint[] { 454, 455, 470, 471 });
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "conversions"), "conversions.json", skips.Contains);
         }
 
@@ -269,7 +271,9 @@ namespace WebAssembly.Runtime
                 180, // Common Language Runtime detected an invalid program.
                 181, // Common Language Runtime detected an invalid program.
             };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "endianness"), "endianness.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "endianness"), "endianness.json", line =>
+                skips.Contains(line) || (!Environment.Is64BitProcess && line >= 194)
+            );
         }
 
         /// <summary>
@@ -418,6 +422,16 @@ namespace WebAssembly.Runtime
                 112, // Not equal: 2142257232 and 2146451536
                 113, // Not equal: -5587746 and -1393442
             };
+            if (!Environment.Is64BitProcess)
+            {
+                skips.UnionWith(new uint[]
+                {
+                    141, // Not equal: 9219994337134247936 and 9222246136947933184
+                    143, // Not equal: 9218888453225749180 and 9221140253039434428
+                    144, // Not equal: 9219717281780008969 and 9221969081593694217
+                    145, // Not equal: -3751748707474619 and -1499948893789371
+                });
+            }
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_literals"), "float_literals.json", skips.Contains);
         }
 
@@ -565,7 +579,14 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_i64()
         {
-            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", new HashSet<uint> { 106 }.Contains);
+            var skips = new HashSet<uint> { 106 };
+            if (!Environment.Is64BitProcess)
+            {
+                skips.UnionWith(Enumerable.Range(166, 47).Select(i => (uint)i)); // As of .NET Core 3.1, 32-bit mode can't bit shift by a 64-bit amount.
+                skips.UnionWith(Enumerable.Range(242, 8).Select(i => (uint)i)); // As of .NET Core 3.1, 32-bit mode can't bit shift by a 64-bit amount.
+            }
+
+            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", skips.Contains);
         }
 
         /// <summary>
@@ -594,7 +615,15 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_int_exprs()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "int_exprs"), "int_exprs.json");
+            HashSet<uint> skips = null;
+            if (!Environment.Is64BitProcess)
+            {
+                skips = new HashSet<uint>
+                {
+                    58, 59, 77, 78,
+                };
+            }
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "int_exprs"), "int_exprs.json", skips != null ? (Func<uint, bool>)skips.Contains : null);
         }
 
         /// <summary>
@@ -622,7 +651,17 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_left_to_right()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "left-to-right"), "left-to-right.json");
+            HashSet<uint> skips = null;
+            if (!Environment.Is64BitProcess)
+            {
+                skips = new HashSet<uint>
+                {
+                    205, // Common Language Runtime detected an invalid program.
+                    206, // Common Language Runtime detected an invalid program.
+                    207, // Common Language Runtime detected an invalid program.
+                };
+            }
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "left-to-right"), "left-to-right.json", skips != null ? (Func<uint, bool>)skips.Contains : null);
         }
 
         /// <summary>
@@ -712,6 +751,8 @@ namespace WebAssembly.Runtime
                 73, // No exception thrown. ModuleLoadException exception was expected.
                 166, // Common Language Runtime detected an invalid program.
             };
+            if (!Environment.Is64BitProcess)
+                skip.UnionWith(Enumerable.Range(187, 26).Select(i => (uint)i)); // Common Language Runtime detected an invalid program.
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory"), "memory.json", skip.Contains);
         }
 
