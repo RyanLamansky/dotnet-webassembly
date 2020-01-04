@@ -14,6 +14,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64CountLeadingZeroes_Compiled()
         {
+            if (!System.Environment.Is64BitProcess)
+                Assert.Inconclusive("32-bit .NET doesn't support the 64-bit bit shifts used by the count leading zeroes helper logic.");
+
             var exports = CompilerTestBase<long>.CreateInstance(
                 new LocalGet(0),
                 new Int64CountLeadingZeroes(),

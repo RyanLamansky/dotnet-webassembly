@@ -120,6 +120,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64Load16Signed_Compiled_Then_Shift()
         {
+            if (!Environment.Is64BitProcess)
+                Assert.Inconclusive("32-bit .NET doesn't support 64-bit bit shift amounts.");
+
             // Adapted from Int64Load8Unsigned_Compiled_Then_Shift.
             const int off = 4;
             const sbyte b = 0x5f;

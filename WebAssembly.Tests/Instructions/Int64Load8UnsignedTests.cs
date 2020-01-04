@@ -112,6 +112,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64Load8Unsigned_Compiled_Then_Shift()
         {
+            if (!Environment.Is64BitProcess)
+                Assert.Inconclusive("32-bit .NET doesn't support 64-bit bit shift amounts.");
+
             // seems like the offset here needs to be different so it
             // doesn't interfere with other tests above.  so I just
             // picked a number.

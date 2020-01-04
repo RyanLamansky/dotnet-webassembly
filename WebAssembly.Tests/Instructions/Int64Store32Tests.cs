@@ -17,6 +17,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64Store32_Compiled_Offset0()
         {
+            if (!Environment.Is64BitProcess)
+                Assert.Inconclusive("32-bit .NET has an unknown error with this process.");
+
             var compiled = MemoryWriteTestBase<long>.CreateInstance(
                 new LocalGet(0),
                 new LocalGet(1),
@@ -71,6 +74,9 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64Store32_Compiled_Offset1()
         {
+            if (!Environment.Is64BitProcess)
+                Assert.Inconclusive("32-bit .NET has an unknown error with this process.");
+
             var compiled = MemoryWriteTestBase<long>.CreateInstance(
                 new LocalGet(0),
                 new LocalGet(1),

@@ -40,7 +40,7 @@ namespace WebAssembly.Instructions
 
                 exports.Test((int)Memory.PageSize - 2, 1);
 
-                Assert.AreEqual(1, Marshal.ReadInt32(memory.Start, (int)Memory.PageSize - 2));
+                Assert.AreEqual(1, Marshal.ReadByte(memory.Start, (int)Memory.PageSize - 2));
 
                 MemoryAccessOutOfRangeException x;
 
@@ -86,7 +86,7 @@ namespace WebAssembly.Instructions
 
                 exports.Test((int)Memory.PageSize - 2 - 1, 1);
 
-                Assert.AreEqual(1, Marshal.ReadInt32(memory.Start, (int)Memory.PageSize - 2));
+                Assert.AreEqual(1, Marshal.ReadByte(memory.Start, (int)Memory.PageSize - 2));
 
                 MemoryAccessOutOfRangeException x;
 
