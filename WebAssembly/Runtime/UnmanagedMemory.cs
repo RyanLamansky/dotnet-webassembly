@@ -117,7 +117,6 @@ namespace WebAssembly.Runtime
                     this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
                     ZeroMemory(this.Start + checked((int) this.Size), newSize - this.Size);
                 }
-                GC.AddMemoryPressure(newSize - this.Size);
                 this.Size = newSize;
 
                 return oldCurrent;
@@ -147,7 +146,6 @@ namespace WebAssembly.Runtime
                 return;
 
             Marshal.FreeHGlobal(this.Start);
-            GC.RemoveMemoryPressure(Memory.PageSize * (long)this.Size);
             this.Start = IntPtr.Zero;
             this.Size = 0;
             GC.SuppressFinalize(this);
