@@ -50,9 +50,6 @@ namespace WebAssembly.Runtime
             var skips = new HashSet<uint>
             {
                 32, // ModuleLoadException: At offset 22: Operation is not valid due to the current state of the object.
-                74, // Missing import for spectest::print_i32.
-                86, // Missing import for spectest::print_i32.
-                98, // Missing import for spectest::print_i32.
             };
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json", skips.Contains);
         }
@@ -204,9 +201,7 @@ namespace WebAssembly.Runtime
             {
                 27, // compiler wants a memory section
                 40, // compiler wants a memory section
-                50, // Missing import for spectest::global_i32
                 55, // compiler wants a memory section
-                61, // Missing import for spectest::global_i32
                 66, // compiler wants a memory section
                 78, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
                 83, // compiler wants a memory section
@@ -514,7 +509,6 @@ namespace WebAssembly.Runtime
         /// Runs the func_ptrs tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Missing import for spectest::print_i32.")]
         public void SpecTest_func_ptrs()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func_ptrs"), "func_ptrs.json");
@@ -603,10 +597,10 @@ namespace WebAssembly.Runtime
         /// Runs the imports tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Missing import for spectest::print_i32.")]
         public void SpecTest_imports()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json");
+            // TODO: SpecTestRunner needs to route "register" input to imports to complete this test.
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json", line => line >= 24);
         }
 
         /// <summary>
@@ -671,6 +665,7 @@ namespace WebAssembly.Runtime
         [Ignore("Missing import for Mf::call.")]
         public void SpecTest_linking()
         {
+            // TODO: SpecTestRunner needs to route "register" input to imports to complete this test.
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "linking"), "linking.json");
         }
 
@@ -797,13 +792,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_names()
         {
-            var skips = new HashSet<uint>
-            {
-                1085, // Missing import for spectest::print_i32. (Parameter 'imports')
-                1097, // failed to look up method print32
-            };
-
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "names"), "names.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "names"), "names.json");
         }
 
         /// <summary>

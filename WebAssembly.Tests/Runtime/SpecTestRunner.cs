@@ -63,6 +63,17 @@ namespace WebAssembly.Runtime
             ObjectMethods methodsByName = null;
             var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
 
+            // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
+            var imports = new ImportDictionary
+            {
+                    { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
+                    { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
+                    { "spectest", "print_f64_f64", new FunctionImport((Action<double, double>)((d1, d2) => { })) },
+                    { "spectest", "print_f32", new FunctionImport((Action<float>)(i => { })) },
+                    { "spectest", "print_f64", new FunctionImport((Action<double>)(i => { })) },
+                    { "spectest", "global_i32", new GlobalImport(() => 666) },
+            };
+
             Action trapExpected;
             object result, obj;
             MethodInfo methodInfo;
@@ -87,7 +98,7 @@ namespace WebAssembly.Runtime
                             var path = Path.Combine(pathBase, module.filename);
                             var parsed = Module.ReadFromBinary(path); // Ensure the module parser can read it.
                             Assert.IsNotNull(parsed);
-                            methodsByName = new ObjectMethods(Compile.FromBinary<TExports>(path)(new ImportDictionary()).Exports);
+                            methodsByName = new ObjectMethods(Compile.FromBinary<TExports>(path)(imports).Exports);
                             if (module.name != null)
                                 moduleMethodsByName[module.name] = methodsByName;
                             continue;
@@ -282,7 +293,21 @@ namespace WebAssembly.Runtime
                                     continue;
                                 case "undefined element":
                                 case "uninitialized element 7":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    try
+                                    {
+                                        trapExpected();
+                                        throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but no exception was thrown.");
+                                    }
+                                    catch (ModuleLoadException)
+                                    {
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but received {x.GetType().Name}.");
+                                    }
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
