@@ -851,6 +851,7 @@ namespace WebAssembly.Runtime
                                                 typeof(FunctionTable),
                                                 emptyTypes
                                                 );
+                                            tableGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
                                             var getterIL = tableGetter.GetILGenerator();
                                             getterIL.Emit(OpCodes.Ldarg_0);
                                             getterIL.Emit(OpCodes.Ldfld, functionTable);
@@ -873,6 +874,7 @@ namespace WebAssembly.Runtime
                                                 typeof(UnmanagedMemory),
                                                 emptyTypes
                                                 );
+                                            memoryGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Memory, name));
                                             var getterIL = memoryGetter.GetILGenerator();
                                             getterIL.Emit(OpCodes.Ldarg_0);
                                             getterIL.Emit(OpCodes.Ldfld, memory);
@@ -891,6 +893,7 @@ namespace WebAssembly.Runtime
                                         {
                                             var global = globals[index];
                                             var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, global.Type.ToSystemType(), emptyTypes);
+                                            property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name));
                                             var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
                                                 exportedPropertyAttributes,
                                                 CallingConventions.HasThis,
@@ -1214,6 +1217,7 @@ namespace WebAssembly.Runtime
                         signature.ReturnTypes.FirstOrDefault(),
                         signature.ParameterTypes
                         );
+                    method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key));
 
                     var il = method.GetILGenerator();
                     for (var parm = 0; parm < signature.ParameterTypes.Length; parm++)

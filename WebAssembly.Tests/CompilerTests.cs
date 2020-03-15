@@ -1,8 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using WebAssembly.Instructions;
 using WebAssembly.Runtime;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly
 {
@@ -98,7 +100,11 @@ namespace WebAssembly
             var compiled = module.ToInstance<ExportedReadonlyGlobal>();
 
             Assert.AreEqual(5, compiled.Exports.Test);
-            Assert.AreNotEqual(6, compiled.Exports.Test);
+
+            var native = compiled.Exports.GetType().GetProperty("Test").GetCustomAttribute<NativeExportAttribute>();
+            Assert.IsNotNull(native);
+            Assert.AreEqual(ExternalKind.Global, native.Kind);
+            Assert.AreEqual("Test", native.Name);
         }
 
         /// <summary>
