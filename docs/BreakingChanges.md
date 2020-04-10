@@ -10,6 +10,7 @@ Preview changes will be less detailed due to low usage.
 * Out of range import types throw `ModuleLoadException` instead of `IndexOutOfRangeException`.
 * `RuntimeException` is now abstract.
 * Missing or incorrectly typed imports now throw `ImportException` instead of `ArgumentException`.
+* `ImportDictionary`'s only member, an `Add` method, was changed to an extension method, which is binary-breaking but not code-breaking.
 
 ### 0.8.0
 

@@ -13,6 +13,14 @@ namespace WebAssembly.Runtime
         /// <summary>
         /// Creates a new <see cref="ImportException"/> with a default message.
         /// </summary>
+        public ImportException()
+            : base("Import type did not match the expected type.")
+        {
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="ImportException"/> with a default message.
+        /// </summary>
         public ImportException(string message)
             : base(message)
         {
