@@ -317,9 +317,12 @@ namespace WebAssembly.Runtime
                                 {
                                     case ExternalKind.Function:
                                         {
+                                            var preTypeIndexOffset = reader.Offset;
                                             var typeIndex = reader.ReadVarUInt32();
                                             if (signatures == null)
                                                 throw new InvalidOperationException();
+                                            if (typeIndex >= signatures.Length)
+                                                throw new ModuleLoadException($"Requested type index {typeIndex} but only {signatures.Length} are available.", preTypeIndexOffset);
                                             var signature = signatures[typeIndex];
                                             var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
                                             if (del == null)
@@ -328,7 +331,7 @@ namespace WebAssembly.Runtime
                                                 continue;
                                             }
 
-                                            var typedDelegate = del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray());
+                                            var typedDelegate = del.IsGenericTypeDefinition ? del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray()) : del;
                                             var delField = $"➡ {moduleName}::{fieldName}";
                                             var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
 
