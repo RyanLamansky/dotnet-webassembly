@@ -146,6 +146,9 @@ namespace WebAssembly.Runtime
                     return (Instance<TExports>)constructor.Invoke(new object[] { imports });
                 }
                 catch (TargetInvocationException x)
+#if DEBUG
+                when (!System.Diagnostics.Debugger.IsAttached)
+#endif
                 {
                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                     throw;
@@ -370,7 +373,7 @@ namespace WebAssembly.Runtime
                                                 .GetTypeInfo()
                                                 .GetDeclaredProperty(nameof(FunctionImport.Method))
                                                 .GetMethod);
-                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                                             functionImports.Add(invoker);
@@ -440,7 +443,8 @@ namespace WebAssembly.Runtime
                                                 .GetTypeInfo()
                                                 .GetDeclaredProperty(nameof(MemoryImport.Method))
                                                 .GetMethod);
-                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            ;
+                                            ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                                         }
                                         break;
@@ -482,7 +486,7 @@ namespace WebAssembly.Runtime
                                                 .GetTypeInfo()
                                                 .GetDeclaredProperty(nameof(GlobalImport.Getter))
                                                 .GetMethod);
-                                            instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                            ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                                             MethodBuilder? setterInvoker;
@@ -526,7 +530,7 @@ namespace WebAssembly.Runtime
                                                     .GetTypeInfo()
                                                     .GetDeclaredProperty(nameof(GlobalImport.Setter))
                                                     .GetMethod);
-                                                instanceConstructorIL.Emit(OpCodes.Castclass, typedDelegate);
+                                                ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                                 instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                                             }
 

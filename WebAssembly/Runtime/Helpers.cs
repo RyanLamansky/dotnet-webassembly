@@ -24,12 +24,12 @@ namespace WebAssembly.Runtime
 
             if (!imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import) || import == null)
             {
-                throw new ArgumentException($"Missing import for {module}::{field}.", nameof(imports));
+                throw new ImportException($"Missing import for {module}::{field}.");
             }
 
             if (!(import is T cast))
             {
-                throw new ArgumentException($"Import for {module}::{field}. was not of the required type {typeof(T).Name}.", nameof(imports));
+                throw new ImportException($"Import for {module}::{field}. was not of the required type {typeof(T).Name}.");
             }
 
             return cast;

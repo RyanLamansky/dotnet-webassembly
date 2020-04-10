@@ -72,11 +72,18 @@ namespace WebAssembly.Runtime
                     { "spectest", "print_f32", new FunctionImport((Action<float>)(i => { })) },
                     { "spectest", "print_f64", new FunctionImport((Action<double>)(i => { })) },
                     { "spectest", "global_i32", new GlobalImport(() => 666) },
+                    { "spectest", "global_i64", new GlobalImport(() => 666L) },
+                    { "spectest", "global_f32", new GlobalImport(() => 666.0F) },
+                    { "spectest", "global_f64", new GlobalImport(() => 666.0) },
+                    // { "spectest", "table", new TableImport() },
             };
+
+            var registrationCandidates = new ImportDictionary();
 
             Action trapExpected;
             object result, obj;
             MethodInfo methodInfo;
+            TExports exports = null;
             foreach (var command in testInfo.commands)
             {
                 if (skip != null && skip(command.line))
@@ -98,7 +105,7 @@ namespace WebAssembly.Runtime
                             var path = Path.Combine(pathBase, module.filename);
                             var parsed = Module.ReadFromBinary(path); // Ensure the module parser can read it.
                             Assert.IsNotNull(parsed);
-                            methodsByName = new ObjectMethods(Compile.FromBinary<TExports>(path)(imports).Exports);
+                            methodsByName = new ObjectMethods(exports = Compile.FromBinary<TExports>(path)(imports).Exports);
                             if (module.name != null)
                                 moduleMethodsByName[module.name] = methodsByName;
                             continue;
@@ -341,7 +348,7 @@ namespace WebAssembly.Runtime
                             {
                                 try
                                 {
-                                    Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                    Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
                                 }
                                 catch (TargetInvocationException x)
                                 {
@@ -351,10 +358,12 @@ namespace WebAssembly.Runtime
                             switch (assert.text)
                             {
                                 case "data segment does not fit":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
-                                    continue;
                                 case "elements segment does not fit":
                                     Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unknown import":
+                                case "incompatible import type":
+                                    Assert.ThrowsException<ImportException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -363,6 +372,7 @@ namespace WebAssembly.Runtime
                             Assert.IsNotNull(
                                 moduleMethodsByName[register.@as] = register.name != null ? moduleMethodsByName[register.name] : methodsByName,
                                 $"{command.line} tried to register null as a module method source.");
+                            imports.AddFromExports(register.@as, exports);
                             continue;
                         case AssertUninstantiable assert:
                             trapExpected = () =>

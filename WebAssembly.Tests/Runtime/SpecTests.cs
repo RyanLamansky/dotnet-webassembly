@@ -599,8 +599,36 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_imports()
         {
-            // TODO: SpecTestRunner needs to route "register" input to imports to complete this test.
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json", line => line >= 24);
+            var skip = new HashSet<uint>
+            {
+                271, // Requires table import support
+                283, // Requires table import support
+                284, // Requires table import support
+                285, // Requires table import support
+                286, // Requires table import support
+                287, // Requires table import support
+                290, // Requires table import support
+                302, // Requires table import support
+                303, // Requires table import support
+                304, // Requires table import support
+                305, // Requires table import support
+                306, // Requires table import support
+                310, // Requires table import support
+                314, // Requires table import support
+                318, // Requires table import support
+                322, // Requires table import support
+                323, // Requires table import support
+                324, // Requires table import support
+                325, // Requires table import support
+                326, // Requires table import support
+                327, // Requires table import support
+                328, // Requires table import support
+                329, // Requires table import support
+                330, // Requires table import support
+                331, // Requires table import support
+                332, // Requires table import support
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json", line => skip.Contains(line) || line >= 381);
         }
 
         /// <summary>

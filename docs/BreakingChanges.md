@@ -5,6 +5,12 @@ Preview changes will be less detailed due to low usage.
 
 ## Preview Breaking Change Summary
 
+### 0.9.0
+
+* Out of range import types throw `ModuleLoadException` instead of `IndexOutOfRangeException`.
+* `RuntimeException` is now abstract.
+* Missing or incorrectly typed imports now throw `ImportException` instead of `ArgumentException`.
+
 ### 0.8.0
 
 * `UnmanagedMemory` can no longer be un-disposed by calling its `Grow` method.
