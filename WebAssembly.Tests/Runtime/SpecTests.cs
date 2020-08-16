@@ -156,7 +156,8 @@ namespace WebAssembly.Runtime
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json",
                 line =>
-                line <= 589 || // WASM broken by System.Action is not a GenericTypeDefinition.
+                line == 556 || // Infinite loop
+                (line >= 557 && line <= 589) || // No method source
                 line >= 886 // should have thrown an exception but did not.
             );
         }
@@ -240,12 +241,75 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_elem()
         {
+            var needTableImport = new HashSet<uint>
+            { // Missing import for spectest::table. (or other table import error)
+                28,
+                43,
+                91,
+                101,
+                116,
+                122,
+                128,
+                134,
+                186,
+                203,
+                229,
+                237,
+                318,
+                357,
+                370,
+            };
+
+            var initializerIssues = new HashSet<uint>
+            { // Initializer expression support for the Element section is limited to a single Int32 constant followed by end.
+                53,
+                60,
+            };
+
+            var operationIssues = new HashSet<uint>
+            { // Operation is not valid due to the current state of the object.
+                97,
+                106,
+                111,
+            };
+
+            var exceptionExpected = new HashSet<uint>
+            { // No exception thrown. ModuleLoadException exception was expected.
+                143,
+                152,
+                161,
+                178,
+                195,
+            };
+
+            var failedLookUp = new HashSet<uint>
+            { // Failed to look up method call-overwritten-element
+                329,
+            };
+
+            var nullRef = new HashSet<uint>
+            { // NullReferenceException
+                353,
+                366,
+                379,
+            };
+
+            var notEqual = new HashSet<uint>
+            {
+                367, // Not equal: 68 and 65
+                380, // Not equal: 69 and 65
+                381, // Not equal: 70 and 66
+            };
+
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "elem"), "elem.json",
                 line =>
-                line <= 60 || // WASM broken by System.Action is not a GenericTypeDefinition.
-                (line >= 86 && line <= 134) || // WASM broken by System.Action is not a GenericTypeDefinition.
-                (line >= 318 && line <= 329) || // Missing import for spectest::table.
-                (line >= 353) // Multiple issues with loading these WASMs.
+                needTableImport.Contains(line) ||
+                initializerIssues.Contains(line) ||
+                operationIssues.Contains(line) ||
+                exceptionExpected.Contains(line) ||
+                failedLookUp.Contains(line) ||
+                nullRef.Contains(line) ||
+                notEqual.Contains(line)
             );
         }
 
@@ -500,8 +564,7 @@ namespace WebAssembly.Runtime
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json",
                 line =>
-                line <= 284 || // WASM broken by StackSizeIncorrectException
-                (line >= 315 && line <= 381)// System.Action is not a GenericTypeDefinition
+                line <= 284 // WASM broken by StackSizeIncorrectException
             );
         }
 

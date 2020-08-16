@@ -1028,11 +1028,14 @@ namespace WebAssembly.Runtime
 
                                     if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
                                     {
-                                        var del = configuration
-                                            .GetDelegateForType(parms.Length, returns.Length)
-                                            ?.MakeGenericType(parms.Concat(returns).ToArray());
+                                        var del = configuration.GetDelegateForType(parms.Length, returns.Length);
+
                                         if (del == null)
                                             throw new CompilerException($"Failed to get a delegate for type {signature}.");
+
+                                        if (del.IsGenericType)
+                                            del = del.MakeGenericType(parms.Concat(returns).ToArray());
+
                                         delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
                                     }
 

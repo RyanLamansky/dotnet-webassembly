@@ -75,7 +75,8 @@ namespace WebAssembly.Runtime
                     { "spectest", "global_i64", new GlobalImport(() => 666L) },
                     { "spectest", "global_f32", new GlobalImport(() => 666.0F) },
                     { "spectest", "global_f64", new GlobalImport(() => 666.0) },
-                    // { "spectest", "table", new TableImport() },
+                    // { "spectest", "table", new TableImport() }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
+                    { "spectest", "memory", new MemoryImport(() => new UnmanagedMemory(1, 2)) }, // Memory.alloc (MemoryType {min = 1l; max = Some 2l})
             };
 
             var registrationCandidates = new ImportDictionary();
@@ -315,6 +316,9 @@ namespace WebAssembly.Runtime
                                     {
                                         throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but received {x.GetType().Name}.");
                                     }
+                                    continue;
+                                case "indirect call type mismatch":
+                                    Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
