@@ -200,37 +200,16 @@ namespace WebAssembly.Runtime
         {
             var skips = new HashSet<uint>
             {
-                27, // compiler wants a memory section
-                40, // compiler wants a memory section
-                55, // compiler wants a memory section
-                66, // compiler wants a memory section
                 78, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
-                83, // compiler wants a memory section
+                83, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
                 89, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 131072, which would have exceeded the allocated memory.
                 94, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                98, // compiler wants a memory section
                 103, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
                 108, // Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
                 113, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                117, // compiler wants a memory section
                 122, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                127, // compiler wants a memory section
-                132, // compiler wants a memory section
-                137, // compiler wants a memory section
-                143, // compiler wants a memory section
-                149, // compiler wants a memory section
-                154, // compiler wants a memory section
-                162, // No exception thrown. ModuleLoadException exception was expected.
-                170, // No exception thrown. ModuleLoadException exception was expected.
-                178, // No exception thrown. ModuleLoadException exception was expected.
                 186, // No exception thrown. ModuleLoadException exception was expected.
                 194, // No exception thrown. ModuleLoadException exception was expected.
-                211, // No exception thrown. ModuleLoadException exception was expected.
-                220, // No exception thrown. ModuleLoadException exception was expected.
-                235, // No exception thrown. ModuleLoadException exception was expected.
-                243, // No exception thrown. ModuleLoadException exception was expected.
-                251, // No exception thrown. ModuleLoadException exception was expected.
-                266, // No exception thrown. ModuleLoadException exception was expected.
             };
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "data"), "data.json", skips.Contains);
         }

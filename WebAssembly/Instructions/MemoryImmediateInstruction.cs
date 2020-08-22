@@ -123,6 +123,9 @@ namespace WebAssembly.Instructions
 
         internal static MethodBuilder CreateRangeCheck(HelperMethod helper, CompilationContext context)
         {
+            if (context.Memory == null)
+                throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
+
             byte size;
             System.Reflection.Emit.OpCode opCode;
             switch (helper)

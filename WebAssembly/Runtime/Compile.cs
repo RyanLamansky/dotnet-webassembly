@@ -241,6 +241,11 @@ namespace WebAssembly.Runtime
             MethodBuilder? importedMemoryProvider = null;
             FieldBuilder? memory = null;
 
+            void CreateMemoryField()
+            {
+                memory = context!.Memory = exportsBuilder!.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
+            }
+
             ILGenerator instanceConstructorIL;
             {
                 var instanceConstructor = exportsBuilder.DefineConstructor(
@@ -446,6 +451,12 @@ namespace WebAssembly.Runtime
                                             ;
                                             ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
+
+                                            CreateMemoryField();
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                                            instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
+                                            instanceConstructorIL.Emit(OpCodes.Stfld, memory);
                                         }
                                         break;
                                     case ExternalKind.Global:
@@ -663,6 +674,9 @@ namespace WebAssembly.Runtime
                             if (count > 1)
                                 throw new ModuleLoadException("Multiple memory values are not supported.", preCountOffset);
 
+                            if (count != 0 && memory != null)
+                                throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
+
                             var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
                             memoryPagesMinimum = reader.ReadVarUInt32();
                             if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
@@ -670,30 +684,22 @@ namespace WebAssembly.Runtime
                             else
                                 memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
-                            memory = context.Memory = exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
+                            CreateMemoryField();
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                            if (importedMemoryProvider == null)
+                            Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
+                            Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
+                            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
                             {
-                                Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
-                                Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
-                                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
-                                {
-                                    var parms = info.GetParameters();
-                                    return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
-                                }).First());
+                                var parms = info.GetParameters();
+                                return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                            }).First());
 
-                                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
-                                {
-                                    var parms = info.GetParameters();
-                                    return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
-                                }).First());
-                            }
-                            else
+                            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
                             {
-                                instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                                instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
-                            }
+                                var parms = info.GetParameters();
+                                return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
+                            }).First());
 
                             instanceConstructorIL.Emit(OpCodes.Stfld, memory);
 

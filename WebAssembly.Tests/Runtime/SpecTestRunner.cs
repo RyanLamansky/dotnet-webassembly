@@ -355,6 +355,9 @@ namespace WebAssembly.Runtime
                                     Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
                                 }
                                 catch (TargetInvocationException x)
+#if DEBUG
+                                when (!System.Diagnostics.Debugger.IsAttached)
+#endif
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -363,7 +366,14 @@ namespace WebAssembly.Runtime
                             {
                                 case "data segment does not fit":
                                 case "elements segment does not fit":
-                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    try
+                                    {
+                                        trapExpected();
+                                        throw new AssertFailedException($"{command.line}: Expected ModuleLoadException, MemoryAccessOutOfRangeException or OverflowException, but no exception was thrown.");
+                                    }
+                                    catch (Exception x) when (x is ModuleLoadException || x is MemoryAccessOutOfRangeException || x is OverflowException)
+                                    {
+                                    }
                                     continue;
                                 case "unknown import":
                                 case "incompatible import type":

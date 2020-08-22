@@ -619,7 +619,6 @@ namespace WebAssembly
         public void Compiler_MemoryImportExport()
         {
             var module = new Module();
-            module.Memories.Add(new Memory(0, 1));
             module.Imports.Add(new Import.Memory
             {
                 Field = "Memory",
