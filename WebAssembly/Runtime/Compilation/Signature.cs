@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Runtime.Compilation
 {
@@ -19,13 +18,8 @@ namespace WebAssembly.Runtime.Compilation
         private Signature()
         {
             this.TypeIndex = uint.MaxValue;
-#if ARRAY_EMPTY
             this.ReturnTypes = this.ParameterTypes = Array.Empty<Type>();
             this.RawReturnTypes = this.RawParameterTypes = Array.Empty<WebAssemblyValueType>();
-#else
-            this.ReturnTypes = this.ParameterTypes = new Type[0];
-            this.RawReturnTypes = this.RawParameterTypes = new WebAssemblyValueType[0];
-#endif
         }
 
         public Signature(WebAssemblyValueType returnType)
@@ -57,8 +51,11 @@ namespace WebAssembly.Runtime.Compilation
                 returns[i] = (rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
         }
 
-        public bool Equals(WebAssemblyType other)
+        public bool Equals(WebAssemblyType? other)
         {
+            if (other == null)
+                return false;
+
             var thisReturns = this.RawReturnTypes;
             var otherReturns = other.Returns;
 

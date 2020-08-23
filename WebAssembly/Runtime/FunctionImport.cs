@@ -32,6 +32,8 @@ namespace WebAssembly.Runtime
                 throw new ArgumentNullException(nameof(del));
 
             var method = (this.Method = del).GetMethodInfo();
+            if (method == null)
+                throw new ArgumentException("Provided delegate isn't associated with a method.", nameof(del));
 
             this.Type = new WebAssemblyType();
             if (method.ReturnType != typeof(void))

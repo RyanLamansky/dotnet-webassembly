@@ -82,7 +82,7 @@ namespace WebAssembly
         /// </summary>
         /// <param name="obj">The object instance to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public override bool Equals(object obj) => this.Equals(obj as FunctionBody);
+        public override bool Equals(object? obj) => this.Equals(obj as FunctionBody);
 
         /// <summary>
         /// Determines whether this instance is identical to another.

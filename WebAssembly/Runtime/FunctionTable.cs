@@ -16,7 +16,7 @@ namespace WebAssembly.Runtime
             .DeclaredProperties
             .Where(prop => prop.GetIndexParameters().Length > 0)
             .First()
-            .GetMethod
+            .GetMethod!
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> IndexSetter = new RegeneratingWeakReference<MethodInfo>(() =>
@@ -25,20 +25,20 @@ namespace WebAssembly.Runtime
             .DeclaredProperties
             .Where(prop => prop.GetIndexParameters().Length > 0)
             .First()
-            .SetMethod
+            .SetMethod!
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
-            .GetDeclaredProperty(nameof(Length))
-            .GetMethod
+            .GetDeclaredProperty(nameof(Length))!
+            .GetMethod!
             );
 
         internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
-            .GetDeclaredMethod(nameof(Grow))
+            .GetDeclaredMethod(nameof(Grow))!
             );
 
         /// <summary>

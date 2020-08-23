@@ -42,6 +42,10 @@ namespace WebAssembly.Instructions
 
         private MethodBuilder CreateStoreMethod(HelperMethod helper, CompilationContext context)
         {
+            var memory = context.Memory;
+            if (memory == null)
+                throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
+
             var builder = context.CheckedExportsBuilder.DefineMethod(
                 $"☣ {helper}",
                 CompilationContext.HelperMethodAttributes,
@@ -62,7 +66,7 @@ namespace WebAssembly.Instructions
             il.Emit(OpCodes.Ldarg_3);
             il.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);
             il.Emit(OpCodes.Ldarg_3);
-            il.Emit(OpCodes.Ldfld, context.Memory);
+            il.Emit(OpCodes.Ldfld, memory);
             il.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
             il.Emit(OpCodes.Add);
             il.Emit(OpCodes.Ldarg_1);

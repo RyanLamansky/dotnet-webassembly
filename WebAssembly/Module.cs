@@ -172,7 +172,6 @@ namespace WebAssembly
             set => this.data = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-#if FILESTREAM
         /// <summary>
         /// Creates a new <see cref="Module"/> from a file.
         /// </summary>
@@ -197,7 +196,6 @@ namespace WebAssembly
                 return ReadFromBinary(stream);
             }
         }
-#endif
 
         /// <summary>
         /// Creates a new <see cref="Module"/> from a stream.

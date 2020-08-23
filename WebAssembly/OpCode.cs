@@ -1049,14 +1049,14 @@ namespace WebAssembly
             () => typeof(OpCode)
                 .GetFields()
                 .Where(field => field.IsStatic)
-                .Select(field => new KeyValuePair<OpCode, string>((OpCode)field.GetValue(null), field.GetCustomAttribute<OpCodeCharacteristicsAttribute>().Name))
+                .Select(field => new KeyValuePair<OpCode, string>((OpCode)field.GetValue(null)!, field.GetCustomAttribute<OpCodeCharacteristicsAttribute>()!.Name))
                 .ToDictionary(kv => kv.Key, kv => kv.Value)
             );
 
         public static string ToNativeName(this OpCode opCode)
         {
             opCodeNativeNamesByOpCode.Reference.TryGetValue(opCode, out var result);
-            return result;
+            return result!;
         }
     }
 }

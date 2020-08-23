@@ -137,7 +137,7 @@ namespace WebAssembly
         /// </summary>
         /// <param name="obj">The other instance to compare against.</param>
         /// <returns>True if the two instances have the same values, otherwise false.</returns>
-        public override bool Equals(object obj) => this.Equals(obj as WebAssemblyType);
+        public override bool Equals(object? obj) => this.Equals(obj as WebAssemblyType);
 
         /// <summary>
         /// Compares the values of this instance for equality with those of another.

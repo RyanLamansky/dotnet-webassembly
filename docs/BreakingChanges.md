@@ -5,6 +5,14 @@ Preview changes will be less detailed due to low usage.
 
 ## Preview Breaking Change Summary
 
+### 0.10.0
+
+* Dropped .NET Standard builds, now targeting .NET Core 3.1 only.
+  - This means it's no longer possible to use this library on the classic .NET Framework or old .NET Core versions.
+  - This was due to .NET Standard being abandoned by Microsoft without getting proper nullable reference type support.
+* `WebAssembly.Instruction.ToString()` now returns the native WebAssembly opcode name.
+* Improved spec compliance by requiring memory to be either defined internally or imported, but not both.
+
 ### 0.9.0
 
 * Out of range import types throw `ModuleLoadException` instead of `IndexOutOfRangeException`.

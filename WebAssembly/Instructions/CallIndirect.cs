@@ -121,7 +121,7 @@ namespace WebAssembly.Instructions
                         throw new CompilerException($"Failed to get a delegate for type {signature}.");
                     if (del.IsGenericType)
                         del = del.MakeGenericType(parms.Concat(returns).ToArray());
-                    context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke)));
+                    context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                 }
 
                 context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.CheckedExportsBuilder.DefineMethod(
@@ -133,10 +133,10 @@ namespace WebAssembly.Instructions
 
                 var il = remapper.GetILGenerator();
                 il.EmitLoadArg(parms.Length + 1);
-                il.Emit(OpCodes.Ldfld, context.FunctionTable);
+                il.Emit(OpCodes.Ldfld, context.FunctionTable!);
                 il.EmitLoadArg(parms.Length);
                 il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
-                il.Emit(OpCodes.Castclass, invoker.DeclaringType);
+                il.Emit(OpCodes.Castclass, invoker.DeclaringType!);
 
                 for (var k = 0; k < parms.Length; k++)
                     il.EmitLoadArg(k);

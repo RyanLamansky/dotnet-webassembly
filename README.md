@@ -1,16 +1,22 @@
 ﻿# WebAssembly for .NET
 [![NuGet](https://img.shields.io/nuget/v/WebAssembly.svg)](https://www.nuget.org/packages/WebAssembly)
 
-A library able to create, read, modify, write and execute WebAssembly (WASM) files from .NET-based applications.
+A library able to create, read, modify, write and (incomplete) execute WebAssembly (WASM) files from .NET-based applications.
 *Execution does not use an interpreter.*
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
 
-A preview is available via NuGet at https://www.nuget.org/packages/WebAssembly .
+Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 
 ## Getting Started
 
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
+  - There are no known issues with this functionality and the API is stable.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
+  - Missing features may prevent complex WASMs from working:
+    - Table imports
+    - Handling unreachable code
+    - Various edge cases
+  - No breaking changes are planned for this API, but may be required for full compatibility.
 
 Please file an issue if you encounter an assembly that works in browsers but not with this library.
 
@@ -106,7 +112,6 @@ static class Program
 ### Required for 1.0
 
 - Leverage the official WebAssembly spec tests to ensure correct behavior.
-- Final API changes, particularly to align with the WebAssembly spec and JavaScript APIs.
 - Implement C# 8.0 nullable reference types.
 
 ### After 1.0

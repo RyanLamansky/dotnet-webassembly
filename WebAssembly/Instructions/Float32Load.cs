@@ -35,6 +35,6 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
-        public bool Equals(Float32Load other) => base.Equals(other);
+        public bool Equals(Float32Load? other) => base.Equals(other);
     }
 }
