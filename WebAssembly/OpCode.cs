@@ -1,4 +1,8 @@
-﻿namespace WebAssembly
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+
+namespace WebAssembly
 {
     /// <summary>
     /// Binary opcode values.
@@ -1037,5 +1041,22 @@
         /// </summary>
         [OpCodeCharacteristics("f64.reinterpret_i64")]
         Float64ReinterpretInt64 = 0xbf,
+    }
+
+    static class OpCodeExtensions
+    {
+        private static readonly RegeneratingWeakReference<Dictionary<OpCode, string>> opCodeNativeNamesByOpCode = new RegeneratingWeakReference<Dictionary<OpCode, string>>(
+            () => typeof(OpCode)
+                .GetFields()
+                .Where(field => field.IsStatic)
+                .Select(field => new KeyValuePair<OpCode, string>((OpCode)field.GetValue(null), field.GetCustomAttribute<OpCodeCharacteristicsAttribute>().Name))
+                .ToDictionary(kv => kv.Key, kv => kv.Value)
+            );
+
+        public static string ToNativeName(this OpCode opCode)
+        {
+            opCodeNativeNamesByOpCode.Reference.TryGetValue(opCode, out var result);
+            return result;
+        }
     }
 }

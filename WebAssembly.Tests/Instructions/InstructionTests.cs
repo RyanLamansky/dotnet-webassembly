@@ -64,5 +64,14 @@ namespace WebAssembly.Instructions
 
             Assert.AreEqual("", missing, "Instructions with no matching test class found.");
         }
+
+        /// <summary>
+        /// Ensures that every instruction has a working <see cref="Instruction.ToString"/> implementation.
+        /// </summary>
+        [TestMethod]
+        public void Instruction_ToStringWorks()
+        {
+            InstructionTypes.All(type => !string.IsNullOrWhiteSpace(((Instruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).ToString()));
+        }
     }
 }

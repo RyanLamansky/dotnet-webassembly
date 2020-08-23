@@ -48,6 +48,12 @@ namespace WebAssembly
         public abstract override int GetHashCode();
 
         /// <summary>
+        /// Provides a native representation of the instruction; the base implementation returns the opcode in WASM spec format.
+        /// </summary>
+        /// <returns>A string representation of this instance.</returns>
+        public override string ToString() => this.OpCode.ToNativeName();
+
+        /// <summary>
         /// Parses an instruction stream restricted to the opcodes available for an initializer expression.
         /// </summary>
         /// <param name="reader">The source of binary data.</param>
