@@ -1041,6 +1041,36 @@ namespace WebAssembly
         /// </summary>
         [OpCodeCharacteristics("f64.reinterpret_i64")]
         Float64ReinterpretInt64 = 0xbf,
+
+        /// <summary>
+        /// Extend a signed 8-bit integer to a 32-bit integer.
+        /// </summary>
+        [OpCodeCharacteristics("i32.extend8_s")]
+        Int32Extend8Signed = 0xc0,
+
+        /// <summary>
+        /// Extend a signed 16-bit integer to a 32-bit integer.
+        /// </summary>
+        [OpCodeCharacteristics("i32.extend16_s")]
+        Int32Extend16Signed = 0xc1,
+
+        /// <summary>
+        /// Extend a signed 8-bit integer to a 64-bit integer.
+        /// </summary>
+        [OpCodeCharacteristics("i64.extend8_s")]
+        Int64Extend8Signed = 0xc2,
+
+        /// <summary>
+        /// Extend a signed 16-bit integer to a 64-bit integer.
+        /// </summary>
+        [OpCodeCharacteristics("i64.extend16_s")]
+        Int64Extend16Signed = 0xc3,
+
+        /// <summary>
+        /// Extend a signed 32-bit integer to a 64-bit integer.
+        /// </summary>
+        [OpCodeCharacteristics("i64.extend32_s")]
+        Int64Extend32Signed = 0xc4,
     }
 
     static class OpCodeExtensions
