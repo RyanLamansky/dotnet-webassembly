@@ -293,6 +293,11 @@ namespace WebAssembly
                     case OpCode.Int64ReinterpretFloat64: yield return new Int64ReinterpretFloat64(); break;
                     case OpCode.Float32ReinterpretInt32: yield return new Float32ReinterpretInt32(); break;
                     case OpCode.Float64ReinterpretInt64: yield return new Float64ReinterpretInt64(); break;
+                    case OpCode.Int32Extend8Signed: yield return new Int32Extend8Signed(); break;
+                    case OpCode.Int32Extend16Signed: yield return new Int32Extend16Signed(); break;
+                    case OpCode.Int64Extend8Signed: yield return new Int64Extend8Signed(); break;
+                    case OpCode.Int64Extend16Signed: yield return new Int64Extend16Signed(); break;
+                    case OpCode.Int64Extend32Signed: yield return new Int64Extend32Signed(); break;
                 }
             }
         }
