@@ -61,6 +61,7 @@ namespace WebAssembly
                 { "max", "Maximum" },
                 { "copysign", "CopySign" },
                 { "const", "Constant" },
+                { "misc", "MiscellaneousOperationPrefix" },
             };
 
             foreach (var kv in opCodeCharacteristicsByOpCode)

@@ -36,5 +36,13 @@
         Int32RotateRight,
         Int64RotateLeft,
         Int64RotateRight,
+        Int32TruncateSaturateFloat32Signed,
+        Int32TruncateSaturateFloat32Unsigned,
+        Int32TruncateSaturateFloat64Signed,
+        Int32TruncateSaturateFloat64Unsigned,
+        Int64TruncateSaturateFloat32Signed,
+        Int64TruncateSaturateFloat32Unsigned,
+        Int64TruncateSaturateFloat64Signed,
+        Int64TruncateSaturateFloat64Unsigned,
     }
 }

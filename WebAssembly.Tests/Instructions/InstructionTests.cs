@@ -37,6 +37,7 @@ namespace WebAssembly.Instructions
         {
             var mismatch = string.Join(", ",
                 InstructionTypes
+                .Where(x => !x.IsSubclassOf(typeof(MiscellaneousInstruction)))
                 .Select(type => (
                 OpCode: ((Instruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).OpCode.ToString(),
                 TypeName: type.Name
@@ -46,6 +47,26 @@ namespace WebAssembly.Instructions
                 );
 
             Assert.AreEqual("", mismatch, "Instructions whose name do not match their opcode found.");
+        }
+
+        /// <summary>
+        /// Ensures that miscellaneous instruction names match their miscellaneous opcode name.
+        /// </summary>
+        [TestMethod]
+        public void Instruction_NameMatchesMiscellaneousOpcode()
+        {
+            var mismatch = string.Join(", ",
+                InstructionTypes
+                    .Where(x => x.IsSubclassOf(typeof(MiscellaneousInstruction)))
+                    .Select(type => (
+                        MiscellaneousOpCode: ((MiscellaneousInstruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).MiscellaneousOpCode.ToString(),
+                        TypeName: type.Name
+                    ))
+                    .Where(result => result.MiscellaneousOpCode != result.TypeName)
+                    .Select(result => result.TypeName)
+            );
+
+            Assert.AreEqual("", mismatch, "Instructions whose name do not match their miscellaneous opcode found.");
         }
 
         /// <summary>
