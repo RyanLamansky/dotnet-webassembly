@@ -1,5 +1,5 @@
-﻿using System.Reflection.Emit;
-using WebAssembly.Runtime;
+﻿using System;
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -7,7 +7,7 @@ namespace WebAssembly.Instructions
     /// <summary>
     /// Truncate (with saturation) a 32-bit float to an unsigned 32-bit integer.
     /// </summary>
-    public class Int32TruncateSaturateFloat32Unsigned : MiscellaneousInstruction
+    public class Int32TruncateSaturateFloat32Unsigned : TruncateSaturateInstruction
     {
         /// <summary>
         /// Always <see cref="MiscellaneousOpCode.Int32TruncateSaturateFloat32Unsigned"/>.
@@ -22,58 +22,40 @@ namespace WebAssembly.Instructions
         {
         }
 
-        internal sealed override void Compile(CompilationContext context)
+        private protected override WebAssemblyValueType InputValueType => WebAssemblyValueType.Float32;
+        private protected override WebAssemblyValueType OutputValueType => WebAssemblyValueType.Int32;
+        private protected override Type InputType => typeof(float);
+        private protected override Type OutputType => typeof(uint);
+        private protected override HelperMethod ConversionHelper => HelperMethod.Int32TruncateSaturateFloat32Unsigned;
+
+        private protected override void EmitLoadFloatMaxValue(ILGenerator il)
         {
-            var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(MiscellaneousOpCode.Int32TruncateSaturateFloat32Unsigned, 1, 0);
+            il.Emit(OpCodes.Ldc_R4, (float)uint.MaxValue);
+        }
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Float32)
-                throw new StackTypeInvalidException(MiscellaneousOpCode.Int32TruncateSaturateFloat32Unsigned, WebAssemblyValueType.Float32, type);
+        private protected override void EmitLoadIntegerMaxValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I4_M1);
+        }
 
-            context.Emit(OpCodes.Call, context[HelperMethod.Int32TruncateSaturateFloat32Unsigned, (helper, c) =>
-            {
-                var builder = c.CheckedExportsBuilder.DefineMethod(
-                    "☣ Int32TruncateSaturateFloat32Unsigned",
-                    CompilationContext.HelperMethodAttributes,
-                    typeof(uint),
-                    new[] { typeof(float) }
-                );
+        private protected override void EmitLoadFloatMinValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_R4, 0.0f);
+        }
 
-                var il = builder.GetILGenerator();
+        private protected override void EmitLoadIntegerMinValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I4_0);
+        }
 
-                var label1 = il.DefineLabel();
-                var label2 = il.DefineLabel();
-                var label3 = il.DefineLabel();
+        private protected override void EmitLoadIntegerZero(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I4_0);
+        }
 
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldc_R4, 4.2949673E+09f);
-                il.Emit(OpCodes.Blt_Un_S, label1);
-                il.Emit(OpCodes.Ldc_I4_M1);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label1);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldc_R4, 0.0f);
-                il.Emit(OpCodes.Bgt_Un_S, label2);
-                il.Emit(OpCodes.Ldc_I4_0);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label2);
-                il.Emit(OpCodes.Ldarg_0);
-                il.EmitCall(OpCodes.Call, typeof(float).GetMethod("IsNaN")!, null);
-                il.Emit(OpCodes.Brfalse_S, label3);
-                il.Emit(OpCodes.Ldc_I4_0);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label3);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Conv_U4);
-                il.Emit(OpCodes.Ret);
-
-                return builder;
-            }
-            ]);
-
-            stack.Push(WebAssemblyValueType.Int32);
+        private protected override void EmitConvert(ILGenerator il)
+        {
+            il.Emit(OpCodes.Conv_U4);
         }
     }
 }

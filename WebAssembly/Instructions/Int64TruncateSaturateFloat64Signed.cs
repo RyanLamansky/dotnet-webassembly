@@ -1,5 +1,5 @@
-﻿using System.Reflection.Emit;
-using WebAssembly.Runtime;
+﻿using System;
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -7,10 +7,10 @@ namespace WebAssembly.Instructions
     /// <summary>
     /// Truncate (with saturation) a 64-bit float to a signed 64-bit integer.
     /// </summary>
-    public class Int64TruncateSaturateFloat64Signed : MiscellaneousInstruction
+    public class Int64TruncateSaturateFloat64Signed : TruncateSaturateInstruction
     {
         /// <summary>
-        /// Always <see cref="MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed"/>.
+        /// Always <see cref="Int64TruncateSaturateFloat64Signed"/>.
         /// </summary>
         public override MiscellaneousOpCode MiscellaneousOpCode =>
             MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed;
@@ -22,59 +22,41 @@ namespace WebAssembly.Instructions
         {
         }
 
-        internal sealed override void Compile(CompilationContext context)
+        private protected override WebAssemblyValueType InputValueType => WebAssemblyValueType.Float64;
+        private protected override WebAssemblyValueType OutputValueType => WebAssemblyValueType.Int64;
+        private protected override Type InputType => typeof(double);
+        private protected override Type OutputType => typeof(long);
+        private protected override HelperMethod ConversionHelper => HelperMethod.Int64TruncateSaturateFloat64Signed;
+
+        private protected override void EmitLoadFloatMaxValue(ILGenerator il)
         {
-            var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed, 1, 0);
+            il.Emit(OpCodes.Ldc_R8, (double)long.MaxValue);
+        }
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Float64)
-                throw new StackTypeInvalidException(MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed, WebAssemblyValueType.Float64, type);
+        private protected override void EmitLoadIntegerMaxValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I8, long.MaxValue);
+        }
 
-            context.Emit(OpCodes.Call, context[HelperMethod.Int64TruncateSaturateFloat64Signed, (helper, c) =>
-            {
-                var builder = c.CheckedExportsBuilder.DefineMethod(
-                    "☣ Int64TruncateSaturateFloat64Signed",
-                    CompilationContext.HelperMethodAttributes,
-                    typeof(long),
-                    new[] { typeof(double) }
-                );
+        private protected override void EmitLoadFloatMinValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_R8, (double)long.MinValue);
+        }
 
-                var il = builder.GetILGenerator();
+        private protected override void EmitLoadIntegerMinValue(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I8, long.MinValue);
+        }
 
-                var label1 = il.DefineLabel();
-                var label2 = il.DefineLabel();
-                var label3 = il.DefineLabel();
+        private protected override void EmitLoadIntegerZero(ILGenerator il)
+        {
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Conv_I8);
+        }
 
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldc_R8, 9.223372036854776E+18);
-                il.Emit(OpCodes.Blt_Un_S, label1);
-                il.Emit(OpCodes.Ldc_I8, 9223372036854775807);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label1);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldc_R8, -9.223372036854776E+18);
-                il.Emit(OpCodes.Bgt_Un_S, label2);
-                il.Emit(OpCodes.Ldc_I8, -9223372036854775808);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label2);
-                il.Emit(OpCodes.Ldarg_0);
-                il.EmitCall(OpCodes.Call, typeof(double).GetMethod("IsNaN")!, null);
-                il.Emit(OpCodes.Brfalse_S, label3);
-                il.Emit(OpCodes.Ldc_I4_0);
-                il.Emit(OpCodes.Conv_I8);
-                il.Emit(OpCodes.Ret);
-                il.MarkLabel(label3);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Conv_I8);
-                il.Emit(OpCodes.Ret);
-
-                return builder;
-            }
-            ]);
-
-            stack.Push(WebAssemblyValueType.Int64);
+        private protected override void EmitConvert(ILGenerator il)
+        {
+            il.Emit(OpCodes.Conv_I8);
         }
     }
 }
