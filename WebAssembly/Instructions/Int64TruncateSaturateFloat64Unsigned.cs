@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -13,7 +12,7 @@ namespace WebAssembly.Instructions
         /// <summary>
         /// Always <see cref="MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned"/>.
         /// </summary>
-        public override MiscellaneousOpCode MiscellaneousOpCode =>
+        public sealed override MiscellaneousOpCode MiscellaneousOpCode =>
             MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned;
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions
         /// <summary>
         /// Always <see cref="MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned"/>.
         /// </summary>
-        public override MiscellaneousOpCode MiscellaneousOpCode =>
+        public sealed override MiscellaneousOpCode MiscellaneousOpCode =>
             MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned;
 
         /// <summary>
