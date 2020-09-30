@@ -1071,6 +1071,12 @@ namespace WebAssembly
         /// </summary>
         [OpCodeCharacteristics("i64.extend32_s")]
         Int64Extend32Signed = 0xc4,
+
+        /// <summary>
+        /// Prefix byte for miscellaneous operations.
+        /// </summary>
+        [OpCodeCharacteristics("misc")]
+        MiscellaneousOperationPrefix = 0xfc,
     }
 
     static class OpCodeExtensions

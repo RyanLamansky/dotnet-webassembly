@@ -19,6 +19,19 @@
         }
 
         /// <summary>
+        /// Creates a new <see cref="StackTooSmallException"/> with the provided parameters.
+        /// </summary>
+        /// <param name="miscellaneousOpCode">The miscellaneous operation attempted.</param>
+        /// <param name="minimum">The minimum acceptable stack height.</param>
+        /// <param name="actual">The actual stack height at the time the operation was attempted.</param>
+        public StackTooSmallException(MiscellaneousOpCode miscellaneousOpCode, int minimum, int actual)
+            : base(miscellaneousOpCode, $"requires at least {minimum} values on the stack, found {actual}.")
+        {
+            this.Minimum = minimum;
+            this.Actual = actual;
+        }
+
+        /// <summary>
         /// The minimum acceptable stack height.
         /// </summary>
         public int Minimum { get; }

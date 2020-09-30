@@ -19,6 +19,19 @@
         }
 
         /// <summary>
+        /// Creates a new <see cref="StackTypeInvalidException"/> with the provided parameters.
+        /// </summary>
+        /// <param name="miscellaneousOpCode">The miscellaneous operation attempted.</param>
+        /// <param name="expected">The expected value type.</param>
+        /// <param name="actual">The actual value type.</param>
+        public StackTypeInvalidException(MiscellaneousOpCode miscellaneousOpCode, WebAssemblyValueType expected, WebAssemblyValueType actual)
+            : base(miscellaneousOpCode, $"requires the top stack item to be {expected}, found {actual}.")
+        {
+            this.Expected = expected;
+            this.Actual = actual;
+        }
+
+        /// <summary>
         /// The expected value type.
         /// </summary>
         public WebAssemblyValueType Expected { get; }

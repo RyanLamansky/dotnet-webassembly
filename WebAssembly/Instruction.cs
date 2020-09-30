@@ -298,6 +298,23 @@ namespace WebAssembly
                     case OpCode.Int64Extend8Signed: yield return new Int64Extend8Signed(); break;
                     case OpCode.Int64Extend16Signed: yield return new Int64Extend16Signed(); break;
                     case OpCode.Int64Extend32Signed: yield return new Int64Extend32Signed(); break;
+
+                    case OpCode.MiscellaneousOperationPrefix:
+                        var miscellaneousOpCodeOffset = reader.Offset;
+                        var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadByte();
+                        switch (miscellaneousOpCode)
+                        {
+                            default: throw new ModuleLoadException($"Don't know how to parse miscellaneous opcode \"{miscellaneousOpCode}\".", miscellaneousOpCodeOffset);
+                            case MiscellaneousOpCode.Int32TruncateSaturateFloat32Signed: yield return new Int32TruncateSaturateFloat32Signed(); break;
+                            case MiscellaneousOpCode.Int32TruncateSaturateFloat32Unsigned: yield return new Int32TruncateSaturateFloat32Unsigned(); break;
+                            case MiscellaneousOpCode.Int32TruncateSaturateFloat64Signed: yield return new Int32TruncateSaturateFloat64Signed(); break;
+                            case MiscellaneousOpCode.Int32TruncateSaturateFloat64Unsigned: yield return new Int32TruncateSaturateFloat64Unsigned(); break;
+                            case MiscellaneousOpCode.Int64TruncateSaturateFloat32Signed: yield return new Int64TruncateSaturateFloat32Signed(); break;
+                            case MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned: yield return new Int64TruncateSaturateFloat32Unsigned(); break;
+                            case MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed: yield return new Int64TruncateSaturateFloat64Signed(); break;
+                            case MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned: yield return new Int64TruncateSaturateFloat64Unsigned(); break;
+                        }
+                        break;
                 }
             }
         }
