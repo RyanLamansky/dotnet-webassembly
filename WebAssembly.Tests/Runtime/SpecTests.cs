@@ -988,7 +988,6 @@ namespace WebAssembly.Runtime
         /// Runs the unreachable tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_unreachable()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unreachable"), "unreachable.json");
