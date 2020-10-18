@@ -18,7 +18,7 @@ namespace WebAssembly
         [TestMethod]
         public void Module_ReadFromBinaryStream()
         {
-            Assert.AreEqual("input", Assert.ThrowsException<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null)).ParamName);
+            Assert.AreEqual("input", Assert.ThrowsException<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null!)).ParamName);
 
             using (var sample = new MemoryStream())
             {
@@ -178,7 +178,7 @@ namespace WebAssembly
                 Assert.AreEqual("B", table.Module);
                 Assert.AreEqual("2", table.Field);
                 Assert.IsNotNull(table.Definition);
-                Assert.AreEqual(ElementType.FunctionReference, table.Definition.ElementType);
+                Assert.AreEqual(ElementType.FunctionReference, table.Definition!.ElementType);
                 Assert.IsNotNull(table.Definition.ResizableLimits);
                 Assert.AreEqual(1u, table.Definition.ResizableLimits.Minimum);
                 Assert.AreEqual(2u, table.Definition.ResizableLimits.Maximum.GetValueOrDefault());
@@ -190,7 +190,7 @@ namespace WebAssembly
                 Assert.AreEqual("C", memory.Module);
                 Assert.AreEqual("3", memory.Field);
                 Assert.IsNotNull(memory.Type);
-                Assert.IsNotNull(memory.Type.ResizableLimits);
+                Assert.IsNotNull(memory.Type!.ResizableLimits);
                 Assert.AreEqual(4u, memory.Type.ResizableLimits.Minimum);
                 Assert.AreEqual(5u, memory.Type.ResizableLimits.Maximum.GetValueOrDefault());
             }

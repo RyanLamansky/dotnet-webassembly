@@ -37,7 +37,8 @@ namespace WebAssembly
         {
             using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("WebAssembly.Samples.Issue7.wasm"))
             {
-                var module = Module.ReadFromBinary(stream);
+                Assert.IsNotNull(stream);
+                var module = Module.ReadFromBinary(stream!);
 
                 Assert.AreEqual(2, module.Codes.Count);
                 Assert.AreEqual(9, module.CustomSections.Count);
@@ -68,7 +69,8 @@ namespace WebAssembly
                 {
                     { "env", "sayc", new FunctionImport(new Action<int>(Issue7Receive)) },
                 };
-                var compiled = Compile.FromBinary<dynamic>(stream)(imports);
+                Assert.IsNotNull(stream);
+                var compiled = Compile.FromBinary<dynamic>(stream!)(imports);
                 Assert.AreEqual<int>(0, compiled.Exports.main());
             }
 

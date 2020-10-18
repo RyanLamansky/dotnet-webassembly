@@ -39,7 +39,7 @@ namespace WebAssembly.Instructions
                 InstructionTypes
                 .Where(x => !x.IsSubclassOf(typeof(MiscellaneousInstruction)))
                 .Select(type => (
-                OpCode: ((Instruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).OpCode.ToString(),
+                OpCode: ((Instruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).OpCode.ToString(),
                 TypeName: type.Name
                 ))
                 .Where(result => result.OpCode != result.TypeName)
@@ -59,7 +59,7 @@ namespace WebAssembly.Instructions
                 InstructionTypes
                     .Where(x => x.IsSubclassOf(typeof(MiscellaneousInstruction)))
                     .Select(type => (
-                        MiscellaneousOpCode: ((MiscellaneousInstruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).MiscellaneousOpCode.ToString(),
+                        MiscellaneousOpCode: ((MiscellaneousInstruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).MiscellaneousOpCode.ToString(),
                         TypeName: type.Name
                     ))
                     .Where(result => result.MiscellaneousOpCode != result.TypeName)
@@ -92,7 +92,16 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Instruction_ToStringWorks()
         {
-            InstructionTypes.All(type => !string.IsNullOrWhiteSpace(((Instruction)type.GetConstructor(System.Type.EmptyTypes).Invoke(null)).ToString()));
+            InstructionTypes.All(type => !string.IsNullOrWhiteSpace(((Instruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).ToString()));
+        }
+
+        /// <summary>
+        /// Ensures that all instructions have a public parameterless constructor.
+        /// </summary>
+        [TestMethod]
+        public void Instruction_HasPublicParameterlessConstructor()
+        {
+            InstructionTypes.All(type => type.GetConstructors().Any(constructor => constructor.GetParameters().Length == 0));
         }
     }
 }

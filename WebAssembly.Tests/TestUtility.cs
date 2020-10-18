@@ -31,12 +31,12 @@ namespace WebAssembly
         /// <param name="a">The first item to check.</param>
         /// <param name="b">The second item to check.</param>
         /// <exception cref="AssertFailedException">The hash codes do not match or the objects are not equal.</exception>
-        public static void AreEqual<T>(T a, T b)
-            where T : IEquatable<T>
+        public static void AreEqual<T>(T? a, T? b)
+            where T : class, IEquatable<T>
         {
             Assert.IsTrue((a?.Equals(b)).GetValueOrDefault());
             Assert.IsTrue((b?.Equals(a)).GetValueOrDefault());
-            AreEqual((object)a, b);
+            AreEqual((object?)a, b);
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace WebAssembly
         /// <param name="a">The first item to check.</param>
         /// <param name="b">The second item to check.</param>
         /// <exception cref="AssertFailedException">The hash codes do not match or the objects are not equal.</exception>
-        private static void AreEqual(object a, object b)
+        private static void AreEqual(object? a, object? b)
         {
             Assert.AreEqual(a?.GetHashCode(), b?.GetHashCode());
             Assert.IsTrue((a?.Equals(b)).GetValueOrDefault());
@@ -63,12 +63,12 @@ namespace WebAssembly
         /// <param name="a">The first item to check.</param>
         /// <param name="b">The second item to check.</param>
         /// <exception cref="AssertFailedException">The objects are not equal.</exception>
-        public static void AreNotEqual<T>(T a, T b)
-            where T : IEquatable<T>
+        public static void AreNotEqual<T>(T? a, T? b)
+            where T : class, IEquatable<T>
         {
             Assert.IsFalse((a?.Equals(b)).GetValueOrDefault());
             Assert.IsFalse((b?.Equals(a)).GetValueOrDefault());
-            AreNotEqual((object)a, b);
+            AreNotEqual((object?)a, b);
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace WebAssembly
         /// <param name="a">The first item to check.</param>
         /// <param name="b">The second item to check.</param>
         /// <exception cref="AssertFailedException">The objects are not equal.</exception>
-        private static void AreNotEqual(object a, object b)
+        private static void AreNotEqual(object? a, object? b)
         {
             Assert.IsFalse((a?.Equals(b)).GetValueOrDefault());
             Assert.IsFalse((b?.Equals(a)).GetValueOrDefault());

@@ -9,13 +9,16 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 
+// Effect of this is trusting that the source JSONs are valid.
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+
 namespace WebAssembly.Runtime
 {
     static class SpecTestRunner
     {
         public static void Run(string pathBase, string json) => Run<object>(pathBase, json);
 
-        public static void Run(string pathBase, string json, Func<uint, bool> skip) => Run<object>(pathBase, json, skip);
+        public static void Run(string pathBase, string json, Func<uint, bool>? skip) => Run<object>(pathBase, json, skip);
 
         public static void Run<TExports>(string pathBase, string json)
             where TExports : class
@@ -23,7 +26,7 @@ namespace WebAssembly.Runtime
             Run<TExports>(pathBase, json, null);
         }
 
-        public static void Run<TExports>(string pathBase, string json, Func<uint, bool> skip)
+        public static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip)
             where TExports : class
         {
             TestInfo testInfo;
@@ -57,10 +60,10 @@ namespace WebAssembly.Runtime
                     .RegisterSubtype(typeof(Float32Value), RawValueType.f32)
                     .RegisterSubtype(typeof(Float64Value), RawValueType.f64)
                     .Build());
-                testInfo = (TestInfo)JsonSerializer.Create(settings).Deserialize(reader, typeof(TestInfo));
+                testInfo = (TestInfo)JsonSerializer.Create(settings).Deserialize(reader, typeof(TestInfo))!;
             }
 
-            ObjectMethods methodsByName = null;
+            ObjectMethods? methodsByName = null;
             var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
 
             // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
@@ -82,9 +85,10 @@ namespace WebAssembly.Runtime
             var registrationCandidates = new ImportDictionary();
 
             Action trapExpected;
-            object result, obj;
+            object? result;
+            object obj;
             MethodInfo methodInfo;
-            TExports exports = null;
+            TExports? exports = null;
             foreach (var command in testInfo.commands)
             {
                 if (skip != null && skip(command.line))
@@ -94,7 +98,7 @@ namespace WebAssembly.Runtime
                 {
                     var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
                     Assert.IsNotNull(methodSource, $"{command.line} has no method source.");
-                    Assert.IsTrue(methodSource.TryGetValue(NameCleaner.CleanName(action.field), out info), $"{command.line} failed to look up method {action.field}");
+                    Assert.IsTrue(methodSource!.TryGetValue(NameCleaner.CleanName(action.field), out info!), $"{command.line} failed to look up method {action.field}");
                     host = methodSource.Host;
                 }
 
@@ -116,7 +120,7 @@ namespace WebAssembly.Runtime
                             {
                                 result = assert.action.Call(methodInfo, obj);
                             }
-                            catch (TargetInvocationException x)
+                            catch (TargetInvocationException x) when (x.InnerException != null)
                             {
                                 throw new AssertFailedException($"{command.line}: {x.InnerException.Message}", x.InnerException);
                             }
@@ -134,13 +138,13 @@ namespace WebAssembly.Runtime
                                     case RawValueType.f32:
                                         {
                                             var expected = ((Float32Value)assert.expected[0]).ActualValue;
-                                            Assert.AreEqual(expected, (float)result, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
+                                            Assert.AreEqual(expected, (float)result!, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
                                         }
                                         continue;
                                     case RawValueType.f64:
                                         {
                                             var expected = ((Float64Value)assert.expected[0]).ActualValue;
-                                            Assert.AreEqual(expected, (double)result, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
+                                            Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                         }
                                         continue;
                                 }
@@ -154,10 +158,10 @@ namespace WebAssembly.Runtime
                             switch (assert.expected[0].type)
                             {
                                 case RawValueType.f32:
-                                    Assert.IsTrue(float.IsNaN((float)result));
+                                    Assert.IsTrue(float.IsNaN((float)result!));
                                     continue;
                                 case RawValueType.f64:
-                                    Assert.IsTrue(double.IsNaN((double)result));
+                                    Assert.IsTrue(double.IsNaN((double)result!));
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
@@ -168,10 +172,10 @@ namespace WebAssembly.Runtime
                             switch (assert.expected[0].type)
                             {
                                 case RawValueType.f32:
-                                    Assert.IsTrue(float.IsNaN((float)result));
+                                    Assert.IsTrue(float.IsNaN((float)result!));
                                     continue;
                                 case RawValueType.f64:
-                                    Assert.IsTrue(double.IsNaN((double)result));
+                                    Assert.IsTrue(double.IsNaN((double)result!));
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
@@ -183,7 +187,7 @@ namespace WebAssembly.Runtime
                                 {
                                     Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
                                 }
-                                catch (TargetInvocationException x)
+                                catch (TargetInvocationException x) when (x.InnerException != null)
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -264,7 +268,7 @@ namespace WebAssembly.Runtime
                                 {
                                     assert.action.Call(methodInfo, obj);
                                 }
-                                catch (TargetInvocationException x)
+                                catch (TargetInvocationException x) when (x.InnerException != null)
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -333,7 +337,7 @@ namespace WebAssembly.Runtime
                                 {
                                     assert.action.Call(methodInfo, obj);
                                 }
-                                catch (TargetInvocationException x)
+                                catch (TargetInvocationException x) when (x.InnerException != null)
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -354,10 +358,11 @@ namespace WebAssembly.Runtime
                                 {
                                     Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
                                 }
-                                catch (TargetInvocationException x)
+                                catch (TargetInvocationException x) when (x.InnerException != null
 #if DEBUG
-                                when (!System.Diagnostics.Debugger.IsAttached)
+                                && !System.Diagnostics.Debugger.IsAttached
 #endif
+                                )
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -384,9 +389,10 @@ namespace WebAssembly.Runtime
                             }
                         case Register register:
                             Assert.IsNotNull(
-                                moduleMethodsByName[register.@as] = register.name != null ? moduleMethodsByName[register.name] : methodsByName,
+                                moduleMethodsByName[register.@as] = register.name != null ? moduleMethodsByName[register.name] : methodsByName!,
                                 $"{command.line} tried to register null as a module method source.");
-                            imports.AddFromExports(register.@as, exports);
+                            Assert.IsNotNull(exports);
+                            imports.AddFromExports(register.@as, exports!);
                             continue;
                         case AssertUninstantiable assert:
                             trapExpected = () =>
@@ -395,7 +401,7 @@ namespace WebAssembly.Runtime
                                 {
                                     Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
                                 }
-                                catch (TargetInvocationException x)
+                                catch (TargetInvocationException x) when (x.InnerException != null)
                                 {
                                     ExceptionDispatchInfo.Capture(x.InnerException).Throw();
                                 }
@@ -438,7 +444,7 @@ namespace WebAssembly.Runtime
                     .GetType()
                     .GetProperties()
                     .Where(p => p.GetGetMethod() != null)
-                    .Select(p => new { p.Name, MethodInfo = p.GetGetMethod() })))
+                    .Select(p => new { p.Name, MethodInfo = p.GetGetMethod()! })))
                 {
                     Assert.IsTrue(TryAdd(method.Name, method.MethodInfo));
                 }
@@ -555,14 +561,14 @@ namespace WebAssembly.Runtime
             public string module;
             public string field;
 
-            public abstract object Call(MethodInfo methodInfo, object obj);
+            public abstract object? Call(MethodInfo methodInfo, object obj);
         }
 
         class Invoke : TestAction
         {
             public TypedValue[] args;
 
-            public override object Call(MethodInfo methodInfo, object obj)
+            public override object? Call(MethodInfo methodInfo, object obj)
             {
                 return methodInfo.Invoke(obj, args.Select(arg => arg.BoxedValue).ToArray());
             }
@@ -572,7 +578,7 @@ namespace WebAssembly.Runtime
 
         class Get : TestAction
         {
-            public override object Call(MethodInfo methodInfo, object obj)
+            public override object? Call(MethodInfo methodInfo, object obj)
             {
                 return methodInfo.Invoke(obj, Array.Empty<object>());
             }

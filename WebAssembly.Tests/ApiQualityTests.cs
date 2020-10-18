@@ -21,10 +21,10 @@ namespace WebAssembly
                 .Where(type => type.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
                 .Select(type => (
                     type,
-                    members: type.GetMembers().Where(member => member.DeclaringType.Assembly == type.Assembly).ToArray(),
-                    fields: type.GetFields().Where(field => field.DeclaringType.Assembly == type.Assembly).ToArray(),
-                    properties: type.GetProperties().Where(property => property.DeclaringType.Assembly == type.Assembly).ToArray(),
-                    methbods: type.GetMethods().Where(method => method.DeclaringType.Assembly == type.Assembly).ToArray())
+                    members: type.GetMembers().Where(member => member.DeclaringType?.Assembly == type.Assembly).ToArray(),
+                    fields: type.GetFields().Where(field => field.DeclaringType?.Assembly == type.Assembly).ToArray(),
+                    properties: type.GetProperties().Where(property => property.DeclaringType?.Assembly == type.Assembly).ToArray(),
+                    methbods: type.GetMethods().Where(method => method.DeclaringType?.Assembly == type.Assembly).ToArray())
                 )
                 .ToArray()
             );

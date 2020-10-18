@@ -12,11 +12,11 @@ namespace WebAssembly
     [TestClass]
     public class OpCodeTests
     {
-        private static readonly Dictionary<OpCode, OpCodeCharacteristicsAttribute> opCodeCharacteristicsByOpCode =
+        private static readonly Dictionary<OpCode, OpCodeCharacteristicsAttribute?> opCodeCharacteristicsByOpCode =
             typeof(OpCode)
             .GetFields(BindingFlags.Public | BindingFlags.Static)
             .Where(field => (field.Attributes & FieldAttributes.Literal) != 0 && (field.Attributes & FieldAttributes.HasDefault) != 0)
-            .ToDictionary(field => (OpCode)field.GetRawConstantValue(), field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>());
+            .ToDictionary(field => (OpCode)field.GetRawConstantValue()!, field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>());
 
         /// <summary>
         /// Ensures that the name of an opcode is appropriate for the name assigned to its associated <see cref="OpCodeCharacteristicsAttribute"/>.
@@ -70,7 +70,9 @@ namespace WebAssembly
                 var characteristics = kv.Value;
                 var expectedName = new StringBuilder();
 
-                var parts = characteristics.Name.Split(splitter);
+                Assert.IsNotNull(characteristics);
+
+                var parts = characteristics!.Name.Split(splitter);
                 foreach (var part in parts)
                 {
                     if (replacements.TryGetValue(part, out var toAppend))

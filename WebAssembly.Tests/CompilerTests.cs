@@ -101,9 +101,9 @@ namespace WebAssembly
 
             Assert.AreEqual(5, compiled.Exports.Test);
 
-            var native = compiled.Exports.GetType().GetProperty("Test").GetCustomAttribute<NativeExportAttribute>();
+            var native = compiled.Exports.GetType().GetProperty("Test")?.GetCustomAttribute<NativeExportAttribute>();
             Assert.IsNotNull(native);
-            Assert.AreEqual(ExternalKind.Global, native.Kind);
+            Assert.AreEqual(ExternalKind.Global, native!.Kind);
             Assert.AreEqual("Test", native.Name);
         }
 

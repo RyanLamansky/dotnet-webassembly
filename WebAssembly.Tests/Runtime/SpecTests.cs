@@ -679,7 +679,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_int_exprs()
         {
-            HashSet<uint> skips = null;
+            HashSet<uint>? skips = null;
             if (!Environment.Is64BitProcess)
             {
                 skips = new HashSet<uint>
@@ -715,7 +715,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_left_to_right()
         {
-            HashSet<uint> skips = null;
+            HashSet<uint>? skips = null;
             if (!Environment.Is64BitProcess)
             {
                 skips = new HashSet<uint>

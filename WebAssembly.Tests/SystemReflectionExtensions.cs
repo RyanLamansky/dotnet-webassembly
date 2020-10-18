@@ -11,7 +11,7 @@
                 if (type == ancestor)
                     return true;
 
-                type = type.GetTypeInfo().BaseType;
+                type = type.GetTypeInfo().BaseType!;
             }
 
             return false;

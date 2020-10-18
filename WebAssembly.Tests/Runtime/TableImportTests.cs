@@ -70,7 +70,7 @@ namespace WebAssembly.Runtime
             var rawDelegate = table[0];
             Assert.IsNotNull(rawDelegate);
             Assert.IsInstanceOfType(rawDelegate, typeof(Func<int, int>));
-            var nativeDelegate = (Func<int, int>)rawDelegate;
+            var nativeDelegate = (Func<int, int>)rawDelegate!;
             Assert.AreEqual(0, nativeDelegate(0));
             Assert.AreEqual(5, nativeDelegate(5));
         }
@@ -146,7 +146,8 @@ namespace WebAssembly.Runtime
                 {
                     { "js", "tbl", tbl },
                 };
-                Compile.FromBinary<dynamic>(stream)(imports);
+                Assert.IsNotNull(stream);
+                Compile.FromBinary<dynamic>(stream!)(imports);
             }
 
             Assert.AreEqual(2u, tbl.Length);
@@ -154,12 +155,12 @@ namespace WebAssembly.Runtime
             var f1 = tbl[0];
             Assert.IsNotNull(f1);
             Assert.IsInstanceOfType(f1, typeof(Func<int>));
-            Assert.AreEqual(42, ((Func<int>)f1).Invoke());
+            Assert.AreEqual(42, ((Func<int>)f1!).Invoke());
 
             var f2 = tbl[1];
             Assert.IsNotNull(f2);
             Assert.IsInstanceOfType(f1, typeof(Func<int>));
-            Assert.AreEqual(83, ((Func<int>)f2).Invoke());
+            Assert.AreEqual(83, ((Func<int>)f2!).Invoke());
         }
 
         /// <summary>
@@ -315,7 +316,7 @@ namespace WebAssembly.Runtime
             var del0 = sharedTable[0];
             Assert.IsNotNull(del0);
             Assert.IsInstanceOfType(del0, typeof(Func<int, int>));
-            var func0 = (Func<int, int>)del0;
+            var func0 = (Func<int, int>)del0!;
             Assert.AreEqual(0, exports1.Calls);
             Assert.AreEqual(5, func0(5));
             Assert.AreEqual(1, exports1.Calls);
@@ -421,7 +422,7 @@ namespace WebAssembly.Runtime
             var rawDelegate = table[0];
             Assert.IsNotNull(rawDelegate);
             Assert.IsInstanceOfType(rawDelegate, typeof(Func<int, int>));
-            var nativeDelegate = (Func<int, int>)rawDelegate;
+            var nativeDelegate = (Func<int, int>)rawDelegate!;
             Assert.AreEqual(0, nativeDelegate(0));
             Assert.AreEqual(5, nativeDelegate(5));
         }

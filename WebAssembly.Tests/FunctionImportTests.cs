@@ -203,7 +203,10 @@ namespace WebAssembly
             il.Emit(OpCodes.Ldc_I4_7);
             il.Emit(OpCodes.Ret);
 
-            new FunctionImport(dynamicClass.CreateType().GetMethod("TestMethod").CreateDelegate(typeof(Func<int>)));
+            var testMethod = dynamicClass.CreateType()?.GetMethod("TestMethod")?.CreateDelegate(typeof(Func<int>));
+            Assert.IsNotNull(testMethod);
+
+            new FunctionImport(testMethod!);
         }
     }
 }
