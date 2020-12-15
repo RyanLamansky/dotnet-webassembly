@@ -132,6 +132,9 @@ namespace WebAssembly.Instructions
             var blockDepth = checked((uint)context.Depth.Count);
             context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[blockDepth - index - 1]).ToArray());
             context.Emit(OpCodes.Br, context.Labels[blockDepth - this.DefaultLabel - 1]);
+
+            //Mark the following code within this block is unreachable
+            context.BlockContexts[checked((uint)context.Depth.Count)].MarkUnreachable();
         }
     }
 }

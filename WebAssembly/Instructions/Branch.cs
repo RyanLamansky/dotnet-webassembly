@@ -68,6 +68,9 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
+
+            //Mark the following code within this block is unreachable
+            context.BlockContexts[checked((uint)context.Depth.Count)].MarkUnreachable();
         }
     }
 }

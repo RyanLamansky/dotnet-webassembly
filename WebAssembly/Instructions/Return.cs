@@ -61,6 +61,9 @@ namespace WebAssembly.Instructions
             }
 
             context.Emit(OpCodes.Ret);
+
+            //Mark the following code within this block is unreachable
+            context.BlockContexts[checked((uint)context.Depth.Count)].MarkUnreachable();
         }
     }
 }
