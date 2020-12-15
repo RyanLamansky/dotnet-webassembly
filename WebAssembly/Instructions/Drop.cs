@@ -23,11 +23,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(OpCode.Drop, 1, 0);
-
-            stack.Pop();
+            context.PopStack(OpCode.Drop, new WebAssemblyValueType?[] { null });
 
             context.Emit(OpCodes.Pop);
         }

@@ -1162,6 +1162,7 @@ namespace WebAssembly.Runtime
                                     context.Previous = instruction.OpCode;
                                 }
                                 context.Stack.Pop();
+                                context.BlockContexts.Remove(checked((uint)context.Depth.Count));
                                 instanceConstructorIL.Emit(OpCodes.Stloc, address);
 
                                 var data = reader.ReadBytes(reader.ReadVarUInt32());

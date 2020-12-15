@@ -24,17 +24,9 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             var stack = context.Stack;
-            if (stack.Count < 2)
-                throw new StackTooSmallException(OpCode.Int64RotateLeft, 2, stack.Count);
 
-            var typeB = stack.Pop();
-            var typeA = stack.Peek(); //Assuming validation passes, the remaining type will be this.
-
-            if (typeA != WebAssemblyValueType.Int64)
-                throw new StackTypeInvalidException(OpCode.Int64RotateLeft, WebAssemblyValueType.Int64, typeA);
-
-            if (typeA != typeB)
-                throw new StackParameterMismatchException(OpCode.Int64RotateLeft, typeA, typeB);
+            context.PopStack(OpCode.Int64RotateLeft, WebAssemblyValueType.Int64, WebAssemblyValueType.Int64);
+            stack.Push(WebAssemblyValueType.Int64);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int64RotateLeft, (helper, c) =>
             {

@@ -121,17 +121,25 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(OpCode.BranchTable, 1, 0);
+            context.PopStack(OpCode.BranchTable, WebAssemblyValueType.Int32);
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.BranchTable, WebAssemblyValueType.Int32, type);
+            var blockType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
+            if (blockType.TryToValueType(out var expectedType))
+                context.PeekStack(this.OpCode, expectedType);
+
+            //All target labels should have the same type
+            foreach (var label in this.Labels)
+            {
+                if (context.Depth.ElementAt(checked((int)label)) != blockType)
+                    throw new OpCodeCompilationException(this.OpCode, "All target should have the same type.");
+            }
 
             var blockDepth = checked((uint)context.Depth.Count);
             context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[blockDepth - index - 1]).ToArray());
             context.Emit(OpCodes.Br, context.Labels[blockDepth - this.DefaultLabel - 1]);
+
+            //Mark the following code within this block is unreachable
+            context.MarkUnreachable();
         }
     }
 }

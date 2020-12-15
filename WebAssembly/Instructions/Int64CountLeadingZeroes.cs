@@ -23,14 +23,8 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var stack = context.Stack;
-            if (stack.Count < 1)
-                throw new StackTooSmallException(OpCode.Int64CountLeadingZeroes, 1, stack.Count);
-
-            var type = stack.Peek(); //Assuming validation passes, the remaining type will be this.
-
-            if (type != WebAssemblyValueType.Int64)
-                throw new StackTypeInvalidException(OpCode.Int64CountLeadingZeroes, WebAssemblyValueType.Int64, type);
+            //Assuming validation passes, the remaining type will be Int64.
+            context.PeekStack(OpCode.Int64CountLeadingZeroes, WebAssemblyValueType.Int64);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int64CountLeadingZeroes, (helper, c) =>
             {

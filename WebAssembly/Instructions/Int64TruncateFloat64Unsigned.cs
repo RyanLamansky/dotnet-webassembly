@@ -24,12 +24,8 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(OpCode.Int64TruncateFloat64Unsigned, 1, 0);
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Float64)
-                throw new StackTypeInvalidException(OpCode.Int64TruncateFloat64Unsigned, WebAssemblyValueType.Float64, type);
+            context.PopStack(OpCode.Int64TruncateFloat64Unsigned, WebAssemblyValueType.Float64);
 
             context.Emit(OpCodes.Conv_Ovf_I8_Un);
 
