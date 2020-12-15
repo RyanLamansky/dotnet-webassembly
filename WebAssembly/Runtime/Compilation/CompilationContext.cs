@@ -58,6 +58,8 @@ namespace WebAssembly.Runtime.Compilation
             this.Labels.Clear();
             this.LoopLabels.Clear();
             this.Stack.Clear();
+            this.BlockContexts.Clear();
+            this.BlockContexts.Add(checked((uint)this.Depth.Count), new BlockContext());
         }
 
         public Signature[]? FunctionSignatures;
@@ -120,6 +122,8 @@ namespace WebAssembly.Runtime.Compilation
         public readonly HashSet<Label> LoopLabels = new HashSet<Label>();
 
         public readonly Stack<WebAssemblyValueType> Stack = new Stack<WebAssemblyValueType>();
+
+        public readonly Dictionary<uint, BlockContext> BlockContexts = new Dictionary<uint, BlockContext>();
 
         public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 

@@ -1118,8 +1118,35 @@ namespace WebAssembly.Runtime
                                     il.DeclareLocal(local.ToSystemType());
                                 }
 
+                                var unreachableBlocks = 0;
                                 foreach (var instruction in Instruction.Parse(reader))
                                 {
+                                    //Skip unreachable code until corresponding End or Else appears
+                                    if (context.BlockContexts[checked((uint)context.Depth.Count)].IsUnreachable)
+                                    {
+                                        if (instruction is Instructions.BlockTypeInstruction)
+                                        {
+                                            unreachableBlocks++;
+                                            continue;   //Skip
+                                        }
+                                        else if (instruction is Instructions.End)
+                                        {
+                                            if (unreachableBlocks != 0)
+                                            {
+                                                unreachableBlocks--;
+                                                continue;   //Skip
+                                            }
+                                            //Otherwise don't skip
+                                        }
+                                        else if (instruction is Instructions.Else && unreachableBlocks == 0)
+                                        {
+                                            //Don't skip
+                                        }
+                                        else
+                                        {
+                                            continue;
+                                        }
+                                    }
                                     instruction.Compile(context);
                                     context.Previous = instruction.OpCode;
                                 }
@@ -1162,6 +1189,7 @@ namespace WebAssembly.Runtime
                                     context.Previous = instruction.OpCode;
                                 }
                                 context.Stack.Pop();
+                                context.BlockContexts.Remove(checked((uint)context.Depth.Count));
                                 instanceConstructorIL.Emit(OpCodes.Stloc, address);
 
                                 var data = reader.ReadBytes(reader.ReadVarUInt32());

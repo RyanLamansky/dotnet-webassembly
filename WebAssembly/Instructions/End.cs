@@ -26,12 +26,20 @@ namespace WebAssembly.Instructions
         {
             var stack = context.Stack;
 
+            var blockContext = context.BlockContexts[checked((uint)context.Depth.Count)];
             var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Pop();
 
             if (context.Depth.Count == 0)
             {
                 if (context.Previous == OpCode.Return)
                     return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
+
+                if (blockContext.IsUnreachable)
+                {
+                    //Skip stack checks of unreachable code
+                    context.Emit(OpCodes.Ret);
+                    return;
+                }
 
                 var returns = context.CheckedSignature.RawReturnTypes;
                 var returnsLength = returns.Length;
@@ -51,6 +59,17 @@ namespace WebAssembly.Instructions
             }
             else
             {
+                if (blockContext.IsUnreachable)
+                {
+                    //Make up stack state which was supposed to be created by unreachable code
+                    stack.Clear();
+                    foreach (var valueType in blockContext.InitialStack)
+                        stack.Push(valueType);
+
+                    if (blockType.TryToValueType(out var blockValueType))
+                        stack.Push(blockValueType);
+                }
+
                 if (blockType.TryToValueType(out var expectedType))
                 {
                     var type = stack.Peek();
@@ -67,6 +86,7 @@ namespace WebAssembly.Instructions
                     context.LoopLabels.Remove(label);
 
                 context.Labels.Remove(depth);
+                context.BlockContexts.Remove(depth + 1);
             }
         }
     }
