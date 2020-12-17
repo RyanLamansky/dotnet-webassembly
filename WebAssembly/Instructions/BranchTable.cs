@@ -123,15 +123,16 @@ namespace WebAssembly.Instructions
         {
             context.PopStack(OpCode.BranchTable, WebAssemblyValueType.Int32);
 
-            var blockType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
-            if (blockType.TryToValueType(out var expectedType))
+            var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
+            if (defaultLabelType.TryToValueType(out var expectedType))
                 context.PeekStack(this.OpCode, expectedType);
 
             //All target labels should have the same type
             foreach (var label in this.Labels)
             {
-                if (context.Depth.ElementAt(checked((int)label)) != blockType)
-                    throw new OpCodeCompilationException(this.OpCode, "All target should have the same type.");
+                var labelType = context.Depth.ElementAt(checked((int)label));
+                if (labelType != defaultLabelType)
+                    throw new LabelTypeMismatchException(this.OpCode, defaultLabelType, labelType);
             }
 
             var blockDepth = checked((uint)context.Depth.Count);

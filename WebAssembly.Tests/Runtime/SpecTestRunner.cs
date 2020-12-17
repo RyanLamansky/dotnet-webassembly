@@ -215,6 +215,10 @@ namespace WebAssembly.Runtime
                                     {
                                         continue;
                                     }
+                                    catch (LabelTypeMismatchException)
+                                    {
+                                        continue;
+                                    }
                                     catch (Exception x)
                                     {
                                         throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
