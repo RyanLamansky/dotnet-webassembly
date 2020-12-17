@@ -38,7 +38,7 @@ namespace WebAssembly.Instructions
             var loopStart = context.DefineLabel();
             context.Labels.Add(checked((uint)context.Depth.Count), loopStart);
             context.Depth.Push(Type);
-            context.BlockContexts.Add(checked((uint)context.Depth.Count), new BlockContext(context.Stack));
+            context.BlockContexts.Add(checked((uint)context.Depth.Count), new BlockContext(context.Stack.Count));
             context.MarkLabel(loopStart);
             context.LoopLabels.Add(loopStart);
         }

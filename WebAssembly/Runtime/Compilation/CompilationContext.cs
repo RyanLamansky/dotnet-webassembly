@@ -200,7 +200,7 @@ namespace WebAssembly.Runtime.Compilation
             {
                 WebAssemblyValueType? type;
 
-                if (this.Stack.Count <= blockContext.InitialStack.Length)
+                if (this.Stack.Count <= blockContext.InitialStackSize)
                 {
                     if (blockContext.IsUnreachable)
                     {
@@ -252,7 +252,7 @@ namespace WebAssembly.Runtime.Compilation
             //Revert the stack state into beginning of the current block
             //This is based on the validation algorithm defined in WASM spec.
             //See: https://webassembly.github.io/spec/core/appendix/algorithm.html
-            while (this.Stack.Count > blockContext.InitialStack.Length)
+            while (this.Stack.Count > blockContext.InitialStackSize)
             {
                 this.Stack.Pop();
             }

@@ -7,18 +7,18 @@ namespace WebAssembly.Runtime.Compilation
     /// </summary>
     internal sealed class BlockContext
     {
-        public readonly WebAssemblyValueType?[] InitialStack;
+        public readonly int InitialStackSize;
         public bool IsUnreachable { get; private set; }
 
         public BlockContext()
         {
             IsUnreachable = false;
-            InitialStack = new WebAssemblyValueType?[0];
+            InitialStackSize = 0;
         }
 
-        public BlockContext(Stack<WebAssemblyValueType?> initialStack)
+        public BlockContext(int initialStackSize)
         {
-            InitialStack = initialStack.ToArray();  //Copy stack
+            InitialStackSize = initialStackSize;
             IsUnreachable = false;
         }
 
