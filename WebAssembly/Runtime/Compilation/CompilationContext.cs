@@ -202,7 +202,7 @@ namespace WebAssembly.Runtime.Compilation
 
                 if (this.Stack.Count <= blockContext.InitialStackSize)
                 {
-                    if (blockContext.IsUnreachable)
+                    if (this.IsUnreachable())
                     {
                         //unreachable, br, br_table, return can "make up" arbitrary types
                         type = null;
@@ -244,10 +244,21 @@ namespace WebAssembly.Runtime.Compilation
             return popped;
         }
 
-        public void MarkUnreachable()
+        /// <summary>
+        /// Marks the subseqwuent instructions are unreachable.
+        /// </summary>
+        public void MarkUnreachable(bool functionWide = false)
         {
             var blockContext = this.BlockContexts[checked((uint)this.Depth.Count)];
             blockContext.MarkUnreachable();
+
+            if (functionWide)
+            {
+                for (var i = this.Depth.Count; i > 1; i--)
+                {
+                    this.BlockContexts[checked((uint)i)].MarkUnreachable();
+                }
+            }
 
             //Revert the stack state into beginning of the current block
             //This is based on the validation algorithm defined in WASM spec.
@@ -261,6 +272,11 @@ namespace WebAssembly.Runtime.Compilation
         public void MarkReachable()
         {
             this.BlockContexts[checked((uint)this.Depth.Count)].MarkReachable();
+        }
+
+        public bool IsUnreachable()
+        {
+            return this.BlockContexts[checked((uint)this.Depth.Count)].IsUnreachable;
         }
     }
 }

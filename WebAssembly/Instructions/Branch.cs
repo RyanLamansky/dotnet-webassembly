@@ -74,8 +74,8 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
 
-            //Mark the following code within this block is unreachable
-            context.BlockContexts[checked((uint)context.Depth.Count)].MarkUnreachable();
+            //Mark the subsequent code within this block is unreachable
+            context.MarkUnreachable();
         }
     }
 }

@@ -139,7 +139,7 @@ namespace WebAssembly.Instructions
             context.Emit(OpCodes.Switch, this.Labels.Select(index => context.Labels[blockDepth - index - 1]).ToArray());
             context.Emit(OpCodes.Br, context.Labels[blockDepth - this.DefaultLabel - 1]);
 
-            //Mark the following code within this block is unreachable
+            //Mark the subsequent code within this block is unreachable
             context.MarkUnreachable();
         }
     }

@@ -29,8 +29,8 @@ namespace WebAssembly.Instructions
             context.Emit(OpCodes.Newobj, typeof(UnreachableException).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
             context.Emit(OpCodes.Throw);
 
-            //Mark the following code within this block is unreachable
-            context.MarkUnreachable();
+            //Mark the subsequent code within this function is unreachable
+            context.MarkUnreachable(functionWide: true);
         }
     }
 }

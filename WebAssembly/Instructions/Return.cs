@@ -56,8 +56,8 @@ namespace WebAssembly.Instructions
 
             context.Emit(OpCodes.Ret);
 
-            //Mark the following code within this block is unreachable
-            context.MarkUnreachable();
+            //Mark the subsequent code within this function is unreachable
+            context.MarkUnreachable(functionWide: true);
         }
     }
 }

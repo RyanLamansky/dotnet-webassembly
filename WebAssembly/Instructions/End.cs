@@ -36,7 +36,7 @@ namespace WebAssembly.Instructions
 
                 var returns = context.CheckedSignature.RawReturnTypes;
                 var returnsLength = returns.Length;
-                if (returnsLength < stack.Count || (returnsLength > stack.Count && !blockContext.IsUnreachable))
+                if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable()))
                     throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
                 Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
@@ -58,7 +58,6 @@ namespace WebAssembly.Instructions
                     if (!peeked[0].HasValue)
                         throw new OpCodeCompilationException(OpCode.End, "Cannot determine stack type.");
                 }
-
 
                 context.BlockContexts.Remove(checked((uint)context.Depth.Count));
                 context.Depth.Pop();
