@@ -14,9 +14,6 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Int64ShiftRightSigned_Compiled()
         {
-            if (!System.Environment.Is64BitProcess)
-                Assert.Inconclusive("32-bit .NET doesn't support 64-bit bit shift amounts.");
-
             const int amount = 0xF;
 
             var exports = CompilerTestBase<long>.CreateInstance(
