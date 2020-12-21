@@ -79,7 +79,8 @@ namespace WebAssembly.Instructions
                 il.Emit(OpCodes.Or);
                 il.Emit(OpCodes.Starg_S, 0);
 
-                il.Emit(OpCodes.Ldc_I4_S, 64);
+                il.Emit(OpCodes.Ldc_I4, 64);
+                il.Emit(OpCodes.Conv_I8);
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Call, c[HelperMethod.Int64CountOneBits, Int64CountOneBits.CreateHelper]);
                 il.Emit(OpCodes.Sub);
