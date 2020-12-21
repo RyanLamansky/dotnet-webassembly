@@ -50,7 +50,11 @@ namespace WebAssembly.Instructions
                 case Options.Align8: alignment = 8; break;
             }
 
-            if (alignment != 4)
+            //8-byte alignment is not available in IL.
+            //See: https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.unaligned?view=net-5.0
+            //However, because 8-byte alignment is subset of 4-byte alignment,
+            //We don't have to consider it.
+            if (alignment != 4 && alignment != 8)
                 context.Emit(OpCodes.Unaligned, alignment);
 
             context.Emit(this.EmittedOpCode);
