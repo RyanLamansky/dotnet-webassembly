@@ -37,6 +37,7 @@ namespace WebAssembly.Instructions
         {
             context.Labels.Add(checked((uint)context.Depth.Count), context.DefineLabel());
             context.Depth.Push(Type);
+            context.BlockContexts.Add(checked((uint)context.Depth.Count), new BlockContext(context.Stack.Count));
         }
     }
 }

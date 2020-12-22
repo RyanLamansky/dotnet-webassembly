@@ -90,19 +90,8 @@ namespace WebAssembly.Instructions
             var returnTypes = signature.RawReturnTypes;
 
             var stack = context.Stack;
-            if (stack.Count < paramTypes.Length + 1)
-                throw new StackTooSmallException(OpCode.CallIndirect, paramTypes.Length + 1, stack.Count);
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Int32)
-                throw new StackTypeInvalidException(OpCode.CallIndirect, WebAssemblyValueType.Int32, type);
-
-            for (var i = paramTypes.Length - 1; i >= 0; i--)
-            {
-                type = stack.Pop();
-                if (type != paramTypes[i])
-                    throw new StackTypeInvalidException(OpCode.CallIndirect, paramTypes[i], type);
-            }
+            context.PopStack(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(WebAssemblyValueType.Int32).ToArray());
 
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);

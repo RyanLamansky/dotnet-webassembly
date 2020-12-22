@@ -32,9 +32,6 @@ namespace WebAssembly.Instructions
 
             var stackCount = stack.Count;
 
-            if (stackCount < returnsLength)
-                throw new StackTooSmallException(OpCode.Return, returnsLength, 0);
-
             if (stackCount > returnsLength)
             {
                 if (returnsLength == 0)
@@ -53,14 +50,14 @@ namespace WebAssembly.Instructions
                     context.Emit(OpCodes.Ldloc, value.LocalIndex);
                 }
             }
-            else if (returnsLength == 1)
-            {
-                var type = stack.Pop();
-                if (type != returns[0])
-                    throw new StackTypeInvalidException(OpCode.Return, returns[0], type);
-            }
+
+            if (returnsLength == 1)
+                context.PopStack(OpCode.Return, returns[0]);
 
             context.Emit(OpCodes.Ret);
+
+            //Mark the subsequent code within this function is unreachable
+            context.MarkUnreachable(functionWide: true);
         }
     }
 }

@@ -24,12 +24,8 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             var stack = context.Stack;
-            if (stack.Count == 0)
-                throw new StackTooSmallException(this.OpCode, 1, 0);
 
-            var type = stack.Pop();
-            if (type != WebAssemblyValueType.Int32)
-                throw new StackTypeInvalidException(this.OpCode, WebAssemblyValueType.Int32, type);
+            context.PopStack(this.OpCode, WebAssemblyValueType.Int32);
 
             if (this.Offset != 0)
             {

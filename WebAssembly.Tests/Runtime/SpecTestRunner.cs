@@ -215,6 +215,10 @@ namespace WebAssembly.Runtime
                                     {
                                         continue;
                                     }
+                                    catch (LabelTypeMismatchException)
+                                    {
+                                        continue;
+                                    }
                                     catch (Exception x)
                                     {
                                         throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
@@ -323,6 +327,9 @@ namespace WebAssembly.Runtime
                                     continue;
                                 case "indirect call type mismatch":
                                     Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "unreachable":
+                                    Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");

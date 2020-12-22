@@ -40,10 +40,6 @@ namespace WebAssembly.Instructions
             if (context.Globals == null)
                 throw new CompilerException("Can't use SetGlobal without a global section or global imports.");
 
-            var stack = context.Stack;
-            if (stack.Count < 1)
-                throw new StackTooSmallException(OpCode.GlobalSet, 1, stack.Count);
-
             GlobalInfo global;
             try
             {
@@ -57,9 +53,7 @@ namespace WebAssembly.Instructions
             if (global.Setter == null)
                 throw new CompilerException($"Global at index {this.Index} is immutable.");
 
-            var type = stack.Pop();
-            if (type != global.Type)
-                throw new StackTypeInvalidException(OpCode.GlobalSet, global.Type, type);
+            context.PopStack(OpCode.GlobalSet, global.Type);
 
             if (global.RequiresInstance)
                 context.EmitLoadThis();

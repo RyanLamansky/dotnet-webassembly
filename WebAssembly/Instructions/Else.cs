@@ -27,9 +27,7 @@ namespace WebAssembly.Instructions
 
             if (blockType.TryToValueType(out var expectedType))
             {
-                var type = context.Stack.Pop();
-                if (type != expectedType)
-                    throw new StackTypeInvalidException(OpCode.Else, expectedType, type);
+                context.PopStack(OpCode.Else, expectedType);
             }
 
             var afterElse = context.DefineLabel();
@@ -38,6 +36,9 @@ namespace WebAssembly.Instructions
             var target = checked((uint)context.Depth.Count) - 1;
             context.MarkLabel(context.Labels[target]);
             context.Labels[target] = afterElse;
+
+            //Else-block is reachable even if the then-block is unreachable
+            context.MarkReachable();
         }
     }
 }

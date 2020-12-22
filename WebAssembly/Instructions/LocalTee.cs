@@ -37,13 +37,8 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var stack = context.Stack;
-            if (stack.Count < 1)
-                throw new StackTooSmallException(OpCode.LocalTee, 1, stack.Count);
-
-            var setType = stack.Peek();  //Assuming validation passes, the remaining type will be this.
-            if (setType != context.CheckedLocals[this.Index])
-                throw new StackTypeInvalidException(OpCode.LocalTee, context.CheckedLocals[this.Index], setType);
+            //Assuming validation passes, the remaining type will be context.CheckedLocals[this.Index]).
+            context.PeekStack(OpCode.LocalTee, context.CheckedLocals[this.Index]);
 
             context.Emit(OpCodes.Dup);
 

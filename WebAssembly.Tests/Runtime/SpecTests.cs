@@ -878,7 +878,6 @@ namespace WebAssembly.Runtime
         /// Runs the return tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackTooSmallException")]
         public void SpecTest_return()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "return"), "return.json");
@@ -888,7 +887,6 @@ namespace WebAssembly.Runtime
         /// Runs the select tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackTooSmallException")]
         public void SpecTest_select()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "select"), "select.json");
@@ -988,7 +986,6 @@ namespace WebAssembly.Runtime
         /// Runs the unreachable tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_unreachable()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unreachable"), "unreachable.json");

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -86,15 +87,8 @@ namespace WebAssembly.Instructions
             var returnTypes = signature.RawReturnTypes;
 
             var stack = context.Stack;
-            if (stack.Count < paramTypes.Length)
-                throw new StackTooSmallException(this.OpCode, paramTypes.Length, stack.Count);
 
-            for (var i = paramTypes.Length - 1; i >= 0; i--)
-            {
-                var type = stack.Pop();
-                if (type != paramTypes[i])
-                    throw new StackTypeInvalidException(this.OpCode, paramTypes[i], type);
-            }
+            context.PopStack(this.OpCode, paramTypes.Cast<WebAssemblyValueType?>().Reverse().ToArray());
 
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);

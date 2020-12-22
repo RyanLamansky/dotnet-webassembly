@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -67,7 +68,14 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
+            var blockType = context.Depth.ElementAt(checked((int)this.Index));
+            if (blockType.TryToValueType(out var expectedType))
+                context.PeekStack(this.OpCode, expectedType);
+
             context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
+
+            //Mark the subsequent code within this block is unreachable
+            context.MarkUnreachable();
         }
     }
 }
