@@ -225,6 +225,7 @@ namespace WebAssembly.Runtime
                                     }
                                     throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                                 case "alignment must not be larger than natural":
+                                case "global is immutable":
                                     Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
                                     continue;
                                 case "unknown memory 0":

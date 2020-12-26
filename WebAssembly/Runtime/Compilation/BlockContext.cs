@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace WebAssembly.Runtime.Compilation
+﻿namespace WebAssembly.Runtime.Compilation
 {
     /// <summary>
     /// Remembers stack state at the beginning of a block, and reachability of code.
@@ -12,14 +10,11 @@ namespace WebAssembly.Runtime.Compilation
 
         public BlockContext()
         {
-            IsUnreachable = false;
-            InitialStackSize = 0;
         }
 
         public BlockContext(int initialStackSize)
         {
             InitialStackSize = initialStackSize;
-            IsUnreachable = false;
         }
 
         public void MarkUnreachable()

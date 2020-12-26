@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -25,7 +24,7 @@ namespace WebAssembly.Instructions
         {
             var stack = context.Stack;
 
-            context.PopStack(this.OpCode, InputValueType);
+            context.PopStackNoReturn(this.OpCode, InputValueType);
 
             context.Emit(OpCodes.Call, context[ConversionHelper, (helper, c) =>
             {

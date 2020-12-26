@@ -1,5 +1,4 @@
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 using static System.Diagnostics.Debug;
 
@@ -52,7 +51,7 @@ namespace WebAssembly.Instructions
             }
 
             if (returnsLength == 1)
-                context.PopStack(OpCode.Return, returns[0]);
+                context.PopStackNoReturn(OpCode.Return, returns[0]);
 
             context.Emit(OpCodes.Ret);
 

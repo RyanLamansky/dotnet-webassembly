@@ -1,5 +1,4 @@
-﻿using WebAssembly.Runtime;
-using WebAssembly.Runtime.Compilation;
+﻿using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
 {
@@ -19,7 +18,7 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             //Assuming validation passes, the remaining type will be this.ValueType.
-            context.PeekStack(this.OpCode, this.ValueType);
+            context.ValidateStack(this.OpCode, this.ValueType);
 
             context.Emit(this.EmittedOpCode);
         }

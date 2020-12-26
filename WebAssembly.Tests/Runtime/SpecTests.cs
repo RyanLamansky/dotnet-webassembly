@@ -60,19 +60,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_block()
         {
-            // Most commmon(/exlusive?) issue: should have thrown an exception but did not.
-            var skips = new HashSet<uint>
-            {
-                373,
-                382,
-                391,
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json",
-                line =>
-                line < 306 ||
-                (line >= 597 && line <= 861) || // This is imprecise due to so many failing.
-                skips.Contains(line)
-                );
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "block"), "block.json");
         }
 
         /// <summary>
@@ -82,11 +70,7 @@ namespace WebAssembly.Runtime
         public void SpecTest_br()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json",
-                line =>
-                line == 3 ||
-                (line >= 334 && line <= 417) || // has no method source.
-                (line >= 420 && line <= 433) || // should have thrown an exception but did not.
-                (line >= 446 && line <= 455) // should have thrown an exception but did not.
+                line => line >= 334 && line <= 417 // has no method source.
             );
         }
 
@@ -97,12 +81,8 @@ namespace WebAssembly.Runtime
         public void SpecTest_br_if()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json",
-                line => line == 3 || // Stack empty.
-                (line >= 372 && line <= 478) || // has no method source.
-                (line >= 515 && line <= 521) || // should have thrown an exception but did not.
-                (line >= 540 && line <= 560) || // should have thrown an exception but did not.
-                (line >= 587 && line <= 593) || // should have thrown an exception but did not.
-                line == 618 // should have thrown an exception but did not.
+                line => line == 3 || // The given key '0' was not present in the dictionary.
+                (line >= 372 && line <= 478) // has no method source.
             );
         }
 
@@ -113,14 +93,10 @@ namespace WebAssembly.Runtime
         public void SpecTest_br_table()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json",
-                line => line == 3 || // StackTooSmallException
+                line => line == 3 || // The given key '0' was not present in the dictionary.
                 (line >= 1247 && line <= 1426) || // has no method source.
                 line == 1429 || // should have thrown an exception but did not.
-                line == 1443 || // should have thrown an exception but did not.
-                line == 1457 || // should have thrown an exception but did not.
-                (line >= 1481 && line <= 1487) || // should have thrown an exception but did not.
-                line == 1502 || // should have thrown an exception but did not.
-                line == 1521 // should have thrown an exception but did not.
+                line == 1502// || // should have thrown an exception but did not.
             );
         }
 
@@ -158,7 +134,7 @@ namespace WebAssembly.Runtime
                 line =>
                 line == 556 || // Infinite loop
                 (line >= 557 && line <= 589) || // No method source
-                line >= 886 // should have thrown an exception but did not.
+                line == 940 // unknown function 0 doesn't have a test procedure set up.
             );
         }
 
@@ -430,8 +406,6 @@ namespace WebAssembly.Runtime
                 829, // Common Language Runtime detected an invalid program.
                 830, // Common Language Runtime detected an invalid program.
                 831, // Common Language Runtime detected an invalid program.
-                929, // StackSizeIncorrectException
-                1055, // StackSizeIncorrectException
                 1430, // Common Language Runtime detected an invalid program.
                 1431, // Common Language Runtime detected an invalid program.
                 1432, // Common Language Runtime detected an invalid program.
@@ -440,9 +414,6 @@ namespace WebAssembly.Runtime
                 1581, // Common Language Runtime detected an invalid program.
                 1582, // Common Language Runtime detected an invalid program.
             };
-
-            skips.UnionWith(Enumerable.Range(973, (1004 + 1) - 973).Select(i => (uint)i)); //Caused by 929 skip
-            skips.UnionWith(Enumerable.Range(1099, (1130 + 1) - 1099).Select(i => (uint)i)); //Caused by 1055 skip
 
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json", skips.Contains);
         }
@@ -542,8 +513,8 @@ namespace WebAssembly.Runtime
         public void SpecTest_func()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json",
-                line =>
-                line <= 284 // WASM broken by StackSizeIncorrectException
+            line =>
+            line <= 284 // WASM broken by The given key '0' was not present in the dictionary.
             );
         }
 
@@ -560,7 +531,6 @@ namespace WebAssembly.Runtime
         /// Runs the globals tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_globals()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "globals"), "globals.json");
@@ -629,10 +599,18 @@ namespace WebAssembly.Runtime
         /// Runs the if tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_if()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "if"), "if.json");
+            var skip = new HashSet<uint>
+            {
+                491, // Unreachable instruction was encountered.
+                492, // The JIT compiler encountered invalid IL code or an internal limitation.
+                493, // The JIT compiler encountered invalid IL code or an internal limitation.
+                495, // Not equal: -14 and - 231.
+                564, // Should have thrown an exception but did not.
+                576, // Should have thrown an exception but did not.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "if"), "if.json", skip.Contains);
         }
 
         /// <summary>
@@ -703,7 +681,7 @@ namespace WebAssembly.Runtime
         /// Runs the labels tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
+        [Ignore("StackTooSmallException")]
         public void SpecTest_labels()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "labels"), "labels.json");
@@ -743,7 +721,6 @@ namespace WebAssembly.Runtime
         /// Runs the load tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_load()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "load"), "load.json");
@@ -764,21 +741,13 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_local_set()
         {
-            var skip = new HashSet<uint>
-            {
-                194, // should have thrown an exception but did not.
-                203, // should have thrown an exception but did not.
-                212, // should have thrown an exception but did not.
-                230, // should have thrown an exception but did not.
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_set"), "local_set.json", skip.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_set"), "local_set.json");
         }
 
         /// <summary>
         /// Runs the local_tee tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
         public void SpecTest_local_tee()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "local_tee"), "local_tee.json");
@@ -788,7 +757,7 @@ namespace WebAssembly.Runtime
         /// Runs the loop tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
+        [Ignore("StackTooSmallException")]
         public void SpecTest_loop()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "loop"), "loop.json");
@@ -830,7 +799,6 @@ namespace WebAssembly.Runtime
             var skips = new HashSet<uint>
             {
                 47, // Not equal: -1 and 0
-                101, // StackSizeIncorrectException
             };
 
             skips.UnionWith(Enumerable.Range(259, (355 + 1) - 259).Select(i => (uint)i)); //Caused by 101 skip
@@ -908,7 +876,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_stack()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "stack"), "stack.json", line => line == 137);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "stack"), "stack.json");
         }
 
         /// <summary>
@@ -917,18 +885,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_store()
         {
-            var skips = new HashSet<uint>
-            {
-                168, // should have thrown an exception but did not.
-                178, // should have thrown an exception but did not.
-                188, // should have thrown an exception but did not.
-                198, // should have thrown an exception but did not.
-                248, // should have thrown an exception but did not.
-                258, // should have thrown an exception but did not.
-                268, // should have thrown an exception but did not.
-                278, // should have thrown an exception but did not.
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "store"), "store.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "store"), "store.json");
         }
 
         /// <summary>
@@ -939,13 +896,6 @@ namespace WebAssembly.Runtime
         {
             var skips = new HashSet<uint>
             {
-                130, // Common Language Runtime detected an invalid program.
-                131, // Common Language Runtime detected an invalid program.
-                132, // Common Language Runtime detected an invalid program.
-                133, // Common Language Runtime detected an invalid program.
-                134, // Common Language Runtime detected an invalid program.
-                135, // Common Language Runtime detected an invalid program.
-                136, // Common Language Runtime detected an invalid program.
                 138, // JIT Compiler encountered an internal limitation.
                 139, // JIT Compiler encountered an internal limitation.
                 140, // JIT Compiler encountered an internal limitation.
@@ -1013,7 +963,7 @@ namespace WebAssembly.Runtime
         /// Runs the unwind tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackSizeIncorrectException")]
+        [Ignore("The given key '0' was not present in the dictionary.")]
         public void SpecTest_unwind()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unwind"), "unwind.json");

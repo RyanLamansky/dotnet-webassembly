@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -26,7 +27,7 @@ namespace WebAssembly.Instructions
         {
             var stack = context.Stack;
 
-            var popped = context.PopStack(OpCode.Select, WebAssemblyValueType.Int32, null, null);
+            var popped = context.PopStack(OpCode.Select, new WebAssemblyValueType?[] { WebAssemblyValueType.Int32, null, null }, 3).ToArray();
             var typeB = popped[1];
             var typeA = popped[2];
 
@@ -34,9 +35,9 @@ namespace WebAssembly.Instructions
                 throw new StackTypeInvalidException(OpCode.Select, typeA.Value, typeB.Value);
 
             if (!typeA.HasValue)
-                stack.Push(typeB);
+                stack.Push(typeB.GetValueOrDefault(WebAssemblyValueType.Int32));
             else
-                stack.Push(typeA);
+                stack.Push(typeA.GetValueOrDefault(WebAssemblyValueType.Int32));
 
             if (!typeA.HasValue)
             {

@@ -121,11 +121,11 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.PopStack(OpCode.BranchTable, WebAssemblyValueType.Int32);
+            context.PopStackNoReturn(OpCode.BranchTable, WebAssemblyValueType.Int32);
 
             var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
             if (defaultLabelType.TryToValueType(out var expectedType))
-                context.PeekStack(this.OpCode, expectedType);
+                context.ValidateStack(this.OpCode, expectedType);
 
             //All target labels should have the same type
             foreach (var label in this.Labels)

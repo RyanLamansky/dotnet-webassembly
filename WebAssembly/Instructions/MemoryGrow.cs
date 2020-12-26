@@ -56,7 +56,7 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             //Assuming validation passes, the remaining type will be Int32.
-            context.PeekStack(OpCode.MemoryGrow, WebAssemblyValueType.Int32);
+            context.ValidateStack(OpCode.MemoryGrow, WebAssemblyValueType.Int32);
 
             context.EmitLoadThis();
             context.Emit(OpCodes.Ldfld, context.CheckedMemory);

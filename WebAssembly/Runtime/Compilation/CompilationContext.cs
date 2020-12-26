@@ -60,7 +60,7 @@ namespace WebAssembly.Runtime.Compilation
             this.LoopLabels.Clear();
             this.Stack.Clear();
             this.BlockContexts.Clear();
-            this.BlockContexts.Add(checked((uint)this.Depth.Count), new BlockContext());
+            this.BlockContexts.Add(this.Depth.Count, new BlockContext());
         }
 
         public Signature[]? FunctionSignatures;
@@ -122,9 +122,9 @@ namespace WebAssembly.Runtime.Compilation
 
         public readonly HashSet<Label> LoopLabels = new HashSet<Label>();
 
-        public readonly Stack<WebAssemblyValueType?> Stack = new Stack<WebAssemblyValueType?>();
+        public readonly Stack<WebAssemblyValueType> Stack = new Stack<WebAssemblyValueType>();
 
-        public readonly Dictionary<uint, BlockContext> BlockContexts = new Dictionary<uint, BlockContext>();
+        public readonly Dictionary<int, BlockContext> BlockContexts = new Dictionary<int, BlockContext>();
 
         public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 
@@ -182,35 +182,121 @@ namespace WebAssembly.Runtime.Compilation
 
         public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
 
+        public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
+        {
+            return PopStack(opcode, new[] { expectedType }, 1).FirstOrDefault();
+        }
+
+        public void PopStackNoReturn(OpCode opcode)
+        {
+            var stackCount = this.Stack.Count;
+
+            if (stackCount <= this.CurrentBlockContext.InitialStackSize)
+            {
+                if (this.IsUnreachable())
+                    return;
+
+                throw new StackTooSmallException(opcode, 1, stackCount);
+            }
+            
+            this.Stack.Pop();
+        }
+
+        public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType)
+        {
+            var stackCount = this.Stack.Count;
+
+            if (stackCount <= this.CurrentBlockContext.InitialStackSize)
+            {
+                if (this.IsUnreachable())
+                    return;
+
+                throw new StackTooSmallException(opcode, 1, stackCount);
+            }
+
+            var type = this.Stack.Pop();
+            if (type != expectedType)
+                throw new StackTypeInvalidException(opcode, expectedType, type);
+        }
+
+        public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType1, WebAssemblyValueType expectedType2)
+        {
+            var initialStackSize = this.Stack.Count;
+            var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
+
+            var expected = expectedType1;
+            if (initialStackSize <= blockContextInitialStackSize)
+            {
+                if (this.IsUnreachable())
+                    return;
+
+                throw new StackTooSmallException(opcode, 2, initialStackSize);
+            }
+
+            var type = this.Stack.Pop();
+            if (type != expected)
+                throw new StackTypeInvalidException(opcode, expected, type);
+
+            expected = expectedType2;
+            if (initialStackSize - 1 <= blockContextInitialStackSize)
+            {
+                if (this.IsUnreachable())
+                    return;
+
+                throw new StackTooSmallException(opcode, 2, initialStackSize);
+            }
+
+            type = this.Stack.Pop();
+            if (type != expected)
+                throw new StackTypeInvalidException(opcode, expected, type);
+        }
+
+        public void PopStackNoReturn(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
+        {
+            var initialStackSize = this.Stack.Count;
+            var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
+
+            foreach (var expected in expectedTypes)
+            {
+                if (this.Stack.Count <= blockContextInitialStackSize)
+                {
+                    if (this.IsUnreachable())
+                        continue;
+                    
+                    throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
+                }
+
+                var type = this.Stack.Pop();
+                if (expected.HasValue && type != expected)
+                    throw new StackTypeInvalidException(opcode, expected.Value, type);
+            }
+        }
+
         /// <summary>
         /// Pop multiple types from stack and test whether they match with expected types.
         /// The algorithm is based on the validation algorithm described in WASM spec.
         /// See: https://webassembly.github.io/spec/core/appendix/algorithm.html
         /// </summary>
         /// <param name="opcode">OpCode of the instruction (for exception message).</param>
-        /// <param name="expectedTypes">Array of expected types (or null, which indicates any type is accepted), in </param>
-        /// <returns>Array of actually popped types (or null, which indicates unknown type).</returns>
-        public WebAssemblyValueType?[] PopStack(OpCode opcode, params WebAssemblyValueType?[] expectedTypes)
+        /// <param name="expectedTypes">Sequence of expected types (or null, which indicates any type is accepted)</param>
+        /// <param name="expectedCount">The number of expected types.</param>
+        /// <returns>Sequence of actually popped types (or null, which indicates unknown type).</returns>
+        public IEnumerable<WebAssemblyValueType?> PopStack(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
         {
-            var actualTypes = new List<WebAssemblyValueType?>();
+            var actualTypes = new List<WebAssemblyValueType?>(expectedCount);
             var initialStackSize = this.Stack.Count;
-            var blockContext = this.BlockContexts[checked((uint)this.Depth.Count)];
+            var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
 
             foreach (var expected in expectedTypes)
             {
                 WebAssemblyValueType? type;
 
-                if (this.Stack.Count <= blockContext.InitialStackSize)
+                if (this.Stack.Count <= blockContextInitialStackSize)
                 {
                     if (this.IsUnreachable())
-                    {
-                        //unreachable, br, br_table, return can "make up" arbitrary types
                         type = null;
-                    }
                     else
-                    {
-                        throw new StackTooSmallException(opcode, expectedTypes.Length, initialStackSize);
-                    }
+                        throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
                 }
                 else
                 {
@@ -230,33 +316,30 @@ namespace WebAssembly.Runtime.Compilation
                 actualTypes.Add(type);
             }
 
-            return actualTypes.ToArray();
+            return actualTypes;
         }
 
-        public WebAssemblyValueType?[] PeekStack(OpCode opcode, params WebAssemblyValueType?[] expectedTypes)
+        public void ValidateStack(OpCode opcode, WebAssemblyValueType expectedType)
         {
-            var popped = this.PopStack(opcode, expectedTypes);
-            foreach (var type in popped.Reverse())
-            {
-                this.Stack.Push(type);
-            }
-
-            return popped;
+            this.PopStackNoReturn(opcode, expectedType);
+            this.Stack.Push(expectedType);
         }
+
+        private BlockContext CurrentBlockContext => this.BlockContexts[this.Depth.Count];
 
         /// <summary>
-        /// Marks the subseqwuent instructions are unreachable.
+        /// Marks the subsequent instructions as unreachable.
         /// </summary>
         public void MarkUnreachable(bool functionWide = false)
         {
-            var blockContext = this.BlockContexts[checked((uint)this.Depth.Count)];
+            var blockContext = this.CurrentBlockContext;
             blockContext.MarkUnreachable();
 
             if (functionWide)
             {
                 for (var i = this.Depth.Count; i > 1; i--)
                 {
-                    this.BlockContexts[checked((uint)i)].MarkUnreachable();
+                    this.BlockContexts[i].MarkUnreachable();
                 }
             }
 
@@ -271,12 +354,12 @@ namespace WebAssembly.Runtime.Compilation
 
         public void MarkReachable()
         {
-            this.BlockContexts[checked((uint)this.Depth.Count)].MarkReachable();
+            this.CurrentBlockContext.MarkReachable();
         }
 
         public bool IsUnreachable()
         {
-            return this.BlockContexts[checked((uint)this.Depth.Count)].IsUnreachable;
+            return this.CurrentBlockContext.IsUnreachable;
         }
     }
 }

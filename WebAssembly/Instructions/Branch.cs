@@ -70,7 +70,7 @@ namespace WebAssembly.Instructions
         {
             var blockType = context.Depth.ElementAt(checked((int)this.Index));
             if (blockType.TryToValueType(out var expectedType))
-                context.PeekStack(this.OpCode, expectedType);
+                context.ValidateStack(this.OpCode, expectedType);
 
             context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
 

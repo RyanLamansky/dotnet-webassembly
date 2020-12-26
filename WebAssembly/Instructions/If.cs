@@ -1,5 +1,4 @@
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -37,12 +36,12 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.PopStack(OpCode.If, WebAssemblyValueType.Int32);
+            context.PopStackNoReturn(OpCode.If, WebAssemblyValueType.Int32);
 
             var label = context.DefineLabel();
             context.Labels.Add(checked((uint)context.Depth.Count), label);
             context.Depth.Push(Type);
-            context.BlockContexts.Add(checked((uint)context.Depth.Count), new BlockContext(context.Stack.Count));
+            context.BlockContexts.Add(context.Depth.Count, new BlockContext(context.Stack.Count));
             context.Emit(OpCodes.Brfalse, label);
         }
     }

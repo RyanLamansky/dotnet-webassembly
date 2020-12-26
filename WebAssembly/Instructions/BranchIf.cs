@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -69,11 +68,11 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.PopStack(this.OpCode, WebAssemblyValueType.Int32);
+            context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
             var blockType = context.Depth.ElementAt(checked((int)this.Index));
             if (blockType.TryToValueType(out var expectedType))
-                context.PeekStack(this.OpCode, expectedType);
+                context.ValidateStack(this.OpCode, expectedType);
 
             context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
         }

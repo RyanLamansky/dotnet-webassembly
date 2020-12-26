@@ -1,5 +1,4 @@
 ﻿using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -24,7 +23,7 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             //Assuming validation passes, the remaining type will be Int32.
-            context.PeekStack(OpCode.Int32CountLeadingZeroes, WebAssemblyValueType.Int32);
+            context.ValidateStack(OpCode.Int32CountLeadingZeroes, WebAssemblyValueType.Int32);
 
             context.Emit(OpCodes.Call, context[HelperMethod.Int32CountLeadingZeroes, (helper, c) =>
             {

@@ -1,5 +1,4 @@
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -23,7 +22,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.PopStack(OpCode.Drop, new WebAssemblyValueType?[] { null });
+            context.PopStackNoReturn(OpCode.Drop);
 
             context.Emit(OpCodes.Pop);
         }

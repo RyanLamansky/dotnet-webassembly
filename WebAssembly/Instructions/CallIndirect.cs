@@ -91,7 +91,7 @@ namespace WebAssembly.Instructions
 
             var stack = context.Stack;
 
-            context.PopStack(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(WebAssemblyValueType.Int32).ToArray());
+            context.PopStackNoReturn(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(WebAssemblyValueType.Int32), paramTypes.Length + 1);
 
             for (var i = 0; i < returnTypes.Length; i++)
                 stack.Push(returnTypes[i]);

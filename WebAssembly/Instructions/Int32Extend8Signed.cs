@@ -1,5 +1,4 @@
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -25,7 +24,7 @@ namespace WebAssembly.Instructions
         {
             var stack = context.Stack;
 
-            context.PopStack(this.OpCode, WebAssemblyValueType.Int32);
+            context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
             context.Emit(OpCodes.Conv_I1);
             context.Emit(OpCodes.Conv_I4);

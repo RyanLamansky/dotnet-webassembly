@@ -37,7 +37,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            context.PopStack(OpCode.LocalSet, context.CheckedLocals[this.Index]);
+            context.PopStackNoReturn(OpCode.LocalSet, context.CheckedLocals[this.Index]);
 
             var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;
             if (localIndex < 0)

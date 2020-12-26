@@ -25,8 +25,6 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             var stack = context.Stack;
-
-            var blockContext = context.BlockContexts[checked((uint)context.Depth.Count)];
             var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek();
 
             if (context.Depth.Count == 1)
@@ -44,7 +42,7 @@ namespace WebAssembly.Instructions
                 if (returnsLength == 1)
                 {
                     var popped = context.PopStack(OpCode.End, returns[0]);
-                    if (!popped[0].HasValue)
+                    if (!popped.HasValue)
                         throw new OpCodeCompilationException(OpCode.End, "Cannot determine stack type.");
                 }
 
@@ -54,12 +52,10 @@ namespace WebAssembly.Instructions
             {
                 if (blockType.TryToValueType(out var expectedType))
                 {
-                    var peeked = context.PeekStack(OpCode.End, expectedType);
-                    if (!peeked[0].HasValue)
-                        throw new OpCodeCompilationException(OpCode.End, "Cannot determine stack type.");
+                    context.ValidateStack(OpCode.End, expectedType);
                 }
 
-                context.BlockContexts.Remove(checked((uint)context.Depth.Count));
+                context.BlockContexts.Remove(context.Depth.Count);
                 context.Depth.Pop();
 
                 var depth = checked((uint)context.Depth.Count);

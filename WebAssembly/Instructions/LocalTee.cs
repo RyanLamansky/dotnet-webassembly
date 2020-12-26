@@ -38,7 +38,7 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             //Assuming validation passes, the remaining type will be context.CheckedLocals[this.Index]).
-            context.PeekStack(OpCode.LocalTee, context.CheckedLocals[this.Index]);
+            context.ValidateStack(OpCode.LocalTee, context.CheckedLocals[this.Index]);
 
             context.Emit(OpCodes.Dup);
 

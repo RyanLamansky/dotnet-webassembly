@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
         {
             var stack = context.Stack;
 
-            context.PopStack(this.OpCode, WebAssemblyValueType.Int32);
+            context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
             if (this.Offset != 0)
             {

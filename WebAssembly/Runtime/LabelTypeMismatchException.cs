@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WebAssembly.Runtime
+﻿namespace WebAssembly.Runtime
 {
     /// <summary>
     /// Used by the compiler to indicate that the labels of a br_table instruction does not have the same type.

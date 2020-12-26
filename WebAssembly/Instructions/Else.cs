@@ -1,5 +1,4 @@
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions
@@ -27,7 +26,7 @@ namespace WebAssembly.Instructions
 
             if (blockType.TryToValueType(out var expectedType))
             {
-                context.PopStack(OpCode.Else, expectedType);
+                context.PopStackNoReturn(OpCode.Else, expectedType);
             }
 
             var afterElse = context.DefineLabel();

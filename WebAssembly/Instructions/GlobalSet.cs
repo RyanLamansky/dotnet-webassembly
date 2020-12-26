@@ -53,7 +53,7 @@ namespace WebAssembly.Instructions
             if (global.Setter == null)
                 throw new CompilerException($"Global at index {this.Index} is immutable.");
 
-            context.PopStack(OpCode.GlobalSet, global.Type);
+            context.PopStackNoReturn(OpCode.GlobalSet, global.Type);
 
             if (global.RequiresInstance)
                 context.EmitLoadThis();
