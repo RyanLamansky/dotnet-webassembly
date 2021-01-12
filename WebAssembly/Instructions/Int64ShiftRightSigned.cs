@@ -26,7 +26,7 @@ namespace WebAssembly.Instructions
 
             //Unlike WASM, CIL OpCodes.Shr requires the shift amount to be int32 or native int.
             //See: https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.shr?view=net-5.0
-            context.Emit(OpCodes.Conv_I4);  //Convert shift amount into int32
+            context.Emit(OpCodes.Conv_I);  //Convert shift amount into native int
             context.Emit(OpCodes.Shr);
 
             context.Stack.Push(WebAssemblyValueType.Int64);
