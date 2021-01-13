@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAssembly", "WebAssembly\WebAssembly.csproj", "{E9676C8C-A671-4978-8C62-40BBA257A597}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAssembly", "WebAssembly\WebAssembly.csproj", "{E9676C8C-A671-4978-8C62-40BBA257A597}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAssembly.Tests", "WebAssembly.Tests\WebAssembly.Tests.csproj", "{E76A6235-3CE7-4E06-ACEB-21673E59C461}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAssembly.Tests", "WebAssembly.Tests\WebAssembly.Tests.csproj", "{E76A6235-3CE7-4E06-ACEB-21673E59C461}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{40D02F4C-D45F-45BE-99DF-D1E48B7CF621}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,19 +18,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E9676C8C-A671-4978-8C62-40BBA257A597}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E9676C8C-A671-4978-8C62-40BBA257A597}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9676C8C-A671-4978-8C62-40BBA257A597}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E9676C8C-A671-4978-8C62-40BBA257A597}.Debug|x86.Build.0 = Debug|Any CPU
 		{E9676C8C-A671-4978-8C62-40BBA257A597}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9676C8C-A671-4978-8C62-40BBA257A597}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9676C8C-A671-4978-8C62-40BBA257A597}.Release|x86.ActiveCfg = Release|Any CPU
+		{E9676C8C-A671-4978-8C62-40BBA257A597}.Release|x86.Build.0 = Release|Any CPU
 		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Debug|x86.ActiveCfg = Debug|x86
+		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Debug|x86.Build.0 = Debug|x86
 		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Release|x86.ActiveCfg = Release|x86
+		{E76A6235-3CE7-4E06-ACEB-21673E59C461}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3B09C795-39DB-4388-9441-FA9401CFD4BE}
 	EndGlobalSection
 EndGlobal
