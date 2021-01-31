@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Title>WebAssembly for .NET</Title>
-	<AssemblyTitle>WebAssembly for .NET Core 3.1</AssemblyTitle>
+    <AssemblyTitle>WebAssembly for .NET Core 3.1</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
     <Description>Create, read, modify, write and (incomplete) execute WebAssembly (WASM) files.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <RepositoryUrl>https://github.com/RyanLamansky/dotnet-webassembly</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -23,10 +23,18 @@
     <TreatSpecificWarningsAsErrors />
     <DocumentationFile>bin\WebAssembly.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../LICENSE" Pack="true" PackagePath="LICENSE" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
 
 </Project>
