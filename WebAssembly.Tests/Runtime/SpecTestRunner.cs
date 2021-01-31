@@ -158,10 +158,10 @@ namespace WebAssembly.Runtime
                             switch (assert.expected[0].type)
                             {
                                 case RawValueType.f32:
-                                    Assert.IsTrue(float.IsNaN((float)result!));
+                                    Assert.IsTrue(float.IsNaN((float)result!), $"{command.line}: Expected NaN, got {result}");
                                     continue;
                                 case RawValueType.f64:
-                                    Assert.IsTrue(double.IsNaN((double)result!));
+                                    Assert.IsTrue(double.IsNaN((double)result!), $"{command.line}: Expected NaN, got {result}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
@@ -172,10 +172,10 @@ namespace WebAssembly.Runtime
                             switch (assert.expected[0].type)
                             {
                                 case RawValueType.f32:
-                                    Assert.IsTrue(float.IsNaN((float)result!));
+                                    Assert.IsTrue(float.IsNaN((float)result!), $"{command.line}: Expected NaN, got {result}");
                                     continue;
                                 case RawValueType.f64:
-                                    Assert.IsTrue(double.IsNaN((double)result!));
+                                    Assert.IsTrue(double.IsNaN((double)result!), $"{command.line}: Expected NaN, got {result}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
