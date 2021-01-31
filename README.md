@@ -12,11 +12,7 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
   - There are no known issues with this functionality and the API is stable.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
-  - Missing features may prevent complex WASMs from working:
-    - Table imports
-    - Handling unreachable code
-    - Various edge cases
-  - No breaking changes are planned for this API, but may be required for full compatibility.
+  - The only significant missing feature is Table Imports; WASM files that do not require this feature are likely to work.
 
 Please file an issue if you encounter an assembly that works in browsers but not with this library.
 
@@ -111,14 +107,12 @@ static class Program
 
 ### Required for 1.0
 
-- Leverage the official WebAssembly spec tests to ensure correct behavior.
-- Implement C# 8.0 nullable reference types.
+- Implement Table Imports.
 
 ### After 1.0
 
-- Make the compiler extensible: in particular, provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements.
-- Support saving generated assemblies as DLLs on .NET Framework via the above extensibility mechanism.
-- If https://github.com/dotnet/corefx/issues/4491 is fixed, enable saving compiled DLLs on .NET Core builds.
+- Provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements so that something like Mono.Cecil can be used to produce a DLL.
+- If https://github.com/dotnet/corefx/issues/4491 is fixed, use it to enable saving DLLs.
 - Remove the compiler's Data section segment size limit of 4128768 bytes.
 
 ## Other Information
