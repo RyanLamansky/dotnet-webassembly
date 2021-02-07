@@ -30,7 +30,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_align()
         {
-            Func<uint, bool> skip = line => line <= 454 || (line >= 807 && line <=811) || (line >= 828 && line <= 850);
+            static bool skip(uint line) => line <= 454 || (line >= 807 && line <= 811) || (line >= 828 && line <= 850);
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "align"), "align.json", skip);
         }
 
@@ -276,20 +276,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_endianness()
         {
-            var skips = new HashSet<uint>
-            {
-                168, // Common Language Runtime detected an invalid program.
-                169, // Common Language Runtime detected an invalid program.
-                170, // Common Language Runtime detected an invalid program.
-                171, // Common Language Runtime detected an invalid program.
-                178, // Common Language Runtime detected an invalid program.
-                179, // Common Language Runtime detected an invalid program.
-                180, // Common Language Runtime detected an invalid program.
-                181, // Common Language Runtime detected an invalid program.
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "endianness"), "endianness.json", line =>
-                skips.Contains(line) || (!Environment.Is64BitProcess && line >= 194)
-            );
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "endianness"), "endianness.json");
         }
 
         /// <summary>
@@ -421,22 +408,6 @@ namespace WebAssembly.Runtime
             {
                 511, // Arithmetic operation resulted in an overflow.
                 519, // Arithmetic operation resulted in an overflow.
-                823, // Common Language Runtime detected an invalid program.
-                824, // Common Language Runtime detected an invalid program.
-                825, // Common Language Runtime detected an invalid program.
-                826, // Common Language Runtime detected an invalid program.
-                827, // Common Language Runtime detected an invalid program.
-                828, // Common Language Runtime detected an invalid program.
-                829, // Common Language Runtime detected an invalid program.
-                830, // Common Language Runtime detected an invalid program.
-                831, // Common Language Runtime detected an invalid program.
-                1430, // Common Language Runtime detected an invalid program.
-                1431, // Common Language Runtime detected an invalid program.
-                1432, // Common Language Runtime detected an invalid program.
-                1433, // Common Language Runtime detected an invalid program.
-                1434, // Common Language Runtime detected an invalid program.
-                1581, // Common Language Runtime detected an invalid program.
-                1582, // Common Language Runtime detected an invalid program.
             };
 
             if (IsNet5)
@@ -483,37 +454,7 @@ namespace WebAssembly.Runtime
             var skips = new HashSet<uint>
             {
                 21, // Not equal: 2141192192 and 2145386496
-                40, // Common Language Runtime detected an invalid program.
-                41, // Common Language Runtime detected an invalid program.
-                43, // Common Language Runtime detected an invalid program.
-                44, // Common Language Runtime detected an invalid program.
-                46, // Common Language Runtime detected an invalid program.
-                47, // Common Language Runtime detected an invalid program.
-                49, // Common Language Runtime detected an invalid program.
-                50, // Common Language Runtime detected an invalid program.
-                52, // Common Language Runtime detected an invalid program.
-                53, // Common Language Runtime detected an invalid program.
                 73, // Not equal: 2141192192 and 2145386496
-                92, // Common Language Runtime detected an invalid program.
-                93, // Common Language Runtime detected an invalid program.
-                95, // Common Language Runtime detected an invalid program.
-                96, // Common Language Runtime detected an invalid program.
-                98, // Common Language Runtime detected an invalid program.
-                99, // Common Language Runtime detected an invalid program.
-                101, // Common Language Runtime detected an invalid program.
-                102, // Common Language Runtime detected an invalid program.
-                104, // Common Language Runtime detected an invalid program.
-                105, // Common Language Runtime detected an invalid program.
-                144, // Common Language Runtime detected an invalid program.
-                145, // Common Language Runtime detected an invalid program.
-                147, // Common Language Runtime detected an invalid program.
-                148, // Common Language Runtime detected an invalid program.
-                150, // Common Language Runtime detected an invalid program.
-                151, // Common Language Runtime detected an invalid program.
-                153, // Common Language Runtime detected an invalid program.
-                154, // Common Language Runtime detected an invalid program.
-                156, // Common Language Runtime detected an invalid program.
-                157, // Common Language Runtime detected an invalid program.
             };
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_memory"), "float_memory.json", skips.Contains);
         }
@@ -567,6 +508,7 @@ namespace WebAssembly.Runtime
         }
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE1006 // Naming Styles -- Must match expectations of the target WASM.
         public abstract class IntegerMath<T>
         {
             public abstract T add(T x, T y);
@@ -606,7 +548,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_i32()
         {
-            SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json", new HashSet<uint> { 106 }.Contains);
+            SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json", line => line == 106);
         }
 
         /// <summary>
@@ -615,14 +557,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_i64()
         {
-            var skips = new HashSet<uint> { 106 };
-            if (!Environment.Is64BitProcess)
-            {
-                skips.UnionWith(Enumerable.Range(166, 47).Select(i => (uint)i)); // As of .NET Core 3.1, 32-bit mode can't bit shift by a 64-bit amount.
-                skips.UnionWith(Enumerable.Range(242, 8).Select(i => (uint)i)); // As of .NET Core 3.1, 32-bit mode can't bit shift by a 64-bit amount.
-            }
-
-            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", skips.Contains);
+            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", line => line == 106);
         }
 
         /// <summary>
@@ -723,17 +658,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_left_to_right()
         {
-            HashSet<uint>? skips = null;
-            if (!Environment.Is64BitProcess)
-            {
-                skips = new HashSet<uint>
-                {
-                    205, // Common Language Runtime detected an invalid program.
-                    206, // Common Language Runtime detected an invalid program.
-                    207, // Common Language Runtime detected an invalid program.
-                };
-            }
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "left-to-right"), "left-to-right.json", skips != null ? (Func<uint, bool>)skips.Contains : null);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "left-to-right"), "left-to-right.json");
         }
 
         /// <summary>
