@@ -25,7 +25,7 @@ namespace WebAssembly
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<WebAssemblyValueType> Parameters
         {
-            get => this.parameters ?? (this.parameters = new List<WebAssemblyValueType>());
+            get => this.parameters ??= new List<WebAssemblyValueType>();
             set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
         }
 
@@ -38,7 +38,7 @@ namespace WebAssembly
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<WebAssemblyValueType> Returns
         {
-            get => this.returns ?? (this.returns = new List<WebAssemblyValueType>());
+            get => this.returns ??= new List<WebAssemblyValueType>();
             set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
         }
 

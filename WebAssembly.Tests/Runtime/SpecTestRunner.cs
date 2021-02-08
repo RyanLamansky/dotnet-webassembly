@@ -596,7 +596,7 @@ namespace WebAssembly.Runtime
         {
             public TestAction action;
 
-            public override string ToString() => $"{base.ToString()}: {action.ToString()}";
+            public override string ToString() => $"{base.ToString()}: {action}";
         }
 
         class AssertReturn : AssertCommand

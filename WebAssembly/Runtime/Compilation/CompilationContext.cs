@@ -36,22 +36,13 @@ namespace WebAssembly.Runtime.Compilation
                 }
                 else
                 {
-                    switch (signature.RawReturnTypes[0])
+                    returnType = (signature.RawReturnTypes[0]) switch
                     {
-                        default: //Should never happen.
-                        case WebAssemblyValueType.Int32:
-                            returnType = BlockType.Int32;
-                            break;
-                        case WebAssemblyValueType.Int64:
-                            returnType = BlockType.Int64;
-                            break;
-                        case WebAssemblyValueType.Float32:
-                            returnType = BlockType.Float32;
-                            break;
-                        case WebAssemblyValueType.Float64:
-                            returnType = BlockType.Float64;
-                            break;
-                    }
+                        WebAssemblyValueType.Int64 => BlockType.Int64,
+                        WebAssemblyValueType.Float32 => BlockType.Float32,
+                        WebAssemblyValueType.Float64 => BlockType.Float64,
+                        _ => BlockType.Int32,
+                    };
                 }
                 this.Depth.Push(returnType);
             }
@@ -141,10 +132,7 @@ namespace WebAssembly.Runtime.Compilation
             get => this.ExportsBuilder ?? throw new InvalidOperationException();
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(value));
-
-                this.ExportsBuilder = value;
+                this.ExportsBuilder = value ?? throw new ArgumentNullException(nameof(value));
             }
         }
 

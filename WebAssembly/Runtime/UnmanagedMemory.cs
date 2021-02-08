@@ -77,7 +77,7 @@ namespace WebAssembly.Runtime
             if (delta == 0)
                 return oldCurrent;
 
-            unsafe void ZeroMemory(IntPtr s, uint n)
+            static unsafe void ZeroMemory(IntPtr s, uint n)
             {
                 // CIL `initblk` can't be generated from C# (as of v8.0).
                 // Using run-time code generation here would interfere with AoT efforts.

@@ -80,7 +80,7 @@ namespace WebAssembly.Runtime
             if (value.Length == 0)
                 return prefix;
 
-            void Replace(StringBuilder replacement, char value)
+            static void Replace(StringBuilder replacement, char value)
             {
                 replacement
                     .Append('_')

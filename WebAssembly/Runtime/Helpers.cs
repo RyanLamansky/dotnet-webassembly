@@ -27,7 +27,7 @@ namespace WebAssembly.Runtime
                 throw new ImportException($"Missing import for {module}::{field}.");
             }
 
-            if (!(import is T cast))
+            if (import is not T cast)
             {
                 throw new ImportException($"Import for {module}::{field}. was not of the required type {typeof(T).Name}.");
             }

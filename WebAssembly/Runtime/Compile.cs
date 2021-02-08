@@ -67,10 +67,8 @@ namespace WebAssembly.Runtime
         public static InstanceCreator<TExports> FromBinary<TExports>(string path, CompilerConfiguration configuration)
         where TExports : class
         {
-            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan))
-            {
-                return FromBinary<TExports>(stream, configuration);
-            }
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024, FileOptions.SequentialScan);
+            return FromBinary<TExports>(stream, configuration);
         }
 
         /// <summary>
@@ -991,7 +989,7 @@ namespace WebAssembly.Runtime
                                 {
                                     var preInitializerOffset = reader.Offset;
                                     var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                                    if (initializer.Length != 2 || !(initializer[0] is Instructions.Int32Constant c) || !(initializer[1] is Instructions.End))
+                                    if (initializer.Length != 2 || initializer[0] is not Instructions.Int32Constant c || !(initializer[1] is Instructions.End))
                                         throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant followed by end.", preInitializerOffset);
 
                                     offset = (uint)c.Value;

@@ -29,7 +29,7 @@ namespace WebAssembly
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<Instruction> InitializerExpression
         {
-            get => this.initializerExpression ?? (this.initializerExpression = new List<Instruction>());
+            get => this.initializerExpression ??= new List<Instruction>();
             set => this.initializerExpression = value ?? throw new ArgumentNullException(nameof(value));
         }
 

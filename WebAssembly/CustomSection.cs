@@ -42,7 +42,7 @@ namespace WebAssembly
         /// </summary>
         public string Name
         {
-            get => this.name ?? (this.name = string.Empty);
+            get => this.name ??= string.Empty;
             set => this.name = value ?? string.Empty;
         }
 
@@ -54,7 +54,7 @@ namespace WebAssembly
         /// </summary>
         public IList<byte> Content
         {
-            get => this.content ?? (this.content = new List<byte>());
+            get => this.content ??= new List<byte>();
             set => this.content = value ?? new List<byte>();
         }
 

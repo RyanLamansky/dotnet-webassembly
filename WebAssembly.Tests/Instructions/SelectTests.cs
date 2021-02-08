@@ -66,14 +66,12 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Select_Compiled_Int32()
         {
-            using (var compiled = CreateTester<int>(WebAssemblyValueType.Int32))
-            {
-                var exports = compiled.Exports;
-                Assert.AreEqual(1, exports.Test(1, 2, 3));
-                Assert.AreEqual(2, exports.Test(1, 2, 0));
-                Assert.AreEqual(4, exports.Test(4, 5, 1));
-                Assert.AreEqual(5, exports.Test(4, 5, 0));
-            }
+            using var compiled = CreateTester<int>(WebAssemblyValueType.Int32);
+            var exports = compiled.Exports;
+            Assert.AreEqual(1, exports.Test(1, 2, 3));
+            Assert.AreEqual(2, exports.Test(1, 2, 0));
+            Assert.AreEqual(4, exports.Test(4, 5, 1));
+            Assert.AreEqual(5, exports.Test(4, 5, 0));
         }
 
         /// <summary>
@@ -82,14 +80,12 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Select_Compiled_Int64()
         {
-            using (var compiled = CreateTester<long>(WebAssemblyValueType.Int64))
-            {
-                var exports = compiled.Exports;
-                Assert.AreEqual(1, exports.Test(1, 2, 3));
-                Assert.AreEqual(2, exports.Test(1, 2, 0));
-                Assert.AreEqual(4, exports.Test(4, 5, 1));
-                Assert.AreEqual(5, exports.Test(4, 5, 0));
-            }
+            using var compiled = CreateTester<long>(WebAssemblyValueType.Int64);
+            var exports = compiled.Exports;
+            Assert.AreEqual(1, exports.Test(1, 2, 3));
+            Assert.AreEqual(2, exports.Test(1, 2, 0));
+            Assert.AreEqual(4, exports.Test(4, 5, 1));
+            Assert.AreEqual(5, exports.Test(4, 5, 0));
         }
 
         /// <summary>
@@ -98,14 +94,12 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Select_Compiled_Float32()
         {
-            using (var compiled = CreateTester<float>(WebAssemblyValueType.Float32))
-            {
-                var exports = compiled.Exports;
-                Assert.AreEqual(1, exports.Test(1, 2, 3));
-                Assert.AreEqual(2, exports.Test(1, 2, 0));
-                Assert.AreEqual(4, exports.Test(4, 5, 1));
-                Assert.AreEqual(5, exports.Test(4, 5, 0));
-            }
+            using var compiled = CreateTester<float>(WebAssemblyValueType.Float32);
+            var exports = compiled.Exports;
+            Assert.AreEqual(1, exports.Test(1, 2, 3));
+            Assert.AreEqual(2, exports.Test(1, 2, 0));
+            Assert.AreEqual(4, exports.Test(4, 5, 1));
+            Assert.AreEqual(5, exports.Test(4, 5, 0));
         }
 
         /// <summary>
@@ -114,14 +108,12 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Select_Compiled_Float64()
         {
-            using (var compiled = CreateTester<double>(WebAssemblyValueType.Float64))
-            {
-                var exports = compiled.Exports;
-                Assert.AreEqual(1, exports.Test(1, 2, 3));
-                Assert.AreEqual(2, exports.Test(1, 2, 0));
-                Assert.AreEqual(4, exports.Test(4, 5, 1));
-                Assert.AreEqual(5, exports.Test(4, 5, 0));
-            }
+            using var compiled = CreateTester<double>(WebAssemblyValueType.Float64);
+            var exports = compiled.Exports;
+            Assert.AreEqual(1, exports.Test(1, 2, 3));
+            Assert.AreEqual(2, exports.Test(1, 2, 0));
+            Assert.AreEqual(4, exports.Test(4, 5, 1));
+            Assert.AreEqual(5, exports.Test(4, 5, 0));
         }
     }
 }

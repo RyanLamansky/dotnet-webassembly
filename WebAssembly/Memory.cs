@@ -21,7 +21,7 @@ namespace WebAssembly
         /// </summary>
         public ResizableLimits ResizableLimits
         {
-            get => resizableLimits ?? (resizableLimits = new ResizableLimits());
+            get => resizableLimits ??= new ResizableLimits();
             set => resizableLimits = value ?? throw new ArgumentNullException(nameof(value));
         }
 

@@ -12,16 +12,14 @@ namespace WebAssembly
         {
             Assert.IsNotNull(module);
 
-            using (var memory = new MemoryStream())
-            {
-                module.WriteToBinary(memory);
-                Assert.AreNotEqual(0, memory.Position);
+            using var memory = new MemoryStream();
+            module.WriteToBinary(memory);
+            Assert.AreNotEqual(0, memory.Position);
 
-                memory.Position = 0;
-                var result = Module.ReadFromBinary(memory);
-                Assert.IsNotNull(result);
-                return result;
-            }
+            memory.Position = 0;
+            var result = Module.ReadFromBinary(memory);
+            Assert.IsNotNull(result);
+            return result;
         }
 
         /// <summary>
@@ -32,10 +30,8 @@ namespace WebAssembly
         {
             Assert.IsNotNull(module);
 
-            using (var memory = new MemoryStream())
-            {
-                module.WriteToBinary(memory);
-            }
+            using var memory = new MemoryStream();
+            module.WriteToBinary(memory);
         }
 
         private sealed class ForwardReadOnlyStream : Stream

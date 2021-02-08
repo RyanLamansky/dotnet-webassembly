@@ -20,7 +20,7 @@ namespace WebAssembly
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<Local> Locals
         {
-            get => this.locals ?? (this.locals = new List<Local>());
+            get => this.locals ??= new List<Local>();
             set => this.locals = value ?? throw new ArgumentNullException(nameof(value));
         }
 
@@ -33,7 +33,7 @@ namespace WebAssembly
         /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
         public IList<Instruction> Code
         {
-            get => this.code ?? (this.code = new List<Instruction>());
+            get => this.code ??= new List<Instruction>();
             set => this.code = value ?? throw new ArgumentNullException(nameof(value));
         }
 
@@ -113,27 +113,25 @@ namespace WebAssembly
 
         internal void WriteTo(Writer writer, byte[] buffer)
         {
-            using (var memory = new MemoryStream())
+            using var memory = new MemoryStream();
+            using (var bodyWriter = new Writer(memory))
             {
-                using (var bodyWriter = new Writer(memory))
-                {
-                    var locals = this.Locals;
-                    var instructions = this.Code;
+                var locals = this.Locals;
+                var instructions = this.Code;
 
-                    bodyWriter.WriteVar((uint)locals.Count);
-                    foreach (var local in locals)
-                        local.WriteTo(bodyWriter);
+                bodyWriter.WriteVar((uint)locals.Count);
+                foreach (var local in locals)
+                    local.WriteTo(bodyWriter);
 
-                    foreach (var instruction in instructions)
-                        instruction.WriteTo(bodyWriter);
-                }
-
-                writer.WriteVar(checked((uint)memory.Length));
-                memory.Position = 0;
-                int read;
-                while ((read = memory.Read(buffer, 0, buffer.Length)) > 0)
-                    writer.Write(buffer, 0, read);
+                foreach (var instruction in instructions)
+                    instruction.WriteTo(bodyWriter);
             }
+
+            writer.WriteVar(checked((uint)memory.Length));
+            memory.Position = 0;
+            int read;
+            while ((read = memory.Read(buffer, 0, buffer.Length)) > 0)
+                writer.Write(buffer, 0, read);
         }
     }
 }

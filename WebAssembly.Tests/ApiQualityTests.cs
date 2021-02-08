@@ -35,7 +35,7 @@ namespace WebAssembly
         [TestMethod]
         public void PublicOverridesAreMostlySealed()
         {
-            IEnumerable<string> GatherViolations()
+            static IEnumerable<string> GatherViolations()
             {
                 foreach (var info in typeInfo.Reference)
                 {
