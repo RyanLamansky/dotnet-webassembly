@@ -60,5 +60,11 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Type);
+
+        /// <summary>
+        /// Provides a native representation of the instruction.
+        /// </summary>
+        /// <returns>A string representation of this instance.</returns>
+        public override string ToString() => $"{base.ToString()} (returns {Type.ToTypeString()})";
     }
 }

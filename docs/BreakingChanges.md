@@ -5,6 +5,10 @@ Preview changes will be less detailed due to low usage.
 
 ## Preview Breaking Change Summary
 
+### 0.11.0
+
+* For `Int32Constant`, `Int64Constant`, `Float32Constant`, and `Float64Constant`, several members were moved to a new base class, `Constant`.
+
 ### 0.10.0
 
 * Dropped .NET Standard builds, now targeting .NET Core 3.1 only.
