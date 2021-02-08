@@ -1,4 +1,4 @@
-name: .NET Core
+name: Build and Test
 
 on: [push, pull_request]
 
@@ -19,7 +19,11 @@ jobs:
         dotnet-version: 5.0.x
     - name: Install dependencies
       run: dotnet restore
-    - name: Build
+    # Debug and Release mighht be different due to conditional compilation, so validate both.
+    - name: Build (Debug)
+      run: dotnet build --configuration Debug --no-restore
+    - name: Build (Release)
       run: dotnet build --configuration Release --no-restore
     - name: Test
       run: dotnet test --configuration Release --no-build --verbosity normal
+    # Not safe to test Debug build as it runs tests in parallel, occasional triggering a bug in the test adapter.
