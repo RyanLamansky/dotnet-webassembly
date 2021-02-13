@@ -29,5 +29,21 @@ namespace WebAssembly.Instructions
 
             Assert.AreEqual<int>(6, exports.Test());
         }
+
+        /// <summary>
+        /// Tests compilation and execution of a <see cref="Block"/> instruction that returns a value.
+        /// </summary>
+        [TestMethod]
+        public void Block_Returns()
+        {
+            var exports = AssemblyBuilder.CreateInstance<dynamic>("Test",
+                WebAssemblyValueType.Int32,
+                new Block(BlockType.Int32),
+                new Int32Constant(5),
+                new End(),
+                new End());
+
+            Assert.AreEqual<int>(5, exports.Test());
+        }
     }
 }

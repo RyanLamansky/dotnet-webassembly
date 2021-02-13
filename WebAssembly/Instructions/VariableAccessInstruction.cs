@@ -5,7 +5,7 @@ namespace WebAssembly.Instructions
     /// <summary>
     /// An instruction that accesses a variable by its 0-based index.
     /// </summary>
-    public abstract class VariableAccessInstruction : Instruction
+    public abstract class VariableAccessInstruction : Instruction, IEquatable<VariableAccessInstruction>
     {
         /// <summary>
         /// The 0-based index of the variable to access.
@@ -48,9 +48,17 @@ namespace WebAssembly.Instructions
         /// <param name="other">The instruction to compare against.</param>
         /// <returns>True if they have the same type and value, otherwise false.</returns>
         public override bool Equals(Instruction? other) =>
-            other is VariableAccessInstruction instruction
-            && instruction.OpCode == this.OpCode
-            && instruction.Index == this.Index
+            this.Equals(other as VariableAccessInstruction);
+
+        /// <summary>
+        /// Determines whether this instruction is identical to another.
+        /// </summary>
+        /// <param name="other">The instruction to compare against.</param>
+        /// <returns>True if they have the same type and value, otherwise false.</returns>
+        public bool Equals(VariableAccessInstruction? other) =>
+            other != null
+            && other.OpCode == this.OpCode
+            && other.Index == this.Index
             ;
 
         /// <summary>
@@ -58,5 +66,11 @@ namespace WebAssembly.Instructions
         /// </summary>
         /// <returns>The hash code.</returns>
         public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Index.GetHashCode());
+
+        /// <summary>
+        /// Provides a native representation of the instruction and the variable index.
+        /// </summary>
+        /// <returns>A string representation of this instance and the variable index.</returns>
+        public override string ToString() => $"{base.ToString()} {Index}";
     }
 }

@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,7 +12,7 @@ namespace WebAssembly.Instructions
     [TestClass]
     public class InstructionTests
     {
-        private static readonly System.Type[] InstructionTypes =
+        private static readonly Type[] InstructionTypes =
             typeof(Instruction)
             .GetTypeInfo()
             .Assembly
@@ -92,7 +94,7 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Instruction_ToStringWorks()
         {
-            InstructionTypes.All(type => !string.IsNullOrWhiteSpace(((Instruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).ToString()));
+            Assert.IsTrue(InstructionTypes.All(type => !string.IsNullOrWhiteSpace(((Instruction)type.GetConstructor(Type.EmptyTypes)!.Invoke(null)).ToString())));
         }
 
         /// <summary>
@@ -101,7 +103,21 @@ namespace WebAssembly.Instructions
         [TestMethod]
         public void Instruction_HasPublicParameterlessConstructor()
         {
-            InstructionTypes.All(type => type.GetConstructors().Any(constructor => constructor.GetParameters().Length == 0));
+            static IEnumerable<string> GatherViolations()
+            {
+                foreach (var type in InstructionTypes)
+                {
+                    if (type.IsAbstract)
+                        continue;
+                    if (!type.IsDescendantOf<Instruction>())
+                        continue;
+
+                    if (type.GetConstructor(System.Type.EmptyTypes) == null)
+                        yield return type.Name;
+                }
+            }
+
+            Assert.AreEqual("", string.Join(", ", GatherViolations()), "Instructions must have a parameterless constructor.");
         }
     }
 }

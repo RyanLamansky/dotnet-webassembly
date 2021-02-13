@@ -1,14 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- .NET Core 3.1 is selected as the baseline for a good balance of compatibility and features, and is fully supported by .NET 5+. -->
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Title>WebAssembly for .NET</Title>
-    <AssemblyTitle>WebAssembly for .NET Core 3.1</AssemblyTitle>
+    <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
-    <Description>Create, read, modify, write and (incomplete) execute WebAssembly (WASM) files.</Description>
+    <Description>Create, read, modify, write and (incomplete) execute WebAssembly (WASM) files using pure 100% .NET.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Inspection/modification features work well but execution has gaps that prevent complex WASMs from working.</PackageReleaseNotes>
+    <PackageReleaseNotes>Full support for creation and modification of WASM 1.0 files; .NET CLR JIT-based execution is not 100% complete.</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>

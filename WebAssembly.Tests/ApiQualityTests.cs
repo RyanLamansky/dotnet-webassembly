@@ -62,12 +62,40 @@ namespace WebAssembly
                         }
 
                         if (method != null && method.IsVirtual && !method.IsFinal)
-                            yield return $"{method.DeclaringType}: {method.Name} override must be sealed.";
+                            yield return $"{method.DeclaringType}.{method.Name}";
                     }
                 }
             }
 
-            Assert.AreEqual("", string.Join(Environment.NewLine, GatherViolations()));
+            Assert.AreEqual("", string.Join(", ", GatherViolations()), "Most public overrides should be sealed.");
+        }
+
+        /// <summary>
+        /// <see cref="Instruction"/> type and all abstract descendants should not have public constructors.
+        /// </summary>
+        /// <remarks>This prevents users from creating new instructions. If this project falls behind the spec, it can be updated with a fork + pull request.</remarks>
+        [TestMethod]
+        public void InstructionIntermediatesHaveInternalConstructors()
+        {
+            static IEnumerable<string> GatherViolations()
+            {
+                foreach (var info in typeInfo.Reference)
+                {
+                    var type = info.type;
+
+                    if (!type.IsAbstract)
+                        continue;
+                    if (!type.IsDescendantOf<Instruction>() && type != typeof(Instruction))
+                        continue;
+
+                    var protectedConstructors = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    if (!protectedConstructors.All(constructor => constructor.IsFamilyAndAssembly))
+                        yield return type.Name;
+                }
+            }
+
+            Assert.AreEqual("", string.Join(", ", GatherViolations()), "Instruction intermediate types can only have internal constructors.");
         }
     }
 }

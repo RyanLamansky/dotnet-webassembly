@@ -35,7 +35,7 @@
             {
                 default:
                 case BlockType.Empty:
-                    valueType = WebAssemblyValueType.Int32;
+                    valueType = default;
                     return false;
                 case BlockType.Int32:
                     valueType = WebAssemblyValueType.Int32;
