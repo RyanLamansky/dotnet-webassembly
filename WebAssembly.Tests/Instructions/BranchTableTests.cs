@@ -72,5 +72,74 @@ namespace WebAssembly.Instructions
             a.Labels = new uint[] { 1, 2 };
             TestUtility.AreNotEqual(a, b);
         }
+
+        /// <summary>
+        /// Tests compilation of the <see cref="BranchTable"/> and <see cref="Loop"/> instructions that yields a value with no way for it to end.
+        /// </summary>
+        [TestMethod]
+        public void BranchTable_LoopInfiniteWithValue()
+        {
+            _ = AssemblyBuilder.CreateInstance<object>("Test",
+                WebAssemblyValueType.Int32,
+                new Loop(BlockType.Int32),
+                new Int32Constant(7),
+                new Int32Constant(0),
+                new BranchTable(0, 0),
+                new End(),
+                new End());
+        }
+
+        /// <summary>
+        /// Tests compilation of the <see cref="BranchTable"/> and <see cref="Loop"/> instructions that yields a value.
+        /// </summary>
+        [TestMethod]
+        public void BranchTable_LoopBreakWithValue()
+        {
+            var exports = AssemblyBuilder.CreateInstance<dynamic>("Test",
+                WebAssemblyValueType.Int32,
+                new Block(BlockType.Int32),
+                new Loop(BlockType.Int32),
+                new Int32Constant(7),
+                new Int32Constant(0),
+                new BranchTable(1, 1),
+                new End(),
+                new End(),
+                new End());
+
+            Assert.AreEqual<int>(7, exports.Test());
+        }
+
+        /// <summary>
+        /// Tests compilation of the <see cref="BranchTable"/> and <see cref="Loop"/> instructions that yields a value and has a discarded value with no way for it to end.
+        /// </summary>
+        [TestMethod]
+        public void BranchTable_LoopInfiniteWithValueAndDiscard()
+        {
+            _ = AssemblyBuilder.CreateInstance<object>("Test",
+                WebAssemblyValueType.Int32,
+                new Loop(BlockType.Int32),
+                new Int32Constant(6),
+                new Int32Constant(7),
+                new Int32Constant(0),
+                new BranchTable(0, 0),
+                new End(),
+                new End());
+        }
+
+        /// <summary>
+        /// Tests compilation of the <see cref="BranchTable"/> and <see cref="Loop"/> instructions that yields a value and has a discarded value of the wrong type with no way for it to end.
+        /// </summary>
+        [TestMethod]
+        public void BranchTable_LoopInfiniteWithValueAndDiscardedWrongType()
+        {
+            _ = AssemblyBuilder.CreateInstance<object>("Test",
+                WebAssemblyValueType.Int32,
+                new Loop(BlockType.Int32),
+                new Float64Constant(1),
+                new Int32Constant(0),
+                new BranchTable(0, 0),
+                new End(),
+                new End());
+        }
     }
 }
