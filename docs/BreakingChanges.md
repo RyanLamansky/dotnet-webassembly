@@ -1,11 +1,34 @@
 # Breaking Change Information
 
-Details and migration information regarding breaking changes will be provided here after the 1.0 release.
-Preview changes will be less detailed due to low usage.
+## Policy
 
-## Preview Breaking Change Summary
+Breaking changes are avoided whenever possible, but are sometimes needed to achieve correct behavior and deliver highly desired functionality.
+* WebAssembly inspection, modification, and creation features have been mostly unchanged for years and this is expected to continue for any *stable* features of the official WebAssembly specification.
+  * Changes to functionality associated with final standards of WebAssembly will typically result in a new major version, unless the change is determined to be very low risk.
+  * Changes to functionality associated with *draft* versions of WebAssembly can occur in minor releases.
+* CLR JIT-based compilation and execution can change in any version to achieve closer compliance to officially specified behavior, with the current release of Google Chrome used as the reference.
+  * To minimize risk to your project, test your WASM files in Google Chrome and file bugs for deviance in WebAssembly for .NET's behavior.
+* .NET Core 3.1 will be supported *at least* as long as Microsoft supports it.
+  * .NET 5 and beyond is capable of loading .NET Core 3.1 libraries without complaint.
+  * Microsoft will transition long-term support to newer .NET releases over time, eventually leading to hardship with developing against older versions, which will trigger an update to the next oldest "LTS" release in a major version.
+  Specifically, if enabling an unsupported version of .NET causes compatibility problems with the Ubuntu-based build agent or Visual Studio Community-based Windows users, it's time to upgrade.
+  * Multi-targeted releases (for example, .NET Core 3.1 and .NET 6) may be created if the extra targets add useful features.
+  * Automated testing will cover .NET Core 3.1 and any newer compatible versions that are supported by Microsoft.
+* WebAssembly for .NET releases will *never* take a dependency on anything other than .NET itself.
+  * This minimizes the chance of "dependency hell".
+  * Extension points may be made available so that middleware can be created to combine WebAssembly for .NET with other tools. Extension point requests are tracked via GitHub issues.
+
+* Scope will not creep beyond the following objectives:
+  * Provide .NET-based data structures that can represent any binary WASM feature.
+  * Binary WASM files can be created from scratch, or read into memory for inspection and modification.
+  * Binary WASM files can be executed using the .NET CLR via run-time WASM-to-CIL conversion with Google Chrome as the reference for correctness.
+  * Provide a pathway to convert WASM files to .NET DLLs to enable ahead-of-time compilation.
+
+## Breaking Changes from Preview Releases
 
 ### 0.11.0
+
+This is the first non-preview release; these are the last breaking changes for preview versions.
 
 * `Int32Constant`, `Int64Constant`, `Float32Constant`, `Float64Constant`: several members were moved to a new base class, `Constant`.
   For users of this library working in higher-level languages like C#, this shouldn't break your build, but it's a binary incompatibility for already-built code that used the moved members.

@@ -6,7 +6,7 @@
     <Title>WebAssembly for .NET</Title>
     <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
-    <Description>Create, read, modify, write and (incomplete) execute WebAssembly (WASM) files using pure 100% .NET.</Description>
+    <Description>Create, read, modify, write and execute WebAssembly (WASM) files using pure 100% .NET.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Full support for creation and modification of WASM 1.0 files; .NET CLR JIT-based execution is not 100% complete.</PackageReleaseNotes>
