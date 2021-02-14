@@ -17,7 +17,7 @@ namespace WebAssembly.Instructions
             .GetTypeInfo()
             .Assembly
             .GetTypes()
-            .Where(type => type.IsDescendantOf(typeof(Instruction)) && type.IsAbstract == false)
+            .Where(type => type.IsDescendantOf(typeof(Instruction)) && type.IsAbstract == false && type.IsNested == false)
             .ToArray();
 
         /// <summary>

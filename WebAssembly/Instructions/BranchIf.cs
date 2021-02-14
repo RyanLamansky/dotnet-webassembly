@@ -71,7 +71,7 @@ namespace WebAssembly.Instructions
             context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
             var blockType = context.Depth.ElementAt(checked((int)this.Index));
-            if (blockType.TryToValueType(out var expectedType))
+            if (blockType.Type.TryToValueType(out var expectedType))
                 context.ValidateStack(this.OpCode, expectedType);
 
             context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);

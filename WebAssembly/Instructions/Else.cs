@@ -22,7 +22,7 @@ namespace WebAssembly.Instructions
 
         internal sealed override void Compile(CompilationContext context)
         {
-            var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek();
+            var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek().Type;
 
             if (blockType.TryToValueType(out var expectedType))
             {

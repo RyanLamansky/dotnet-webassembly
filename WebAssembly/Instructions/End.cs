@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
         internal sealed override void Compile(CompilationContext context)
         {
             var stack = context.Stack;
-            var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek();
+            var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek().Type;
 
             if (context.Depth.Count == 1)
             {
@@ -34,7 +34,7 @@ namespace WebAssembly.Instructions
 
                 var returns = context.CheckedSignature.RawReturnTypes;
                 var returnsLength = returns.Length;
-                if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable()))
+                if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable))
                     throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
                 Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.

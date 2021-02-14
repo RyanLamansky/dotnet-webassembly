@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using WebAssembly.Instructions;
 
 namespace WebAssembly.Runtime.Compilation
 {
@@ -15,6 +16,17 @@ namespace WebAssembly.Runtime.Compilation
         public CompilationContext(CompilerConfiguration configuration)
         {
             this.Configuration = configuration;
+        }
+
+        sealed class FunctionOuterBlock : BlockTypeInstruction
+        {
+            public FunctionOuterBlock(BlockType type) : base(type)
+            {
+            }
+
+            public sealed override OpCode OpCode => (OpCode)0xff; // Not a real opcode, but this type is also not public.
+
+            internal sealed override void Compile(CompilationContext context) => throw new NotSupportedException();
         }
 
         public void Reset(
@@ -44,7 +56,7 @@ namespace WebAssembly.Runtime.Compilation
                         _ => BlockType.Int32,
                     };
                 }
-                this.Depth.Push(returnType);
+                this.Depth.Push(new FunctionOuterBlock(returnType));
             }
             this.Previous = OpCode.NoOperation;
             this.Labels.Clear();
@@ -105,7 +117,7 @@ namespace WebAssembly.Runtime.Compilation
 
         public WebAssemblyValueType[]? Locals;
 
-        public readonly Stack<BlockType> Depth = new Stack<BlockType>();
+        public readonly Stack<BlockTypeInstruction> Depth = new Stack<BlockTypeInstruction>();
 
         public OpCode Previous;
 
@@ -181,7 +193,7 @@ namespace WebAssembly.Runtime.Compilation
 
             if (stackCount <= this.CurrentBlockContext.InitialStackSize)
             {
-                if (this.IsUnreachable())
+                if (this.IsUnreachable)
                     return;
 
                 throw new StackTooSmallException(opcode, 1, stackCount);
@@ -196,7 +208,7 @@ namespace WebAssembly.Runtime.Compilation
 
             if (stackCount <= this.CurrentBlockContext.InitialStackSize)
             {
-                if (this.IsUnreachable())
+                if (this.IsUnreachable)
                     return;
 
                 throw new StackTooSmallException(opcode, 1, stackCount);
@@ -215,7 +227,7 @@ namespace WebAssembly.Runtime.Compilation
             var expected = expectedType1;
             if (initialStackSize <= blockContextInitialStackSize)
             {
-                if (this.IsUnreachable())
+                if (this.IsUnreachable)
                     return;
 
                 throw new StackTooSmallException(opcode, 2, initialStackSize);
@@ -228,7 +240,7 @@ namespace WebAssembly.Runtime.Compilation
             expected = expectedType2;
             if (initialStackSize - 1 <= blockContextInitialStackSize)
             {
-                if (this.IsUnreachable())
+                if (this.IsUnreachable)
                     return;
 
                 throw new StackTooSmallException(opcode, 2, initialStackSize);
@@ -248,7 +260,7 @@ namespace WebAssembly.Runtime.Compilation
             {
                 if (this.Stack.Count <= blockContextInitialStackSize)
                 {
-                    if (this.IsUnreachable())
+                    if (this.IsUnreachable)
                         continue;
                     
                     throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
@@ -281,7 +293,7 @@ namespace WebAssembly.Runtime.Compilation
 
                 if (this.Stack.Count <= blockContextInitialStackSize)
                 {
-                    if (this.IsUnreachable())
+                    if (this.IsUnreachable)
                         type = null;
                     else
                         throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
@@ -345,9 +357,6 @@ namespace WebAssembly.Runtime.Compilation
             this.CurrentBlockContext.MarkReachable();
         }
 
-        public bool IsUnreachable()
-        {
-            return this.CurrentBlockContext.IsUnreachable;
-        }
+        public bool IsUnreachable => this.CurrentBlockContext.IsUnreachable;
     }
 }

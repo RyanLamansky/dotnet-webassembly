@@ -123,14 +123,14 @@ namespace WebAssembly.Instructions
         {
             context.PopStackNoReturn(OpCode.BranchTable, WebAssemblyValueType.Int32);
 
-            var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
+            var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel)).Type;
             if (defaultLabelType.TryToValueType(out var expectedType))
                 context.ValidateStack(this.OpCode, expectedType);
 
             //All target labels should have the same type
             foreach (var label in this.Labels)
             {
-                var labelType = context.Depth.ElementAt(checked((int)label));
+                var labelType = context.Depth.ElementAt(checked((int)label)).Type;
                 if (labelType != defaultLabelType)
                     throw new LabelTypeMismatchException(this.OpCode, defaultLabelType, labelType);
             }

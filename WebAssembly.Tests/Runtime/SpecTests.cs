@@ -712,7 +712,6 @@ namespace WebAssembly.Runtime
         /// Runs the loop tests.
         /// </summary>
         [TestMethod]
-        [Ignore("StackTooSmallException")]
         public void SpecTest_loop()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "loop"), "loop.json");
