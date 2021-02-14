@@ -44,6 +44,26 @@ namespace WebAssembly
         {
         }
 
+        /// <summary>
+        /// Creates a new instance of <see cref="FunctionBody"/> with the provided code.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <exception cref="ArgumentNullException"><paramref name="code"/> cannot be null.</exception>
+        public FunctionBody(params Instruction[] code)
+        {
+            this.code = code ?? throw new ArgumentNullException(nameof(code));
+        }
+
+        /// <summary>
+        /// Creates a new instance of <see cref="FunctionBody"/> with the provided locals.
+        /// </summary>
+        /// <param name="locals"></param>
+        /// <exception cref="ArgumentNullException"><paramref name="locals"/> cannot be null.</exception>
+        public FunctionBody(params Local[] locals)
+        {
+            this.locals = locals ?? throw new ArgumentNullException(nameof(locals));
+        }
+
         internal FunctionBody(Reader reader, long byteLength)
         {
             if (reader == null)

@@ -78,20 +78,8 @@ namespace WebAssembly.Instructions
                     new End(),
                  },
             });
-            module.Tables.Add(new Table
-            {
-                ElementType = ElementType.FunctionReference,
-                ResizableLimits = new ResizableLimits(2, 2),
-            });
-            module.Elements.Add(new Element
-            {
-                Elements = new uint[] { 1, 2 },
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(0),
-                    new End(),
-                },
-            });
+            module.Tables.Add(new Table(2, 2));
+            module.Elements.Add(new Element(0, 1, 2));
 
             var compiled = module.ToInstance<CompilerTestBase<int>>();
 
@@ -156,20 +144,8 @@ namespace WebAssembly.Instructions
                     new End(),
                 },
             });
-            module.Tables.Add(new Table
-            {
-                ElementType = ElementType.FunctionReference,
-                ResizableLimits = new ResizableLimits(1),
-            });
-            module.Elements.Add(new Element
-            {
-                Elements = new uint[] { 0 },
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(0),
-                    new End(),
-                },
-            });
+            module.Tables.Add(new Table(1));
+            module.Elements.Add(new Element(0, 0));
 
             var calls = 0;
             var compiled = module.ToInstance<CompilerTestBase<int>>(new ImportDictionary

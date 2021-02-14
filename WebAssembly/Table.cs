@@ -30,6 +30,18 @@ namespace WebAssembly
         /// </summary>
         public Table()
         {
+            this.ElementType = ElementType.FunctionReference;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Table"/> instance with the provided <see cref="ResizableLimits.Minimum"/> and <see cref="ResizableLimits.Maximum"/> values.
+        /// </summary>
+        /// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
+        /// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>
+        public Table(uint minimum, uint? maximum = null)
+            : this()
+        {
+            this.resizableLimits = new ResizableLimits(minimum, maximum);
         }
 
         /// <summary>

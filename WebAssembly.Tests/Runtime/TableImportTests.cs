@@ -23,16 +23,7 @@ namespace WebAssembly.Runtime
                 Returns = new[] { WebAssemblyValueType.Int32 },
                 Parameters = new[] { WebAssemblyValueType.Int32 }
             });
-            module.Imports.Add(new Import.Table
-            {
-                Module = "Test",
-                Field = "Test",
-                Definition = new Table
-                {
-                    ElementType = ElementType.FunctionReference,
-                    ResizableLimits = new ResizableLimits(1)
-                }
-            });
+            module.Imports.Add(new Import.Table("Test", "Test", 1));
             module.Functions.Add(new Function
             {
             });
@@ -40,15 +31,7 @@ namespace WebAssembly.Runtime
             {
                 Name = "Test",
             });
-            module.Elements.Add(new Element
-            {
-                Elements = new uint[] { 0 },
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(0),
-                    new End(),
-                },
-            });
+            module.Elements.Add(new Element(0, 0));
             module.Codes.Add(new FunctionBody
             {
                 Code = new Instruction[]
@@ -87,16 +70,7 @@ namespace WebAssembly.Runtime
                 Returns = new[] { WebAssemblyValueType.Int32 },
                 Parameters = new[] { WebAssemblyValueType.Int32 }
             });
-            module.Imports.Add(new Import.Table
-            {
-                Module = "Test",
-                Field = "Test",
-                Definition = new Table
-                {
-                    ElementType = ElementType.FunctionReference,
-                    ResizableLimits = new ResizableLimits(1)
-                }
-            });
+            module.Imports.Add(new Import.Table("Test", "Test", 1));
             module.Functions.Add(new Function
             {
             });
@@ -197,16 +171,7 @@ namespace WebAssembly.Runtime
         public void Compile_TableImport_ExportedImport()
         {
             var module = new Module();
-            module.Imports.Add(new Import.Table
-            {
-                Module = "Test",
-                Field = "Test",
-                Definition = new Table
-                {
-                    ElementType = ElementType.FunctionReference,
-                    ResizableLimits = new ResizableLimits(1)
-                }
-            });
+            module.Imports.Add(new Import.Table("Test", "Test", 1));
             module.Exports.Add(new Export
             {
                 Name = nameof(ExportedTable.Table),
@@ -282,20 +247,8 @@ namespace WebAssembly.Runtime
             module1.Functions.Add(new Function
             {
             });
-            module1.Tables.Add(new Table
-            {
-                ElementType = ElementType.FunctionReference,
-                ResizableLimits = new ResizableLimits(2),
-            });
-            module1.Elements.Add(new Element
-            {
-                Elements = new uint[] { 0 },
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(0),
-                    new End(),
-                },
-            });
+            module1.Tables.Add(new Table(2));
+            module1.Elements.Add(new Element(0, 0));
             module1.Codes.Add(new FunctionBody
             {
                 Code = new Instruction[]
@@ -325,16 +278,7 @@ namespace WebAssembly.Runtime
             {
                 Types = module1.Types,
             };
-            module2.Imports.Add(new Import.Table
-            {
-                Module = "Test",
-                Field = "Test",
-                Definition = new Table
-                {
-                    ElementType = ElementType.FunctionReference,
-                    ResizableLimits = new ResizableLimits(1)
-                }
-            });
+            module2.Imports.Add(new Import.Table("Test", "Test", 1));
             module2.Functions.Add(new Function
             {
             });
@@ -375,16 +319,7 @@ namespace WebAssembly.Runtime
                 Returns = new[] { WebAssemblyValueType.Int32 },
                 Parameters = new[] { WebAssemblyValueType.Int32 }
             });
-            module.Imports.Add(new Import.Table
-            {
-                Module = "Test",
-                Field = "Test",
-                Definition = new Table
-                {
-                    ElementType = ElementType.FunctionReference,
-                    ResizableLimits = new ResizableLimits(1)
-                }
-            });
+            module.Imports.Add(new Import.Table("Test", "Test", 1));
             module.Functions.Add(new Function
             {
             });
@@ -392,15 +327,7 @@ namespace WebAssembly.Runtime
             {
                 Name = "Test",
             });
-            module.Elements.Add(new Element
-            {
-                Elements = new uint[] { 0 },
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(0),
-                    new End(),
-                },
-            });
+            module.Elements.Add(new Element(0, 0));
             module.Codes.Add(new FunctionBody
             {
                 Code = new Instruction[]
@@ -425,6 +352,15 @@ namespace WebAssembly.Runtime
             var nativeDelegate = (Func<int, int>)rawDelegate!;
             Assert.AreEqual(0, nativeDelegate(0));
             Assert.AreEqual(5, nativeDelegate(5));
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="Table"/> is initialized with a correct element type.
+        /// </summary>
+        [TestMethod]
+        public void ImportTable_InitialElementTypeIsCorrect()
+        {
+            Assert.AreEqual(ElementType.FunctionReference, new Table().ElementType);
         }
     }
 }

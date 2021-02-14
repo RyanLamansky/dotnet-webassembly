@@ -126,11 +126,7 @@ namespace WebAssembly
                     {
                         Module = "B",
                         Field = "2",
-                        Definition = new Table
-                        {
-                            ElementType = ElementType.FunctionReference,
-                            ResizableLimits = new ResizableLimits(1, 2),
-                        },
+                        Definition = new Table(1, 2),
                     },
                     new Import.Memory
                     {

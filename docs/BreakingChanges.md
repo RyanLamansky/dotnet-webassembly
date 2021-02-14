@@ -7,7 +7,12 @@ Preview changes will be less detailed due to low usage.
 
 ### 0.11.0
 
-* For `Int32Constant`, `Int64Constant`, `Float32Constant`, and `Float64Constant`, several members were moved to a new base class, `Constant`.
+* `Int32Constant`, `Int64Constant`, `Float32Constant`, `Float64Constant`: several members were moved to a new base class, `Constant`.
+  For users of this library working in higher-level languages like C#, this shouldn't break your build, but it's a binary incompatibility for already-built code that used the moved members.
+* Some instruction `.ToString()` calls now return additional information in WAT format.
+* The parameterless constructor for `Import.Table` sets the `ElementType` property to `FunctionReference` 
+instead of an invalid zero value.
+* The parameterless constructor for `Import.Global` sets the `ContentType` property to `WebAssemblyValueType.Int32` instead of an invalid zero value.
 
 ### 0.10.0
 

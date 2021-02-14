@@ -39,6 +39,20 @@ namespace WebAssembly
         }
 
         /// <summary>
+        /// Creates a new <see cref="Export"/>  instance with the provided parameters.
+        /// </summary>
+        /// <param name="name">The name of the exported item.</param>
+        /// <param name="index">The index into the corresponding index space.</param>
+        /// <param name="kind"></param>
+        /// <exception cref="ArgumentNullException"><paramref name="name"/> cannot be null.</exception>
+        public Export(string name, uint index = 0, ExternalKind kind = ExternalKind.Function)
+        {
+            this.name = name ?? throw new ArgumentNullException(nameof(name));
+            this.Index = index;
+            this.Kind = kind;
+        }
+
+        /// <summary>
         /// Creates a new <see cref="Export"/> instance from the provided <see cref="Reader"/>.
         /// </summary>
         /// <param name="reader">Provides raw data.</param>

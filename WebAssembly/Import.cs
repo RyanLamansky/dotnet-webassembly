@@ -46,6 +46,12 @@ namespace WebAssembly
         {
         }
 
+        private protected Import(string module, string field)
+        {
+            this.module = module;
+            this.field = field;
+        }
+
         /// <summary>
         /// Expresses the value of this instance as a string.
         /// </summary>
@@ -132,6 +138,18 @@ namespace WebAssembly
             }
 
             /// <summary>
+            /// Creates a new <see cref="Function"/> instance with the provided parameters.
+            /// </summary>
+            /// <param name="module">The module portion of the name.</param>
+            /// <param name="field">The field portion of the name.</param>
+            /// <param name="typeIndex">The index within the module's types that describes the function signature.</param>
+            public Function(string module, string field, uint typeIndex = 0)
+                : base(module, field)
+            {
+                this.TypeIndex = typeIndex;
+            }
+
+            /// <summary>
             /// Expresses the value of this instance as a string.
             /// </summary>
             /// <returns>A string representation of this instance.</returns>
@@ -165,6 +183,31 @@ namespace WebAssembly
             /// </summary>
             public Table()
             {
+            }
+
+            /// <summary>
+            /// Creates a new <see cref="Table"/> instance with the provided parameters.
+            /// </summary>
+            /// <param name="module">The module portion of the name.</param>
+            /// <param name="field">The field portion of the name.</param>
+            /// <param name="definition">Definiton of the imported table.</param>
+            public Table(string module, string field, WebAssembly.Table? definition = null)
+                : base(module, field)
+            {
+                this.Definition = definition;
+            }
+
+            /// <summary>
+            /// Creates a new <see cref="Table"/> instance with the provided parameters.
+            /// </summary>
+            /// <param name="module">The module portion of the name.</param>
+            /// <param name="field">The field portion of the name.</param>
+            /// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
+            /// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>
+            public Table(string module, string field, uint minimum, uint? maximum = null)
+                : base(module, field)
+            {
+                this.Definition = new WebAssembly.Table(minimum, maximum);
             }
 
             /// <summary>
@@ -204,6 +247,18 @@ namespace WebAssembly
             /// </summary>
             public Memory()
             {
+            }
+
+            /// <summary>
+            /// Creates a new <see cref="Memory"/> instance with the provided parameters.
+            /// </summary>
+            /// <param name="module">The module portion of the name.</param>
+            /// <param name="field">The field portion of the name.</param>
+            /// <param name="type">Type of the imported memory.</param>
+            public Memory(string module, string field, WebAssembly.Memory? type = null)
+                : base(module, field)
+            {
+                this.Type = type;
             }
 
             /// <summary>
@@ -248,6 +303,19 @@ namespace WebAssembly
             /// </summary>
             public Global()
             {
+                this.ContentType = WebAssemblyValueType.Int32;
+            }
+
+            /// <summary>
+            /// Creates a new <see cref="Global"/> instance with the provided parameters.
+            /// </summary>
+            /// <param name="module">The module portion of the name.</param>
+            /// <param name="field">The field portion of the name.</param>
+            /// <param name="contentType">Type of the value.</param>
+            public Global(string module, string field, WebAssemblyValueType contentType = WebAssemblyValueType.Int32)
+                : base(module, field)
+            {
+                this.ContentType = contentType;
             }
 
             internal Global(Reader reader)
