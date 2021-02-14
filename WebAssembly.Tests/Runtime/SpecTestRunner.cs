@@ -78,7 +78,7 @@ namespace WebAssembly.Runtime
                     { "spectest", "global_i64", new GlobalImport(() => 666L) },
                     { "spectest", "global_f32", new GlobalImport(() => 666.0F) },
                     { "spectest", "global_f64", new GlobalImport(() => 666.0) },
-                    // { "spectest", "table", new TableImport() }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
+                    { "spectest", "table", new FunctionTable(10, 20) }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
                     { "spectest", "memory", new MemoryImport(() => new UnmanagedMemory(1, 2)) }, // Memory.alloc (MemoryType {min = 1l; max = Some 2l})
             };
 
@@ -262,6 +262,9 @@ namespace WebAssembly.Runtime
                                         throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
                                     }
                                     throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                                case "multiple tables":
+                                    Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                    continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                             }
@@ -331,6 +334,44 @@ namespace WebAssembly.Runtime
                                     continue;
                                 case "unreachable":
                                     Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
+                                    continue;
+                                case "uninitialized element":
+                                case "uninitialized":
+                                    try
+                                    {
+                                        trapExpected();
+                                        throw new AssertFailedException($"{command.line}: Expected KeyNotFoundException or NullReferenceException, but no exception was thrown.");
+                                    }
+                                    catch (KeyNotFoundException)
+                                    {
+                                    }
+                                    catch (NullReferenceException)
+                                    {
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line}: Expected KeyNotFoundException or NullReferenceException, but received {x.GetType().Name}.");
+                                    }
+                                    continue;
+                                case "undefined":
+                                    try
+                                    {
+                                        trapExpected();
+                                        throw new AssertFailedException($"{command.line}: Expected KeyNotFoundException or IndexOutOfRangeException, but no exception was thrown.");
+                                    }
+                                    catch (KeyNotFoundException)
+                                    {
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                    }
+                                    catch (Exception x)
+                                    {
+                                        throw new AssertFailedException($"{command.line}: Expected KeyNotFoundException or IndexOutOfRangeException, but received {x.GetType().Name}.");
+                                    }
+                                    continue;
+                                case "indirect call":
+                                    Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
                                     continue;
                                 default:
                                     throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");

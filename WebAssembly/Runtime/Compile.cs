@@ -180,10 +180,10 @@ namespace WebAssembly.Runtime
             switch (reader.ReadUInt32())
             {
                 case 0x1: //First release
-                case 0xd: //Final pre-release, binary format is identical with first release.
+                // case 0xd: //Final pre-release, binary format is identical with first release.
                     break;
                 default:
-                    throw new ModuleLoadException("Unsupported version, only version 0x1 and 0xd are accepted.", 4);
+                    throw new ModuleLoadException("Unsupported version, only version 0x1 is accepted.", 4);
             }
 
             uint memoryPagesMinimum = 0;
@@ -387,7 +387,7 @@ namespace WebAssembly.Runtime
                                             var limits = new ResizableLimits(reader);
 
                                             if (functionTable != null)
-                                                break; // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
+                                                throw new NotSupportedException("Unable to support multiple tables.");
 
                                             functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);

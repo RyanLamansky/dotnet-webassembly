@@ -20,8 +20,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_address()
         {
-            var skips = new HashSet<uint> { 391, 395, 433, 437, 475, 479, 487, 495, 570, 574, 576, 580, 582, 586, 588, 589 };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "address"), "address.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "address"), "address.json");
         }
 
         /// <summary>
@@ -40,7 +39,11 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_binary()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json", line => line == 723);
+            var skips = new HashSet<uint>
+            {
+                723, // The given key '0' was not present in the dictionary.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json", skips.Contains);
         }
 
         /// <summary>
@@ -71,9 +74,12 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_br()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json",
-                line => line >= 334 && line <= 417 // has no method source.
-            );
+            var skips = new HashSet<uint>
+            {
+                // The JIT compiler encountered invalid IL code or an internal limitation.
+                357, 361, 373, 374, 375, 378, 379, 382, 383, 384, 394, 396, 401, 406, 412, 415, 417,
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br"), "br.json", skips.Contains);
         }
 
         /// <summary>
@@ -198,23 +204,12 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_elem()
         {
-            var needTableImport = new HashSet<uint>
-            { // Missing import for spectest::table. (or other table import error)
-                28,
-                43,
-                91,
-                101,
-                116,
-                122,
-                128,
-                134,
-                186,
-                203,
-                229,
-                237,
-                318,
-                357,
-                370,
+            var miscellaneous = new HashSet<uint>
+            {
+                186, 203, // ModuleLoadException, MemoryAccessOutOfRangeException or OverflowException, but no exception was thrown.
+                237, // number, when added to Length, would exceed the defined Maximum.
+                318, // The delegate at position 9 is expected to be of type System.Action, but the supplied delegate is System.Func`1[System.Int32].
+                357, 370, // Missing import for module1::shared-table.
             };
 
             var initializerIssues = new HashSet<uint>
@@ -260,7 +255,7 @@ namespace WebAssembly.Runtime
 
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "elem"), "elem.json",
                 line =>
-                needTableImport.Contains(line) ||
+                miscellaneous.Contains(line) ||
                 initializerIssues.Contains(line) ||
                 operationIssues.Contains(line) ||
                 exceptionExpected.Contains(line) ||
@@ -548,7 +543,11 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_i32()
         {
-            SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json", line => line == 106);
+            var skip = new HashSet<uint>
+            {
+               106, // Arithmetic operation resulted in an overflow.
+            };
+            SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json", skip.Contains);
         }
 
         /// <summary>
@@ -557,7 +556,11 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_i64()
         {
-            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", line => line == 106);
+            var skip = new HashSet<uint>
+            {
+               106, // Arithmetic operation resulted in an overflow.
+            };
+            SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", skip.Contains);
         }
 
         /// <summary>
@@ -586,34 +589,21 @@ namespace WebAssembly.Runtime
         {
             var skip = new HashSet<uint>
             {
-                271, // Requires table import support
-                283, // Requires table import support
-                284, // Requires table import support
-                285, // Requires table import support
-                286, // Requires table import support
-                287, // Requires table import support
-                290, // Requires table import support
-                302, // Requires table import support
-                303, // Requires table import support
-                304, // Requires table import support
-                305, // Requires table import support
-                306, // Requires table import support
-                310, // Requires table import support
-                314, // Requires table import support
-                318, // Requires table import support
-                322, // Requires table import support
-                323, // Requires table import support
-                324, // Requires table import support
-                325, // Requires table import support
-                326, // Requires table import support
-                327, // Requires table import support
-                328, // Requires table import support
-                329, // Requires table import support
-                330, // Requires table import support
-                331, // Requires table import support
-                332, // Requires table import support
+                322, // Missing import for test::table-10-inf.
+                323, // Missing import for test::table-10-inf.
+                324, // Missing import for test::table-10-inf.
+                352, // ImportException exception was expected
+                356, // ImportException exception was expected
+                405, // ModuleLoadException exception was expected.
+                417, // Missing import for test::memory-2-inf.
+                418, // Missing import for test::memory-2-inf.
+                419, // Missing import for test::memory-2-inf.
+                445, // ImportException exception was expected.
+                449, // ImportException exception was expected.
+                479, // ImportException exception was expected.
+                483, // ImportException exception was expected.
             };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json", line => skip.Contains(line) || line >= 381);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "imports"), "imports.json", skip.Contains);
         }
 
         /// <summary>
@@ -665,11 +655,34 @@ namespace WebAssembly.Runtime
         /// Runs the linking tests.
         /// </summary>
         [TestMethod]
-        [Ignore("Missing import for Mf::call.")]
         public void SpecTest_linking()
         {
-            // TODO: SpecTestRunner needs to route "register" input to imports to complete this test.
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "linking"), "linking.json");
+            var skips = new HashSet<uint>
+            {
+                48, // setter cannot have a return type.
+                50, // WebAssemblyValueType 7 not recognized.
+                68, 69, 71, 72, 75, 77, 81, 83, // The given key '$Ng' was not present in the dictionary.
+                154, // Missing import for Mt::tab.
+                170, // The given key '$Ot' was not present in the dictionary.
+                172, 173, 175, // Not equal: -4 and 4
+                176, // The given key '$Ot' was not present in the dictionary.
+                178, 179, 181,// Object reference not set to an instance of an object.
+                182, // The given key '$Ot' was not present in the dictionary.
+                192, // Missing import for Mt::tab.
+                200, // WebAssemblyValueType 7 not recognized.
+                204, // The given key '$G2' was not present in the dictionary.
+                207, 228, 239, // Missing import for Mt::tab.
+                279, // Missing import for Mm::mem.
+                288, 289, // Not equal: 167 and 2
+                291, // The given key '$Om' was not present in the dictionary.
+                293, 299, 306, // Missing import for Mm::mem.
+                314, 315, 316, 317, 318, 319, 320, 321, // The given key '$Pm' was not present in the dictionary.
+                335, 345, // Missing import for Mm::mem.
+                371, // ModuleLoadException exception was expected.
+                387, // Not equal: 104 and 0
+                388, // Object reference not set to an instance of an object.
+            };
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "linking"), "linking.json", skips.Contains);
         }
 
         /// <summary>

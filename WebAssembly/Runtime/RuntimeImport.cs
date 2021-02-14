@@ -73,7 +73,14 @@ namespace WebAssembly.Runtime
                             if (property == null)
                                 continue; // TODO: Throw an exception for mismatch.
 
-                            // TODO: Support table import.
+                            var getter = property.GetGetMethod();
+                            if (getter == null)
+                                continue; // TODO: Throw an exception for missing getter.
+
+                            if (getter.Invoke(exports, Array.Empty<object>()) is not FunctionTable table)
+                                continue; // TODO: Throw an exception for missing result.
+
+                            yield return (native.Name, table);
                         }
                         continue;
 
