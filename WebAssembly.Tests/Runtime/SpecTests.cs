@@ -738,11 +738,6 @@ namespace WebAssembly.Runtime
         {
             var skip = new HashSet<uint>
             {
-                9, // No exception thrown. ModuleLoadException exception was expected.
-                11, // Segment size of 0 is not currently supported.
-                12, // failed to look up method memsize
-                13, // Segment size of 0 is not currently supported.
-                14, // failed to look up method memsize
                 49, // No exception thrown. ModuleLoadException exception was expected.
                 53, // No exception thrown. ModuleLoadException exception was expected.
                 57, // No exception thrown. ModuleLoadException exception was expected.
@@ -750,7 +745,6 @@ namespace WebAssembly.Runtime
                 65, // No exception thrown. ModuleLoadException exception was expected.
                 69, // No exception thrown. ModuleLoadException exception was expected.
                 73, // No exception thrown. ModuleLoadException exception was expected.
-                166, // Common Language Runtime detected an invalid program.
             };
             if (!Environment.Is64BitProcess)
                 skip.UnionWith(Enumerable.Range(187, 26).Select(i => (uint)i)); // Common Language Runtime detected an invalid program.
@@ -763,14 +757,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_memory_grow()
         {
-            var skips = new HashSet<uint>
-            {
-                47, // Not equal: -1 and 0
-            };
-
-            skips.UnionWith(Enumerable.Range(259, (355 + 1) - 259).Select(i => (uint)i)); //Caused by 101 skip
-
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_grow"), "memory_grow.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory_grow"), "memory_grow.json");
         }
 
         /// <summary>
