@@ -24,7 +24,7 @@ namespace WebAssembly.Runtime.Compilation
             {
             }
 
-            public sealed override OpCode OpCode => (OpCode)0xff; // Not a real opcode, but this type is also not public.
+            public sealed override OpCode OpCode => OpCode.Return; // "Return" is the most accurate fake opcode for the outer block.
 
             internal sealed override void Compile(CompilationContext context) => throw new NotSupportedException();
         }
@@ -64,6 +64,8 @@ namespace WebAssembly.Runtime.Compilation
             this.Stack.Clear();
             this.BlockContexts.Clear();
             this.BlockContexts.Add(this.Depth.Count, new BlockContext());
+
+            this.Labels.Add(0, generator.DefineLabel());
         }
 
         public Signature[]? FunctionSignatures;

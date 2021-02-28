@@ -29,8 +29,7 @@ namespace WebAssembly.Instructions
 
             if (context.Depth.Count == 1)
             {
-                if (context.Previous == OpCode.Return)
-                    return; //WebAssembly requires functions to end on "end", but an immediately previous return is allowed.
+                context.MarkLabel(context.Labels[0]);
 
                 var returns = context.CheckedSignature.RawReturnTypes;
                 var returnsLength = returns.Length;

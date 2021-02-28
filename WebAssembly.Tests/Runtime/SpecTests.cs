@@ -39,11 +39,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_binary()
         {
-            var skips = new HashSet<uint>
-            {
-                723, // The given key '0' was not present in the dictionary.
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary"), "binary.json");
         }
 
         /// <summary>
@@ -85,8 +81,8 @@ namespace WebAssembly.Runtime
         public void SpecTest_br_if()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_if"), "br_if.json",
-                line => line == 3 || // The given key '0' was not present in the dictionary.
-                (line >= 372 && line <= 478) // has no method source.
+                line =>
+                (line >= 372 && line <= 478) // The JIT compiler encountered invalid IL code or an internal limitation.
             );
         }
 
@@ -97,7 +93,7 @@ namespace WebAssembly.Runtime
         public void SpecTest_br_table()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "br_table"), "br_table.json",
-                line => line == 3 || // The given key '0' was not present in the dictionary.
+                line => line == 3 || // BranchTable requires all labels to have type Empty, but found Int32.
                 (line >= 1247 && line <= 1426) || // has no method source.
                 line == 1429 || // should have thrown an exception but did not.
                 line == 1502// || // should have thrown an exception but did not.
@@ -466,10 +462,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_func()
         {
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json",
-            line =>
-            line <= 284 // WASM broken by The given key '0' was not present in the dictionary.
-            );
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "func"), "func.json");
         }
 
         /// <summary>
@@ -905,7 +898,7 @@ namespace WebAssembly.Runtime
         /// Runs the unwind tests.
         /// </summary>
         [TestMethod]
-        [Ignore("The given key '0' was not present in the dictionary.")]
+        [Ignore("The JIT compiler encountered invalid IL code or an internal limitation.")]
         public void SpecTest_unwind()
         {
             SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "unwind"), "unwind.json");
