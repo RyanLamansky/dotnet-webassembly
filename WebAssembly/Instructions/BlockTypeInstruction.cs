@@ -65,6 +65,6 @@ namespace WebAssembly.Instructions
         /// Provides a native representation of the instruction.
         /// </summary>
         /// <returns>A string representation of this instance.</returns>
-        public override string ToString() => $"{base.ToString()} (returns {Type.ToTypeString()})";
+        public override string ToString() => Type == BlockType.Empty ? base.ToString() : $"{base.ToString()} {Type.ToTypeString()}";
     }
 }

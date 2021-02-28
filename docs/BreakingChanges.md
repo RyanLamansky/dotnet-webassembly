@@ -24,6 +24,12 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
   * Binary WASM files can be executed using the .NET CLR via run-time WASM-to-CIL conversion with Google Chrome as the reference for correctness.
   * Provide a pathway to convert WASM files to .NET DLLs to enable ahead-of-time compilation.
 
+## Breaking Changes
+
+### 0.12.0
+
+* Block-type instructions that returned their type in `.ToString` now more closely match the WAT format; "block (returns i32)" is now "block i32", for example.
+
 ## Breaking Changes from Preview Releases
 
 ### 0.11.0
