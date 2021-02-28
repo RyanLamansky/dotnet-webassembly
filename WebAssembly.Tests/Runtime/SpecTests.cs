@@ -52,11 +52,7 @@ namespace WebAssembly.Runtime
         [TestMethod]
         public void SpecTest_binary_leb128()
         {
-            var skips = new HashSet<uint>
-            {
-                32, // ModuleLoadException: At offset 22: Operation is not valid due to the current state of the object.
-            };
-            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json", skips.Contains);
+            SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "binary-leb128"), "binary-leb128.json");
         }
 
         /// <summary>
@@ -206,7 +202,7 @@ namespace WebAssembly.Runtime
         {
             var miscellaneous = new HashSet<uint>
             {
-                186, 203, // ModuleLoadException, MemoryAccessOutOfRangeException or OverflowException, but no exception was thrown.
+                170, 186, 203, // ModuleLoadException, MemoryAccessOutOfRangeException or OverflowException, but no exception was thrown.
                 237, // number, when added to Length, would exceed the defined Maximum.
                 318, // The delegate at position 9 is expected to be of type System.Action, but the supplied delegate is System.Func`1[System.Int32].
                 357, 370, // Missing import for module1::shared-table.
@@ -216,13 +212,6 @@ namespace WebAssembly.Runtime
             { // Initializer expression support for the Element section is limited to a single Int32 constant followed by end.
                 53,
                 60,
-            };
-
-            var operationIssues = new HashSet<uint>
-            { // Operation is not valid due to the current state of the object.
-                97,
-                106,
-                111,
             };
 
             var exceptionExpected = new HashSet<uint>
@@ -257,7 +246,6 @@ namespace WebAssembly.Runtime
                 line =>
                 miscellaneous.Contains(line) ||
                 initializerIssues.Contains(line) ||
-                operationIssues.Contains(line) ||
                 exceptionExpected.Contains(line) ||
                 failedLookUp.Contains(line) ||
                 nullRef.Contains(line) ||

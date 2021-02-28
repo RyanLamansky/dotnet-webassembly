@@ -995,7 +995,15 @@ namespace WebAssembly.Runtime
                                     offset = (uint)c.Value;
                                 }
 
+                                var preElementOffset = reader.Offset;
                                 var elements = reader.ReadVarUInt32();
+
+                                if (elements == 0)
+                                    continue;
+
+                                if (functionSignatures == null || internalFunctions == null)
+                                    throw new ModuleLoadException("Element section must be empty if there are no functions to reference.", preElementOffset);
+
                                 var isBigEnough = instanceConstructorIL.DefineLabel();
                                 instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
                                 instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
@@ -1011,11 +1019,6 @@ namespace WebAssembly.Runtime
                                 instanceConstructorIL.Emit(OpCodes.Pop);
 
                                 instanceConstructorIL.MarkLabel(isBigEnough);
-
-                                if (functionSignatures == null)
-                                    throw new InvalidOperationException();
-                                if (internalFunctions == null)
-                                    throw new InvalidOperationException();
 
                                 for (var j = 0u; j < elements; j++)
                                 {
