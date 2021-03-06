@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Instructions;
+using ILOpCode = System.Reflection.Emit.OpCode;
 
 namespace WebAssembly.Runtime.Compilation
 {
@@ -160,27 +161,27 @@ namespace WebAssembly.Runtime.Compilation
 
         public void EmitLoadThis() => CheckedGenerator.EmitLoadArg(CheckedSignature.ParameterTypes.Length);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode) => CheckedGenerator.Emit(opcode);
+        public void Emit(ILOpCode opcode) => CheckedGenerator.Emit(opcode);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, byte arg) => CheckedGenerator.Emit(opcode, arg);
+        public void Emit(ILOpCode opcode, byte arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, int arg) => CheckedGenerator.Emit(opcode, arg);
+        public void Emit(ILOpCode opcode, int arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, long arg) => CheckedGenerator.Emit(opcode, arg);
+        public void Emit(ILOpCode opcode, long arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, float arg) => CheckedGenerator.Emit(opcode, arg);
+        public void Emit(ILOpCode opcode, float arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, double arg) => CheckedGenerator.Emit(opcode, arg);
+        public void Emit(ILOpCode opcode, double arg) => CheckedGenerator.Emit(opcode, arg);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, Label label) => CheckedGenerator.Emit(opcode, label);
+        public void Emit(ILOpCode opcode, Label label) => CheckedGenerator.Emit(opcode, label);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, Label[] labels) => CheckedGenerator.Emit(opcode, labels);
+        public void Emit(ILOpCode opcode, Label[] labels) => CheckedGenerator.Emit(opcode, labels);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, FieldInfo field) => CheckedGenerator.Emit(opcode, field);
+        public void Emit(ILOpCode opcode, FieldInfo field) => CheckedGenerator.Emit(opcode, field);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, MethodInfo meth) => CheckedGenerator.Emit(opcode, meth);
+        public void Emit(ILOpCode opcode, MethodInfo meth) => CheckedGenerator.Emit(opcode, meth);
 
-        public void Emit(System.Reflection.Emit.OpCode opcode, ConstructorInfo con) => CheckedGenerator.Emit(opcode, con);
+        public void Emit(ILOpCode opcode, ConstructorInfo con) => CheckedGenerator.Emit(opcode, con);
 
         public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
 
