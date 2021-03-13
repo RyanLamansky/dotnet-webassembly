@@ -55,7 +55,7 @@ namespace WebAssembly.Instructions
                 }
 
                 context.BlockContexts.Remove(context.Depth.Count);
-                context.Depth.Pop();
+                context.Depth.PopNoReturn();
 
                 var depth = checked((uint)context.Depth.Count);
                 var label = context.Labels[depth];

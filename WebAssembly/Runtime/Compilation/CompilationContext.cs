@@ -120,7 +120,7 @@ namespace WebAssembly.Runtime.Compilation
 
         public WebAssemblyValueType[]? Locals;
 
-        public readonly Stack<BlockTypeInstruction> Depth = new();
+        public readonly BlockStack Depth = new();
 
         public OpCode Previous;
 
