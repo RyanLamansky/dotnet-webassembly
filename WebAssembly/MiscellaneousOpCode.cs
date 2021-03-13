@@ -60,7 +60,7 @@ namespace WebAssembly
 
     static class MiscellaneousOpCodeExtensions
     {
-        private static readonly RegeneratingWeakReference<Dictionary<MiscellaneousOpCode, string>> opCodeNativeNamesByOpCode = new RegeneratingWeakReference<Dictionary<MiscellaneousOpCode, string>>(
+        private static readonly RegeneratingWeakReference<Dictionary<MiscellaneousOpCode, string>> opCodeNativeNamesByOpCode = new(
             () => typeof(MiscellaneousOpCode)
                 .GetFields()
                 .Where(field => field.IsStatic)

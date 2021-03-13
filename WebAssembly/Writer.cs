@@ -6,7 +6,7 @@ namespace WebAssembly
 {
     internal sealed class Writer : IDisposable
     {
-        private readonly UTF8Encoding utf8 = new UTF8Encoding(false, false);
+        private readonly UTF8Encoding utf8 = new(false, false);
         private BinaryWriter? writer;
 
         public Writer(Stream output)
@@ -51,8 +51,8 @@ namespace WebAssembly
             var writer = CheckedWriter;
 
             var remaining = value >> 7;
-            var hasMore = true;
             var end = ((value & int.MinValue) == 0) ? 0 : -1;
+            bool hasMore;
             do
             {
                 hasMore = (remaining != end) || ((remaining & 1) != ((value >> 6) & 1));
@@ -67,8 +67,8 @@ namespace WebAssembly
             var writer = CheckedWriter;
 
             var remaining = value >> 7;
-            var hasMore = true;
             var end = ((value & long.MinValue) == 0) ? 0 : -1;
+            bool hasMore;
             do
             {
                 hasMore = (remaining != end) || ((remaining & 1) != ((value >> 6) & 1));

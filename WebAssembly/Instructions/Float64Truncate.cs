@@ -25,7 +25,7 @@ namespace WebAssembly.Instructions
 
         private protected sealed override WebAssemblyValueType ValueType => WebAssemblyValueType.Float64;
 
-        internal static readonly RegeneratingWeakReference<MethodInfo> Method = new RegeneratingWeakReference<MethodInfo>(() =>
+        internal static readonly RegeneratingWeakReference<MethodInfo> Method = new(() =>
             typeof(Math).GetTypeInfo().DeclaredMethods.First(m =>
             {
                 if (m.Name != nameof(Math.Truncate))

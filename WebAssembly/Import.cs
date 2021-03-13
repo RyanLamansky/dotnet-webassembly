@@ -77,42 +77,33 @@ namespace WebAssembly
             var initialOffset = reader.Offset;
             var kind = (ExternalKind)reader.ReadByte();
 
-            switch (kind)
+            return kind switch
             {
-                case ExternalKind.Function:
-                    return new Function
-                    {
-                        Module = module,
-                        Field = field,
-                        TypeIndex = reader.ReadVarUInt32(),
-                    };
-
-                case ExternalKind.Table:
-                    return new Table
-                    {
-                        Module = module,
-                        Field = field,
-                        Definition = new WebAssembly.Table(reader),
-                    };
-
-                case ExternalKind.Memory:
-                    return new Memory
-                    {
-                        Module = module,
-                        Field = field,
-                        Type = new WebAssembly.Memory(reader),
-                    };
-
-                case ExternalKind.Global:
-                    return new Global(reader)
-                    {
-                        Module = module,
-                        Field = field,
-                    };
-
-                default:
-                    throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", initialOffset);
-            }
+                ExternalKind.Function => new Function
+                {
+                    Module = module,
+                    Field = field,
+                    TypeIndex = reader.ReadVarUInt32(),
+                },
+                ExternalKind.Table => new Table
+                {
+                    Module = module,
+                    Field = field,
+                    Definition = new WebAssembly.Table(reader),
+                },
+                ExternalKind.Memory => new Memory
+                {
+                    Module = module,
+                    Field = field,
+                    Type = new WebAssembly.Memory(reader),
+                },
+                ExternalKind.Global => new Global(reader)
+                {
+                    Module = module,
+                    Field = field,
+                },
+                _ => throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", initialOffset),
+            };
         }
 
         /// <summary>

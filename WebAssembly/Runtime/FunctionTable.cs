@@ -10,7 +10,7 @@ namespace WebAssembly.Runtime
     /// </summary>
     public class FunctionTable : TableImport
     {
-        internal static readonly RegeneratingWeakReference<MethodInfo> IndexGetter = new RegeneratingWeakReference<MethodInfo>(() =>
+        internal static readonly RegeneratingWeakReference<MethodInfo> IndexGetter = new(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
             .DeclaredProperties
@@ -19,7 +19,7 @@ namespace WebAssembly.Runtime
             .GetMethod!
             );
 
-        internal static readonly RegeneratingWeakReference<MethodInfo> IndexSetter = new RegeneratingWeakReference<MethodInfo>(() =>
+        internal static readonly RegeneratingWeakReference<MethodInfo> IndexSetter = new(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
             .DeclaredProperties
@@ -28,14 +28,14 @@ namespace WebAssembly.Runtime
             .SetMethod!
             );
 
-        internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new RegeneratingWeakReference<MethodInfo>(() =>
+        internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
             .GetDeclaredProperty(nameof(Length))!
             .GetMethod!
             );
 
-        internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(() =>
+        internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(() =>
             typeof(FunctionTable)
             .GetTypeInfo()
             .GetDeclaredMethod(nameof(Grow))!

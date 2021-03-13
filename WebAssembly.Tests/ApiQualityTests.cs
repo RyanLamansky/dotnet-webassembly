@@ -14,7 +14,7 @@ namespace WebAssembly
     public class ApiQualityTests
     {
         private static readonly RegeneratingWeakReference<(Type type, MemberInfo[] members, FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods)[]> typeInfo =
-            new RegeneratingWeakReference<(Type type, MemberInfo[] members, FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods)[]>(() =>
+            new(() =>
                 typeof(Module)
                 .Assembly
                 .GetTypes()

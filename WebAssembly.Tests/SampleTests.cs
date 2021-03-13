@@ -15,7 +15,7 @@ namespace WebAssembly
         /// <summary>
         /// The data acquired from calls to <see cref="Issue7Receive(int)"/>
         /// </summary>
-        private static readonly StringBuilder issue7Received = new StringBuilder();
+        private static readonly StringBuilder issue7Received = new();
 
         /// <summary>
         /// Used with <see cref="Execute_Sample_Issue7"/> to verify a call out from a WebAssembly file.

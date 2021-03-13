@@ -44,81 +44,67 @@ namespace WebAssembly.Instructions
                 typeA = WebAssemblyValueType.Int32; //And treat it as an int32
             }
 
-            HelperMethod helper;
-            switch (typeA)
+            var helper = typeA switch
             {
-                default: throw new InvalidOperationException(); // Shouldn't be possible.
-                case WebAssemblyValueType.Int32: helper = HelperMethod.SelectInt32; break;
-                case WebAssemblyValueType.Int64: helper = HelperMethod.SelectInt64; break;
-                case WebAssemblyValueType.Float32: helper = HelperMethod.SelectFloat32; break;
-                case WebAssemblyValueType.Float64: helper = HelperMethod.SelectFloat64; break;
-            }
+                WebAssemblyValueType.Int32 => HelperMethod.SelectInt32,
+                WebAssemblyValueType.Int64 => HelperMethod.SelectInt64,
+                WebAssemblyValueType.Float32 => HelperMethod.SelectFloat32,
+                WebAssemblyValueType.Float64 => HelperMethod.SelectFloat64,
+                _ => throw new InvalidOperationException(),// Shouldn't be possible.
+            };
             context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
         }
 
         static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
         {
-            MethodBuilder builder;
-            switch (helper)
+            MethodBuilder builder = helper switch
             {
-                default: throw new InvalidOperationException(); // Shouldn't be possible.
-                case HelperMethod.SelectInt32:
-                    builder = context.CheckedExportsBuilder.DefineMethod(
-                        "☣ Select Int32",
-                        CompilationContext.HelperMethodAttributes,
-                        typeof(int),
-                        new[]
-                        {
+                HelperMethod.SelectInt32 => context.CheckedExportsBuilder.DefineMethod(
+                                       "☣ Select Int32",
+                                       CompilationContext.HelperMethodAttributes,
+                                       typeof(int),
+                                       new[]
+                                       {
                                 typeof(int),
                                 typeof(int),
                                 typeof(int),
-                        }
-                        );
-                    break;
-
-                case HelperMethod.SelectInt64:
-                    builder = context.CheckedExportsBuilder.DefineMethod(
-                        "☣ Select Int64",
-                        CompilationContext.HelperMethodAttributes,
-                        typeof(long),
-                        new[]
-                        {
+                                       }
+                                       ),
+                HelperMethod.SelectInt64 => context.CheckedExportsBuilder.DefineMethod(
+              "☣ Select Int64",
+              CompilationContext.HelperMethodAttributes,
+              typeof(long),
+              new[]
+              {
                                 typeof(long),
                                 typeof(long),
                                 typeof(int),
-                        }
-                        );
-                    break;
-
-                case HelperMethod.SelectFloat32:
-                    builder = context.CheckedExportsBuilder.DefineMethod(
-                        "☣ Select Float32",
-                        CompilationContext.HelperMethodAttributes,
-                        typeof(float),
-                        new[]
-                        {
+              }
+              ),
+                HelperMethod.SelectFloat32 => context.CheckedExportsBuilder.DefineMethod(
+              "☣ Select Float32",
+              CompilationContext.HelperMethodAttributes,
+              typeof(float),
+              new[]
+              {
                                 typeof(float),
                                 typeof(float),
                                 typeof(int),
-                        }
-                        );
-                    break;
-
-                case HelperMethod.SelectFloat64:
-                    builder = context.CheckedExportsBuilder.DefineMethod(
-                        "☣ Select Float64",
-                        CompilationContext.HelperMethodAttributes,
-                        typeof(double),
-                        new[]
-                        {
+              }
+              ),
+                HelperMethod.SelectFloat64 => context.CheckedExportsBuilder.DefineMethod(
+              "☣ Select Float64",
+              CompilationContext.HelperMethodAttributes,
+              typeof(double),
+              new[]
+              {
                                 typeof(double),
                                 typeof(double),
                                 typeof(int),
-                        }
-                        );
-                    break;
-            }
-
+              }
+              ),
+                _ => throw new InvalidOperationException(),// Shouldn't be possible.
+            };
             var il = builder.GetILGenerator();
             il.Emit(OpCodes.Ldarg_2);
             var @true = il.DefineLabel();

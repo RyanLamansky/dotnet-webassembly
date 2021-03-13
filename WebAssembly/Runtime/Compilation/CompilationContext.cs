@@ -77,9 +77,9 @@ namespace WebAssembly.Runtime.Compilation
 
         public GlobalInfo[]? Globals;
 
-        public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = new Dictionary<uint, MethodInfo>();
+        public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = new();
 
-        public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new Dictionary<uint, MethodBuilder>();
+        public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new();
 
         public FieldBuilder? FunctionTable;
 
@@ -89,7 +89,7 @@ namespace WebAssembly.Runtime.Compilation
             MethodAttributes.HideBySig
             ;
 
-        private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = new Dictionary<HelperMethod, MethodBuilder>();
+        private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = new();
 
         public MethodInfo this[HelperMethod helper]
         {
@@ -120,17 +120,17 @@ namespace WebAssembly.Runtime.Compilation
 
         public WebAssemblyValueType[]? Locals;
 
-        public readonly Stack<BlockTypeInstruction> Depth = new Stack<BlockTypeInstruction>();
+        public readonly Stack<BlockTypeInstruction> Depth = new();
 
         public OpCode Previous;
 
-        public readonly Dictionary<uint, Label> Labels = new Dictionary<uint, Label>();
+        public readonly Dictionary<uint, Label> Labels = new();
 
-        public readonly HashSet<Label> LoopLabels = new HashSet<Label>();
+        public readonly HashSet<Label> LoopLabels = new();
 
-        public readonly Stack<WebAssemblyValueType> Stack = new Stack<WebAssemblyValueType>();
+        public readonly Stack<WebAssemblyValueType> Stack = new();
 
-        public readonly Dictionary<int, BlockContext> BlockContexts = new Dictionary<int, BlockContext>();
+        public readonly Dictionary<int, BlockContext> BlockContexts = new();
 
         public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 

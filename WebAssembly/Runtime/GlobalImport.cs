@@ -92,10 +92,7 @@ namespace WebAssembly.Runtime
 
         private GlobalImport(Delegate getter, Delegate? setter, WebAssemblyValueType type)
         {
-            if (getter == null)
-                throw new ArgumentNullException(nameof(getter));
-
-            this.Getter = getter;
+            this.Getter = getter ?? throw new ArgumentNullException(nameof(getter));
             this.Setter = setter;
             this.GetterType = type;
         }

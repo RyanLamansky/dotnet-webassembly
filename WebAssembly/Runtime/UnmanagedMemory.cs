@@ -10,11 +10,11 @@ namespace WebAssembly.Runtime
     /// </summary>
     public sealed class UnmanagedMemory : IDisposable
     {
-        internal static readonly RegeneratingWeakReference<MethodInfo> SizeGetter = new RegeneratingWeakReference<MethodInfo>(()
+        internal static readonly RegeneratingWeakReference<MethodInfo> SizeGetter = new(()
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.Where(prop => prop.Name == nameof(Size)).First().GetMethod!);
-        internal static readonly RegeneratingWeakReference<MethodInfo> StartGetter = new RegeneratingWeakReference<MethodInfo>(()
+        internal static readonly RegeneratingWeakReference<MethodInfo> StartGetter = new(()
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.Where(prop => prop.Name == nameof(Start)).First().GetMethod!);
-        internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new RegeneratingWeakReference<MethodInfo>(()
+        internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(()
             => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.Where(prop => prop.Name == nameof(Grow)).First());
 
         private bool disposed;

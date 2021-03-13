@@ -102,17 +102,14 @@ namespace WebAssembly.Instructions
 
         private protected HelperMethod RangeCheckHelper
         {
-            get
+            get => this.Size switch
             {
-                switch (this.Size)
-                {
-                    default: throw new InvalidOperationException(); // Shouldn't be possible.
-                    case 1: return HelperMethod.RangeCheck8;
-                    case 2: return HelperMethod.RangeCheck16;
-                    case 4: return HelperMethod.RangeCheck32;
-                    case 8: return HelperMethod.RangeCheck64;
-                }
-            }
+                1 => HelperMethod.RangeCheck8,
+                2 => HelperMethod.RangeCheck16,
+                4 => HelperMethod.RangeCheck32,
+                8 => HelperMethod.RangeCheck64,
+                _ => throw new InvalidOperationException(),// Shouldn't be possible.
+            };
         }
 
         private protected void EmitRangeCheck(CompilationContext context)

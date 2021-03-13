@@ -27,20 +27,17 @@ namespace WebAssembly
 
     static class ValueTypeExtensions
     {
-        public static System.Type ToSystemType(this WebAssemblyValueType valueType)
+        public static System.Type ToSystemType(this WebAssemblyValueType valueType) =>valueType switch
         {
-            switch (valueType)
-            {
-                case WebAssemblyValueType.Int32: return typeof(int);
-                case WebAssemblyValueType.Int64: return typeof(long);
-                case WebAssemblyValueType.Float32: return typeof(float);
-                case WebAssemblyValueType.Float64: return typeof(double);
-                default: throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized.");
-            }
-        }
+            WebAssemblyValueType.Int32 => typeof(int),
+            WebAssemblyValueType.Int64 => typeof(long),
+            WebAssemblyValueType.Float32 => typeof(float),
+            WebAssemblyValueType.Float64 => typeof(double),
+            _ => throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized."),
+        };
 
         private static readonly RegeneratingWeakReference<Dictionary<System.Type, WebAssemblyValueType>> systemTypeToValueType
-            = new RegeneratingWeakReference<Dictionary<System.Type, WebAssemblyValueType>>(() => new Dictionary<System.Type, WebAssemblyValueType>
+            = new(() => new Dictionary<System.Type, WebAssemblyValueType>
             {
                 { typeof(int), WebAssemblyValueType.Int32 },
                 { typeof(long), WebAssemblyValueType.Int64 },

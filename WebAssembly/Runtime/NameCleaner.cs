@@ -14,40 +14,33 @@ namespace WebAssembly.Runtime
             if (c == '_')
                 return true;
 
-            switch (char.GetUnicodeCategory(c))
+            return char.GetUnicodeCategory(c) switch
             {
-                case UnicodeCategory.UppercaseLetter:
-                case UnicodeCategory.LowercaseLetter:
-                case UnicodeCategory.TitlecaseLetter:
-                case UnicodeCategory.ModifierLetter:
-                case UnicodeCategory.OtherLetter:
-                case UnicodeCategory.LetterNumber:
-                    return true;
-            }
-
-            return false;
+                UnicodeCategory.UppercaseLetter
+                or UnicodeCategory.LowercaseLetter
+                or UnicodeCategory.TitlecaseLetter
+                or UnicodeCategory.ModifierLetter
+                or UnicodeCategory.OtherLetter
+                or UnicodeCategory.LetterNumber => true,
+                _ => false,
+            };
         }
 
-        static bool IsPermittedIdentifierPart(char c)
+        static bool IsPermittedIdentifierPart(char c) => char.GetUnicodeCategory(c) switch
         {
-            switch (char.GetUnicodeCategory(c))
-            {
-                case UnicodeCategory.UppercaseLetter:
-                case UnicodeCategory.LowercaseLetter:
-                case UnicodeCategory.TitlecaseLetter:
-                case UnicodeCategory.ModifierLetter:
-                case UnicodeCategory.OtherLetter:
-                case UnicodeCategory.LetterNumber:
-                case UnicodeCategory.NonSpacingMark:
-                case UnicodeCategory.SpacingCombiningMark:
-                case UnicodeCategory.DecimalDigitNumber:
-                case UnicodeCategory.ConnectorPunctuation:
-                case UnicodeCategory.Format:
-                    return true;
-            }
-
-            return false;
-        }
+            UnicodeCategory.UppercaseLetter
+            or UnicodeCategory.LowercaseLetter
+            or UnicodeCategory.TitlecaseLetter
+            or UnicodeCategory.ModifierLetter
+            or UnicodeCategory.OtherLetter
+            or UnicodeCategory.LetterNumber
+            or UnicodeCategory.NonSpacingMark
+            or UnicodeCategory.SpacingCombiningMark
+            or UnicodeCategory.DecimalDigitNumber
+            or UnicodeCategory.ConnectorPunctuation
+            or UnicodeCategory.Format => true,
+            _ => false,
+        };
 
         static bool IsPermittedIdentifier(string value)
         {

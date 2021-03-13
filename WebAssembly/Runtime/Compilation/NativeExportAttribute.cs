@@ -31,11 +31,11 @@ namespace WebAssembly.Runtime.Compilation
             this.Name = name;
         }
 
-        static readonly RegeneratingWeakReference<ConstructorInfo> Constructor = new RegeneratingWeakReference<ConstructorInfo>(() =>
+        static readonly RegeneratingWeakReference<ConstructorInfo> Constructor = new(() =>
             typeof(NativeExportAttribute).GetConstructors()[0]
         );
 
         internal static CustomAttributeBuilder Emit(ExternalKind kind, string name) =>
-            new CustomAttributeBuilder(Constructor, new object[] { kind, name });
+            new(Constructor, new object[] { kind, name });
     }
 }

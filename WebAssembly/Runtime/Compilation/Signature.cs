@@ -11,7 +11,7 @@ namespace WebAssembly.Runtime.Compilation
         public readonly Type[] ReturnTypes;
         public readonly WebAssemblyValueType[] RawReturnTypes;
 
-        private static readonly RegeneratingWeakReference<Signature> empty = new RegeneratingWeakReference<Signature>(() => new Signature());
+        private static readonly RegeneratingWeakReference<Signature> empty = new(() => new Signature());
 
         public static Signature Empty => empty;
 

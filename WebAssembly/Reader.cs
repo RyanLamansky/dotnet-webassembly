@@ -6,7 +6,7 @@ namespace WebAssembly
 {
     internal sealed class Reader : IDisposable
     {
-        private readonly UTF8Encoding utf8 = new UTF8Encoding(false, false);
+        private readonly UTF8Encoding utf8 = new(false, false);
         private BinaryReader? reader;
         private long offset;
 
@@ -27,7 +27,7 @@ namespace WebAssembly
             return result;
         }
 
-        public byte ReadVarUInt1() => (Byte)(this.ReadVarUInt32() & 0b1);
+        public byte ReadVarUInt1() => (byte)(this.ReadVarUInt32() & 0b1);
 
         public bool TryReadVarUInt7(out byte result)
         {

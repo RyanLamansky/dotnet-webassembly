@@ -444,7 +444,7 @@ namespace WebAssembly
             writer.Write(Magic);
             writer.Write((uint)0x1);
 
-            var buffer = new Byte[4 * 1024];
+            var buffer = new byte[4 * 1024];
             WriteCustomSection(buffer, writer, Section.None, customSectionsByPrecedingSection);
 
             if (this.types != null)

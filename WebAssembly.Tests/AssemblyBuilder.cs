@@ -82,7 +82,7 @@ namespace WebAssembly
             return compiled.Exports;
         }
 
-        private static readonly Dictionary<System.Type, WebAssemblyValueType> map = new Dictionary<System.Type, WebAssemblyValueType>(4)
+        private static readonly Dictionary<System.Type, WebAssemblyValueType> map = new(4)
         {
             { typeof(int), WebAssemblyValueType.Int32 },
             { typeof(long), WebAssemblyValueType.Int64 },
