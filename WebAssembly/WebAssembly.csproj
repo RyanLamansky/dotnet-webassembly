@@ -9,7 +9,7 @@
     <Description>Create, read, modify, write and execute WebAssembly (WASM) files using pure 100% .NET.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Full support for creation and modification of WASM 1.0 files; .NET CLR JIT-based execution is not 100% complete.</PackageReleaseNotes>
+    <PackageReleaseNotes>Full support for creation and modification of WASM 1.0 files; .NET CLR JIT-based execution is in beta.</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
