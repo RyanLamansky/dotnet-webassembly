@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 
 namespace WebAssembly
@@ -18,7 +19,7 @@ namespace WebAssembly
             module.Types.Add(new WebAssemblyType
             {
                 Returns = @return.HasValue == false
-                ? new WebAssemblyValueType[0]
+                ? Array.Empty<WebAssemblyValueType>()
                 : new[]
                 {
                     @return.GetValueOrDefault()
@@ -55,7 +56,7 @@ namespace WebAssembly
             module.Types.Add(new WebAssemblyType
             {
                 Returns = @return.HasValue == false
-                ? new WebAssemblyValueType[0]
+                ? Array.Empty<WebAssemblyValueType>()
                 : new[]
                 {
                     @return.GetValueOrDefault()

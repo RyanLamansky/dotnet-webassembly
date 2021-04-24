@@ -14,7 +14,7 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
   - There are no known issues with this functionality and the API is stable.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
-  - This part of the API is in "beta" status and may require changes to improve compliance with WASM standards.
+  - This feature doesn't have 100% spec compliance so it may not work with every WASM you provide.
 
 Please report an issue if you encounter an assembly that works in browsers but not with this library.
 
@@ -107,6 +107,8 @@ static class Program
 
 ## Current Development Objectives
 
+Informational; there is no timelime for completion of these items.
+
 - Improve official specification compliance, using Google Chrome as the reference for correct behavior.
 - Improve exceptions thrown from problems found during compilation or execution.
 - Provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements so that something like Mono.Cecil can be used to produce a DLL.
@@ -117,3 +119,4 @@ static class Program
 ## Other Information
 
 * [Breaking Change Log](docs/BreakingChanges.md)
+* [Examples](Examples)

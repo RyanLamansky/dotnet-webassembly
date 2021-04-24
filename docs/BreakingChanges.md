@@ -26,7 +26,7 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
 
 ## Breaking Changes
 
-### 0.12.0
+### 1.0.0
 
 * Block-type instructions that returned their type in `.ToString` now more closely match the WAT format; "block (returns i32)" is now "block i32", for example.
 
