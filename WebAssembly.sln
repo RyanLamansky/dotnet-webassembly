@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadMeSample", "Examples\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RunExisting", "Examples\RunExisting\RunExisting.csproj", "{E4A73D5E-5A53-4B6C-8034-E350ADC649EC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateClassFromWasm", "Examples\GenerateClassFromWasm\GenerateClassFromWasm.csproj", "{447571E7-CE40-4A4D-86E1-104C0141D13B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{E4A73D5E-5A53-4B6C-8034-E350ADC649EC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E4A73D5E-5A53-4B6C-8034-E350ADC649EC}.Release|x86.ActiveCfg = Release|Any CPU
 		{E4A73D5E-5A53-4B6C-8034-E350ADC649EC}.Release|x86.Build.0 = Release|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Debug|x86.Build.0 = Debug|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Release|x86.ActiveCfg = Release|Any CPU
+		{447571E7-CE40-4A4D-86E1-104C0141D13B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +78,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AAC685B0-BD34-4BDF-9283-E7712B83B2F3} = {8B170A86-42D9-4F76-9230-7E8FC5C242D9}
 		{E4A73D5E-5A53-4B6C-8034-E350ADC649EC} = {8B170A86-42D9-4F76-9230-7E8FC5C242D9}
+		{447571E7-CE40-4A4D-86E1-104C0141D13B} = {8B170A86-42D9-4F76-9230-7E8FC5C242D9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3B09C795-39DB-4388-9441-FA9401CFD4BE}
