@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- .NET Core 3.1 is selected as the baseline for a good balance of compatibility and features, and is fully supported by .NET 5+. -->
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;netstandard2.0</TargetFrameworks>
     <Title>WebAssembly for .NET</Title>
     <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
@@ -32,6 +32,10 @@
   <ItemGroup>
     <None Include="../LICENSE" Pack="true" PackagePath="LICENSE" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
