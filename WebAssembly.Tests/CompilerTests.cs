@@ -1,5 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using WebAssembly.Instructions;
@@ -638,6 +641,61 @@ namespace WebAssembly
             }).Exports.Memory as UnmanagedMemory;
             Assert.IsNotNull(roundMemory);
             Assert.AreSame(memory, roundMemory);
+        }
+
+        /// <summary>
+        /// Verifies that during compilation we read the number of globals
+        /// exactly as defined in the global section, even when there is a
+        /// global import.
+        /// See https://github.com/RyanLamansky/dotnet-webassembly/issues/35
+        /// </summary>
+        [TestMethod]
+        public void Compiler_ReadGlobalSectionWhenGlobalImport()
+        {
+            // Set up a module with a global import and a global
+            var module = new Module();
+            module.Imports.Add(new WebAssembly.Import.Global("mod", "field"));
+            module.Globals.Add(new Global
+            {
+                ContentType = WebAssemblyValueType.Int32,
+                IsMutable = false,
+                InitializerExpression = new Instruction[] { new Int32Constant(1), new End() }.ToList()
+            });
+            module.Types.Add(new WebAssemblyType
+            {
+                Returns = new[]
+                {
+                    WebAssemblyValueType.Int32,
+                },
+            });
+            module.Functions.Add(new Function { Type = 0 });
+            module.Codes.Add(new FunctionBody
+            {
+                Code = new Instruction[]
+                {
+                    new GlobalGet(0),
+                    new GlobalGet(1),
+                    new Int32Add(),
+                    new End(),
+                },
+            });
+            module.Exports.Add(new Export
+            {
+                Kind = ExternalKind.Function,
+                Index = 0,
+                Name = "fn",
+            });
+
+            using var memoryStream = new MemoryStream();
+            module.WriteToBinary(memoryStream);
+            memoryStream.Seek(0L, SeekOrigin.Begin);
+
+            var compilationResult = Compile.FromBinary<dynamic>(memoryStream);
+            var result = compilationResult.Invoke(new Dictionary<string, IDictionary<string, RuntimeImport>>
+            {
+                { "mod", new Dictionary<string, RuntimeImport> { { "field", new GlobalImport(() => 2) } } },
+            }).Exports.fn();
+            Assert.AreEqual(3, result);
         }
     }
 }

@@ -735,7 +735,7 @@ namespace WebAssembly.Runtime
 
                             var emptySignature = Signature.Empty;
 
-                            for (var i = 0; i < globals.Length; i++)
+                            for (var i = 0; i < count; i++)
                             {
                                 var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
                                 var isMutable = reader.ReadVarUInt1() == 1;
