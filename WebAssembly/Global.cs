@@ -40,6 +40,27 @@ namespace WebAssembly
         {
         }
 
+
+        /// <summary>
+        /// Creates a new <see cref="Global"/> instance with the provided content type.
+        /// </summary>
+        /// <param name="contentType">The <see cref="ContentType"/> value.</param>
+        public Global(WebAssemblyValueType contentType)
+        {
+            this.ContentType = contentType;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Global"/> instance with the provided content type and initializer expression.
+        /// </summary>
+        /// <param name="contentType">The <see cref="ContentType"/> value.</param>
+        /// <param name="initializerExpression">The <see cref="InitializerExpression"/> value.</param>
+        public Global(WebAssemblyValueType contentType, params Instruction[] initializerExpression)
+        {
+            this.ContentType = contentType;
+            this.initializerExpression = initializerExpression;
+        }
+
         internal Global(Reader reader)
         {
             this.ContentType = (WebAssemblyValueType)reader.ReadVarInt7();

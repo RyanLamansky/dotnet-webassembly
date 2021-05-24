@@ -45,9 +45,7 @@ namespace WebAssembly.Instructions
             var module = new Module();
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Int32,
@@ -55,9 +53,7 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Int64,
@@ -65,9 +61,7 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Float32,
@@ -75,118 +69,28 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Float64,
                 }
             });
-            module.Functions.Add(new Function
-            {
-                Type = 0,
-            });
-            module.Functions.Add(new Function
-            {
-                Type = 1,
-            });
-            module.Functions.Add(new Function
-            {
-                Type = 2,
-            });
-            module.Functions.Add(new Function
-            {
-                Type = 3,
-            });
-            module.Globals.Add(new Global
-            {
-                ContentType = WebAssemblyValueType.Int32,
-                InitializerExpression = new Instruction[]
-                {
-                    new Int32Constant(4),
-                    new End(),
-                },
-            });
-            module.Globals.Add(new Global
-            {
-                ContentType = WebAssemblyValueType.Int64,
-                InitializerExpression = new Instruction[]
-                {
-                    new Int64Constant(5),
-                    new End(),
-                },
-            });
-            module.Globals.Add(new Global
-            {
-                ContentType = WebAssemblyValueType.Float32,
-                InitializerExpression = new Instruction[]
-                {
-                    new Float32Constant(6),
-                    new End(),
-                },
-            });
-            module.Globals.Add(new Global
-            {
-                ContentType = WebAssemblyValueType.Float64,
-                InitializerExpression = new Instruction[]
-                {
-                    new Float64Constant(7),
-                    new End(),
-                },
-            });
-            module.Exports.Add(new Export
-            {
-                Index = 0,
-                Name = nameof(TestBase.TestInt32)
-            });
-            module.Exports.Add(new Export
-            {
-                Index = 1,
-                Name = nameof(TestBase.TestInt64)
-            });
-            module.Exports.Add(new Export
-            {
-                Index = 2,
-                Name = nameof(TestBase.TestFloat32)
-            });
-            module.Exports.Add(new Export
-            {
-                Index = 3,
-                Name = nameof(TestBase.TestFloat64)
-            });
-            module.Codes.Add(new FunctionBody
-            {
-                Code = new Instruction[]
-                {
-                    new GlobalGet(0),
-                    new End(),
-                },
-            });
-            module.Codes.Add(new FunctionBody
-            {
-                Code = new Instruction[]
-                {
-                    new GlobalGet(1),
-                    new End(),
-                },
-            });
-            module.Codes.Add(new FunctionBody
-            {
-                Code = new Instruction[]
-                {
-                    new GlobalGet(2),
-                    new End(),
-                },
-            });
-            module.Codes.Add(new FunctionBody
-            {
-                Code = new Instruction[]
-                {
-                    new GlobalGet(3),
-                    new End(),
-                },
-            });
+            module.Functions.Add(new Function(0));
+            module.Functions.Add(new Function(1));
+            module.Functions.Add(new Function(2));
+            module.Functions.Add(new Function(3));
+            module.Globals.Add(new Global(WebAssemblyValueType.Int32, new Int32Constant(4), new End()));
+            module.Globals.Add(new Global(WebAssemblyValueType.Int64, new Int64Constant(5), new End()));
+            module.Globals.Add(new Global(WebAssemblyValueType.Float32, new Float32Constant(6), new End()));
+            module.Globals.Add(new Global(WebAssemblyValueType.Float64, new Float64Constant(7), new End()));
+            module.Exports.Add(new Export(nameof(TestBase.TestInt32), 0));
+            module.Exports.Add(new Export(nameof(TestBase.TestInt64), 1));
+            module.Exports.Add(new Export(nameof(TestBase.TestFloat32), 2));
+            module.Exports.Add(new Export(nameof(TestBase.TestFloat64), 3));
+            module.Codes.Add(new FunctionBody(new GlobalGet(0), new End()));
+            module.Codes.Add(new FunctionBody(new GlobalGet(1), new End()));
+            module.Codes.Add(new FunctionBody(new GlobalGet(2), new End()));
+            module.Codes.Add(new FunctionBody(new GlobalGet(3), new End()));
 
             var compiled = module.ToInstance<TestBase>();
 
@@ -206,9 +110,7 @@ namespace WebAssembly.Instructions
             var module = new Module();
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Int32,
@@ -216,9 +118,7 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Int64,
@@ -226,9 +126,7 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Float32,
@@ -236,9 +134,7 @@ namespace WebAssembly.Instructions
             });
             module.Types.Add(new WebAssemblyType
             {
-                Parameters = new WebAssemblyValueType[]
-                {
-                },
+                Parameters = Array.Empty<WebAssemblyValueType>(),
                 Returns = new[]
                 {
                     WebAssemblyValueType.Float64,

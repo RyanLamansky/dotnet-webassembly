@@ -90,7 +90,7 @@ namespace WebAssembly
                         continue;
                     }
 
-                    expectedName.Append(char.ToUpper(part[0])).Append(part.Substring(1));
+                    expectedName.Append(char.ToUpper(part[0])).Append(part[1..]);
                 }
 
                 Assert.AreEqual(expectedName.ToString(), opCode.ToString());
