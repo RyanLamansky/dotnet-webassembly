@@ -164,33 +164,33 @@ namespace WebAssembly.Runtime
             public readonly WebAssemblyValueType Type;
         }
 
-        const TypeAttributes classAttributes =
+        const TypeAttributes ClassAttributes =
             TypeAttributes.Public |
             TypeAttributes.Class |
             TypeAttributes.BeforeFieldInit
             ;
 
-        const MethodAttributes constructorAttributes =
+        const MethodAttributes ConstructorAttributes =
             MethodAttributes.Public |
             MethodAttributes.HideBySig |
             MethodAttributes.SpecialName |
             MethodAttributes.RTSpecialName
             ;
 
-        const MethodAttributes internalFunctionAttributes =
+        const MethodAttributes InternalFunctionAttributes =
             MethodAttributes.Assembly |
             MethodAttributes.Static |
             MethodAttributes.HideBySig
             ;
 
-        const MethodAttributes exportedFunctionAttributes =
+        const MethodAttributes ExportedFunctionAttributes =
             MethodAttributes.Public |
             MethodAttributes.Virtual |
             MethodAttributes.Final |
             MethodAttributes.HideBySig
             ;
 
-        const FieldAttributes privateReadonlyField =
+        const FieldAttributes PrivateReadonlyField =
             FieldAttributes.Private |
             FieldAttributes.InitOnly
             ;
@@ -233,19 +233,19 @@ namespace WebAssembly.Runtime
                 ;
 
             var context = new CompilationContext(configuration);
-            var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", classAttributes, exportContainer);
+            var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", ClassAttributes, exportContainer);
             MethodBuilder? importedMemoryProvider = null;
             FieldBuilder? memory = null;
 
             void CreateMemoryField()
             {
-                memory = context!.Memory = exportsBuilder!.DefineField("☣ Memory", typeof(UnmanagedMemory), privateReadonlyField);
+                memory = context!.Memory = exportsBuilder!.DefineField("☣ Memory", typeof(UnmanagedMemory), PrivateReadonlyField);
             }
 
             ILGenerator instanceConstructorIL;
             {
                 var instanceConstructor = exportsBuilder.DefineConstructor(
-                    constructorAttributes,
+                    ConstructorAttributes,
                     CallingConventions.Standard,
                     new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
                     );
@@ -333,11 +333,11 @@ namespace WebAssembly.Runtime
 
                                             var typedDelegate = del.IsGenericTypeDefinition ? del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray()) : del;
                                             var delField = $"➡ {moduleName}::{fieldName}";
-                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
                                             var invoker = exportsBuilder.DefineMethod(
                                                 $"Invoke {delField}",
-                                                internalFunctionAttributes,
+                                                InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
                                                 signature.ParameterTypes.Concat(new Type[] { exports }).ToArray()
@@ -409,11 +409,11 @@ namespace WebAssembly.Runtime
 
                                             var typedDelegate = typeof(Func<UnmanagedMemory>);
                                             var delField = $"➡ {moduleName}::{fieldName}";
-                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
                                             importedMemoryProvider = exportsBuilder.DefineMethod(
                                                 $"Invoke {delField}",
-                                                internalFunctionAttributes,
+                                                InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 typeof(UnmanagedMemory),
                                                 new Type[] { exports }
@@ -458,11 +458,11 @@ namespace WebAssembly.Runtime
 
                                             var typedDelegate = typeof(Func<>).MakeGenericType(new[] { contentType.ToSystemType() });
                                             var delField = $"➡ Get {moduleName}::{fieldName}";
-                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+                                            var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
                                             var getterInvoker = exportsBuilder.DefineMethod(
                                                 $"Invoke {delField}",
-                                                internalFunctionAttributes,
+                                                InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 contentType.ToSystemType(),
                                                 new Type[] { exports }
@@ -501,11 +501,11 @@ namespace WebAssembly.Runtime
                                             {
                                                 typedDelegate = typeof(Action<>).MakeGenericType(new[] { contentType.ToSystemType() });
                                                 delField = $"➡ Set {moduleName}::{fieldName}";
-                                                delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, privateReadonlyField);
+                                                delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
                                                 setterInvoker = exportsBuilder.DefineMethod(
                                                 $"Invoke {delField}",
-                                                internalFunctionAttributes,
+                                                InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 null,
                                                 new[] { contentType.ToSystemType(), exports }
@@ -589,7 +589,7 @@ namespace WebAssembly.Runtime
                                 var parms = signature.ParameterTypes.Concat(new Type[] { exports }).ToArray();
                                 internalFunctions[i] = exportsBuilder.DefineMethod(
                                     $"👻 {i}",
-                                    internalFunctionAttributes,
+                                    InternalFunctionAttributes,
                                     CallingConventions.Standard,
                                     signature.ReturnTypes.FirstOrDefault(),
                                     parms
@@ -721,23 +721,23 @@ namespace WebAssembly.Runtime
                         break;
 
                     case Section.Global:
-                        globals = Section_Global(reader, context, globals, exportsBuilder, exports, instanceConstructorIL, importedGlobals);
+                        globals = SectionGlobal(reader, context, globals, exportsBuilder, exports, instanceConstructorIL, importedGlobals);
                         break;
 
                     case Section.Export:
-                        exportedFunctions = Section_Export(reader, functionTable, exportsBuilder, emptyTypes, memory, globals);
+                        exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals);
                         break;
 
                     case Section.Start:
                         if (internalFunctions == null)
                             throw new ModuleLoadException("Start section created without any functions.", preSectionOffset);
-                        startFunction = Section_Start(reader, internalFunctions);
+                        startFunction = SectionStart(reader, internalFunctions);
                         break;
 
                     case Section.Element:
                         if (functionTable == null)
                             throw new ModuleLoadException("Element section found without an associated table section or import.", preSectionOffset);
-                        Section_Element(reader, functionTable, instanceConstructorIL, functionSignatures, internalFunctions, delegateInvokersByTypeIndex, configuration, exportsBuilder);
+                        SectionElement(reader, functionTable, instanceConstructorIL, functionSignatures, internalFunctions, delegateInvokersByTypeIndex, configuration, exportsBuilder);
                         break;
 
                     case Section.Code:
@@ -745,13 +745,13 @@ namespace WebAssembly.Runtime
                             throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
                         if (internalFunctions == null)
                             throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
-                        Section_Code(reader, context, functionSignatures, internalFunctions, importedFunctions);
+                        SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                         break;
 
                     case Section.Data:
                         if (memory == null)
                             throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
-                        Section_Data(reader, context, memory, instanceConstructorIL, exportsBuilder);
+                        SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
                         break;
 
                     default:
@@ -776,7 +776,7 @@ namespace WebAssembly.Runtime
 
                     var method = exportsBuilder.DefineMethod(
                         NameCleaner.CleanName(exported.Key),
-                        exportedFunctionAttributes,
+                        ExportedFunctionAttributes,
                         CallingConventions.HasThis,
                         signature.ReturnTypes.FirstOrDefault(),
                         signature.ParameterTypes
@@ -804,9 +804,9 @@ namespace WebAssembly.Runtime
 
             TypeInfo instance;
             {
-                var instanceBuilder = module.DefineType("CompiledInstance", classAttributes, instanceContainer);
+                var instanceBuilder = module.DefineType("CompiledInstance", ClassAttributes, instanceContainer);
                 var instanceConstructor = instanceBuilder.DefineConstructor(
-                    constructorAttributes,
+                    ConstructorAttributes,
                     CallingConventions.Standard,
                     new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
                     );
@@ -833,7 +833,7 @@ namespace WebAssembly.Runtime
             return instance.DeclaredConstructors.First();
         }
 
-        static GlobalInfo[] Section_Global(Reader reader, CompilationContext context, GlobalInfo[]? globals, TypeBuilder exportsBuilder, TypeBuilder exports, ILGenerator instanceConstructorIL, int importedGlobals)
+        static GlobalInfo[] SectionGlobal(Reader reader, CompilationContext context, GlobalInfo[]? globals, TypeBuilder exportsBuilder, TypeBuilder exports, ILGenerator instanceConstructorIL, int importedGlobals)
         {
             var count = reader.ReadVarUInt32();
             if (globals != null)
@@ -855,7 +855,7 @@ namespace WebAssembly.Runtime
 
                 var getter = exportsBuilder.DefineMethod(
                     $"🌍 Get {i}",
-                    internalFunctionAttributes,
+                    InternalFunctionAttributes,
                     CallingConventions.Standard,
                     contentType.ToSystemType(),
                     isMutable ? new Type[] { exports } : null
@@ -895,7 +895,7 @@ namespace WebAssembly.Runtime
 
                     setter = exportsBuilder.DefineMethod(
                     $"🌍 Set {i}",
-                        internalFunctionAttributes,
+                        InternalFunctionAttributes,
                         CallingConventions.Standard,
                         typeof(void),
                         new[] { contentType.ToSystemType(), exports }
@@ -939,7 +939,7 @@ namespace WebAssembly.Runtime
             return globals;
         }
 
-        static KeyValuePair<string, uint>[] Section_Export(Reader reader, FieldBuilder? functionTable, TypeBuilder exportsBuilder, Type[] emptyTypes, FieldBuilder? memory, GlobalInfo[]? globals)
+        static KeyValuePair<string, uint>[] SectionExport(Reader reader, FieldBuilder? functionTable, TypeBuilder exportsBuilder, Type[] emptyTypes, FieldBuilder? memory, GlobalInfo[]? globals)
         {
             const MethodAttributes exportedPropertyAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final;
             var totalExports = reader.ReadVarUInt32();
@@ -1056,7 +1056,7 @@ namespace WebAssembly.Runtime
             return xFunctions.ToArray();
         }
 
-        static MethodInfo Section_Start(Reader reader, MethodInfo[] internalFunctions)
+        static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions)
         {
             var preReadOffset = reader.Offset;
             var startIndex = reader.ReadVarInt32();
@@ -1066,7 +1066,7 @@ namespace WebAssembly.Runtime
             return internalFunctions[startIndex];
         }
 
-        static void Section_Element(Reader reader, FieldBuilder functionTable, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+        static void SectionElement(Reader reader, FieldBuilder functionTable, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
         {
             // Holds the function table index of where an exsting function index has been mapped, for re-use.
             var existingDelegates = new Dictionary<uint, uint>();
@@ -1183,7 +1183,7 @@ namespace WebAssembly.Runtime
             }
         }
 
-        static void Section_Code(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
+        static void SectionCode(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
         {
             var preBodiesIndex = reader.Offset;
             var functionBodies = reader.ReadVarUInt32();
@@ -1230,7 +1230,7 @@ namespace WebAssembly.Runtime
             }
         }
 
-        static void Section_Data(Reader reader, CompilationContext context, FieldBuilder memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder)
+        static void SectionData(Reader reader, CompilationContext context, FieldBuilder memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder)
         {
             var count = reader.ReadVarUInt32();
 
