@@ -255,7 +255,6 @@ namespace WebAssembly.Runtime
                 }
             }
 
-            var exports = exportsBuilder;
             var importedFunctions = 0;
             var importedGlobals = 0;
             MethodInfo[]? internalFunctions = null;
@@ -335,7 +334,7 @@ namespace WebAssembly.Runtime
                                                 InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
-                                                signature.ParameterTypes.Concat(new Type[] { exports }).ToArray()
+                                                signature.ParameterTypes.Concat(new Type[] { exportsBuilder }).ToArray()
                                                 );
 
                                             var invokerIL = invoker.GetILGenerator();
@@ -411,7 +410,7 @@ namespace WebAssembly.Runtime
                                                 InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 typeof(UnmanagedMemory),
-                                                new Type[] { exports }
+                                                new Type[] { exportsBuilder }
                                                 );
 
                                             var invokerIL = importedMemoryProvider.GetILGenerator();
@@ -460,7 +459,7 @@ namespace WebAssembly.Runtime
                                                 InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 contentType.ToSystemType(),
-                                                new Type[] { exports }
+                                                new Type[] { exportsBuilder }
                                                 );
 
                                             var invokerIL = getterInvoker.GetILGenerator();
@@ -503,7 +502,7 @@ namespace WebAssembly.Runtime
                                                 InternalFunctionAttributes,
                                                 CallingConventions.Standard,
                                                 null,
-                                                new[] { contentType.ToSystemType(), exports }
+                                                new[] { contentType.ToSystemType(), exportsBuilder }
                                                 );
 
                                                 invokerIL = setterInvoker.GetILGenerator();
@@ -581,7 +580,7 @@ namespace WebAssembly.Runtime
                             for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                             {
                                 var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
-                                var parms = signature.ParameterTypes.Concat(new Type[] { exports }).ToArray();
+                                var parms = signature.ParameterTypes.Concat(new Type[] { exportsBuilder }).ToArray();
                                 internalFunctions[i] = exportsBuilder.DefineMethod(
                                     $"👻 {i}",
                                     InternalFunctionAttributes,
@@ -716,7 +715,7 @@ namespace WebAssembly.Runtime
                         break;
 
                     case Section.Global:
-                        globals = SectionGlobal(reader, context, globals, exportsBuilder, exports, instanceConstructorIL, importedGlobals);
+                        globals = SectionGlobal(reader, context, globals, exportsBuilder, instanceConstructorIL, importedGlobals);
                         break;
 
                     case Section.Export:
@@ -828,7 +827,7 @@ namespace WebAssembly.Runtime
             return instance.DeclaredConstructors.First();
         }
 
-        static GlobalInfo[] SectionGlobal(Reader reader, CompilationContext context, GlobalInfo[]? globals, TypeBuilder exportsBuilder, TypeBuilder exports, ILGenerator instanceConstructorIL, int importedGlobals)
+        static GlobalInfo[] SectionGlobal(Reader reader, CompilationContext context, GlobalInfo[]? globals, TypeBuilder exportsBuilder, ILGenerator instanceConstructorIL, int importedGlobals)
         {
             var count = reader.ReadVarUInt32();
             if (globals != null)
@@ -853,7 +852,7 @@ namespace WebAssembly.Runtime
                     InternalFunctionAttributes,
                     CallingConventions.Standard,
                     contentType.ToSystemType(),
-                    isMutable ? new Type[] { exports } : null
+                    isMutable ? new Type[] { exportsBuilder } : null
                     );
 
                 var il = getter.GetILGenerator();
@@ -893,7 +892,7 @@ namespace WebAssembly.Runtime
                         InternalFunctionAttributes,
                         CallingConventions.Standard,
                         typeof(void),
-                        new[] { contentType.ToSystemType(), exports }
+                        new[] { contentType.ToSystemType(), exportsBuilder }
                         );
 
                     il = setter.GetILGenerator();
