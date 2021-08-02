@@ -237,11 +237,6 @@ namespace WebAssembly.Runtime
             MethodBuilder? importedMemoryProvider = null;
             FieldBuilder? memory = null;
 
-            void CreateMemoryField()
-            {
-                memory = context!.Memory = exportsBuilder!.DefineField("☣ Memory", typeof(UnmanagedMemory), PrivateReadonlyField);
-            }
-
             ILGenerator instanceConstructorIL;
             {
                 var instanceConstructor = exportsBuilder.DefineConstructor(
@@ -444,7 +439,7 @@ namespace WebAssembly.Runtime
                                             ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
-                                            CreateMemoryField();
+                                            memory = context.Memory = CreateMemoryField(exportsBuilder);
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                                             instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
@@ -676,7 +671,7 @@ namespace WebAssembly.Runtime
                             else
                                 memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
-                            CreateMemoryField();
+                            memory = context.Memory = CreateMemoryField(exportsBuilder);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                             Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
@@ -1300,6 +1295,11 @@ namespace WebAssembly.Runtime
         static FieldBuilder CreateFunctionTableField(TypeBuilder exportsBuilder)
         {
             return exportsBuilder.DefineField("☣ FunctionTable", typeof(FunctionTable), FieldAttributes.Private | FieldAttributes.InitOnly);
+        }
+
+        static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder)
+        {
+            return exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), PrivateReadonlyField);
         }
     }
 }
