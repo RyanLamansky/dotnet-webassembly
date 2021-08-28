@@ -641,7 +641,7 @@ namespace WebAssembly.Runtime
             var skips = new HashSet<uint>
             {
                 48, // setter cannot have a return type.
-                50, // WebAssemblyValueType 7 not recognized.
+                50, //  Missing import for Mg::glob.
                 68, 69, 71, 72, 75, 77, 81, 83, // The given key '$Ng' was not present in the dictionary.
                 154, // Missing import for Mt::tab.
                 170, // The given key '$Ot' was not present in the dictionary.
@@ -650,7 +650,6 @@ namespace WebAssembly.Runtime
                 178, 179, 181,// Object reference not set to an instance of an object.
                 182, // The given key '$Ot' was not present in the dictionary.
                 192, // Missing import for Mt::tab.
-                200, // WebAssemblyValueType 7 not recognized.
                 204, // The given key '$G2' was not present in the dictionary.
                 207, 228, 239, // Missing import for Mt::tab.
                 279, // Missing import for Mm::mem.
