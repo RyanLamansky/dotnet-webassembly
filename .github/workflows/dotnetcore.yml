@@ -17,13 +17,18 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+    - name: Setup .NET 6
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
     - name: Install dependencies
       run: dotnet restore
-    # Debug and Release mighht be different due to conditional compilation, so validate both.
+    # Debug and Release might be different due to conditional compilation, so validate both.
     - name: Build (Debug)
       run: dotnet build --configuration Debug --no-restore
     - name: Build (Release)
       run: dotnet build --configuration Release --no-restore
-    - name: Test
+    - name: Test (Debug)
+      run: dotnet test --configuration Debug --no-build --verbosity normal
+    - name: Test (Release)
       run: dotnet test --configuration Release --no-build --verbosity normal
-    # Not safe to test Debug build as it runs tests in parallel, occasional triggering a bug in the test adapter.

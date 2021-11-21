@@ -12,7 +12,10 @@ namespace WebAssembly.Runtime
     [TestClass]
     public class SpecTests
     {
-        static readonly bool IsNet5 = Environment.Version.Major == 5;
+        /// <summary>
+        /// .NET 5 changed something about floating point processing that causes some spec tests to fail.
+        /// </summary>
+        static readonly bool IsNet5OrHigher = Environment.Version.Major >= 5;
 
         /// <summary>
         /// Runs the address tests.
@@ -295,7 +298,7 @@ namespace WebAssembly.Runtime
         public void SpecTest_f32()
         {
             // .NET Core 3.1 is fine but .NET 5 has issues for some reason.
-            Func<uint, bool>? skips = !IsNet5 ? null : line => line is
+            Func<uint, bool>? skips = !IsNet5OrHigher ? null : line => line is
                 >= 1943 and <= 1946 or
                 >= 1951 and <= 1954 or
                 >= 1959 and <= 1962 or
@@ -333,7 +336,7 @@ namespace WebAssembly.Runtime
         public void SpecTest_f64()
         {
             // .NET Core 3.1 is fine but .NET 5 has issues for some reason.
-            Func<uint, bool>? skips = !IsNet5 ? null : line => line is
+            Func<uint, bool>? skips = !IsNet5OrHigher ? null : line => line is
                 >= 1943 and <= 1946 or
                 >= 1951 and <= 1954 or
                 >= 1959 and <= 1962 or
@@ -389,7 +392,7 @@ namespace WebAssembly.Runtime
                 519, // Arithmetic operation resulted in an overflow.
             };
 
-            if (IsNet5)
+            if (IsNet5OrHigher)
             {
                 skips.Add(2351);
                 skips.Add(2357);
