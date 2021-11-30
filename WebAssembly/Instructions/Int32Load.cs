@@ -1,33 +1,32 @@
 using System.Reflection.Emit;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Load 4 bytes as i32.
+/// </summary>
+public class Int32Load : MemoryReadInstruction
 {
     /// <summary>
-    /// Load 4 bytes as i32.
+    /// Always <see cref="OpCode.Int32Load"/>.
     /// </summary>
-    public class Int32Load : MemoryReadInstruction
+    public sealed override OpCode OpCode => OpCode.Int32Load;
+
+    /// <summary>
+    /// Creates a new  <see cref="Int32Load"/> instance.
+    /// </summary>
+    public Int32Load()
     {
-        /// <summary>
-        /// Always <see cref="OpCode.Int32Load"/>.
-        /// </summary>
-        public sealed override OpCode OpCode => OpCode.Int32Load;
-
-        /// <summary>
-        /// Creates a new  <see cref="Int32Load"/> instance.
-        /// </summary>
-        public Int32Load()
-        {
-        }
-
-        internal Int32Load(Reader reader)
-            : base(reader)
-        {
-        }
-
-        private protected sealed override WebAssemblyValueType Type => WebAssemblyValueType.Int32;
-
-        private protected sealed override byte Size => 4;
-
-        private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I4;
     }
+
+    internal Int32Load(Reader reader)
+        : base(reader)
+    {
+    }
+
+    private protected sealed override WebAssemblyValueType Type => WebAssemblyValueType.Int32;
+
+    private protected sealed override byte Size => 4;
+
+    private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_I4;
 }

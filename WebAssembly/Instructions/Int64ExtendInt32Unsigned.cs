@@ -1,34 +1,33 @@
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Extend an unsigned 32-bit integer to a 64-bit integer.
+/// </summary>
+public class Int64ExtendInt32Unsigned : SimpleInstruction
 {
     /// <summary>
-    /// Extend an unsigned 32-bit integer to a 64-bit integer.
+    /// Always <see cref="OpCode.Int64ExtendInt32Unsigned"/>.
     /// </summary>
-    public class Int64ExtendInt32Unsigned : SimpleInstruction
+    public sealed override OpCode OpCode => OpCode.Int64ExtendInt32Unsigned;
+
+    /// <summary>
+    /// Creates a new  <see cref="Int64ExtendInt32Unsigned"/> instance.
+    /// </summary>
+    public Int64ExtendInt32Unsigned()
     {
-        /// <summary>
-        /// Always <see cref="OpCode.Int64ExtendInt32Unsigned"/>.
-        /// </summary>
-        public sealed override OpCode OpCode => OpCode.Int64ExtendInt32Unsigned;
+    }
 
-        /// <summary>
-        /// Creates a new  <see cref="Int64ExtendInt32Unsigned"/> instance.
-        /// </summary>
-        public Int64ExtendInt32Unsigned()
-        {
-        }
+    internal sealed override void Compile(CompilationContext context)
+    {
+        var stack = context.Stack;
 
-        internal sealed override void Compile(CompilationContext context)
-        {
-            var stack = context.Stack;
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
-            context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        context.Emit(OpCodes.Conv_U8);
 
-            context.Emit(OpCodes.Conv_U8);
-
-            stack.Push(WebAssemblyValueType.Int64);
-        }
+        stack.Push(WebAssemblyValueType.Int64);
     }
 }

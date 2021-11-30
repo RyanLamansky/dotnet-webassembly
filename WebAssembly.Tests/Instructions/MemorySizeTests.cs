@@ -1,49 +1,48 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="MemorySize"/> instruction.
+/// </summary>
+[TestClass]
+public class MemorySizeTests
 {
     /// <summary>
-    /// Tests the <see cref="MemorySize"/> instruction.
+    /// Tests compilation and execution of the <see cref="MemorySize"/> instruction.
     /// </summary>
-    [TestClass]
-    public class MemorySizeTests
+    [TestMethod]
+    public void CurrentMemory_Compiled()
     {
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="MemorySize"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void CurrentMemory_Compiled()
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType
         {
-            var module = new Module();
-            module.Types.Add(new WebAssemblyType
+            Returns = new[]
             {
-                Returns = new[]
-                {
                     WebAssemblyValueType.Int32,
                 },
-            });
-            module.Functions.Add(new Function
+        });
+        module.Functions.Add(new Function
+        {
+        });
+        module.Exports.Add(new Export
+        {
+            Name = "Test",
+        });
+        module.Codes.Add(new FunctionBody
+        {
+            Code = new Instruction[]
             {
-            });
-            module.Exports.Add(new Export
-            {
-                Name = "Test",
-            });
-            module.Codes.Add(new FunctionBody
-            {
-                Code = new Instruction[]
-                {
                     new MemorySize(),
                     new End(),
-                }
-            });
-            module.Memories.Add(new Memory(1, 1));
+            }
+        });
+        module.Memories.Add(new Memory(1, 1));
 
-            var compiled = module.ToInstance<dynamic>();
+        var compiled = module.ToInstance<dynamic>();
 
-            var exports = compiled.Exports;
+        var exports = compiled.Exports;
 
-            Assert.AreEqual<int>(1, exports.Test());
-        }
+        Assert.AreEqual<int>(1, exports.Test());
     }
 }

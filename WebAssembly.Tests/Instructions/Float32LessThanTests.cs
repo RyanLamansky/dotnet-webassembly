@@ -1,28 +1,28 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="Float32LessThan"/> instruction.
+/// </summary>
+[TestClass]
+public class Float32LessThanTests
 {
     /// <summary>
-    /// Tests the <see cref="Float32LessThan"/> instruction.
+    /// Tests compilation and execution of the <see cref="Float32LessThan"/> instruction.
     /// </summary>
-    [TestClass]
-    public class Float32LessThanTests
+    [TestMethod]
+    public void Float32LessThan_Compiled()
     {
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="Float32LessThan"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void Float32LessThan_Compiled()
-        {
-            var exports = ComparisonTestBase<float>.CreateInstance(
-                new LocalGet(0),
-                new LocalGet(1),
-                new Float32LessThan(),
-                new End());
+        var exports = ComparisonTestBase<float>.CreateInstance(
+            new LocalGet(0),
+            new LocalGet(1),
+            new Float32LessThan(),
+            new End());
 
-            var values = new[]
-            {
+        var values = new[]
+        {
                 0.0f,
                 1.0f,
                 -1.0f,
@@ -35,14 +35,13 @@ namespace WebAssembly.Instructions
                 -(float)double.Epsilon,
             };
 
-            foreach (var comparand in values)
-            {
-                foreach (var value in values)
-                    Assert.AreEqual(comparand < value, exports.Test(comparand, value) != 0);
+        foreach (var comparand in values)
+        {
+            foreach (var value in values)
+                Assert.AreEqual(comparand < value, exports.Test(comparand, value) != 0);
 
-                foreach (var value in values)
-                    Assert.AreEqual(value < comparand, exports.Test(value, comparand) != 0);
-            }
+            foreach (var value in values)
+                Assert.AreEqual(value < comparand, exports.Test(value, comparand) != 0);
         }
     }
 }

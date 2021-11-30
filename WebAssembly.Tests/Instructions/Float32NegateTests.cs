@@ -1,26 +1,25 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="Float32Negate"/> instruction.
+/// </summary>
+[TestClass]
+public class Float32NegateTests
 {
     /// <summary>
-    /// Tests the <see cref="Float32Negate"/> instruction.
+    /// Tests compilation and execution of the <see cref="Float32Negate"/> instruction.
     /// </summary>
-    [TestClass]
-    public class Float32NegateTests
+    [TestMethod]
+    public void Float32Negate_Compiled()
     {
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="Float32Negate"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void Float32Negate_Compiled()
-        {
-            var exports = CompilerTestBase<float>.CreateInstance(
-                new LocalGet(0),
-                new Float32Negate(),
-                new End());
+        var exports = CompilerTestBase<float>.CreateInstance(
+            new LocalGet(0),
+            new Float32Negate(),
+            new End());
 
-            foreach (var value in Samples.Single)
-                Assert.AreEqual(-value, exports.Test(value));
-        }
+        foreach (var value in Samples.Single)
+            Assert.AreEqual(-value, exports.Test(value));
     }
 }

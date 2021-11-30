@@ -1,24 +1,23 @@
 using System.Reflection;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Round to nearest integer towards zero.
+/// </summary>
+public class Float32Truncate : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Round to nearest integer towards zero.
+    /// Always <see cref="OpCode.Float32Truncate"/>.
     /// </summary>
-    public class Float32Truncate : Float64CallWrapperInstruction
+    public sealed override OpCode OpCode => OpCode.Float32Truncate;
+
+    /// <summary>
+    /// Creates a new  <see cref="Float32Truncate"/> instance.
+    /// </summary>
+    public Float32Truncate()
     {
-        /// <summary>
-        /// Always <see cref="OpCode.Float32Truncate"/>.
-        /// </summary>
-        public sealed override OpCode OpCode => OpCode.Float32Truncate;
-
-        /// <summary>
-        /// Creates a new  <see cref="Float32Truncate"/> instance.
-        /// </summary>
-        public Float32Truncate()
-        {
-        }
-
-        private protected sealed override MethodInfo MethodInfo => Float64Truncate.Method;
     }
+
+    private protected sealed override MethodInfo MethodInfo => Float64Truncate.Method;
 }

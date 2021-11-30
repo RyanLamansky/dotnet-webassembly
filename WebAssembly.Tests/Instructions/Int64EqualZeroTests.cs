@@ -1,40 +1,39 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="Int64EqualZero"/> instruction.
+/// </summary>
+[TestClass]
+public class Int64EqualZeroTests
 {
     /// <summary>
-    /// Tests the <see cref="Int64EqualZero"/> instruction.
+    /// A simple test class.
     /// </summary>
-    [TestClass]
-    public class Int64EqualZeroTests
+    public abstract class TestClass
     {
         /// <summary>
-        /// A simple test class.
+        /// A simple test method.
         /// </summary>
-        public abstract class TestClass
-        {
-            /// <summary>
-            /// A simple test method.
-            /// </summary>
-            public abstract int Test(long value);
-        }
+        public abstract int Test(long value);
+    }
 
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="Int64EqualZero"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void Int64EqualZero_Compiled()
+    /// <summary>
+    /// Tests compilation and execution of the <see cref="Int64EqualZero"/> instruction.
+    /// </summary>
+    [TestMethod]
+    public void Int64EqualZero_Compiled()
+    {
+        var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", WebAssemblyValueType.Int32, new[]
         {
-            var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", WebAssemblyValueType.Int32, new[]
-            {
                     WebAssemblyValueType.Int64,
                 },
-                new LocalGet(0),
-                new Int64EqualZero(),
-                new End());
+            new LocalGet(0),
+            new Int64EqualZero(),
+            new End());
 
-            foreach (var value in Samples.Int64)
-                Assert.AreEqual(value == 0, exports.Test(value) != 0);
-        }
+        foreach (var value in Samples.Int64)
+            Assert.AreEqual(value == 0, exports.Test(value) != 0);
     }
 }

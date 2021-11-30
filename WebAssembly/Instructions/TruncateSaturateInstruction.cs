@@ -2,38 +2,38 @@
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Provides shared functionality for instructions that do truncation with saturation.
+/// </summary>
+public abstract class TruncateSaturateInstruction : MiscellaneousInstruction
 {
-    /// <summary>
-    /// Provides shared functionality for instructions that do truncation with saturation.
-    /// </summary>
-    public abstract class TruncateSaturateInstruction : MiscellaneousInstruction
+    private protected TruncateSaturateInstruction()
+        : base()
     {
-        private protected TruncateSaturateInstruction()
-            : base()
+    }
+
+    private protected abstract WebAssemblyValueType InputValueType { get; }
+    private protected abstract WebAssemblyValueType OutputValueType { get; }
+    private protected abstract HelperMethod ConversionHelper { get; }
+    private protected abstract Type InputType { get; }
+    private protected abstract Type OutputType { get; }
+
+    internal sealed override void Compile(CompilationContext context)
+    {
+        var stack = context.Stack;
+
+        context.PopStackNoReturn(this.OpCode, InputValueType);
+
+        context.Emit(OpCodes.Call, context[ConversionHelper, (helper, c) =>
         {
-        }
-
-        private protected abstract WebAssemblyValueType InputValueType { get; }
-        private protected abstract WebAssemblyValueType OutputValueType { get; }
-        private protected abstract HelperMethod ConversionHelper { get; }
-        private protected abstract Type InputType { get; }
-        private protected abstract Type OutputType { get; }
-
-        internal sealed override void Compile(CompilationContext context)
-        {
-            var stack = context.Stack;
-
-            context.PopStackNoReturn(this.OpCode, InputValueType);
-
-            context.Emit(OpCodes.Call, context[ConversionHelper, (helper, c) =>
-            {
-                var builder = c.CheckedExportsBuilder.DefineMethod(
-                    $"☣ {ConversionHelper}",
-                    CompilationContext.HelperMethodAttributes,
-                    OutputType,
-                    new[] { InputType }
-                );
+            var builder = c.CheckedExportsBuilder.DefineMethod(
+                $"☣ {ConversionHelper}",
+                CompilationContext.HelperMethodAttributes,
+                OutputType,
+                new[] { InputType }
+            );
 
                 // The following code is an IL version of this C#,
                 // with "float" and "int" replaced by "double" and "uint"
@@ -55,57 +55,56 @@ namespace WebAssembly.Instructions
 
                 var il = builder.GetILGenerator();
 
-                var notAboveRangeLabel = il.DefineLabel();
-                var notBelowRangeLabel = il.DefineLabel();
-                var notNaNLabel = il.DefineLabel();
+            var notAboveRangeLabel = il.DefineLabel();
+            var notBelowRangeLabel = il.DefineLabel();
+            var notNaNLabel = il.DefineLabel();
 
                 // if (f >= int.MaxValue)
                 il.Emit(OpCodes.Ldarg_0);
-                EmitLoadFloatMaxValue(il);
-                il.Emit(OpCodes.Blt_Un_S, notAboveRangeLabel);
+            EmitLoadFloatMaxValue(il);
+            il.Emit(OpCodes.Blt_Un_S, notAboveRangeLabel);
 
                 // return int.MaxValue
                 EmitLoadIntegerMaxValue(il);
-                il.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Ret);
 
                 // if (f <= int.MinValue)
                 il.MarkLabel(notAboveRangeLabel);
-                il.Emit(OpCodes.Ldarg_0);
-                EmitLoadFloatMinValue(il);
-                il.Emit(OpCodes.Bgt_Un_S, notBelowRangeLabel);
+            il.Emit(OpCodes.Ldarg_0);
+            EmitLoadFloatMinValue(il);
+            il.Emit(OpCodes.Bgt_Un_S, notBelowRangeLabel);
 
                 // return int.MinValue
                 EmitLoadIntegerMinValue(il);
-                il.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Ret);
 
                 // if (float.IsNaN(f))
                 il.MarkLabel(notBelowRangeLabel);
-                il.Emit(OpCodes.Ldarg_0);
-                il.EmitCall(OpCodes.Call, InputType.GetMethod(nameof(float.IsNaN))!, null);
-                il.Emit(OpCodes.Brfalse_S, notNaNLabel);
+            il.Emit(OpCodes.Ldarg_0);
+            il.EmitCall(OpCodes.Call, InputType.GetMethod(nameof(float.IsNaN))!, null);
+            il.Emit(OpCodes.Brfalse_S, notNaNLabel);
 
                 // return 0
                 EmitLoadIntegerZero(il);
-                il.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Ret);
 
                 // return (int)f
                 il.MarkLabel(notNaNLabel);
-                il.Emit(OpCodes.Ldarg_0);
-                EmitConvert(il);
-                il.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Ldarg_0);
+            EmitConvert(il);
+            il.Emit(OpCodes.Ret);
 
-                return builder;
-            }
-            ]);
-
-            stack.Push(OutputValueType);
+            return builder;
         }
+        ]);
 
-        private protected abstract void EmitLoadFloatMaxValue(ILGenerator il);
-        private protected abstract void EmitLoadIntegerMaxValue(ILGenerator il);
-        private protected abstract void EmitLoadFloatMinValue(ILGenerator il);
-        private protected abstract void EmitLoadIntegerMinValue(ILGenerator il);
-        private protected abstract void EmitLoadIntegerZero(ILGenerator il);
-        private protected abstract void EmitConvert(ILGenerator il);
+        stack.Push(OutputValueType);
     }
+
+    private protected abstract void EmitLoadFloatMaxValue(ILGenerator il);
+    private protected abstract void EmitLoadIntegerMaxValue(ILGenerator il);
+    private protected abstract void EmitLoadFloatMinValue(ILGenerator il);
+    private protected abstract void EmitLoadIntegerMinValue(ILGenerator il);
+    private protected abstract void EmitLoadIntegerZero(ILGenerator il);
+    private protected abstract void EmitConvert(ILGenerator il);
 }

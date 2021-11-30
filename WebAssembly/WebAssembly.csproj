@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
     <RepositoryUrl>https://github.com/RyanLamansky/dotnet-webassembly</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

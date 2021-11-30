@@ -1,27 +1,26 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="Float64Nearest"/> instruction.
+/// </summary>
+[TestClass]
+public class Float64NearestTests
 {
     /// <summary>
-    /// Tests the <see cref="Float64Nearest"/> instruction.
+    /// Tests compilation and execution of the <see cref="Float64Nearest"/> instruction.
     /// </summary>
-    [TestClass]
-    public class Float64NearestTests
+    [TestMethod]
+    public void Float64Nearest_Compiled()
     {
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="Float64Nearest"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void Float64Nearest_Compiled()
-        {
-            var exports = CompilerTestBase<double>.CreateInstance(
-                new LocalGet(0),
-                new Float64Nearest(),
-                new End());
+        var exports = CompilerTestBase<double>.CreateInstance(
+            new LocalGet(0),
+            new Float64Nearest(),
+            new End());
 
-            foreach (var value in new[] { 1f, -1f, -Math.PI, Math.PI })
-                Assert.AreEqual(Math.Round(value, MidpointRounding.ToEven), exports.Test(value));
-        }
+        foreach (var value in new[] { 1f, -1f, -Math.PI, Math.PI })
+            Assert.AreEqual(Math.Round(value, MidpointRounding.ToEven), exports.Test(value));
     }
 }

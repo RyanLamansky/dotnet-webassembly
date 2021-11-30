@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30413.136
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31911.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAssembly", "WebAssembly\WebAssembly.csproj", "{E9676C8C-A671-4978-8C62-40BBA257A597}"
 EndProject
@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebAssembly.Tests", "WebAss
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{40D02F4C-D45F-45BE-99DF-D1E48B7CF621}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		LICENSE = LICENSE
@@ -21,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadMeSample", "Examples\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RunExisting", "Examples\RunExisting\RunExisting.csproj", "{E4A73D5E-5A53-4B6C-8034-E350ADC649EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateClassFromWasm", "Examples\GenerateClassFromWasm\GenerateClassFromWasm.csproj", "{447571E7-CE40-4A4D-86E1-104C0141D13B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateClassFromWasm", "Examples\GenerateClassFromWasm\GenerateClassFromWasm.csproj", "{447571E7-CE40-4A4D-86E1-104C0141D13B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

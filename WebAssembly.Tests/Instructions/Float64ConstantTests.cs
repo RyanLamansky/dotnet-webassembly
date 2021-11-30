@@ -1,22 +1,22 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace WebAssembly.Instructions
+namespace WebAssembly.Instructions;
+
+/// <summary>
+/// Tests the <see cref="Float64Constant"/> instruction.
+/// </summary>
+[TestClass]
+public class Float64ConstantTests
 {
     /// <summary>
-    /// Tests the <see cref="Float64Constant"/> instruction.
+    /// Tests compilation and execution of the <see cref="Float64Constant"/> instruction.
     /// </summary>
-    [TestClass]
-    public class Float64ConstantTests
+    [TestMethod]
+    public void Float64Constant_Compiled()
     {
-        /// <summary>
-        /// Tests compilation and execution of the <see cref="Float64Constant"/> instruction.
-        /// </summary>
-        [TestMethod]
-        public void Float64Constant_Compiled()
+        foreach (var sample in new double[]
         {
-            foreach (var sample in new double[]
-            {
                 -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, //Dedicated .NET Opcodes
 				byte.MaxValue,
                 short.MinValue,
@@ -29,13 +29,12 @@ namespace WebAssembly.Instructions
                 long.MaxValue,
                 Math.PI,
                 -Math.PI,
-            })
-            {
-                Assert.AreEqual<double>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float64,
-                    new Float64Constant(sample),
-                    new End()
-                    ).Test());
-            }
+        })
+        {
+            Assert.AreEqual<double>(sample, AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float64,
+                new Float64Constant(sample),
+                new End()
+                ).Test());
         }
     }
 }

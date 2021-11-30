@@ -1,19 +1,18 @@
 ﻿using System;
 
-namespace WebAssembly.Runtime
+namespace WebAssembly.Runtime;
+
+/// <summary>
+/// Describes an error encountered during execution of a compiled WebAssembly.
+/// </summary>
+public abstract class RuntimeException : Exception
 {
     /// <summary>
-    /// Describes an error encountered during execution of a compiled WebAssembly.
+    /// Creates a new <see cref="RuntimeException"/> with the provided message.
     /// </summary>
-    public abstract class RuntimeException : Exception
+    /// <param name="message">Becomes <see cref="Exception.Message"/>.</param>
+    public RuntimeException(string message)
+        : base(message)
     {
-        /// <summary>
-        /// Creates a new <see cref="RuntimeException"/> with the provided message.
-        /// </summary>
-        /// <param name="message">Becomes <see cref="Exception.Message"/>.</param>
-        public RuntimeException(string message)
-            : base(message)
-        {
-        }
     }
 }

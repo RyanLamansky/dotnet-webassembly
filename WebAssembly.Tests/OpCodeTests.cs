@@ -4,28 +4,28 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace WebAssembly
-{
-    /// <summary>
-    /// Tests that <see cref="OpCode"/> names and values are set up correctly.
-    /// </summary>
-    [TestClass]
-    public class OpCodeTests
-    {
-        private static readonly Dictionary<OpCode, OpCodeCharacteristicsAttribute?> opCodeCharacteristicsByOpCode =
-            typeof(OpCode)
-            .GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(field => (field.Attributes & FieldAttributes.Literal) != 0 && (field.Attributes & FieldAttributes.HasDefault) != 0)
-            .ToDictionary(field => (OpCode)field.GetRawConstantValue()!, field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>());
+namespace WebAssembly;
 
-        /// <summary>
-        /// Ensures that the name of an opcode is appropriate for the name assigned to its associated <see cref="OpCodeCharacteristicsAttribute"/>.
-        /// </summary>
-        [TestMethod]
-        public void OpCode_NameMatchesCharacteristics()
-        {
-            var splitter = new[] { '.', '_' };
-            var replacements = new Dictionary<string, string>
+/// <summary>
+/// Tests that <see cref="OpCode"/> names and values are set up correctly.
+/// </summary>
+[TestClass]
+public class OpCodeTests
+{
+    private static readonly Dictionary<OpCode, OpCodeCharacteristicsAttribute?> opCodeCharacteristicsByOpCode =
+        typeof(OpCode)
+        .GetFields(BindingFlags.Public | BindingFlags.Static)
+        .Where(field => (field.Attributes & FieldAttributes.Literal) != 0 && (field.Attributes & FieldAttributes.HasDefault) != 0)
+        .ToDictionary(field => (OpCode)field.GetRawConstantValue()!, field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>());
+
+    /// <summary>
+    /// Ensures that the name of an opcode is appropriate for the name assigned to its associated <see cref="OpCodeCharacteristicsAttribute"/>.
+    /// </summary>
+    [TestMethod]
+    public void OpCode_NameMatchesCharacteristics()
+    {
+        var splitter = new[] { '.', '_' };
+        var replacements = new Dictionary<string, string>
             {
                 { "i32", "Int32" },
                 { "i64", "Int64" },
@@ -64,37 +64,36 @@ namespace WebAssembly
                 { "misc", "MiscellaneousOperationPrefix" },
             };
 
-            foreach (var kv in opCodeCharacteristicsByOpCode)
+        foreach (var kv in opCodeCharacteristicsByOpCode)
+        {
+            var opCode = kv.Key;
+            var characteristics = kv.Value;
+            var expectedName = new StringBuilder();
+
+            Assert.IsNotNull(characteristics);
+
+            var parts = characteristics!.Name.Split(splitter);
+            foreach (var part in parts)
             {
-                var opCode = kv.Key;
-                var characteristics = kv.Value;
-                var expectedName = new StringBuilder();
-
-                Assert.IsNotNull(characteristics);
-
-                var parts = characteristics!.Name.Split(splitter);
-                foreach (var part in parts)
+                if (replacements.TryGetValue(part, out var toAppend))
                 {
-                    if (replacements.TryGetValue(part, out var toAppend))
-                    {
-                        expectedName.Append(toAppend);
-                        continue;
-                    }
-
-                    if (part.StartsWith("eq"))
-                    {
-                        expectedName.Append("Equal");
-                        if (part.Length >= 3 && part[2] == 'z')
-                            expectedName.Append("Zero");
-
-                        continue;
-                    }
-
-                    expectedName.Append(char.ToUpper(part[0])).Append(part[1..]);
+                    expectedName.Append(toAppend);
+                    continue;
                 }
 
-                Assert.AreEqual(expectedName.ToString(), opCode.ToString());
+                if (part.StartsWith("eq"))
+                {
+                    expectedName.Append("Equal");
+                    if (part.Length >= 3 && part[2] == 'z')
+                        expectedName.Append("Zero");
+
+                    continue;
+                }
+
+                expectedName.Append(char.ToUpper(part[0])).Append(part[1..]);
             }
+
+            Assert.AreEqual(expectedName.ToString(), opCode.ToString());
         }
     }
 }
