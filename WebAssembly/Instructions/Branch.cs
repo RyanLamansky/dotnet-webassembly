@@ -70,7 +70,7 @@ public class Branch : Instruction
     /// Provides a native representation of the instruction.
     /// </summary>
     /// <returns>A string representation of this instance.</returns>
-    public override string ToString() => $"{base.ToString()} {Index})";
+    public override string ToString() => $"{base.ToString()} {Index}";
 
     internal sealed override void Compile(CompilationContext context)
     {
