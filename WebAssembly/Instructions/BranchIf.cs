@@ -76,4 +76,10 @@ public class BranchIf : Instruction
 
         context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
     }
+
+    /// <summary>
+    /// Provides a native representation of the instruction and the block index
+    /// </summary>
+    /// <returns>A string representation of this instance and the block index.</returns>
+    public override string ToString() => $"{base.ToString()} {Index}";
 }
