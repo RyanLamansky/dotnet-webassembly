@@ -37,6 +37,8 @@ public class LocalSet : VariableAccessInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (this.Index >= context.CheckedLocals.Length)
+            throw new System.IndexOutOfRangeException($"Attempt to set local at index {this.Index} but only {context.CheckedLocals.Length} {(context.CheckedLocals.Length == 1 ? "local was" : "locals were")} defined.");
         context.PopStackNoReturn(OpCode.LocalSet, context.CheckedLocals[this.Index]);
 
         var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;
