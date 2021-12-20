@@ -105,4 +105,18 @@ public class LocalGetTests
         Assert.AreEqual(9, compiled4.Test(12, 11, 10, 9));
         Assert.AreEqual(999, compiled4.Test(1002, 1001, 1000, 999));
     }
+
+    /// <summary>
+    /// Tests the error message when a local is referenced that isn't defined for the <see cref="LocalGet"/> instruction.
+    /// </summary>
+    [TestMethod]
+    public void GetLocal_Compiled_Parameter_OutOfRange()
+    {
+        var exception = Assert.ThrowsException<ModuleLoadException>(
+            () => AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, new[] { WebAssemblyValueType.Int32 },
+                new LocalGet(1),
+                new End()
+                ));
+        Assert.AreEqual("At offset 37: Attempt to get local at index 1 but only 1 local was defined.", exception.Message);
+    }
 }
