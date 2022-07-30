@@ -1,4 +1,8 @@
-﻿using System.Reflection.Emit;
+﻿#if NETCOREAPP3_0_OR_GREATER
+using System.Numerics;
+using System.Reflection;
+#endif
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -20,11 +24,18 @@ public class Int32CountLeadingZeroes : SimpleInstruction
     {
     }
 
+#if NETCOREAPP3_0_OR_GREATER
+    private static readonly MethodInfo leadingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.LeadingZeroCount), new[] { typeof(uint) })!;
+#endif
+
     internal sealed override void Compile(CompilationContext context)
     {
         //Assuming validation passes, the remaining type will be Int32.
         context.ValidateStack(OpCode.Int32CountLeadingZeroes, WebAssemblyValueType.Int32);
 
+#if NETCOREAPP3_0_OR_GREATER
+        context.Emit(OpCodes.Call, leadingZeroCount);
+#else
         context.Emit(OpCodes.Call, context[HelperMethod.Int32CountLeadingZeroes, (helper, c) =>
         {
             var result = context.CheckedExportsBuilder.DefineMethod(
@@ -80,6 +91,7 @@ public class Int32CountLeadingZeroes : SimpleInstruction
 
             return result;
         }
-        ]);
+        ]);  
+#endif
     }
 }

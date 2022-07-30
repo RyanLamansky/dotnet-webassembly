@@ -26,6 +26,7 @@ enum HelperMethod
     Float32CopySign,
     Float64CopySign,
     GrowMemory,
+#if !NETCOREAPP3_0_OR_GREATER
     Int32CountOneBits,
     Int64CountOneBits,
     Int32CountLeadingZeroes,
@@ -36,6 +37,7 @@ enum HelperMethod
     Int32RotateRight,
     Int64RotateLeft,
     Int64RotateRight,
+#endif
     Int32TruncateSaturateFloat32Signed,
     Int32TruncateSaturateFloat32Unsigned,
     Int32TruncateSaturateFloat64Signed,

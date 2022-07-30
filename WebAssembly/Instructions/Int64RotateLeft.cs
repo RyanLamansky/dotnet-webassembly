@@ -1,4 +1,8 @@
-﻿using System.Reflection.Emit;
+﻿#if NETCOREAPP3_0_OR_GREATER
+using System.Numerics;
+using System.Reflection;
+#endif
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -20,6 +24,10 @@ public class Int64RotateLeft : SimpleInstruction
     {
     }
 
+#if NETCOREAPP3_0_OR_GREATER
+    private static readonly MethodInfo rotateLeft = typeof(BitOperations).GetMethod(nameof(BitOperations.RotateLeft), new[] { typeof(ulong), typeof(int) })!;
+#endif
+
     internal sealed override void Compile(CompilationContext context)
     {
         var stack = context.Stack;
@@ -27,6 +35,10 @@ public class Int64RotateLeft : SimpleInstruction
         context.PopStackNoReturn(OpCode.Int64RotateLeft, WebAssemblyValueType.Int64, WebAssemblyValueType.Int64);
         stack.Push(WebAssemblyValueType.Int64);
 
+#if NETCOREAPP3_0_OR_GREATER
+        context.Emit(OpCodes.Conv_I4);
+        context.Emit(OpCodes.Call, rotateLeft);
+#else
         context.Emit(OpCodes.Call, context[HelperMethod.Int64RotateLeft, (helper, c) =>
         {
             var builder = c.CheckedExportsBuilder.DefineMethod(
@@ -62,5 +74,6 @@ public class Int64RotateLeft : SimpleInstruction
             return builder;
         }
         ]);
+#endif
     }
 }

@@ -1,4 +1,8 @@
-﻿using System.Reflection.Emit;
+﻿#if NETCOREAPP3_0_OR_GREATER
+using System.Numerics;
+using System.Reflection;
+#endif
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -20,11 +24,18 @@ public class Int32CountTrailingZeroes : SimpleInstruction
     {
     }
 
+#if NETCOREAPP3_0_OR_GREATER
+    private static readonly MethodInfo trailingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.TrailingZeroCount), new[] { typeof(uint) })!;
+#endif
+
     internal sealed override void Compile(CompilationContext context)
     {
         //Assuming validation passes, the remaining type will be this.
         context.ValidateStack(OpCode.Int32CountTrailingZeroes, WebAssemblyValueType.Int32);
 
+#if NETCOREAPP3_0_OR_GREATER
+        context.Emit(OpCodes.Call, trailingZeroCount);
+#else
         context.Emit(OpCodes.Call, context[HelperMethod.Int32CountTrailingZeroes, (helper, c) =>
         {
             var result = context.CheckedExportsBuilder.DefineMethod(
@@ -49,5 +60,6 @@ public class Int32CountTrailingZeroes : SimpleInstruction
             return result;
         }
         ]);
+#endif
     }
 }

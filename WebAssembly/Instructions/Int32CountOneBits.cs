@@ -1,4 +1,8 @@
-﻿using System.Reflection.Emit;
+﻿#if NETCOREAPP3_0_OR_GREATER
+using System.Numerics;
+using System.Reflection;
+#endif
+using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -20,11 +24,18 @@ public class Int32CountOneBits : SimpleInstruction
     {
     }
 
+#if NETCOREAPP3_0_OR_GREATER
+    private static readonly MethodInfo popCount = typeof(BitOperations).GetMethod(nameof(BitOperations.PopCount), new[] { typeof(uint) })!;
+#endif
+
     internal sealed override void Compile(CompilationContext context)
     {
         //Assuming validation passes, the remaining type will be Int32.
         context.ValidateStack(OpCode.Int32CountOneBits, WebAssemblyValueType.Int32);
 
+#if NETCOREAPP3_0_OR_GREATER
+        context.Emit(OpCodes.Call, popCount);
+#else
         context.Emit(OpCodes.Call, context[HelperMethod.Int32CountOneBits, CreateHelper]);
     }
 
@@ -71,7 +82,7 @@ public class Int32CountOneBits : SimpleInstruction
         il.Emit(OpCodes.Ldc_I4_S, 24);
         il.Emit(OpCodes.Shr_Un);
         il.Emit(OpCodes.Ret);
-
         return result;
+#endif
     }
 }
