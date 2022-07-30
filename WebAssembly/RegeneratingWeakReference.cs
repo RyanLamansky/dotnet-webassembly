@@ -2,7 +2,7 @@
 
 namespace WebAssembly;
 
-struct RegeneratingWeakReference<T>
+readonly struct RegeneratingWeakReference<T>
     where T : class
 {
     private readonly WeakReference<T> reference;

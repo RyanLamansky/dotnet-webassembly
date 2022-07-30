@@ -152,7 +152,7 @@ public static class Compile
         };
     }
 
-    private struct Local
+    private readonly struct Local
     {
         public Local(Reader reader)
         {
