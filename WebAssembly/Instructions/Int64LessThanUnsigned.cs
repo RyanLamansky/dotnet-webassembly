@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int64LessThanUnsigned : ValueTwoToInt32Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64LessThanUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64LessThanUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64LessThanUnsigned;
 

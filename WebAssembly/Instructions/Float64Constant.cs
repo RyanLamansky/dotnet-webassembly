@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float64Constant : Constant<double>
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Constant"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Constant"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Constant;
 

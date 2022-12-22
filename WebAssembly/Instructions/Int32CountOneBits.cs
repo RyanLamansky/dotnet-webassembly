@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Int32CountOneBits : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32CountOneBits"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32CountOneBits"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32CountOneBits;
 

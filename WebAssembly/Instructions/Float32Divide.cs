@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float32Divide : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Divide"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Divide"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Divide;
 

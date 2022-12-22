@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32Equal : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32Equal"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32Equal"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32Equal;
 

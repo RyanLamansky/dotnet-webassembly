@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int32WrapInt64 : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32WrapInt64"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32WrapInt64"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32WrapInt64;
 

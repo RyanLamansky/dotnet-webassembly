@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float32CopySign : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32CopySign"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32CopySign"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32CopySign;
 

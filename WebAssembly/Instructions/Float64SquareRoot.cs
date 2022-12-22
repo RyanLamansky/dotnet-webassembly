@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float64SquareRoot : ValueOneToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64SquareRoot"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64SquareRoot"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64SquareRoot;
 

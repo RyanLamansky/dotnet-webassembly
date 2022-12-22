@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Drop : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Drop"/>.
+    /// Always <see cref="WebAssembly.OpCode.Drop"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Drop;
 

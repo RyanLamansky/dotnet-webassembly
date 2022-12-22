@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32RemainderSigned : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32RemainderSigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32RemainderSigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32RemainderSigned;
 

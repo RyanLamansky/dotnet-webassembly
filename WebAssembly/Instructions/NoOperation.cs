@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class NoOperation : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.NoOperation"/>.
+    /// Always <see cref="WebAssembly.OpCode.NoOperation"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.NoOperation;
 

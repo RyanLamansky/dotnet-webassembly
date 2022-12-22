@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Return : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Return"/>.
+    /// Always <see cref="WebAssembly.OpCode.Return"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Return;
 

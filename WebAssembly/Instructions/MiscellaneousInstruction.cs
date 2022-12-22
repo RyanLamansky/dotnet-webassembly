@@ -10,7 +10,7 @@ public abstract class MiscellaneousInstruction : Instruction
     }
 
     /// <summary>
-    /// Always <see cref="OpCode.MiscellaneousOperationPrefix"/>.
+    /// Always <see cref="WebAssembly.OpCode.MiscellaneousOperationPrefix"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.MiscellaneousOperationPrefix;
 

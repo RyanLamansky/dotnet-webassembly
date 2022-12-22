@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable CS0618 // Type or member is obsolete: used for internal methods
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

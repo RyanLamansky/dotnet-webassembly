@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int32Constant : Constant<int>
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32Constant"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32Constant"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32Constant;
 

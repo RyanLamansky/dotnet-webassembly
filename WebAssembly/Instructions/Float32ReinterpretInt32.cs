@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float32ReinterpretInt32 : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32ReinterpretInt32"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32ReinterpretInt32"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32ReinterpretInt32;
 

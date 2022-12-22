@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Block : BlockTypeInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Block"/>.
+    /// Always <see cref="WebAssembly.OpCode.Block"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Block;
 

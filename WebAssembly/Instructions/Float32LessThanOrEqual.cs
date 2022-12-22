@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float32LessThanOrEqual : ValueTwoToInt32NotEqualZeroInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32LessThanOrEqual"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32LessThanOrEqual"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32LessThanOrEqual;
 

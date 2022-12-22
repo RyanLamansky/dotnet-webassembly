@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int64ExclusiveOr : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64ExclusiveOr"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64ExclusiveOr"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64ExclusiveOr;
 

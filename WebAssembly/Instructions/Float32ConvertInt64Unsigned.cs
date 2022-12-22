@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float32ConvertInt64Unsigned : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32ConvertInt64Unsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32ConvertInt64Unsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32ConvertInt64Unsigned;
 

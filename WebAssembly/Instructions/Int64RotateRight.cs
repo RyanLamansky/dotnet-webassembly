@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Int64RotateRight : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64RotateRight"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64RotateRight"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64RotateRight;
 

@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float64Divide : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Divide"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Divide"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Divide;
 

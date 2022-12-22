@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Int32CountLeadingZeroes : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32CountLeadingZeroes"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32CountLeadingZeroes"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32CountLeadingZeroes;
 

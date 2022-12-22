@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float32GreaterThan : ValueTwoToInt32Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32GreaterThan"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32GreaterThan"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32GreaterThan;
 

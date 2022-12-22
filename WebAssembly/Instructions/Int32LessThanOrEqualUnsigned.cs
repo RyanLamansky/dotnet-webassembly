@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32LessThanOrEqualUnsigned : ValueTwoToInt32NotEqualZeroInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32LessThanOrEqualUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32LessThanOrEqualUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32LessThanOrEqualUnsigned;
 

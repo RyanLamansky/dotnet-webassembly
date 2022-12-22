@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class LocalSet : VariableAccessInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.LocalSet"/>.
+    /// Always <see cref="WebAssembly.OpCode.LocalSet"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.LocalSet;
 

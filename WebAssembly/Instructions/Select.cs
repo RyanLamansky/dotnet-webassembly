@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions;
 public class Select : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Select"/>.
+    /// Always <see cref="WebAssembly.OpCode.Select"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Select;
 

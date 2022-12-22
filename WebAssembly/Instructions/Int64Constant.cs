@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int64Constant : Constant<long>
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64Constant"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64Constant"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64Constant;
 

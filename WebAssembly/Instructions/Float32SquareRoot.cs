@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32SquareRoot : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32SquareRoot"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32SquareRoot"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32SquareRoot;
 

@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32Ceiling : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Ceiling"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Ceiling"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Ceiling;
 

@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class GlobalSet : VariableAccessInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.GlobalSet"/>.
+    /// Always <see cref="WebAssembly.OpCode.GlobalSet"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.GlobalSet;
 

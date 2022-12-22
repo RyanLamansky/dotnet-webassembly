@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class LocalTee : VariableAccessInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.LocalTee"/>.
+    /// Always <see cref="WebAssembly.OpCode.LocalTee"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.LocalTee;
 

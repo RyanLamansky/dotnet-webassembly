@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float64Nearest : ValueOneToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Nearest"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Nearest"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Nearest;
 

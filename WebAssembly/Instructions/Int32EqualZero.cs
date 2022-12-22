@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int32EqualZero : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32EqualZero"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32EqualZero"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32EqualZero;
 

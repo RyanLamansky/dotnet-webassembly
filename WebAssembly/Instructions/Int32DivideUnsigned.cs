@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32DivideUnsigned : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32DivideUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32DivideUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32DivideUnsigned;
 

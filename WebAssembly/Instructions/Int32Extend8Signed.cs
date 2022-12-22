@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int32Extend8Signed : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32Extend8Signed"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32Extend8Signed"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32Extend8Signed;
 

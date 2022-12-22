@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float64Truncate : ValueOneToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Truncate"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Truncate"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Truncate;
 

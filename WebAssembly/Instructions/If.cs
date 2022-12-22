@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class If : BlockTypeInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.If"/>.
+    /// Always <see cref="WebAssembly.OpCode.If"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.If;
 

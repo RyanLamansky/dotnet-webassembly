@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Unreachable : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Unreachable"/>.
+    /// Always <see cref="WebAssembly.OpCode.Unreachable"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Unreachable;
 

@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int64EqualZero : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64EqualZero"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64EqualZero"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64EqualZero;
 

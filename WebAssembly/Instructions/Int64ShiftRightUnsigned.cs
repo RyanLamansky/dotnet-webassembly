@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int64ShiftRightUnsigned : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64ShiftRightUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64ShiftRightUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64ShiftRightUnsigned;
 

@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float32Minimum : ValueTwoToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Minimum"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Minimum"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Minimum;
 

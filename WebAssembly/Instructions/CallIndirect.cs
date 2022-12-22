@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class CallIndirect : Instruction, IEquatable<CallIndirect>
 {
     /// <summary>
-    /// Always <see cref="OpCode.CallIndirect"/>.
+    /// Always <see cref="WebAssembly.OpCode.CallIndirect"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.CallIndirect;
 

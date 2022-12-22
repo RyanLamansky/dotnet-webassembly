@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int64ShiftLeft : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64ShiftLeft"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64ShiftLeft"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64ShiftLeft;
 

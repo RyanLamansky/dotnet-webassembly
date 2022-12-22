@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float64Negate : ValueOneToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Negate"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Negate"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Negate;
 
