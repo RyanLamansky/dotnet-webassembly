@@ -3,10 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using WebAssembly.Instructions;
 using ILOpCode = System.Reflection.Emit.OpCode;
 
 namespace WebAssembly.Runtime.Compilation;
+
+internal struct ReturnContext
+{
+    public ReturnContext(int[] localIndexes, Label label)
+    {
+        LocalIndexes = localIndexes;
+        Label = label;
+    }
+
+    public int[] LocalIndexes { get; }
+
+    public Label Label { get; }
+}
 
 internal sealed class CompilationContext
 {
@@ -33,12 +47,14 @@ internal sealed class CompilationContext
     public void Reset(
         ILGenerator generator,
         Signature signature,
-        WebAssemblyValueType[] locals
+        WebAssemblyValueType[] locals,
+        ReturnContext? returnContext
         )
     {
         this.generator = generator;
         this.Signature = signature;
         this.Locals = locals;
+        this.ReturnContext = returnContext;
 
         this.Depth.Clear();
         {
@@ -68,6 +84,10 @@ internal sealed class CompilationContext
 
         this.Labels.Add(0, generator.DefineLabel());
     }
+
+    public ReturnContext? ReturnContext { get; set; }
+
+    public Tag[]? Tags;
 
     public Signature[]? FunctionSignatures;
 
@@ -128,6 +148,8 @@ internal sealed class CompilationContext
 
     public readonly HashSet<Label> LoopLabels = new();
 
+    public readonly HashSet<Label> ExceptionLabels = new();
+
     public readonly Stack<WebAssemblyValueType> Stack = new();
 
     public readonly Dictionary<int, BlockContext> BlockContexts = new();
@@ -150,6 +172,63 @@ internal sealed class CompilationContext
             this.ExportsBuilder = value ?? throw new ArgumentNullException(nameof(value));
         }
     }
+
+    public Label BeginExceptionBlock() => CheckedGenerator.BeginExceptionBlock();
+
+    public void BeginCatchBlock(uint id)
+    {
+        var tag = this.Tags?[id] ?? throw new InvalidOperationException();
+        var type = this.Types?[tag.TypeIndex] ?? throw new InvalidOperationException();
+        var exceptionType = type.ToException();
+
+        var variable = this.CheckedGenerator.DeclareLocal(exceptionType);
+
+        var endFilter = CheckedGenerator.DefineLabel();
+        var checkIdLabel = CheckedGenerator.DefineLabel();
+
+        CheckedGenerator.BeginExceptFilterBlock();
+
+        // Check instance
+        CheckedGenerator.Emit(OpCodes.Isinst, exceptionType);
+        CheckedGenerator.Emit(OpCodes.Dup);
+        CheckedGenerator.Emit(OpCodes.Brtrue, checkIdLabel);
+
+        // Not a WebAssemblyException, so rethrow.
+        CheckedGenerator.Emit(OpCodes.Pop);
+        CheckedGenerator.Emit(OpCodes.Ldc_I4_0);
+        CheckedGenerator.Emit(OpCodes.Br, endFilter);
+
+        CheckedGenerator.MarkLabel(checkIdLabel);
+
+        // Store variable
+        CheckedGenerator.Emit(OpCodes.Stloc, variable);
+        CheckedGenerator.Emit(OpCodes.Ldloc, variable);
+
+        // Check ID
+        var tagIndexProperty = exceptionType.GetProperty(nameof(WebAssemblyException.TagIndex)) ?? throw new InvalidOperationException();
+        CheckedGenerator.Emit(OpCodes.Callvirt, tagIndexProperty.GetGetMethod() ?? throw new InvalidOperationException());
+        CheckedGenerator.Emit(OpCodes.Ldc_I4, id);
+        CheckedGenerator.Emit(OpCodes.Ceq);
+
+        CheckedGenerator.MarkLabel(endFilter);
+        CheckedGenerator.BeginCatchBlock(null!);
+
+        // Load arguments
+        for (var i = type.ParameterTypes.Length - 1; i >= 0; i--)
+        {
+            CheckedGenerator.Emit(OpCodes.Ldloc, variable);
+            var property = exceptionType.GetProperty($"Param{i}") ?? throw new InvalidOperationException();
+            CheckedGenerator.Emit(OpCodes.Callvirt, property.GetGetMethod() ?? throw new InvalidOperationException());
+        }
+    }
+
+    public void BeginCatchAllBlock()
+    {
+        CheckedGenerator.BeginCatchBlock(typeof(WebAssemblyException));
+        CheckedGenerator.Emit(OpCodes.Pop);
+    }
+
+    public void EndExceptionBlock() => CheckedGenerator.EndExceptionBlock();
 
     private ILGenerator CheckedGenerator => this.generator ?? throw new InvalidOperationException();
 

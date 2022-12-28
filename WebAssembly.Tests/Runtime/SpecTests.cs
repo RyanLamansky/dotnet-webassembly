@@ -932,4 +932,20 @@ public class SpecTests
     {
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "utf8-import-module"), "utf8-import-module.json");
     }
+
+    /// <summary>
+    /// Runs the switch tests.
+    /// </summary>
+    [TestMethod]
+    public void SpecTest_throw()
+    {
+        var skips = new HashSet<uint>
+        {
+            47, // TODO: Validate for invalid tags
+            48, // TODO: Validate for invalid argument types
+            50, // TODO: Validate for invalid argument types
+        };
+
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "throw"), "throw.json", skips.Contains);
+    }
 }
