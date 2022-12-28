@@ -948,4 +948,20 @@ public class SpecTests
 
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "throw"), "throw.json", skips.Contains);
     }
+
+    /// <summary>
+    /// Runs the switch tests.
+    /// </summary>
+    [TestMethod]
+    public void SpecTest_rethrow()
+    {
+        var skips = new HashSet<uint>
+        {
+            93, // TODO: Validate invalid rethrow
+            94, // TODO: Validate invalid rethrow
+            95, // TODO: Validate invalid rethrow
+        };
+
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "rethrow"), "rethrow.json", skips.Contains);
+    }
 }

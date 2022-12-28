@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -38,11 +37,7 @@ public class Throw : TagInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var tag = context.Tags?[this.Index] ?? throw new InvalidOperationException($"Tag {this.Index} not found.");
-        var type = context.Types?[tag.TypeIndex] ?? throw new InvalidOperationException($"Type {tag.TypeIndex} not found.");
-
-        if (tag == null)
-            throw new InvalidOperationException($"Type index {this.Index} not found.");
+        var type = context.GetTagType(this.Index);
 
         var exceptionType = type.ToException();
         var constructor = exceptionType.GetConstructors().Single();

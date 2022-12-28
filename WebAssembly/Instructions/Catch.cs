@@ -36,34 +36,7 @@ public class Catch : TagInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var tag = context.Tags?[Index];
-
-        if (tag is null)
-        {
-            throw new InvalidOperationException($"Tag {Index} not found.");
-        }
-
-        var type = context.Types?[tag.TypeIndex];
-
-        if (type is null)
-        {
-            throw new InvalidOperationException($"Type {tag.TypeIndex} not found.");
-        }
-
-        var depth = checked((uint)context.Depth.Count - 1);
-        var label = context.Labels[depth];
-
-        if (!context.ExceptionLabels.Contains(label))
-        {
-            throw new InvalidOperationException("CatchAll must be inside a try block");
-        }
-
         context.BeginCatchBlock(Index);
         context.MarkReachable();
-
-        foreach (var parameterType in type.RawParameterTypes)
-        {
-            context.Stack.Push(parameterType);
-        }
     }
 }

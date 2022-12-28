@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Text;
 using WebAssembly.Instructions;
 using ILOpCode = System.Reflection.Emit.OpCode;
@@ -173,12 +174,51 @@ internal sealed class CompilationContext
         }
     }
 
-    public Label BeginExceptionBlock() => CheckedGenerator.BeginExceptionBlock();
+    private Stack<(LocalBuilder? Variable, WebAssemblyValueType? Type, int StackCount)> exceptionStackCount = new();
+
+    public Label BeginExceptionBlock(BlockType blockType)
+    {
+        LocalBuilder? variable = null;
+        WebAssemblyValueType? wasmType = null;
+
+        if (blockType.TryToValueType(out var type))
+        {
+            variable = CheckedGenerator.DeclareLocal(type.ToSystemType());
+            wasmType = type;
+        }
+
+        this.exceptionStackCount.Push((variable, wasmType, Stack.Count));
+        return CheckedGenerator.BeginExceptionBlock();
+    }
+
+    private void SetTryResult()
+    {
+        if (this.IsUnreachable)
+            return;
+
+        var (variable, webAssemblyValueType, stackCount) = this.exceptionStackCount.Peek();
+
+        if (variable is not null)
+        {
+            var type = Stack.Pop();
+
+            if (type != webAssemblyValueType)
+                throw new InvalidOperationException($"Type mismatch in exception block. Expected {webAssemblyValueType}, got {type}.");
+
+            CheckedGenerator.Emit(OpCodes.Stloc, variable);
+        }
+
+        if (Stack.Count > stackCount)
+        {
+            throw new InvalidOperationException($"Stack count mismatch (expected {stackCount}, found {Stack.Count}).");
+        }
+    }
 
     public void BeginCatchBlock(uint id)
     {
-        var tag = this.Tags?[id] ?? throw new InvalidOperationException();
-        var type = this.Types?[tag.TypeIndex] ?? throw new InvalidOperationException();
+        SetTryResult();
+
+        var type = GetTagType(id);
         var exceptionType = type.ToException();
 
         var variable = this.CheckedGenerator.DeclareLocal(exceptionType);
@@ -214,23 +254,49 @@ internal sealed class CompilationContext
         CheckedGenerator.BeginCatchBlock(null!);
 
         // Load arguments
+        CheckedGenerator.Emit(OpCodes.Pop);
+
         for (var i = type.ParameterTypes.Length - 1; i >= 0; i--)
         {
-            CheckedGenerator.Emit(OpCodes.Ldloc, variable);
             var property = exceptionType.GetProperty($"Param{i}") ?? throw new InvalidOperationException();
+
+            CheckedGenerator.Emit(OpCodes.Ldloc, variable);
             CheckedGenerator.Emit(OpCodes.Callvirt, property.GetGetMethod() ?? throw new InvalidOperationException());
+
+            Stack.Push(type.RawParameterTypes[i]);
         }
     }
 
     public void BeginCatchAllBlock()
     {
+        SetTryResult();
+
+        var variable = this.CheckedGenerator.DeclareLocal(typeof(WebAssemblyException));
+
         CheckedGenerator.BeginCatchBlock(typeof(WebAssemblyException));
-        CheckedGenerator.Emit(OpCodes.Pop);
+        CheckedGenerator.Emit(OpCodes.Stloc, variable);
     }
 
-    public void EndExceptionBlock() => CheckedGenerator.EndExceptionBlock();
+    public void Rethrow()
+    {
+        CheckedGenerator.Emit(OpCodes.Rethrow);
+        MarkUnreachable();
+    }
 
-    private ILGenerator CheckedGenerator => this.generator ?? throw new InvalidOperationException();
+    public void EndExceptionBlock()
+    {
+        SetTryResult();
+
+        CheckedGenerator.EndExceptionBlock();
+
+        if (exceptionStackCount.Pop() is { Variable: {} variable, Type: {} type })
+        {
+            CheckedGenerator.Emit(OpCodes.Ldloc, variable);
+            Stack.Push(type);
+        }
+    }
+
+    internal ILGenerator CheckedGenerator => this.generator ?? throw new InvalidOperationException();
 
     public Signature CheckedSignature => this.Signature ?? throw new InvalidOperationException();
 
@@ -437,6 +503,19 @@ internal sealed class CompilationContext
     public void MarkReachable()
     {
         this.CurrentBlockContext.MarkReachable();
+    }
+
+    public Signature GetTagType(uint tagIndex)
+    {
+        if (Tags == null || tagIndex >= Tags.Length)
+            throw new ArgumentOutOfRangeException(nameof(tagIndex));
+
+        var tag = Tags[tagIndex];
+
+        if (Types == null || tag.TypeIndex >= Types.Length)
+            throw new InvalidOperationException("Invalid tag type index.");
+
+        return Types[tag.TypeIndex];
     }
 
     public bool IsUnreachable => this.CurrentBlockContext.IsUnreachable;

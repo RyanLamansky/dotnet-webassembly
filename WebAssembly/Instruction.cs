@@ -133,6 +133,7 @@ public abstract class Instruction : IEquatable<Instruction>
                     depth++;
                     break;
 
+                case OpCode.Rethrow: yield return new Rethrow(reader); break;
                 case OpCode.Throw: yield return new Throw(reader); break;
                 case OpCode.Catch: yield return new Catch(reader); break;
                 case OpCode.CatchAll: yield return new CatchAll(); break;

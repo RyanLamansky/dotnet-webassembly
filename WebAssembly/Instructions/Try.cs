@@ -37,7 +37,7 @@ public class Try : BlockTypeInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var label = context.BeginExceptionBlock();
+        var label = context.BeginExceptionBlock(Type);
         context.ExceptionLabels.Add(label);
         context.Labels.Add(checked((uint)context.Depth.Count), label);
         context.Depth.Push(this);
