@@ -12,7 +12,7 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
   - `Module.ReadFromBinary` reads a stream into an instance, which can then be inspected and modified through its properties.
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
-  - There are no known issues with this functionality and the API is stable.
+  - WebAssembly 1.0 is fully supported, but support for newer versions is incomplete.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
   - This feature doesn't have 100% spec compliance so it may not work with every WASM you provide.
 
@@ -104,17 +104,6 @@ static class Program
     }
 }
 ```
-
-## Current Development Objectives
-
-Informational; there is no timelime for completion of these items.
-
-- Improve official specification compliance, using Google Chrome as the reference for correct behavior.
-- Improve exceptions thrown from problems found during compilation or execution.
-- Provide a mechanism to replace the `System.Reflection.Emit.AssemblyBuilder`-affiliated methods with replacements so that something like Mono.Cecil can be used to produce a DLL.
-- If https://github.com/dotnet/corefx/issues/4491 is fixed, use it to enable saving DLLs.
-- Remove the compiler's Data section segment size limit of 4128768 bytes.
-- Add support for new WebAssembly features as they become standardized.
 
 ## Other Information
 
