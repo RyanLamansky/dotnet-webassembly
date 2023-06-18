@@ -1085,13 +1085,9 @@ static class OpCodeExtensions
         () => typeof(OpCode)
             .GetFields()
             .Where(field => field.IsStatic)
-            .Select(field => new KeyValuePair<OpCode, string>((OpCode)field.GetValue(null)!, field.GetCustomAttribute<OpCodeCharacteristicsAttribute>()!.Name))
-            .ToDictionary(kv => kv.Key, kv => kv.Value)
+            .ToDictionary(field => (OpCode)field.GetValue(null)!, field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>()!.Name)
         );
 
     public static string ToNativeName(this OpCode opCode)
-    {
-        opCodeNativeNamesByOpCode.Reference.TryGetValue(opCode, out var result);
-        return result!;
-    }
+        => opCodeNativeNamesByOpCode.Reference[opCode];
 }

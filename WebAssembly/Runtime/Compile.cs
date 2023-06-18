@@ -268,8 +268,9 @@ public static class Compile
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
-            if (id != 0 && (Section)id < previousSection)
+            if (!((Section)id).IsInOrder(previousSection))
                 throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
+
             var payloadLength = reader.ReadVarUInt32();
 
             switch ((Section)id)
@@ -499,6 +500,11 @@ public static class Compile
                     if (memory == null)
                         throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
                     SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
+                    break;
+
+                case Section.DataCount:
+                    // This section is optional so not currently relying on it.
+                    reader.ReadVarInt64();
                     break;
 
                 default:

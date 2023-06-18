@@ -224,8 +224,6 @@ public class Module
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
-                if (id != 0 && (Section)id < previousSection)
-                    throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
                 var payloadLength = reader.ReadVarUInt32();
 
                 switch ((Section)id)
@@ -348,6 +346,11 @@ public class Module
                         }
                         break;
 
+                    case Section.DataCount:
+                        // The module reader is tolerant of invalid WASM files so this section is ignored.
+                        reader.ReadVarInt64();
+                        break;
+
                     default:
                         throw new ModuleLoadException($"Unrecognized section type {id}.", preSectionOffset);
                 }
@@ -366,6 +369,9 @@ public class Module
             throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
         }
         catch (Exception x)
+#if DEBUG
+        when (!Debugger.IsAttached)
+#endif
         {
             throw new ModuleLoadException(x.Message, reader.Offset, x);
         }

@@ -56,6 +56,30 @@ public enum MiscellaneousOpCode : byte
     /// </summary>
     [OpCodeCharacteristics("i64.trunc_sat_f64_u")]
     Int64TruncateSaturateFloat64Unsigned = 0x07,
+
+    /// <summary>
+    /// Initialize memory.
+    /// </summary>
+    [OpCodeCharacteristics("memory.init")]
+    MemoryInitialize = 0x08,
+
+    /// <summary>
+    /// Drop a data element to release memory.
+    /// </summary>
+    [OpCodeCharacteristics("data.drop")]
+    DataDrop = 0x09,
+
+    /// <summary>
+    /// Copy bytes from one area in memory to another.
+    /// </summary>
+    [OpCodeCharacteristics("memory.copy")]
+    MemoryCopy = 0x0A,
+
+    /// <summary>
+    /// Fills memory bytes to a specific value.
+    /// </summary>
+    [OpCodeCharacteristics("memory.fill")]
+    MemoryFill = 0x0B,
 }
 
 static class MiscellaneousOpCodeExtensions
@@ -64,13 +88,9 @@ static class MiscellaneousOpCodeExtensions
         () => typeof(MiscellaneousOpCode)
             .GetFields()
             .Where(field => field.IsStatic)
-            .Select(field => new KeyValuePair<MiscellaneousOpCode, string>((MiscellaneousOpCode)field.GetValue(null)!, field.GetCustomAttribute<OpCodeCharacteristicsAttribute>()!.Name))
-            .ToDictionary(kv => kv.Key, kv => kv.Value)
+            .ToDictionary(field => (MiscellaneousOpCode)field.GetValue(null)!, field => field.GetCustomAttribute<OpCodeCharacteristicsAttribute>()!.Name)
     );
 
     public static string ToNativeName(this MiscellaneousOpCode opCode)
-    {
-        opCodeNativeNamesByOpCode.Reference.TryGetValue(opCode, out var result);
-        return result!;
-    }
+        => opCodeNativeNamesByOpCode.Reference[opCode];
 }

@@ -301,7 +301,7 @@ public abstract class Instruction : IEquatable<Instruction>
 
                 case OpCode.MiscellaneousOperationPrefix:
                     var miscellaneousOpCodeOffset = reader.Offset;
-                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadByte();
+                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadVarInt64();
                     switch (miscellaneousOpCode)
                     {
                         default: throw new ModuleLoadException($"Don't know how to parse miscellaneous opcode \"{miscellaneousOpCode}\".", miscellaneousOpCodeOffset);
@@ -313,6 +313,22 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned: yield return new Int64TruncateSaturateFloat32Unsigned(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed: yield return new Int64TruncateSaturateFloat64Signed(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned: yield return new Int64TruncateSaturateFloat64Unsigned(); break;
+                        
+                        case MiscellaneousOpCode.MemoryInitialize:
+                            yield return new MemoryInitialize();
+                            break;
+                        
+                        case MiscellaneousOpCode.DataDrop:
+                            yield return new DataDrop();
+                            break;
+                        
+                        case MiscellaneousOpCode.MemoryCopy:
+                            yield return new MemoryCopy();
+                            break;
+                        
+                        case MiscellaneousOpCode.MemoryFill:
+                            yield return new MemoryFill();
+                            break;
                     }
                     break;
             }
