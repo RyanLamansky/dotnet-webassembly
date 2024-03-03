@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- .NET Core 3.1 is selected as the baseline for a good balance of compatibility and features, and is fully supported by .NET 5+. -->
-    <TargetFrameworks>netcoreapp3.1;netstandard2.0</TargetFrameworks>
+    <!-- I'd prefer to set a much older .NET Core as the baseline but it's not currently worth the inconvenience. -->
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <Title>WebAssembly for .NET</Title>
     <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>

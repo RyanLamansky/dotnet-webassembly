@@ -396,6 +396,10 @@ public class SpecTests
         {
             skips.Add(2351);
             skips.Add(2357);
+            
+            // Found starting in .NET 8.
+            skips.Add(2353);
+            skips.Add(2359);
         }
 
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json", skips.Contains);
