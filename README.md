@@ -1,6 +1,10 @@
 ﻿# WebAssembly for .NET
 [![NuGet](https://img.shields.io/nuget/v/WebAssembly.svg)](https://www.nuget.org/packages/WebAssembly)
 
+> [!WARNING]
+> Only WebAssembly 1.0 is supported!
+> Most WASM files target a higher version and will encounter errors if you try to load them with WebAssembly for .NET.
+
 A library able to create, read, modify, write and execute WebAssembly (WASM) files from .NET-based applications.
 *Execution does not use an interpreter or a 3rd party library:*
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
@@ -11,12 +15,14 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
   - `Module.ReadFromBinary` reads a stream into an instance, which can then be inspected and modified through its properties.
+    - Most WASM files use post-1.0 features and will experience errors when you try to load them.
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
-  - WebAssembly 1.0 is fully supported, but support for newer versions is incomplete.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
-  - This feature doesn't have 100% spec compliance so it may not work with every WASM you provide.
+  - Most WASM files have many imports and exports--you'll need to cover these yourself.
+  - This should work for most WASM 1.0 files, but spec compliance is not perfect.
+  - This will not work for any newer-than-1.0 files
 
-Please report an issue if you encounter an assembly that works in browsers but not with this library.
+You're welcome to report a bug if you can share a WASM file that has a problem, but no one is actively working on this project so a fix may not come.
 
 ## Sample: Create and execute a WebAssembly file in memory
 
