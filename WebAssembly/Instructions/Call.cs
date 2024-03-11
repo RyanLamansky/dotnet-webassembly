@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions;
 public class Call : Instruction, IEquatable<Call>
 {
     /// <summary>
-    /// Always <see cref="OpCode.Call"/>.
+    /// Always <see cref="WebAssembly.OpCode.Call"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Call;
 

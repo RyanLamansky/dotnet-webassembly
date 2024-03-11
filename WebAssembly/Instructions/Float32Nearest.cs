@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32Nearest : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Nearest"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Nearest"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Nearest;
 

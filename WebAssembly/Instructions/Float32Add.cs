@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float32Add : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Add"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Add"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Add;
 

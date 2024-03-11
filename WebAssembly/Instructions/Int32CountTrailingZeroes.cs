@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Int32CountTrailingZeroes : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32CountTrailingZeroes"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32CountTrailingZeroes"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32CountTrailingZeroes;
 

@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float32Maximum : ValueTwoToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Maximum"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Maximum"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Maximum;
 

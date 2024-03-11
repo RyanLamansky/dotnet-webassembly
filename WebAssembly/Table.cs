@@ -34,7 +34,7 @@ public class Table
     }
 
     /// <summary>
-    /// Creates a new <see cref="Table"/> instance with the provided <see cref="ResizableLimits.Minimum"/> and <see cref="ResizableLimits.Maximum"/> values.
+    /// Creates a new <see cref="Table"/> instance with the provided <see cref="WebAssembly.ResizableLimits.Minimum"/> and <see cref="WebAssembly.ResizableLimits.Maximum"/> values.
     /// </summary>
     /// <param name="minimum">Initial length (in units of table elements or 65,536-byte pages).</param>
     /// <param name="maximum">Maximum length (in units of table elements or 65,536-byte pages).</param>

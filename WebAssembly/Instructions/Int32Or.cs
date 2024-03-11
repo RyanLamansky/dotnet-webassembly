@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32Or : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32Or"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32Or"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32Or;
 

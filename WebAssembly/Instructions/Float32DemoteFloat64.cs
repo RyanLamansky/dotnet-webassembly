@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float32DemoteFloat64 : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32DemoteFloat64"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32DemoteFloat64"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32DemoteFloat64;
 

@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int64And : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64And"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64And"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64And;
 
