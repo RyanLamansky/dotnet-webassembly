@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Else : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Else"/>.
+    /// Always <see cref="WebAssembly.OpCode.Else"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Else;
 

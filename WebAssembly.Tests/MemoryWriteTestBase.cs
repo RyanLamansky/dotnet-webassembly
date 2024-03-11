@@ -60,6 +60,6 @@ where T : struct
             Code = instructions,
         });
 
-        return module.ToInstance<MemoryWriteTestBase<T>>(); ;
+        return module.ToInstance<MemoryWriteTestBase<T>>();
     }
 }

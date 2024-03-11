@@ -34,7 +34,7 @@ public class OpCodeCompilationException : CompilerException
     public OpCode OpCode { get; }
 
     /// <summary>
-    /// The miscellaneous operation attempted, if <see cref="OpCode"/> is <see cref="OpCode.MiscellaneousOperationPrefix"/>.
+    /// The miscellaneous operation attempted, if <see cref="OpCode"/> is <see cref="WebAssembly.OpCode.MiscellaneousOperationPrefix"/>.
     /// </summary>
     public MiscellaneousOpCode? MiscellaneousOpCode { get; }
 }

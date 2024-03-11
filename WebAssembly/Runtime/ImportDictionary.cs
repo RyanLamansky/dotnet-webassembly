@@ -7,7 +7,7 @@ namespace WebAssembly.Runtime;
 /// No members of its own, essentially an alias for a dictionary of dictionaries,
 /// both keyed by strings, with the inner dictionary having values of <see cref="RuntimeImport"/>.
 /// </summary>
-public class ImportDictionary : Dictionary<string, IDictionary<string, RuntimeImport>>, IDictionary<string, IDictionary<string, RuntimeImport>>
+public class ImportDictionary : Dictionary<string, IDictionary<string, RuntimeImport>>
 {
     /// <summary>
     /// Creates a new <see cref="ImportDictionary"/> instance.

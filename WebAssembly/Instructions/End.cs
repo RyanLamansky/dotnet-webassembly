@@ -11,7 +11,7 @@ namespace WebAssembly.Instructions;
 public class End : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.End"/>.
+    /// Always <see cref="WebAssembly.OpCode.End"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.End;
 
@@ -60,7 +60,13 @@ public class End : SimpleInstruction
             var depth = checked((uint)context.Depth.Count);
             var label = context.Labels[depth];
 
-            if (!context.LoopLabels.Contains(label)) //Loop labels are marked where defined.
+            if (context.ExceptionLabels.Contains(label))
+            {
+                context.EndExceptionBlock();
+                context.ExceptionLabels.Remove(label);
+                context.MarkReachable();
+            }
+            else if (!context.LoopLabels.Contains(label)) //Loop labels are marked where defined.
                 context.MarkLabel(label);
             else
                 context.LoopLabels.Remove(label);

@@ -47,6 +47,7 @@ static class SpecTestRunner
                 .RegisterSubtype(typeof(Register), CommandType.register)
                 .RegisterSubtype(typeof(AssertReturn), CommandType.action)
                 .RegisterSubtype(typeof(AssertUninstantiable), CommandType.assert_uninstantiable)
+                .RegisterSubtype(typeof(AssertException), CommandType.assert_exception)
                 .Build());
             settings.Converters.Add(JsonSubtypesConverterBuilder
                 .Of(typeof(TestAction), "type")
@@ -87,6 +88,7 @@ static class SpecTestRunner
         Action trapExpected;
         object? result;
         object obj;
+        bool exceptionThrown = false;
         MethodInfo methodInfo;
         TExports? exports = null;
         foreach (var command in testInfo.commands)
@@ -146,6 +148,58 @@ static class SpecTestRunner
                                         var expected = ((Float64Value)assert.expected[0]).ActualValue;
                                         Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                     }
+                                    continue;
+                            }
+
+                            throw new AssertFailedException($"{command.line}: Not equal: {assert.expected[0].BoxedValue} and {result}");
+                        }
+                        continue;
+                    case AssertException assert:
+                        GetMethod(assert.action, out methodInfo, out obj);
+                        try
+                        {
+                            result = assert.action.Call(methodInfo, obj);
+                        }
+                        catch (TargetInvocationException ix) when (ix.InnerException is WebAssemblyException x)
+                        {
+                            exceptionThrown = true;
+                            result = null;
+                        }
+                        catch (TargetInvocationException x) when (x.InnerException != null)
+                        {
+                            throw new AssertFailedException($"{command.line}: {x.InnerException.Message}", x.InnerException);
+                        }
+                        catch (Exception x)
+                        {
+                            throw new AssertFailedException($"{command.line}: {x.Message}", x);
+                        }
+
+                        Assert.IsTrue(exceptionThrown, $"{command.line}: Expected exception, but none thrown.");
+
+                        if (assert.expected?.Length > 0)
+                        {
+                            if (!assert.expected[0].HasValue)
+                            {
+                                // TODO: Assert type
+                                continue;
+                            }
+
+                            if (assert.expected[0].BoxedValue.Equals(result))
+                                continue;
+
+                            switch (assert.expected[0].type)
+                            {
+                                case RawValueType.f32:
+                                {
+                                    var expected = ((Float32Value)assert.expected[0]).ActualValue;
+                                    Assert.AreEqual(expected, (float)result!, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
+                                }
+                                    continue;
+                                case RawValueType.f64:
+                                {
+                                    var expected = ((Float64Value)assert.expected[0]).ActualValue;
+                                    Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
+                                }
                                     continue;
                             }
 
@@ -514,7 +568,8 @@ static class SpecTestRunner
         assert_unlinkable,
         register,
         action,
-        assert_uninstantiable
+        assert_uninstantiable,
+        assert_exception
     }
 
 #pragma warning disable 649
@@ -559,29 +614,35 @@ static class SpecTestRunner
     abstract class TypedValue : TypeOnly
     {
         public abstract object BoxedValue { get; }
+
+        public abstract bool HasValue { get; }
     }
 
     class Int32Value : TypedValue
     {
-        public uint value;
+        public uint? value;
 
-        public override object BoxedValue => (int)value;
+        public override object BoxedValue => (int)(value ?? 0);
+
+        public override bool HasValue => value.HasValue;
 
         public override string ToString() => $"{type}: {value}";
     }
 
     class Int64Value : TypedValue
     {
-        public ulong value;
+        public ulong? value;
 
-        public override object BoxedValue => (long)value;
+        public override object BoxedValue => (long)(value ?? 0);
+
+        public override bool HasValue => value.HasValue;
 
         public override string ToString() => $"{type}: {value}";
     }
 
     class Float32Value : Int32Value
     {
-        public float ActualValue => BitConverter.Int32BitsToSingle(unchecked((int)value));
+        public float ActualValue => value.HasValue ? BitConverter.Int32BitsToSingle(unchecked((int)value)) : 0;
 
         public override object BoxedValue => ActualValue;
 
@@ -590,7 +651,7 @@ static class SpecTestRunner
 
     class Float64Value : Int64Value
     {
-        public double ActualValue => BitConverter.Int64BitsToDouble(unchecked((long)value));
+        public double ActualValue => value.HasValue ? BitConverter.Int64BitsToDouble(unchecked((long)value)) : 0;
 
         public override object BoxedValue => ActualValue;
 
@@ -701,6 +762,13 @@ static class SpecTestRunner
     {
         public string name;
         public string @as;
+    }
+
+    class AssertException : AssertCommand
+    {
+        public TypedValue[] expected;
+
+        public override string ToString() => $"{base.ToString()} = [{string.Join(',', (IEnumerable<TypedValue>)expected)}]";
     }
 #pragma warning restore
 }

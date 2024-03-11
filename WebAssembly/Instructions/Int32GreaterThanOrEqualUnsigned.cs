@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32GreaterThanOrEqualUnsigned : ValueTwoToInt32NotEqualZeroInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32GreaterThanOrEqualUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32GreaterThanOrEqualUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32GreaterThanOrEqualUnsigned;
 

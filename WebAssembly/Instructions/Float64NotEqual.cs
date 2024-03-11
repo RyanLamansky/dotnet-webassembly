@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float64NotEqual : ValueTwoToInt32NotEqualZeroInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64NotEqual"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64NotEqual"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64NotEqual;
 

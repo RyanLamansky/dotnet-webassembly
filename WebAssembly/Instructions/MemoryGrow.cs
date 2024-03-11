@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class MemoryGrow : Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.MemoryGrow"/>.
+    /// Always <see cref="WebAssembly.OpCode.MemoryGrow"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.MemoryGrow;
 

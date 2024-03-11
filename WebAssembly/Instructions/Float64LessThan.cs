@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Float64LessThan : ValueTwoToInt32Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64LessThan"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64LessThan"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64LessThan;
 

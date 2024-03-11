@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class GlobalGet : VariableAccessInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.GlobalGet"/>.
+    /// Always <see cref="WebAssembly.OpCode.GlobalGet"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.GlobalGet;
 

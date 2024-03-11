@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Int32Load16Unsigned : MemoryReadInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32Load16Unsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32Load16Unsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32Load16Unsigned;
 

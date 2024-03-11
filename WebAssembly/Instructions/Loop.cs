@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Loop : BlockTypeInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Loop"/>.
+    /// Always <see cref="WebAssembly.OpCode.Loop"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Loop;
 

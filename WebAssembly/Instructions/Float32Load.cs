@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32Load : MemoryReadInstruction, System.IEquatable<Float32Load>
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Load"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Load"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Load;
 

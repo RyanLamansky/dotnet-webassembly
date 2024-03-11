@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32Truncate : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Truncate"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Truncate"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Truncate;
 

@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int64Multiply : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64Multiply"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64Multiply"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64Multiply;
 
