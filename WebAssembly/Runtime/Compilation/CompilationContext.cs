@@ -81,6 +81,10 @@ internal sealed class CompilationContext
 
     public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new();
 
+    public readonly Dictionary<int, MethodBuilder> DataGetters = new();
+
+    public uint DataCount;
+
     public FieldBuilder? FunctionTable;
 
     internal const MethodAttributes HelperMethodAttributes =

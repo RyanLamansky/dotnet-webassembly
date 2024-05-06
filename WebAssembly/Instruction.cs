@@ -313,9 +313,22 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned: yield return new Int64TruncateSaturateFloat32Unsigned(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed: yield return new Int64TruncateSaturateFloat64Signed(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned: yield return new Int64TruncateSaturateFloat64Unsigned(); break;
+                        case MiscellaneousOpCode.MemoryCopy: SkipBytes(reader, 2); yield return new MemoryCopy(); break;
+                        case MiscellaneousOpCode.MemoryFill: SkipBytes(reader, 1); yield return new MemoryFill(); break;
+                        case MiscellaneousOpCode.TableInit: yield return new TableInit(reader); break;
+                        case MiscellaneousOpCode.TableCopy: yield return new TableCopy(reader); break;
+                        case MiscellaneousOpCode.MemoryInit: yield return new MemoryInit(reader); break;
+                        case MiscellaneousOpCode.DataDrop: yield return new DataDrop(reader); break;
+                        case MiscellaneousOpCode.ElemDrop: yield return new ElemDrop(reader); break;
                     }
                     break;
             }
         }
+    }
+
+    private static void SkipBytes(Reader reader, int count)
+    {
+        for(; count > 0; count--)
+            reader.ReadByte();
     }
 }

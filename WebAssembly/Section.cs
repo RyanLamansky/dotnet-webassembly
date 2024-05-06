@@ -52,7 +52,11 @@ public enum Section : byte
     /// <summary>
     /// Data segments.
     /// </summary>
-    Data
+    Data,
+    /// <summary>
+    /// Data count section
+    /// </summary>
+    DataCount
 }
 
 static class SectionExtensions

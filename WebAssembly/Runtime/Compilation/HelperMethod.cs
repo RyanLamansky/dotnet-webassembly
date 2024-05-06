@@ -38,6 +38,9 @@ enum HelperMethod
     Int64RotateLeft,
     Int64RotateRight,
 #endif
+    MemoryFill,
+    MemoryCopy,
+    MemoryInit,
     Int32TruncateSaturateFloat32Signed,
     Int32TruncateSaturateFloat32Unsigned,
     Int32TruncateSaturateFloat64Signed,

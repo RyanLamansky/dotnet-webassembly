@@ -268,7 +268,7 @@ public static class Compile
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
-            if (id != 0 && (Section)id < previousSection)
+            if (id != 0 && (Section)id < previousSection && (previousSection == Section.DataCount ? (Section)id != Section.Code : true))
                 throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
             var payloadLength = reader.ReadVarUInt32();
 
@@ -499,6 +499,12 @@ public static class Compile
                     if (memory == null)
                         throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
                     SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
+                    break;
+
+                case Section.DataCount:
+                    context.DataCount = reader.ReadVarUInt32();
+                    for (int i = 0; i < context.DataCount; i++)
+                        context.DataGetters.Add(i, exportsBuilder.DefineMethod($"☣ DataGetter {i}", CompilationContext.HelperMethodAttributes, typeof(byte*), []));
                     break;
 
                 default:
@@ -1269,26 +1275,44 @@ public static class Compile
         for (var i = 0; i < count; i++)
         {
             var startingOffset = reader.Offset;
-            {
-                var index = reader.ReadVarUInt32();
-                if (index != 0)
-                    throw new ModuleLoadException($"Data index must be 0, found {index}.", startingOffset);
-            }
 
-            block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
-            foreach (var instruction in Instruction.ParseInitializerExpression(reader))
+            // 0:u32  e:expr  b:vec(byte) -> init b*, mode active { memory 0, offset e }
+            // 1:u32  e:expr  b:vec(byte) -> init b*, mode passive
+            // 2:u32  x:memidx e:expr  b:vec(byte) -> init b*, mode active { memory x, offset e }
+
+            var mode = reader.ReadVarUInt32();
+
+            if (mode != 1) // skip for passive data
             {
-                instruction.Compile(context);
-                context.Previous = instruction.OpCode;
+                block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
+                foreach (var instruction in Instruction.ParseInitializerExpression(reader))
+                {
+                    instruction.Compile(context);
+                    context.Previous = instruction.OpCode;
+                }
+                context.Stack.Pop();
+                context.BlockContexts.Remove(context.Depth.Count);
             }
-            context.Stack.Pop();
-            context.BlockContexts.Remove(context.Depth.Count);
-            instanceConstructorIL.Emit(OpCodes.Stloc, address);
 
             var data = reader.ReadBytes(reader.ReadVarUInt32());
 
             if (data.Length == 0)
                 continue;
+
+            if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
+                throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
+
+            var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
+
+            var getter = context.DataGetters[i];
+            var getterIL = getter.GetILGenerator();
+            getterIL.Emit(OpCodes.Ldsflda, field);
+            getterIL.Emit(OpCodes.Ret);
+
+            if (mode == 1)
+                continue; // no copy to mem for passive data
+
+            instanceConstructorIL.Emit(OpCodes.Stloc, address);
 
             //Ensure sufficient memory is allocated, error if max is exceeded.
             instanceConstructorIL.Emit(OpCodes.Ldloc, address);
@@ -1299,11 +1323,6 @@ public static class Compile
 
             instanceConstructorIL.Emit(OpCodes.Call, context[HelperMethod.RangeCheck8, Instructions.MemoryImmediateInstruction.CreateRangeCheck]);
             instanceConstructorIL.Emit(OpCodes.Pop);
-
-            if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
-                throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
-
-            var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
             instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
