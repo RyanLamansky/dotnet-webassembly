@@ -1284,6 +1284,7 @@ public static class Compile
 
             if (mode != 1) // skip for passive data
             {
+                var index = reader.ReadVarUInt32();
                 block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
                 foreach (var instruction in Instruction.ParseInitializerExpression(reader))
                 {
@@ -1304,10 +1305,12 @@ public static class Compile
 
             var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
 
-            var getter = context.DataGetters[i];
-            var getterIL = getter.GetILGenerator();
-            getterIL.Emit(OpCodes.Ldsflda, field);
-            getterIL.Emit(OpCodes.Ret);
+            if (context.DataGetters.TryGetValue(i, out var getter))
+            {
+                var getterIL = getter.GetILGenerator();
+                getterIL.Emit(OpCodes.Ldsflda, field);
+                getterIL.Emit(OpCodes.Ret);
+            }
 
             if (mode == 1)
                 continue; // no copy to mem for passive data

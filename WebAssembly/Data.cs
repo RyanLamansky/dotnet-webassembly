@@ -11,6 +11,16 @@ namespace WebAssembly;
 public class Data
 {
     /// <summary>
+    /// Data segment type
+    /// </summary>
+    public DataType Type { get; set; }
+
+    /// <summary>
+    /// In which Memory this Data is located. Usually it is equal to 0.
+    /// </summary>
+    public uint MemoryIdx { get; set; }
+
+    /// <summary>
     /// The linear memory index (always 0 in the initial version of WebAssembly).
     /// </summary>
     public uint Index { get; set; }
@@ -53,7 +63,11 @@ public class Data
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
 
-        this.Index = reader.ReadVarUInt32();
+        this.Type = (DataType)reader.ReadVarUInt32();
+        if (Type == DataType.ActiveWithCustomMemory)
+            this.MemoryIdx = reader.ReadUInt32();
+        if (Type != DataType.Passive)
+            this.Index = reader.ReadVarUInt32();
         this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
         this.rawData = reader.ReadBytes(reader.ReadVarUInt32());
     }
@@ -66,7 +80,13 @@ public class Data
 
     internal void WriteTo(Writer writer)
     {
-        writer.WriteVar(this.Index);
+        writer.WriteVar((uint)this.Type);
+
+        if (Type == DataType.ActiveWithCustomMemory)
+            writer.WriteVar(this.MemoryIdx);
+        if (Type != DataType.Passive)
+            writer.WriteVar(this.Index);
+
         foreach (var instruction in this.InitializerExpression)
             instruction.WriteTo(writer);
 
@@ -76,5 +96,24 @@ public class Data
         else
             foreach (var b in this.RawData)
                 writer.Write(b);
+    }
+
+    /// <summary>
+    /// Bitfield at the beginning of the data.
+    /// </summary>
+    public enum DataType : uint
+    {
+        /// <summary>
+        /// This Data segment is the active segment in memory with idx equal to 0
+        /// </summary>
+        Active = 0,
+        /// <summary>
+        /// This Data segment is the passive segment
+        /// </summary>
+        Passive = 1,
+        /// <summary>
+        /// This Data segment is the active segment in memory with custom idx
+        /// </summary>
+        ActiveWithCustomMemory = 2
     }
 }
