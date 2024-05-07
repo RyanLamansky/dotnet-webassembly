@@ -10,6 +10,11 @@ public sealed class ElemDrop : MiscellaneousInstruction
     /// <summary>
     /// Creates a new  <see cref="ElemDrop"/> instance.
     /// </summary>
+    public ElemDrop() { }
+
+    /// <summary>
+    /// Creates a new  <see cref="ElemDrop"/> instance.
+    /// </summary>
     public ElemDrop(uint elemIdx) => ElemIdx = elemIdx;
 
     internal ElemDrop(Reader reader) => ElemIdx = reader.ReadVarUInt32(); // segment:varuint32

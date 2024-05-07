@@ -12,6 +12,11 @@ public sealed class TableInit : MiscellaneousInstruction
     /// <summary>
     /// Creates a new  <see cref="TableInit"/> instance.
     /// </summary>
+    public TableInit() { }
+
+    /// <summary>
+    /// Creates a new  <see cref="TableInit"/> instance.
+    /// </summary>
     public TableInit(uint segment) => Segment = segment;
 
     internal TableInit(Reader reader)

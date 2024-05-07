@@ -10,6 +10,11 @@ public sealed class DataDrop : MiscellaneousInstruction
     /// <summary>
     /// Creates a new  <see cref="DataDrop"/> instance.
     /// </summary>
+    public DataDrop() { }
+
+    /// <summary>
+    /// Creates a new  <see cref="DataDrop"/> instance.
+    /// </summary>
     public DataDrop(uint dataIdx) => DataIdx = dataIdx;
 
     internal DataDrop(Reader reader) => DataIdx = reader.ReadVarUInt32(); // segment:varuint32

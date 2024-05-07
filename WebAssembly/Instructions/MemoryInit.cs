@@ -13,7 +13,12 @@ public sealed class MemoryInit : MiscellaneousInstruction
     /// <summary>
     /// Creates a new  <see cref="MemoryInit"/> instance.
     /// </summary>
-    public MemoryInit(uint dataIdx) { DataIdx = dataIdx; }
+    public MemoryInit() { }
+
+    /// <summary>
+    /// Creates a new  <see cref="MemoryInit"/> instance.
+    /// </summary>
+    public MemoryInit(uint dataIdx) => DataIdx = dataIdx;
 
     internal MemoryInit(Reader reader)
     {
