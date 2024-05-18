@@ -66,19 +66,16 @@ public class Element
     /// <param name="elements">The table entries.</param>
     public Element(uint offset, IList<uint> elements)
     {
-        this.initializerExpression = new Instruction[]
-        {
+        this.initializerExpression =
+        [
                 new Int32Constant(offset),
                 new End(),
-        };
+        ];
         this.elements = elements;
     }
 
     internal Element(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         this.Index = reader.ReadVarUInt32();
         this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
 

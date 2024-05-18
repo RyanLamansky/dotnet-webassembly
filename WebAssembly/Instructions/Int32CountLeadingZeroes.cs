@@ -25,7 +25,7 @@ public class Int32CountLeadingZeroes : SimpleInstruction
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    private static readonly MethodInfo leadingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.LeadingZeroCount), new[] { typeof(uint) })!;
+    private static readonly MethodInfo leadingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.LeadingZeroCount), [typeof(uint)])!;
 #endif
 
     internal sealed override void Compile(CompilationContext context)
@@ -42,8 +42,8 @@ public class Int32CountLeadingZeroes : SimpleInstruction
                 "☣ Int32CountLeadingZeroes",
                 CompilationContext.HelperMethodAttributes,
                 typeof(uint),
-                new[] { typeof(uint)
-                });
+                [ typeof(uint)
+                ]);
 
                 //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
                 //This algorithm is from https://stackoverflow.com/questions/10439242/count-leading-zeroes-in-an-int32

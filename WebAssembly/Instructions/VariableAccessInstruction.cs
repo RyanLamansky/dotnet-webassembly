@@ -14,9 +14,6 @@ public abstract class VariableAccessInstruction : Instruction, IEquatable<Variab
 
     private protected VariableAccessInstruction(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Index = reader.ReadVarUInt32();
     }
 
@@ -41,6 +38,9 @@ public abstract class VariableAccessInstruction : Instruction, IEquatable<Variab
         writer.Write((byte)this.OpCode);
         writer.WriteVar(this.Index);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as VariableAccessInstruction);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.

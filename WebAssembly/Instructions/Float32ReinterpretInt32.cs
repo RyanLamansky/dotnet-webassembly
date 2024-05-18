@@ -34,10 +34,9 @@ public class Float32ReinterpretInt32 : SimpleInstruction
                 "☣ Float32ReinterpretInt32",
                 CompilationContext.HelperMethodAttributes,
                 typeof(float),
-                new[]
-                {
+                [
                             typeof(int),
-                }
+                ]
                 );
 
             var il = builder.GetILGenerator();

@@ -45,9 +45,6 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
     internal CallIndirect(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Type = reader.ReadVarUInt32();
         Reserved = reader.ReadVarUInt1();
     }
@@ -58,6 +55,9 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
         writer.WriteVar(this.Type);
         writer.WriteVar(this.Reserved);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as CallIndirect);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.
@@ -105,11 +105,10 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             if (!context.DelegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
             {
-                var del = context.Configuration.GetDelegateForType(parms.Length, returns.Length);
-                if (del == null)
+                var del = context.Configuration.GetDelegateForType(parms.Length, returns.Length) ??
                     throw new CompilerException($"Failed to get a delegate for type {signature}.");
                 if (del.IsGenericType)
-                    del = del.MakeGenericType(parms.Concat(returns).ToArray());
+                    del = del.MakeGenericType([.. parms, .. returns]);
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
@@ -117,7 +116,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
                 $"🔁 {signature.TypeIndex}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 returns.Length == 0 ? typeof(void) : returns[0],
-                parms.Concat(new[] { typeof(uint), context.CheckedExportsBuilder }).ToArray()
+                [.. parms, typeof(uint), context.CheckedExportsBuilder]
                 ));
 
             var il = remapper.GetILGenerator();

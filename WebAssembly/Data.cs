@@ -50,9 +50,6 @@ public class Data
 
     internal Data(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         this.Index = reader.ReadVarUInt32();
         this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
         this.rawData = reader.ReadBytes(reader.ReadVarUInt32());

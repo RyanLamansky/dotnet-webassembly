@@ -33,14 +33,14 @@ public class MemoryGrowTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new[]
-            {
+                ],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                },
+                ],
         });
         module.Functions.Add(new Function
         {
@@ -56,12 +56,12 @@ public class MemoryGrowTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new MemoryGrow(),
                     new End(),
-            }
+            ]
         });
         module.Memories.Add(new Memory(1, 2));
 

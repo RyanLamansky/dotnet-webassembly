@@ -34,10 +34,9 @@ public class Int64ReinterpretFloat64 : SimpleInstruction
                 "☣ Int64ReinterpretFloat64",
                 CompilationContext.HelperMethodAttributes,
                 typeof(long),
-                new[]
-                {
+                [
                             typeof(double),
-                }
+                ]
                 );
 
             var il = builder.GetILGenerator();

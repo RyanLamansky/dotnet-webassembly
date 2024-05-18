@@ -1,19 +1,16 @@
 name: Build and Test
-
 on: [push, pull_request]
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET 8
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-    - name: Install dependencies
+    - name: Restore Dependencies
       run: dotnet restore
     # Debug and Release might be different due to conditional compilation, so validate both.
     - name: Build (Debug)
@@ -21,6 +18,6 @@ jobs:
     - name: Build (Release)
       run: dotnet build --configuration Release --no-restore
     - name: Test (Debug)
-      run: dotnet test --configuration Debug --no-build --verbosity normal
+      run: dotnet test --configuration Debug --no-build --nologo
     - name: Test (Release)
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test --configuration Release --no-build --nologo

@@ -103,7 +103,7 @@ public class ModuleTests
         Assert.AreEqual("Test", custom.Name);
         Assert.IsNotNull(custom.Content);
         Assert.AreEqual(8, custom.Content.Count);
-        Assert.AreEqual(content, BitConverter.ToInt64(custom.Content.ToArray(), 0));
+        Assert.AreEqual(content, BitConverter.ToInt64([.. custom.Content], 0));
     }
 
     /// <summary>
@@ -114,8 +114,8 @@ public class ModuleTests
     {
         var source = new Module
         {
-            Imports = new Import[]
-            {
+            Imports =
+            [
                     new Import.Function
                     {
                         Module = "A",
@@ -139,7 +139,7 @@ public class ModuleTests
                         Module = "D",
                         Field = "4",
                     },
-            }
+            ]
         };
 
         Module destination;
@@ -205,14 +205,14 @@ public class ModuleTests
     {
         var source = new Module
         {
-            Types = new WebAssemblyType[]
-            {
+            Types =
+            [
                     new WebAssemblyType
                     {
-                        Parameters = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 },
-                        Returns = new[] { WebAssemblyValueType.Int64 }
+                        Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float32],
+                        Returns = [WebAssemblyValueType.Int64]
                     }
-            }
+            ]
         }; ;
 
         Module destination;
@@ -238,24 +238,24 @@ public class ModuleTests
     {
         var source = new Module
         {
-            Codes = new[]
-            {
+            Codes =
+            [
                     new FunctionBody
                     {
-                        Locals = new[]
-                        {
+                        Locals =
+                        [
                             new Local
                             {
                                 Count  = 2,
                                 Type = WebAssemblyValueType.Float64
                             }
-                        },
-                        Code = new Instruction[]
-                        {
+                        ],
+                        Code =
+                        [
                             new Instructions.End()
-                        }
+                        ]
                     }
-                }
+                ]
         };
 
         Module destination;
@@ -278,9 +278,9 @@ public class ModuleTests
     [TestMethod]
     public void Module_InstructionSequenceMissingEndValidation()
     {
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Globals = new[] { new Global() } }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Elements = new[] { new Element() } }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Codes = new[] { new FunctionBody() } }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Data = new[] { new Data() } }.WriteToBinaryNoOutput());
+        Assert.ThrowsException<InvalidOperationException>(() => new Module { Globals = [new Global()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsException<InvalidOperationException>(() => new Module { Elements = [new Element()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsException<InvalidOperationException>(() => new Module { Codes = [new FunctionBody()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsException<InvalidOperationException>(() => new Module { Data = [new Data()] }.WriteToBinaryNoOutput());
     }
 }

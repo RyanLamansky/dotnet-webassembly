@@ -467,7 +467,7 @@ static class SpecTestRunner
                         throw new AssertFailedException($"{command.line}: {command} doesn't have a test procedure set up.");
                 }
             }
-            catch (Exception x) when (!System.Diagnostics.Debugger.IsAttached && !(x is AssertFailedException))
+            catch (Exception x) when (!System.Diagnostics.Debugger.IsAttached && x is not AssertFailedException)
             {
                 throw new AssertFailedException($"{command.line}: {x}", x);
             }

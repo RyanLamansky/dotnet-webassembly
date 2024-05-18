@@ -5,20 +5,13 @@ namespace WebAssembly;
 
 /// <summary>
 /// A compiled WebAssembly instance.
+/// This is used by compiled WebAssembly files and should not be used by any other code.
 /// </summary>
-public abstract class Instance<TExports> : IDisposable
+public abstract class Instance<TExports>(TExports exports) : IDisposable
     where TExports : class
 {
-    /// <summary>
-    /// This is used by compiled WebAssembly files and should not be used by any other code.
-    /// </summary>
-    protected Instance(TExports exports)
-    {
-        this.exports = exports ?? throw new ArgumentNullException(nameof(exports));
-    }
-
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-    private TExports? exports;
+    private TExports? exports = exports ?? throw new ArgumentNullException(nameof(exports));
 
     /// <summary>
     /// Exported features of the assembly.

@@ -17,10 +17,10 @@ public class MemorySizeTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                },
+                ],
         });
         module.Functions.Add(new Function
         {
@@ -31,11 +31,11 @@ public class MemorySizeTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new MemorySize(),
                     new End(),
-            }
+            ]
         });
         module.Memories.Add(new Memory(1, 1));
 

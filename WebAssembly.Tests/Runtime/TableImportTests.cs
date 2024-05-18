@@ -20,8 +20,8 @@ public class TableImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { WebAssemblyValueType.Int32 },
-            Parameters = new[] { WebAssemblyValueType.Int32 }
+            Returns = [WebAssemblyValueType.Int32],
+            Parameters = [WebAssemblyValueType.Int32]
         });
         module.Imports.Add(new Import.Table("Test", "Test", 1));
         module.Functions.Add(new Function
@@ -34,11 +34,11 @@ public class TableImportTests
         module.Elements.Add(new Element(0, 0));
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new End()
-            },
+            ],
         });
 
         var table = new FunctionTable(1);
@@ -67,8 +67,8 @@ public class TableImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { WebAssemblyValueType.Int32 },
-            Parameters = new[] { WebAssemblyValueType.Int32 }
+            Returns = [WebAssemblyValueType.Int32],
+            Parameters = [WebAssemblyValueType.Int32]
         });
         module.Imports.Add(new Import.Table("Test", "Test", 1));
         module.Functions.Add(new Function
@@ -80,13 +80,13 @@ public class TableImportTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End()
-            },
+            ],
         });
 
         var table = new FunctionTable(1);
@@ -221,8 +221,8 @@ public class TableImportTests
         var module1 = new Module();
         module1.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { WebAssemblyValueType.Int32 },
-            Parameters = new[] { WebAssemblyValueType.Int32 }
+            Returns = [WebAssemblyValueType.Int32],
+            Parameters = [WebAssemblyValueType.Int32]
         });
         module1.Exports.Add(new Export
         {
@@ -238,11 +238,11 @@ public class TableImportTests
         {
             ContentType = WebAssemblyValueType.Int32,
             IsMutable = true,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(0),
                     new End()
-            }
+            ]
         });
         module1.Functions.Add(new Function
         {
@@ -251,8 +251,8 @@ public class TableImportTests
         module1.Elements.Add(new Element(0, 0));
         module1.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new Int32Constant(1),
                     new Int32Add(),
@@ -260,7 +260,7 @@ public class TableImportTests
 
                     new LocalGet(0),
                     new End()
-            },
+            ],
         });
 
         var exports1 = module1.ToInstance<ExportedTableWithCalls>().Exports;
@@ -288,13 +288,13 @@ public class TableImportTests
         });
         module2.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End()
-            },
+            ],
         });
 
         var compiled = module2.ToInstance<CompilerTestBase<int>>(
@@ -316,8 +316,8 @@ public class TableImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { WebAssemblyValueType.Int32 },
-            Parameters = new[] { WebAssemblyValueType.Int32 }
+            Returns = [WebAssemblyValueType.Int32],
+            Parameters = [WebAssemblyValueType.Int32]
         });
         module.Imports.Add(new Import.Table("Test", "Test", 1));
         module.Functions.Add(new Function
@@ -330,11 +330,11 @@ public class TableImportTests
         module.Elements.Add(new Element(0, 0));
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new End()
-            },
+            ],
         });
 
         var table = new FunctionTable(0, 1);

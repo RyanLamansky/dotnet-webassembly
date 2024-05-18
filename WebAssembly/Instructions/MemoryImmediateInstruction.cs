@@ -55,9 +55,6 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
     private protected MemoryImmediateInstruction(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Flags = (Options)reader.ReadVarUInt32();
         Offset = reader.ReadVarUInt32();
     }
@@ -68,6 +65,9 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         writer.WriteVar((uint)this.Flags);
         writer.WriteVar(this.Offset);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as MemoryImmediateInstruction);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.
@@ -150,7 +150,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
             $"☣ Range Check {size}",
             CompilationContext.HelperMethodAttributes,
             typeof(uint),
-            new[] { typeof(uint), context.CheckedExportsBuilder }
+            [typeof(uint), context.CheckedExportsBuilder]
             );
         var il = builder.GetILGenerator();
         il.Emit(OpCodes.Ldarg_1);

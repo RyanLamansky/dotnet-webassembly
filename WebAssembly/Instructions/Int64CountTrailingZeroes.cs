@@ -25,7 +25,7 @@ public class Int64CountTrailingZeroes : SimpleInstruction
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    private static readonly MethodInfo trailingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.TrailingZeroCount), new[] { typeof(ulong) })!;
+    private static readonly MethodInfo trailingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.TrailingZeroCount), [typeof(ulong)])!;
 #endif
 
     internal sealed override void Compile(CompilationContext context)
@@ -42,8 +42,8 @@ public class Int64CountTrailingZeroes : SimpleInstruction
                 "☣ Int64CountTrailingZeroes",
                 CompilationContext.HelperMethodAttributes,
                 typeof(long),
-                new[] { typeof(ulong)
-                });
+                [ typeof(ulong)
+                ]);
 
                 //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
                 //Based on the algorithm found here: http://aggregate.org/MAGIC/#Trailing%20Zero%20Count

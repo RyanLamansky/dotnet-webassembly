@@ -25,7 +25,7 @@ public class Int32RotateLeft : SimpleInstruction
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    private static readonly MethodInfo rotateLeft = typeof(BitOperations).GetMethod(nameof(BitOperations.RotateLeft), new[] { typeof(uint), typeof(int) })!;
+    private static readonly MethodInfo rotateLeft = typeof(BitOperations).GetMethod(nameof(BitOperations.RotateLeft), [typeof(uint), typeof(int)])!;
 #endif
 
     internal sealed override void Compile(CompilationContext context)
@@ -44,11 +44,10 @@ public class Int32RotateLeft : SimpleInstruction
                 "☣ Int32RotateLeft",
                 CompilationContext.HelperMethodAttributes,
                 typeof(uint),
-                new[]
-                {
+                [
                             typeof(uint),
                             typeof(int),
-                }
+                ]
                 );
 
             var il = builder.GetILGenerator();

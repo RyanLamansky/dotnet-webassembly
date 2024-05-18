@@ -27,6 +27,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <DebugType>embedded</DebugType>
+    <AnalysisMode>Minimum</AnalysisMode>
   </PropertyGroup>
 
   <ItemGroup>

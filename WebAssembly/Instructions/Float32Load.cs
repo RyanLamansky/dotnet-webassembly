@@ -2,6 +2,8 @@ using System.Reflection.Emit;
 
 namespace WebAssembly.Instructions;
 
+#pragma warning disable CS0659 // MemoryReadInstruction's GetHashCode implementation covers everything.
+
 /// <summary>
 /// Load 4 bytes as f32.
 /// </summary>
@@ -29,6 +31,9 @@ public class Float32Load : MemoryReadInstruction, System.IEquatable<Float32Load>
     private protected sealed override byte Size => 4;
 
     private protected sealed override System.Reflection.Emit.OpCode EmittedOpCode => OpCodes.Ldind_R4;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as Float32Load);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.

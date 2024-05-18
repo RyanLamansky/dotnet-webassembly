@@ -32,7 +32,7 @@ public abstract class TruncateSaturateInstruction : MiscellaneousInstruction
                 $"☣ {ConversionHelper}",
                 CompilationContext.HelperMethodAttributes,
                 OutputType,
-                new[] { InputType }
+                [InputType]
             );
 
                 // The following code is an IL version of this C#,

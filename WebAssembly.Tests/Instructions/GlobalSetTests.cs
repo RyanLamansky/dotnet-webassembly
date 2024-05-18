@@ -44,43 +44,35 @@ public class GlobalSetTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int64,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Float32,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Float64,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Functions.Add(new Function
         {
@@ -102,41 +94,41 @@ public class GlobalSetTests
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(4),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int64Constant(5),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float32Constant(6),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float64Constant(7),
                     new End(),
-            },
+            ],
         });
         module.Exports.Add(new Export
         {
@@ -160,39 +152,39 @@ public class GlobalSetTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(0),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(2),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(3),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<TestBase>();
@@ -259,83 +251,67 @@ public class GlobalSetTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int64,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Float32,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Float64,
-                },
-            Returns = new WebAssemblyValueType[]
-            {
-            }
+                ],
+            Returns = []
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
-            },
-            Returns = new[]
-            {
+            Parameters = [],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
-            },
-            Returns = new[]
-            {
+            Parameters = [],
+            Returns =
+            [
                     WebAssemblyValueType.Int64,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
-            },
-            Returns = new[]
-            {
+            Parameters = [],
+            Returns =
+            [
                     WebAssemblyValueType.Float32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
-            },
-            Returns = new[]
-            {
+            Parameters = [],
+            Returns =
+            [
                     WebAssemblyValueType.Float64,
-                }
+                ]
         });
         for (uint i = 0; i <= 7; i++)
         {
@@ -348,41 +324,41 @@ public class GlobalSetTests
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(0),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int64Constant(0),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float32Constant(0),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float64Constant(0),
                     new End(),
-            },
+            ],
         });
         module.Exports.Add(new Export
         {
@@ -426,71 +402,71 @@ public class GlobalSetTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(0),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(2),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(3),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(2),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(3),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<RoundTripTestBase>();
@@ -521,10 +497,10 @@ public class GlobalSetTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
+                ],
         });
         module.Functions.Add(new Function
         {
@@ -542,12 +518,12 @@ public class GlobalSetTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new GlobalSet(0),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<CompilerTestBaseVoid<int>>(

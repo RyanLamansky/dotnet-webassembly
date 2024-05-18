@@ -27,6 +27,9 @@ public abstract class Constant<T> : Instruction, IEquatable<Constant<T>>
     /// <remarks><see cref="Value"/> should not be changed while this instance is used as a hash key.</remarks>
     public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Value.GetHashCode());
 
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as Constant<T>);
+
     /// <summary>
     /// Determines whether this instruction is identical to another.
     /// </summary>

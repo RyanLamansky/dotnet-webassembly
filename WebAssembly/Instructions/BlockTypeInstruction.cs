@@ -32,9 +32,6 @@ public abstract class BlockTypeInstruction : Instruction
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     private protected BlockTypeInstruction(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Type = (BlockType)reader.ReadVarInt7();
     }
 

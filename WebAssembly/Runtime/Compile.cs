@@ -124,8 +124,8 @@ public static class Compile
                 throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
             }
             catch (Exception x) when (
-            !(x is CompilerException)
-            && !(x is ModuleLoadException)
+            x is not CompilerException
+            && x is not ModuleLoadException
 #if DEBUG
                 && !System.Diagnostics.Debugger.IsAttached
 #endif
@@ -139,7 +139,7 @@ public static class Compile
         {
             try
             {
-                return (Instance<TExports>)constructor.Invoke(new object[] { imports });
+                return (Instance<TExports>)constructor.Invoke([imports]);
             }
             catch (TargetInvocationException x)
 #if DEBUG
@@ -152,16 +152,10 @@ public static class Compile
         };
     }
 
-    private readonly struct Local
+    private readonly struct Local(Reader reader)
     {
-        public Local(Reader reader)
-        {
-            this.Count = reader.ReadVarUInt32();
-            this.Type = (WebAssemblyValueType)reader.ReadVarInt7();
-        }
-
-        public readonly uint Count;
-        public readonly WebAssemblyValueType Type;
+        public readonly uint Count = reader.ReadVarUInt32();
+        public readonly WebAssemblyValueType Type = (WebAssemblyValueType)reader.ReadVarInt7();
     }
 
     const TypeAttributes ClassAttributes =
@@ -202,8 +196,12 @@ public static class Compile
         Type exportContainer
         )
     {
+#if NETSTANDARD
         if (configuration == null)
             throw new ArgumentNullException(nameof(configuration));
+#else
+        ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
+#endif
 
         if (reader.ReadUInt32() != Module.Magic)
             throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
@@ -242,7 +240,7 @@ public static class Compile
             var instanceConstructor = exportsBuilder.DefineConstructor(
                 ConstructorAttributes,
                 CallingConventions.Standard,
-                new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
+                [typeof(IDictionary<string, IDictionary<string, RuntimeImport>>)]
                 );
             instanceConstructorIL = instanceConstructor.GetILGenerator();
             {
@@ -333,7 +331,7 @@ public static class Compile
                         for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                         {
                             var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
-                            var parms = signature.ParameterTypes.Concat(new Type[] { exportsBuilder }).ToArray();
+                            var parms = signature.ParameterTypes.Concat([exportsBuilder]).ToArray();
                             internalFunctions[i] = exportsBuilder.DefineMethod(
                                 $"👻 {i}",
                                 InternalFunctionAttributes,
@@ -555,7 +553,7 @@ public static class Compile
             var instanceConstructor = instanceBuilder.DefineConstructor(
                 ConstructorAttributes,
                 CallingConventions.Standard,
-                new[] { typeof(IDictionary<string, IDictionary<string, RuntimeImport>>) }
+                [typeof(IDictionary<string, IDictionary<string, RuntimeImport>>)]
                 );
             var il = instanceConstructor.GetILGenerator();
             var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
@@ -623,7 +621,7 @@ public static class Compile
                             continue;
                         }
 
-                        var typedDelegate = del.IsGenericTypeDefinition ? del.MakeGenericType(signature.ParameterTypes.Concat(signature.ReturnTypes).ToArray()) : del;
+                        var typedDelegate = del.IsGenericTypeDefinition ? del.MakeGenericType([.. signature.ParameterTypes, .. signature.ReturnTypes]) : del;
                         var delField = $"➡ {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -632,7 +630,7 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
-                            signature.ParameterTypes.Concat(new Type[] { exportsBuilder }).ToArray()
+                            [.. signature.ParameterTypes, exportsBuilder]
                             );
 
                         var invokerIL = invoker.GetILGenerator();
@@ -708,7 +706,7 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             typeof(UnmanagedMemory),
-                            new Type[] { exportsBuilder }
+                            [exportsBuilder]
                             );
 
                         var invokerIL = importedMemoryProvider.GetILGenerator();
@@ -748,7 +746,7 @@ public static class Compile
                         var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
                         var mutable = reader.ReadVarUInt1() == 1;
 
-                        var typedDelegate = typeof(Func<>).MakeGenericType(new[] { contentType.ToSystemType() });
+                        var typedDelegate = typeof(Func<>).MakeGenericType([contentType.ToSystemType()]);
                         var delField = $"➡ Get {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -757,7 +755,7 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             contentType.ToSystemType(),
-                            new Type[] { exportsBuilder }
+                            [exportsBuilder]
                             );
 
                         var invokerIL = getterInvoker.GetILGenerator();
@@ -791,7 +789,7 @@ public static class Compile
                         }
                         else
                         {
-                            typedDelegate = typeof(Action<>).MakeGenericType(new[] { contentType.ToSystemType() });
+                            typedDelegate = typeof(Action<>).MakeGenericType([contentType.ToSystemType()]);
                             delField = $"➡ Set {moduleName}::{fieldName}";
                             delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -800,14 +798,14 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             null,
-                            new[] { contentType.ToSystemType(), exportsBuilder }
+                            [contentType.ToSystemType(), exportsBuilder]
                             );
 
                             invokerIL = setterInvoker.GetILGenerator();
                             invokerIL.EmitLoadArg(1);
                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
                             invokerIL.EmitLoadArg(0);
-                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), new[] { contentType.ToSystemType() })!);
+                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), [contentType.ToSystemType()])!);
                             invokerIL.Emit(OpCodes.Ret);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -840,9 +838,9 @@ public static class Compile
         if (missingDelegates.Count != 0)
             throw new MissingDelegateTypesException(missingDelegates);
 
-        context.Methods = functionImports.ToArray();
-        context.FunctionSignatures = functionImportTypes.ToArray();
-        context.Globals = globalImports.ToArray();
+        context.Methods = [.. functionImports];
+        context.FunctionSignatures = [.. functionImportTypes];
+        context.Globals = [.. globalImports];
 
         return (
             importedMemoryProvider,
@@ -881,7 +879,7 @@ public static class Compile
                 InternalFunctionAttributes,
                 CallingConventions.Standard,
                 contentType.ToSystemType(),
-                isMutable ? new Type[] { exportsBuilder } : null
+                isMutable ? [exportsBuilder] : null
                 );
 
             var il = getter.GetILGenerator();
@@ -921,7 +919,7 @@ public static class Compile
                     InternalFunctionAttributes,
                     CallingConventions.Standard,
                     typeof(void),
-                    new[] { contentType.ToSystemType(), exportsBuilder }
+                    [contentType.ToSystemType(), exportsBuilder]
                     );
 
                 il = setter.GetILGenerator();
@@ -1057,7 +1055,7 @@ public static class Compile
                                 exportedPropertyAttributes,
                                 CallingConventions.HasThis,
                                 null,
-                                new[] { global.Type.ToSystemType() }
+                                [global.Type.ToSystemType()]
                                 );
 
                             var wrappedSetIL = wrappedSet.GetILGenerator();
@@ -1076,7 +1074,7 @@ public static class Compile
             }
         }
 
-        return xFunctions.ToArray();
+        return [.. xFunctions];
     }
 
     static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions)
@@ -1118,7 +1116,7 @@ public static class Compile
             {
                 var preInitializerOffset = reader.Offset;
                 var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                if (initializer.Length != 2 || initializer[0] is not Instructions.Int32Constant c || !(initializer[1] is Instructions.End))
+                if (initializer.Length != 2 || initializer[0] is not Instructions.Int32Constant c || initializer[1] is not Instructions.End)
                     throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant followed by end.", preInitializerOffset);
 
                 offset = (uint)c.Value;
@@ -1158,13 +1156,10 @@ public static class Compile
 
                 if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
                 {
-                    var del = configuration.GetDelegateForType(parms.Length, returns.Length);
-
-                    if (del == null)
+                    var del = configuration.GetDelegateForType(parms.Length, returns.Length) ??
                         throw new CompilerException($"Failed to get a delegate for type {signature}.");
-
                     if (del.IsGenericType)
-                        del = del.MakeGenericType(parms.Concat(returns).ToArray());
+                        del = del.MakeGenericType([.. parms, .. returns]);
 
                     delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                 }
@@ -1231,11 +1226,12 @@ public static class Compile
             context.Reset(
                 il,
                 signature,
-                signature.RawParameterTypes.Concat(
-                    locals
+                [
+                    .. signature.RawParameterTypes,
+                    .. locals
                     .SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
-                    ).ToArray()
-                );
+,
+                ]);
 
             foreach (var local in locals.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type)))
             {

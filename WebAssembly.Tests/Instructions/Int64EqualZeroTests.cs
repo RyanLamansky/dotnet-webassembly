@@ -25,10 +25,10 @@ public class Int64EqualZeroTests
     [TestMethod]
     public void Int64EqualZero_Compiled()
     {
-        var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", WebAssemblyValueType.Int32, new[]
-        {
+        var exports = AssemblyBuilder.CreateInstance<TestClass>("Test", WebAssemblyValueType.Int32,
+        [
                     WebAssemblyValueType.Int64,
-                },
+                ],
             new LocalGet(0),
             new Int64EqualZero(),
             new End());

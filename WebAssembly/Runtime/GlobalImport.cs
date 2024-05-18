@@ -99,8 +99,12 @@ public class GlobalImport : RuntimeImport
 
     static WebAssemblyValueType DetermineValueType(Delegate getter, Delegate? setter)
     {
+#if NETSTANDARD
         if (getter == null)
             throw new ArgumentNullException(nameof(getter));
+#else
+        ArgumentNullException.ThrowIfNull(getter, nameof(getter));
+#endif
 
         if (getter.Method.GetParameters().Length != 0)
             throw new ArgumentException("getter cannot have parameters.", nameof(getter));

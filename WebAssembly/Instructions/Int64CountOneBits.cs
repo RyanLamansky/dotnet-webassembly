@@ -25,7 +25,7 @@ public class Int64CountOneBits : SimpleInstruction
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    private static readonly MethodInfo popCount = typeof(BitOperations).GetMethod(nameof(BitOperations.PopCount), new[] { typeof(ulong) })!;
+    private static readonly MethodInfo popCount = typeof(BitOperations).GetMethod(nameof(BitOperations.PopCount), [typeof(ulong)])!;
 #endif
 
     internal sealed override void Compile(CompilationContext context)
@@ -45,8 +45,8 @@ public class Int64CountOneBits : SimpleInstruction
             "☣ Int64CountOneBits",
             CompilationContext.HelperMethodAttributes,
             typeof(ulong),
-            new[] { typeof(ulong)
-            });
+            [ typeof(ulong)
+            ]);
 
         //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
         //This algorithm is from https://stackoverflow.com/questions/2709430/count-number-of-bits-in-a-64-bit-long-big-integer

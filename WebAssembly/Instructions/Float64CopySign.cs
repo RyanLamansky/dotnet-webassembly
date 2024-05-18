@@ -30,11 +30,10 @@ public class Float64CopySign : SimpleInstruction
                 "☣ Float64CopySign",
                 CompilationContext.HelperMethodAttributes,
                 typeof(double),
-                new[]
-                {
+                [
                         typeof(double),
                         typeof(double),
-                }
+                ]
                 );
 
             var il = builder.GetILGenerator();

@@ -32,21 +32,18 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
 
     private MethodBuilder CreateStoreMethod(HelperMethod helper, CompilationContext context)
     {
-        var memory = context.Memory;
-        if (memory == null)
+        var memory = context.Memory ??
             throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
-
         var builder = context.CheckedExportsBuilder.DefineMethod(
             $"☣ {helper}",
             CompilationContext.HelperMethodAttributes,
             typeof(void),
-            new[]
-            {
+            [
                     typeof(uint), //Address
 					this.Type.ToSystemType(), //Value
 					typeof(uint), //Offset
 					context.CheckedExportsBuilder,
-            }
+            ]
             );
         var il = builder.GetILGenerator();
 

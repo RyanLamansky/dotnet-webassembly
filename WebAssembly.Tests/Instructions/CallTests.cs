@@ -17,14 +17,14 @@ public class CallTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new[]
-            {
+                ],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -38,22 +38,22 @@ public class CallTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Call(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Int32Constant(1),
                     new Int32Add(),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<CompilerTestBase<int>>();
@@ -86,15 +86,15 @@ public class CallTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Float64, //Not actually used, just here to verify that the call works correctly.
-				},
-            Returns = new[]
-            {
+				],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -108,23 +108,23 @@ public class CallTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new LocalGet(1),
                     new Call(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Int32Constant(1),
                     new Int32Add(),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<MixedParameters>();

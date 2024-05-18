@@ -25,8 +25,8 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
     public Signature(WebAssemblyValueType returnType)
         : this()
     {
-        this.ReturnTypes = new[] { returnType.ToSystemType() };
-        this.RawReturnTypes = new[] { returnType };
+        this.ReturnTypes = [returnType.ToSystemType()];
+        this.RawReturnTypes = [returnType];
     }
 
     public Signature(Reader reader, uint typeIndex)

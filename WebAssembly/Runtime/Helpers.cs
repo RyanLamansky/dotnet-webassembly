@@ -15,12 +15,18 @@ public static class Helpers
     public static T FindImport<T>(IDictionary<string, IDictionary<string, RuntimeImport>> imports, string module, string field)
         where T : RuntimeImport
     {
+#if NETSTANDARD
         if (imports == null)
             throw new ArgumentNullException(nameof(imports));
         if (module == null)
             throw new ArgumentNullException(nameof(module));
         if (field == null)
             throw new ArgumentNullException(nameof(field));
+#else
+        ArgumentNullException.ThrowIfNull(imports, nameof(imports));
+        ArgumentNullException.ThrowIfNull(module, nameof(module));
+        ArgumentNullException.ThrowIfNull(field, nameof(field));
+#endif
 
         if (!imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import) || import == null)
         {

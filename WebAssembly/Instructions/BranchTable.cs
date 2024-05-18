@@ -65,9 +65,6 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
     internal BranchTable(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         var count = reader.ReadVarUInt32();
         var labels = new List<uint>();
         Labels = labels;
@@ -89,6 +86,9 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             writer.WriteVar(label);
         writer.WriteVar(this.DefaultLabel);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as BranchTable);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.

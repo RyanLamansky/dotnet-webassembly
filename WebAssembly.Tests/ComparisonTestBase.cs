@@ -32,11 +32,10 @@ public abstract class ComparisonTestBase<T>
 
         return AssemblyBuilder.CreateInstance<ComparisonTestBase<T>>(nameof(ComparisonTestBase<T>.Test),
             WebAssemblyValueType.Int32,
-            new[]
-            {
+            [
                     type,
                     type,
-            },
+            ],
             instructions);
     }
 }

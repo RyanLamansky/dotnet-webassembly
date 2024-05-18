@@ -5,14 +5,7 @@ namespace WebAssembly.Runtime;
 /// <summary>
 /// Describes an error encountered during execution of a compiled WebAssembly.
 /// </summary>
-public abstract class RuntimeException : Exception
+/// <param name="message">Becomes <see cref="Exception.Message"/>.</param>
+public abstract class RuntimeException(string message) : Exception(message)
 {
-    /// <summary>
-    /// Creates a new <see cref="RuntimeException"/> with the provided message.
-    /// </summary>
-    /// <param name="message">Becomes <see cref="Exception.Message"/>.</param>
-    public RuntimeException(string message)
-        : base(message)
-    {
-    }
 }

@@ -38,9 +38,6 @@ public class Branch : Instruction
 
     internal Branch(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Index = reader.ReadVarUInt32();
     }
 

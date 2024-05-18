@@ -16,10 +16,9 @@ public class BranchTableTests
     {
         var exports = AssemblyBuilder.CreateInstance<CompilerTestBase<int>>("Test",
             WebAssemblyValueType.Int32,
-             new[]
-             {
+             [
                      WebAssemblyValueType.Int32
-             },
+             ],
             new Block(BlockType.Empty),
             new Block(BlockType.Empty),
             new Block(BlockType.Empty),
@@ -63,13 +62,13 @@ public class BranchTableTests
         b.DefaultLabel = 2;
         TestUtility.AreEqual(a, b);
 
-        b.Labels = new uint[] { };
+        b.Labels = [];
         TestUtility.AreEqual(a, b);
-        b.Labels = new uint[] { 1 };
+        b.Labels = [1];
         TestUtility.AreNotEqual(a, b);
-        a.Labels = new uint[] { 1 };
+        a.Labels = [1];
         TestUtility.AreEqual(a, b);
-        a.Labels = new uint[] { 1, 2 };
+        a.Labels = [1, 2];
         TestUtility.AreNotEqual(a, b);
     }
 

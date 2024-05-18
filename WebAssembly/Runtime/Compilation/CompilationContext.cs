@@ -8,23 +8,14 @@ using ILOpCode = System.Reflection.Emit.OpCode;
 
 namespace WebAssembly.Runtime.Compilation;
 
-internal sealed class CompilationContext
+internal sealed class CompilationContext(CompilerConfiguration configuration)
 {
     private TypeBuilder? ExportsBuilder;
     private ILGenerator? generator;
-    public readonly CompilerConfiguration Configuration;
+    public readonly CompilerConfiguration Configuration = configuration;
 
-    public CompilationContext(CompilerConfiguration configuration)
+    sealed class FunctionOuterBlock(BlockType type) : BlockTypeInstruction(type)
     {
-        this.Configuration = configuration;
-    }
-
-    sealed class FunctionOuterBlock : BlockTypeInstruction
-    {
-        public FunctionOuterBlock(BlockType type) : base(type)
-        {
-        }
-
         public sealed override OpCode OpCode => OpCode.Return; // "Return" is the most accurate fake opcode for the outer block.
 
         internal sealed override void Compile(CompilationContext context) => throw new NotSupportedException();
@@ -187,7 +178,7 @@ internal sealed class CompilationContext
 
     public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
     {
-        return PopStack(opcode, new[] { expectedType }, 1).FirstOrDefault();
+        return PopStack(opcode, [expectedType], 1).FirstOrDefault();
     }
 
     public void PopStackNoReturn(OpCode opcode)

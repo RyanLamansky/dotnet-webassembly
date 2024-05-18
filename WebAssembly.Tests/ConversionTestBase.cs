@@ -33,10 +33,9 @@ public abstract class ConversionTestBase<TInput, TReturn>
 
         return AssemblyBuilder.CreateInstance<ConversionTestBase<TInput, TReturn>>(nameof(ConversionTestBase<TInput, TReturn>.Test),
             @return,
-            new[]
-            {
+            [
                     input,
-            },
+            ],
             instructions);
     }
 }

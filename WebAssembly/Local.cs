@@ -26,9 +26,6 @@ public class Local : IEquatable<Local>
 
     internal Local(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         this.Count = reader.ReadVarUInt32();
         this.Type = (WebAssemblyValueType)reader.ReadVarInt7();
     }

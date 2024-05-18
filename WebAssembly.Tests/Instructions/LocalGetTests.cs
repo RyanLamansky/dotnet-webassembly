@@ -58,7 +58,7 @@ public class LocalGetTests
     [TestMethod]
     public void GetLocal_Compiled_Parameters()
     {
-        var compiled = AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, new[] { WebAssemblyValueType.Int32 },
+        var compiled = AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, [WebAssemblyValueType.Int32],
             new LocalGet(0),
             new End()
             );
@@ -67,7 +67,7 @@ public class LocalGetTests
         Assert.AreEqual(10, compiled.Test(10));
         Assert.AreEqual(1000, compiled.Test(1000));
 
-        var compiled2 = AssemblyBuilder.CreateInstance<ParameterTest2>("Test", WebAssemblyValueType.Int32, new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Int32 },
+        var compiled2 = AssemblyBuilder.CreateInstance<ParameterTest2>("Test", WebAssemblyValueType.Int32, [WebAssemblyValueType.Int32, WebAssemblyValueType.Int32],
             new LocalGet(1),
             new End()
             );
@@ -76,12 +76,12 @@ public class LocalGetTests
         Assert.AreEqual(9, compiled2.Test(10, 9));
         Assert.AreEqual(999, compiled2.Test(1000, 999));
 
-        var compiled3 = AssemblyBuilder.CreateInstance<ParameterTest3>("Test", WebAssemblyValueType.Int32, new[]
-            {
+        var compiled3 = AssemblyBuilder.CreateInstance<ParameterTest3>("Test", WebAssemblyValueType.Int32,
+            [
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int32,
-                },
+                ],
             new LocalGet(2),
             new End()
             );
@@ -90,13 +90,13 @@ public class LocalGetTests
         Assert.AreEqual(9, compiled3.Test(11, 10, 9));
         Assert.AreEqual(999, compiled3.Test(1001, 1000, 999));
 
-        var compiled4 = AssemblyBuilder.CreateInstance<ParameterTest4>("Test", WebAssemblyValueType.Int32, new[]
-            {
+        var compiled4 = AssemblyBuilder.CreateInstance<ParameterTest4>("Test", WebAssemblyValueType.Int32,
+            [
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int32,
-                },
+                ],
             new LocalGet(3),
             new End()
             );
@@ -113,7 +113,7 @@ public class LocalGetTests
     public void GetLocal_Compiled_Parameter_OutOfRange()
     {
         var exception = Assert.ThrowsException<ModuleLoadException>(
-            () => AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, new[] { WebAssemblyValueType.Int32 },
+            () => AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, [WebAssemblyValueType.Int32],
                 new LocalGet(1),
                 new End()
                 ));

@@ -61,10 +61,14 @@ public abstract class Instruction : IEquatable<Instruction>
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal static IEnumerable<Instruction> ParseInitializerExpression(Reader reader)
     {
+#if NETSTANDARD
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
+#else
+        ArgumentNullException.ThrowIfNull(reader, nameof(reader));
+#endif
 
-        //As of the initial version, the set of operations valid for initializer experssions is extremely limited.
+        //As of the initial version, the set of operations valid for initializer expressions is extremely limited.
         while (true)
         {
             var initialOffset = reader.Offset;
@@ -90,8 +94,12 @@ public abstract class Instruction : IEquatable<Instruction>
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal static IEnumerable<Instruction> Parse(Reader reader)
     {
+#if NETSTANDARD
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
+#else
+        ArgumentNullException.ThrowIfNull(reader, nameof(reader));
+#endif
 
         var depth = 1;
         while (true)

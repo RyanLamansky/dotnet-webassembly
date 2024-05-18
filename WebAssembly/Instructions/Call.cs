@@ -39,20 +39,17 @@ public class Call : Instruction, IEquatable<Call>
 
     internal Call(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         Index = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
-        if (writer == null)
-            throw new ArgumentNullException(nameof(writer));
-
         writer.Write((byte)OpCode.Call);
         writer.WriteVar(this.Index);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as Call);
 
     /// <summary>
     /// Determines whether this instruction is identical to another.

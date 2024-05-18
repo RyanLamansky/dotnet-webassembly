@@ -19,24 +19,22 @@ public class CallIndirectTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new[]
-            {
+                ],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
-            },
-            Returns = new[]
-            {
+            Parameters = [],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -55,28 +53,28 @@ public class CallIndirectTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new CallIndirect(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new Int32Constant(5),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-             {
+            Code =
+             [
                     new Int32Constant(6),
                     new End(),
-             },
+             ],
         });
         module.Tables.Add(new Table(2, 2));
         module.Elements.Add(new Element(0, 1, 2));
@@ -116,14 +114,14 @@ public class CallIndirectTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
-                },
-            Returns = new[]
-            {
+                ],
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Imports.Add(new Import.Function { Module = "Test", Field = "Function", });
         module.Functions.Add(new Function
@@ -136,13 +134,13 @@ public class CallIndirectTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new Int32Constant(0),
                     new CallIndirect(0),
                     new End(),
-            },
+            ],
         });
         module.Tables.Add(new Table(1));
         module.Elements.Add(new Element(0, 0));

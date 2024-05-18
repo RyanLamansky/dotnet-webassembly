@@ -37,8 +37,8 @@ where T : struct
         module.Memories.Add(new Memory(1, 1));
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { AssemblyBuilder.Map(typeof(T)) },
-            Parameters = new[] { WebAssemblyValueType.Int32 },
+            Returns = [AssemblyBuilder.Map(typeof(T))],
+            Parameters = [WebAssemblyValueType.Int32],
         });
         module.Functions.Add(new Function
         {

@@ -27,16 +27,16 @@ public class SelectTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new WebAssemblyValueType[]
-            {
+            Parameters =
+            [
                     type,
                     type,
                     WebAssemblyValueType.Int32,
-            },
-            Returns = new[]
-            {
+            ],
+            Returns =
+            [
                     type,
-                },
+                ],
         });
         module.Functions.Add(new Function
         {
@@ -47,14 +47,14 @@ public class SelectTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new LocalGet(0),
                     new LocalGet(1),
                     new LocalGet(2),
                     new Select(),
                     new End(),
-            },
+            ],
         });
 
         return module.ToInstance<SelectTester<T>>();

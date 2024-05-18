@@ -37,11 +37,11 @@ where T : struct
         module.Memories.Add(new Memory(1, 1));
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[]
-            {
+            Parameters =
+            [
                     WebAssemblyValueType.Int32,
                     AssemblyBuilder.Map(typeof(T)),
-                },
+                ],
         });
         module.Functions.Add(new Function
         {

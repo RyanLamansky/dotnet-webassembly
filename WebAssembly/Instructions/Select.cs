@@ -27,7 +27,7 @@ public class Select : SimpleInstruction
     {
         var stack = context.Stack;
 
-        var popped = context.PopStack(OpCode.Select, new WebAssemblyValueType?[] { WebAssemblyValueType.Int32, null, null }, 3).ToArray();
+        var popped = context.PopStack(OpCode.Select, [WebAssemblyValueType.Int32, null, null], 3).ToArray();
         var typeB = popped[1];
         var typeA = popped[2];
 
@@ -63,45 +63,41 @@ public class Select : SimpleInstruction
                                    "☣ Select Int32",
                                    CompilationContext.HelperMethodAttributes,
                                    typeof(int),
-                                   new[]
-                                   {
+                                   [
                                 typeof(int),
                                 typeof(int),
                                 typeof(int),
-                                   }
+                                   ]
                                    ),
             HelperMethod.SelectInt64 => context.CheckedExportsBuilder.DefineMethod(
           "☣ Select Int64",
           CompilationContext.HelperMethodAttributes,
           typeof(long),
-          new[]
-          {
+          [
                                 typeof(long),
                                 typeof(long),
                                 typeof(int),
-          }
+          ]
           ),
             HelperMethod.SelectFloat32 => context.CheckedExportsBuilder.DefineMethod(
           "☣ Select Float32",
           CompilationContext.HelperMethodAttributes,
           typeof(float),
-          new[]
-          {
+          [
                                 typeof(float),
                                 typeof(float),
                                 typeof(int),
-          }
+          ]
           ),
             HelperMethod.SelectFloat64 => context.CheckedExportsBuilder.DefineMethod(
           "☣ Select Float64",
           CompilationContext.HelperMethodAttributes,
           typeof(double),
-          new[]
-          {
+          [
                                 typeof(double),
                                 typeof(double),
                                 typeof(int),
-          }
+          ]
           ),
             _ => throw new InvalidOperationException(),// Shouldn't be possible.
         };

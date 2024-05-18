@@ -23,8 +23,8 @@ public class FunctionImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[] { WebAssemblyValueType.Float64 },
-            Parameters = new[] { WebAssemblyValueType.Float64, WebAssemblyValueType.Float64, }
+            Returns = [WebAssemblyValueType.Float64],
+            Parameters = [WebAssemblyValueType.Float64, WebAssemblyValueType.Float64,]
         });
         module.Imports.Add(new Import.Function { Module = "Math", Field = "Pow", });
         module.Functions.Add(new Function
@@ -37,13 +37,13 @@ public class FunctionImportTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new LocalGet(0),
                 new LocalGet(1),
                 new Call(0),
                 new End()
-            },
+            ],
         });
 
         var compiled = module.ToInstance<CompilerTestBase2<double>>(
@@ -86,7 +86,7 @@ public class FunctionImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[] { WebAssemblyValueType.Float64, }
+            Parameters = [WebAssemblyValueType.Float64,]
         });
         module.Imports.Add(new Import.Function { Module = "Do", Field = "Nothing", });
         module.Functions.Add(new Function
@@ -99,12 +99,12 @@ public class FunctionImportTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new LocalGet(0),
                 new Call(0),
                 new End()
-            },
+            ],
         });
 
         var compiled = module.ToInstance<CompilerTestBaseVoid<double>>(
@@ -135,7 +135,7 @@ public class FunctionImportTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Parameters = new[] { WebAssemblyValueType.Float64, }
+            Parameters = [WebAssemblyValueType.Float64,]
         });
         module.Imports.Add(new Import.Function { Module = "Do", Field = "Nothing", });
         module.Functions.Add(new Function
@@ -148,12 +148,12 @@ public class FunctionImportTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new LocalGet(0),
                 new Call(0),
                 new End()
-            },
+            ],
         });
 
         var calls = 0;

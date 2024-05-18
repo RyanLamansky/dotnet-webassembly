@@ -55,9 +55,6 @@ public class ResizableLimits
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal ResizableLimits(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         var setFlags = (Flags)reader.ReadVarUInt32();
         this.Minimum = reader.ReadVarUInt32();
         if ((setFlags & Flags.Maximum) != 0)

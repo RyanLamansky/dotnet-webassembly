@@ -46,34 +46,34 @@ public class GlobalGetTests
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int64,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Float32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Float64,
-                }
+                ]
         });
         module.Functions.Add(new Function(0));
         module.Functions.Add(new Function(1));
@@ -111,34 +111,34 @@ public class GlobalGetTests
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int64,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Float32,
-                }
+                ]
         });
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Float64,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -160,41 +160,41 @@ public class GlobalGetTests
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(4),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Int64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int64Constant(5),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float32,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float32Constant(6),
                     new End(),
-            },
+            ],
         });
         module.Globals.Add(new Global
         {
             IsMutable = true,
             ContentType = WebAssemblyValueType.Float64,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Float64Constant(7),
                     new End(),
-            },
+            ],
         });
         module.Exports.Add(new Export
         {
@@ -218,35 +218,35 @@ public class GlobalGetTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(1),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(2),
                     new End(),
-            },
+            ],
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(3),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<TestBase>();
@@ -272,10 +272,10 @@ public class GlobalGetTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -292,11 +292,11 @@ public class GlobalGetTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<CompilerTestBase0<int>>(
@@ -333,17 +333,17 @@ public class GlobalGetTests
         module.Types.Add(new WebAssemblyType
         {
             Parameters = Array.Empty<WebAssemblyValueType>(),
-            Returns = new[] { WebAssemblyValueType.Int32 },
+            Returns = [WebAssemblyValueType.Int32],
         });
         module.Globals.Add(new Global
         {
             ContentType = WebAssemblyValueType.Int32,
             IsMutable = true,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(5),
                     new End()
-            }
+            ]
         });
         module.Exports.Add(new Export
         {
@@ -360,11 +360,11 @@ public class GlobalGetTests
         module.Functions.Add(new Function());
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new End()
-            },
+            ],
         });
 
         var exports = module.ToInstance<GlobalAndFunctionExport>().Exports;

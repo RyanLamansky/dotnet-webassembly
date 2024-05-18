@@ -9,8 +9,8 @@ namespace WebAssembly;
 /// </summary>
 static class Samples
 {
-    public static int[] Int32 => new int[]
-    {
+    public static int[] Int32 =>
+    [
             -1,
             0,
             1,
@@ -24,10 +24,10 @@ static class Samples
             ushort.MaxValue,
             int.MinValue,
             int.MaxValue,
-    };
+    ];
 
-    public static uint[] UInt32 => new uint[]
-    {
+    public static uint[] UInt32 =>
+    [
             0,
             1,
             0x00,
@@ -38,10 +38,10 @@ static class Samples
             ushort.MaxValue,
             int.MaxValue,
             uint.MaxValue,
-    };
+    ];
 
-    public static long[] Int64 => new long[]
-    {
+    public static long[] Int64 =>
+    [
             -1,
             0,
             1,
@@ -58,10 +58,10 @@ static class Samples
             uint.MaxValue,
             long.MinValue,
             long.MaxValue,
-    };
+    ];
 
-    public static ulong[] UInt64 => new ulong[]
-    {
+    public static ulong[] UInt64 =>
+    [
             0,
             1,
             0x00,
@@ -74,10 +74,10 @@ static class Samples
             uint.MaxValue,
             long.MaxValue,
             ulong.MaxValue,
-    };
+    ];
 
-    public static float[] Single => new float[]
-    {
+    public static float[] Single =>
+    [
             0.0f,
             1.0f,
             -1.0f,
@@ -88,10 +88,10 @@ static class Samples
             float.PositiveInfinity,
             float.Epsilon,
             -float.Epsilon,
-    };
+    ];
 
-    public static double[] Double => new[]
-    {
+    public static double[] Double =>
+    [
             0.0,
             1.0,
             -1.0,
@@ -106,10 +106,8 @@ static class Samples
             double.PositiveInfinity,
             double.Epsilon,
             -double.Epsilon,
-        };
+        ];
 
-    public static byte[] Memory => new byte[] { 254, 2, 3, 4, 5, 6, 7, 8 }
-        .Concat(Encoding.Unicode.GetBytes("🐩")) //Must be aligned to 16 bits for compatibility with JavaScript Uint16Array.
-        .ToArray()
+    public static byte[] Memory => [254, 2, 3, 4, 5, 6, 7, 8, .. Encoding.Unicode.GetBytes("🐩")]
         ;
 }

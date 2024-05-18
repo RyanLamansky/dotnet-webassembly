@@ -35,12 +35,18 @@ public static class ImportDictionaryExtensions
         string fieldName,
         RuntimeImport value)
     {
+#if NETSTANDARD
         if (dictionary == null)
             throw new ArgumentNullException(nameof(dictionary));
         if (moduleName == null)
             throw new ArgumentNullException(nameof(moduleName));
         if (fieldName == null)
             throw new ArgumentNullException(nameof(fieldName));
+#else
+        ArgumentNullException.ThrowIfNull(dictionary, nameof(dictionary));
+        ArgumentNullException.ThrowIfNull(moduleName, nameof(moduleName));
+        ArgumentNullException.ThrowIfNull(fieldName, nameof(fieldName));
+#endif
 
         if (!dictionary.TryGetValue(moduleName, out var modules))
         {
@@ -62,12 +68,18 @@ public static class ImportDictionaryExtensions
         TExports exports)
     where TExports : class
     {
+#if NETSTANDARD
         if (dictionary == null)
             throw new ArgumentNullException(nameof(dictionary));
         if (moduleName == null)
             throw new ArgumentNullException(nameof(moduleName));
         if (exports == null)
             throw new ArgumentNullException(nameof(exports));
+#else
+        ArgumentNullException.ThrowIfNull(dictionary, nameof(dictionary));
+        ArgumentNullException.ThrowIfNull(moduleName, nameof(moduleName));
+        ArgumentNullException.ThrowIfNull(exports, nameof(exports));
+#endif
 
         foreach (var (name, import) in RuntimeImport.FromCompiledExports(exports))
         {

@@ -25,7 +25,7 @@ public class Int32CountOneBits : SimpleInstruction
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    private static readonly MethodInfo popCount = typeof(BitOperations).GetMethod(nameof(BitOperations.PopCount), new[] { typeof(uint) })!;
+    private static readonly MethodInfo popCount = typeof(BitOperations).GetMethod(nameof(BitOperations.PopCount), [typeof(uint)])!;
 #endif
 
     internal sealed override void Compile(CompilationContext context)
@@ -45,8 +45,8 @@ public class Int32CountOneBits : SimpleInstruction
             "☣ Int32CountOneBits",
             CompilationContext.HelperMethodAttributes,
             typeof(uint),
-            new[] { typeof(uint)
-            });
+            [ typeof(uint)
+            ]);
 
         //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
         //This algorithm is from https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer

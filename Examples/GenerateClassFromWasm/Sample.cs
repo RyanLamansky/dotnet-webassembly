@@ -5,35 +5,35 @@ static class Sample
 {
     public static Module GenerateExample() => new()
     {
-        Types = new WebAssemblyType[]
-        {
+        Types =
+        [
             new WebAssemblyType
             {
-                Returns = new WebAssemblyValueType[] { WebAssemblyValueType.Int32 },
-                Parameters = new WebAssemblyValueType[]
-                {
+                Returns = [WebAssemblyValueType.Int32],
+                Parameters =
+                [
                     WebAssemblyValueType.Int32,
                     WebAssemblyValueType.Int64,
                     WebAssemblyValueType.Float32,
                     WebAssemblyValueType.Float64,
-                },
+                ],
             },
             new WebAssemblyType
             {
             },
-        },
-        Functions = new Function[]
-        {
+        ],
+        Functions =
+        [
             new Function(0),
             new Function(1),
-        },
-        Codes = new FunctionBody[]
-        {
+        ],
+        Codes =
+        [
             new FunctionBody(new LocalGet(), new End()),
             new FunctionBody(new End()),
-        },
-        Globals = new Global[]
-        {
+        ],
+        Globals =
+        [
             new Global
             {
                 ContentType = WebAssemblyValueType.Int32,
@@ -43,13 +43,13 @@ static class Sample
                 ContentType = WebAssemblyValueType.Int32,
                 IsMutable = true,
             }
-        },
-        Exports = new Export[]
-        {
+        ],
+        Exports =
+        [
             new Export("Variety", 0, ExternalKind.Function),
             new Export("DoNothing", 1, ExternalKind.Function),
             new Export("ReadOnlyInt32Global", 0, ExternalKind.Global),
             new Export("ReadWriteInt32Global", 1, ExternalKind.Global),
-        },
+        ],
     };
 }

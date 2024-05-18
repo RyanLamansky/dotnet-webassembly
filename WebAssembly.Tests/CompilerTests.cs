@@ -55,10 +55,10 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -88,11 +88,11 @@ public class CompilerTests
         {
             ContentType = WebAssemblyValueType.Int32,
             IsMutable = false,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(5),
                     new End()
-            }
+            ]
         });
         module.Exports.Add(new Export
         {
@@ -132,11 +132,11 @@ public class CompilerTests
         {
             ContentType = WebAssemblyValueType.Int32,
             IsMutable = true,
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(3),
                     new End()
-            }
+            ]
         });
         module.Exports.Add(new Export
         {
@@ -169,10 +169,10 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -187,10 +187,10 @@ public class CompilerTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -201,11 +201,11 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new Int32Constant { Value = 8 },
                 new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -235,10 +235,10 @@ public class CompilerTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -249,11 +249,11 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new Int32Constant { Value = 3 },
                 new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<HelloWorldExports>();
@@ -271,10 +271,10 @@ public class CompilerTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -285,11 +285,11 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                 new Int32Constant { Value = 3 },
                 new End(),
-            },
+            ],
         });
 
         var compiled = module.ToInstance<HelloWorldExports>();
@@ -370,10 +370,10 @@ public class CompilerTests
         var module = new Module();
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
         module.Functions.Add(new Function
         {
@@ -384,19 +384,19 @@ public class CompilerTests
         });
         module.Codes.Add(new FunctionBody
         {
-            Locals = new[]
-            {
+            Locals =
+            [
                     new Local
                     {
                         Count = 1,
                         Type = WebAssemblyValueType.Int32,
                     }
-                },
-            Code = new Instruction[]
-            {
+                ],
+            Code =
+            [
                     new LocalGet(0),
                     new End(),
-            }
+            ]
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -440,10 +440,10 @@ public class CompilerTests
         });
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                }
+                ]
         });
 
         module.Functions.Add(new Function
@@ -456,23 +456,23 @@ public class CompilerTests
 
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new Int32Constant(1),
                     new Int32Constant(2),
                     new Int32Store(),
                     new End(),
-            },
+            ],
         });
 
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new Int32Constant(1),
                     new Int32Load(),
                     new End(),
-            },
+            ],
         });
 
         module.Start = 0;
@@ -509,12 +509,12 @@ public class CompilerTests
 
         module.Data.Add(new Data
         {
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(0),
                     new End(),
-            },
-            RawData = new byte[] { 2 },
+            ],
+            RawData = [2],
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -551,21 +551,21 @@ public class CompilerTests
 
         module.Data.Add(new Data
         {
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(0),
                     new End(),
-            },
-            RawData = new byte[] { 1, 2 },
+            ],
+            RawData = [1, 2],
         });
         module.Data.Add(new Data
         {
-            InitializerExpression = new Instruction[]
-             {
+            InitializerExpression =
+             [
                     new Int32Constant(1),
                     new End(),
-             },
-            RawData = new byte[] { 3, 4 },
+             ],
+            RawData = [3, 4],
         });
 
         var compiled = module.ToInstance<dynamic>();
@@ -602,12 +602,12 @@ public class CompilerTests
 
         module.Data.Add(new Data
         {
-            InitializerExpression = new Instruction[]
-            {
+            InitializerExpression =
+            [
                     new Int32Constant(0),
                     new End(),
-            },
-            RawData = new byte[] { 2 },
+            ],
+            RawData = [2],
         });
 
         var x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
@@ -663,21 +663,21 @@ public class CompilerTests
         });
         module.Types.Add(new WebAssemblyType
         {
-            Returns = new[]
-            {
+            Returns =
+            [
                     WebAssemblyValueType.Int32,
-                },
+                ],
         });
         module.Functions.Add(new Function { Type = 0 });
         module.Codes.Add(new FunctionBody
         {
-            Code = new Instruction[]
-            {
+            Code =
+            [
                     new GlobalGet(0),
                     new GlobalGet(1),
                     new Int32Add(),
                     new End(),
-            },
+            ],
         });
         module.Exports.Add(new Export
         {

@@ -16,17 +16,17 @@ public class DataTests
     {
         var module = new Module
         {
-            Data = new[]
-            {
+            Data =
+            [
                     new Data
                     {
-                        InitializerExpression = new Instruction[]
-                        {
+                        InitializerExpression =
+                        [
                             new Instructions.Int32Constant(0),
                             new Instructions.End(),
-                        },
+                        ],
                     },
-                },
+                ],
         }.BinaryRoundTrip();
 
         Assert.IsNotNull(module.Data);

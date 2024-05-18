@@ -20,10 +20,10 @@ static class AssemblyBuilder
         {
             Returns = @return.HasValue == false
             ? Array.Empty<WebAssemblyValueType>()
-            : new[]
-            {
+            :
+            [
                     @return.GetValueOrDefault()
-            },
+            ],
         });
         module.Functions.Add(new Function
         {
@@ -57,10 +57,10 @@ static class AssemblyBuilder
         {
             Returns = @return.HasValue == false
             ? Array.Empty<WebAssemblyValueType>()
-            : new[]
-            {
+            :
+            [
                     @return.GetValueOrDefault()
-            },
+            ],
             Parameters = parameters,
         });
         module.Functions.Add(new Function

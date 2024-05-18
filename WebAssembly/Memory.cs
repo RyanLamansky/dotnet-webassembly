@@ -49,8 +49,12 @@ public class Memory
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal Memory(Reader reader)
     {
+#if NETSTANDARD
         if (reader == null)
             throw new ArgumentNullException(nameof(reader));
+#else
+        ArgumentNullException.ThrowIfNull(reader, nameof(reader));
+#endif
 
         this.resizableLimits = new ResizableLimits(reader);
     }

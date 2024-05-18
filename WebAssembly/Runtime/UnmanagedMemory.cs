@@ -70,8 +70,12 @@ public sealed class UnmanagedMemory : IDisposable
     /// <returns>The previous <see cref="Current"/> size value, or -1 (unchecked wrap to unsigned 32-bit integer) in the event of a failure.</returns>
     public uint Grow(uint delta)
     {
+#if NETSTANDARD
         if (this.disposed)
             throw new ObjectDisposedException(nameof(UnmanagedMemory));
+#else
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+#endif
 
         var oldCurrent = this.Current;
         if (delta == 0)

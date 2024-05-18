@@ -28,20 +28,22 @@ public class FunctionImport : RuntimeImport
     /// <exception cref="ArgumentException">A parameter or return type is not compatible with WebAssembly.</exception>
     public FunctionImport(Delegate del)
     {
+#if NETSTANDARD
         if (del == null)
             throw new ArgumentNullException(nameof(del));
+#else
+        ArgumentNullException.ThrowIfNull(del, nameof(del));
+#endif
 
-        var method = (this.Method = del).GetMethodInfo();
-        if (method == null)
+        var method = (this.Method = del).GetMethodInfo() ??
             throw new ArgumentException("Provided delegate isn't associated with a method.", nameof(del));
-
         this.Type = new WebAssemblyType();
         if (method.ReturnType != typeof(void))
         {
             if (!method.ReturnType.TryConvertToValueType(out var type))
                 throw new ArgumentException($"Return type {method.ReturnType} is not compatible with WebAssembly.", nameof(del));
 
-            this.Type.Returns = new[] { type };
+            this.Type.Returns = [type];
         }
 
         foreach (var parameter in method.GetParameters())

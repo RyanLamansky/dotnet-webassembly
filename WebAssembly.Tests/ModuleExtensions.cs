@@ -34,15 +34,10 @@ static class ModuleExtensions
         module.WriteToBinary(memory);
     }
 
-    private sealed class ForwardReadOnlyStream : Stream
+    private sealed class ForwardReadOnlyStream(byte[] data) : Stream
     {
-        private readonly byte[] data;
+        private readonly byte[] data = data;
         private int position;
-
-        public ForwardReadOnlyStream(byte[] data)
-        {
-            this.data = data;
-        }
 
         public override bool CanRead => true;
 

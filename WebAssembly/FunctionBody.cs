@@ -66,9 +66,6 @@ public class FunctionBody : IEquatable<FunctionBody>
 
     internal FunctionBody(Reader reader, long byteLength)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         var startingOffset = reader.Offset;
         var localCount = reader.ReadVarUInt32();
         var locals = this.Locals = new List<Local>(checked((int)localCount));
@@ -78,7 +75,7 @@ public class FunctionBody : IEquatable<FunctionBody>
         this.code = Instruction.Parse(reader).ToArray();
 
         if (reader.Offset - startingOffset != byteLength)
-            throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
+            throw new ModuleLoadException($"Instruction sequence reader ended after reading {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
     }
 
     /// <summary>

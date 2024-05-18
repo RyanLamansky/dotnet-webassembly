@@ -66,11 +66,10 @@ public class MemoryGrow : Instruction
                 "☣ GrowMemory",
                 CompilationContext.HelperMethodAttributes,
                 typeof(uint),
-                new[]
-                {
+                [
                         typeof(uint), //Delta
 						typeof(UnmanagedMemory),
-                }
+                ]
                 );
 
             var il = builder.GetILGenerator();

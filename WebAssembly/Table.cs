@@ -51,9 +51,6 @@ public class Table
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal Table(Reader reader)
     {
-        if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
-
         this.ElementType = (ElementType)reader.ReadVarInt7();
         this.resizableLimits = new ResizableLimits(reader);
     }

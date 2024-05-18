@@ -2,20 +2,12 @@
 
 namespace WebAssembly.Runtime.Compilation;
 
-internal sealed class GlobalInfo
+internal sealed class GlobalInfo(WebAssemblyValueType type, bool requiresInstance, MethodInfo getter, MethodInfo? setter)
 {
-    public readonly WebAssemblyValueType Type;
-    public readonly bool RequiresInstance;
-    public readonly MethodInfo Getter;
-    public readonly MethodInfo? Setter;
-
-    public GlobalInfo(WebAssemblyValueType type, bool requiresInstance, MethodInfo getter, MethodInfo? setter)
-    {
-        this.Type = type;
-        this.RequiresInstance = requiresInstance;
-        this.Getter = getter;
-        this.Setter = setter;
-    }
+    public readonly WebAssemblyValueType Type = type;
+    public readonly bool RequiresInstance = requiresInstance;
+    public readonly MethodInfo Getter = getter;
+    public readonly MethodInfo? Setter = setter;
 
 #if DEBUG
     public sealed override string ToString() => $"{this.Type} {this.RequiresInstance}";

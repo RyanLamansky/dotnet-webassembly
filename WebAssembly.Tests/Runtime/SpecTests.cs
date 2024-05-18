@@ -158,7 +158,7 @@ public class SpecTests
     {
         var skips = new HashSet<uint> { 88, 89, 93, 133, 134, 139, 183, 187, 229, 234, 236 };
         if (!Environment.Is64BitProcess) // 32-bit JIT operates differently as of .NET Core 3.1.
-            skips.UnionWith(new uint[] { 454, 455, 470, 471 });
+            skips.UnionWith([454, 455, 470, 471]);
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "conversions"), "conversions.json", skips.Contains);
     }
 
@@ -420,13 +420,13 @@ public class SpecTests
             };
         if (!Environment.Is64BitProcess)
         {
-            skips.UnionWith(new uint[]
-            {
+            skips.UnionWith(
+            [
                     141, // Not equal: 9219994337134247936 and 9222246136947933184
                     143, // Not equal: 9218888453225749180 and 9221140253039434428
                     144, // Not equal: 9219717281780008969 and 9221969081593694217
                     145, // Not equal: -3751748707474619 and -1499948893789371
-            });
+            ]);
         }
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_literals"), "float_literals.json", skips.Contains);
     }

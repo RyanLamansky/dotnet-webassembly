@@ -31,10 +31,9 @@ public abstract class CompilerTestBase<T>
 
         return AssemblyBuilder.CreateInstance<CompilerTestBase<T>>(nameof(CompilerTestBase<T>.Test),
             type,
-            new[]
-            {
+            [
                     type,
-            },
+            ],
             instructions);
     }
 }

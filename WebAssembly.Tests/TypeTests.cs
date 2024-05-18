@@ -20,30 +20,30 @@ public class TypeTests
         b.Form = (FunctionType)1;
         TestUtility.AreEqual(a, b);
 
-        a.Parameters = new WebAssemblyValueType[] { };
+        a.Parameters = [];
         TestUtility.AreEqual(a, b);
-        a.Parameters = new[] { WebAssemblyValueType.Int32 };
+        a.Parameters = [WebAssemblyValueType.Int32];
         TestUtility.AreNotEqual(a, b);
-        b.Parameters = new[] { WebAssemblyValueType.Int32 };
+        b.Parameters = [WebAssemblyValueType.Int32];
         TestUtility.AreEqual(a, b);
-        a.Parameters = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 };
+        a.Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float32];
         TestUtility.AreNotEqual(a, b);
-        b.Parameters = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float64 };
+        b.Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float64];
         TestUtility.AreNotEqual(a, b);
-        b.Parameters = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 };
+        b.Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float32];
         TestUtility.AreEqual(a, b);
 
-        a.Returns = new WebAssemblyValueType[] { };
+        a.Returns = [];
         TestUtility.AreEqual(a, b);
-        a.Returns = new[] { WebAssemblyValueType.Int32 };
+        a.Returns = [WebAssemblyValueType.Int32];
         TestUtility.AreNotEqual(a, b);
-        b.Returns = new[] { WebAssemblyValueType.Int32 };
+        b.Returns = [WebAssemblyValueType.Int32];
         TestUtility.AreEqual(a, b);
-        a.Returns = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 };
+        a.Returns = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float32];
         TestUtility.AreNotEqual(a, b);
-        b.Returns = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float64 };
+        b.Returns = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float64];
         TestUtility.AreNotEqual(a, b);
-        b.Returns = new[] { WebAssemblyValueType.Int32, WebAssemblyValueType.Float32 };
+        b.Returns = [WebAssemblyValueType.Int32, WebAssemblyValueType.Float32];
         TestUtility.AreEqual(a, b);
     }
 }

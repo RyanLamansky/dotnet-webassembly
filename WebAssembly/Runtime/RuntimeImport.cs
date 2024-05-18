@@ -27,26 +27,21 @@ public abstract class RuntimeImport
     internal static IEnumerable<(string name, RuntimeImport import)> FromCompiledExports<TExports>(TExports exports)
         where TExports : class
     {
-        if (exports == null)
-            throw new ArgumentNullException(nameof(exports));
-
         Delegate GetDelegate(MethodInfo method)
         {
             var parameters = method.GetParameters();
             Type? returns = method.ReturnType;
             if (returns == typeof(void))
                 returns = null;
-            var del = CompilerConfiguration.GetStandardDelegateForType(parameters.Length, returns != null ? 1 : 0);
-            if (del == null)
+            var del = CompilerConfiguration.GetStandardDelegateForType(parameters.Length, returns != null ? 1 : 0) ??
                 throw new ArgumentException($"Unable to produce a compatible delegate for export member {method.Name}.", nameof(exports));
-
             if (del.IsGenericTypeDefinition == false)
                 return Delegate.CreateDelegate(del, exports, method);
 
             var args = method.GetParameters().Select(parm => parm.ParameterType).ToList();
             if (returns != null && returns != typeof(void))
                 args.Add(returns);
-            return Delegate.CreateDelegate(del.MakeGenericType(args.ToArray()), exports, method);
+            return Delegate.CreateDelegate(del.MakeGenericType([.. args]), exports, method);
         }
 
         foreach (var member in exports.GetType().GetMembers())
