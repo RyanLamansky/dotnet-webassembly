@@ -125,7 +125,7 @@ public class FunctionBody : IEquatable<FunctionBody>
             }
 
             return !itemMoved && !othersMoved;
-        };
+        }
     }
 
     internal void WriteTo(Writer writer, byte[] buffer)

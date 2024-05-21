@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class Int64CountOneBits : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64CountOneBits"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64CountOneBits"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64CountOneBits;
 

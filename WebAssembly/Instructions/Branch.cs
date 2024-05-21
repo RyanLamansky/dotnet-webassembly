@@ -11,7 +11,7 @@ namespace WebAssembly.Instructions;
 public class Branch : Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Branch"/>.
+    /// Always <see cref="WebAssembly.OpCode.Branch"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Branch;
 

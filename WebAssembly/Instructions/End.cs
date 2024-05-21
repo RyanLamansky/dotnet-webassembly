@@ -11,7 +11,7 @@ namespace WebAssembly.Instructions;
 public class End : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.End"/>.
+    /// Always <see cref="WebAssembly.OpCode.End"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.End;
 

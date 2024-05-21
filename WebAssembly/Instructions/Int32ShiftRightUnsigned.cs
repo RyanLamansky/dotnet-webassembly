@@ -6,7 +6,7 @@ namespace WebAssembly.Instructions;
 public class Int32ShiftRightUnsigned : ValueTwoToOneInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32ShiftRightUnsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32ShiftRightUnsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32ShiftRightUnsigned;
 

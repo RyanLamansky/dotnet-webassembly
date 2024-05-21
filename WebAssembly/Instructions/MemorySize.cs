@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class MemorySize : Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.MemorySize"/>.
+    /// Always <see cref="WebAssembly.OpCode.MemorySize"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.MemorySize;
 

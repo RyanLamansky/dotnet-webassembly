@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float32Store : MemoryWriteInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Store"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Store"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Store;
 
