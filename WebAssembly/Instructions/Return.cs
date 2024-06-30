@@ -27,7 +27,7 @@ public class Return : SimpleInstruction
         var stack = context.Stack;
 
         var returnsLength = returns.Length;
-        Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
+        Assert(returnsLength is 0 or 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
 
         var stackCount = stack.Count;
 

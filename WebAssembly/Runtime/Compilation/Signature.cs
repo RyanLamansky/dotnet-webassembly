@@ -18,8 +18,8 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
     private Signature()
     {
         this.TypeIndex = uint.MaxValue;
-        this.ReturnTypes = this.ParameterTypes = Array.Empty<Type>();
-        this.RawReturnTypes = this.RawParameterTypes = Array.Empty<WebAssemblyValueType>();
+        this.ReturnTypes = this.ParameterTypes = [ ];
+        this.RawReturnTypes = this.RawParameterTypes = [ ];
     }
 
     public Signature(WebAssemblyValueType returnType)
