@@ -1115,7 +1115,7 @@ public static class Compile
             {
                 var preInitializerOffset = reader.Offset;
                 var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                if (initializer is not [ Instructions.Int32Constant c, Instructions.End ])
+                if (initializer.Length != 2 || initializer[0] is not Instructions.Int32Constant c || initializer[1] is not Instructions.End)
                     throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant followed by end.", preInitializerOffset);
 
                 offset = (uint)c.Value;
