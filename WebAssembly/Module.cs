@@ -385,7 +385,7 @@ public class Module
                 instruction.Count == 0 ||
                 instruction[instruction.Count - 1].OpCode != OpCode.End
                 ;
-        };
+        }
 
         if (this.globals != null)
         {

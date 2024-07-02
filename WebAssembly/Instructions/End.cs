@@ -36,7 +36,7 @@ public class End : SimpleInstruction
             if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable))
                 throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
-            Assert(returnsLength == 0 || returnsLength == 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
+            Assert(returnsLength is 0 or 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
 
             if (returnsLength == 1)
             {

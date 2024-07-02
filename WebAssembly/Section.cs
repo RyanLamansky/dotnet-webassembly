@@ -57,5 +57,5 @@ public enum Section : byte
 
 static class SectionExtensions
 {
-    public static bool IsValid(this Section section) => section >= Section.None && section <= Section.Data;
+    public static bool IsValid(this Section section) => section <= Section.Data;
 }
