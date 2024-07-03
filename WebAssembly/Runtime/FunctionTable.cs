@@ -12,20 +12,18 @@ public class FunctionTable : TableImport
 {
     internal static readonly RegeneratingWeakReference<MethodInfo> IndexGetter = new(() =>
         typeof(FunctionTable)
-        .GetTypeInfo()
-        .DeclaredProperties
-        .Where(prop => prop.GetIndexParameters().Length > 0)
-        .First()
-        .GetMethod!
+           .GetTypeInfo()
+           .DeclaredProperties
+           .First(prop => prop.GetIndexParameters().Length > 0)
+           .GetMethod!
         );
 
     internal static readonly RegeneratingWeakReference<MethodInfo> IndexSetter = new(() =>
         typeof(FunctionTable)
-        .GetTypeInfo()
-        .DeclaredProperties
-        .Where(prop => prop.GetIndexParameters().Length > 0)
-        .First()
-        .SetMethod!
+           .GetTypeInfo()
+           .DeclaredProperties
+           .First(prop => prop.GetIndexParameters().Length > 0)
+           .SetMethod!
         );
 
     internal static readonly RegeneratingWeakReference<MethodInfo> LengthGetter = new(() =>

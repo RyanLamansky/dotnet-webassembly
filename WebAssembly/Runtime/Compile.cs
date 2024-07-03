@@ -135,7 +135,7 @@ public static class Compile
             }
         }
 
-        return (IDictionary<string, IDictionary<string, RuntimeImport>> imports) =>
+        return imports =>
         {
             try
             {
@@ -143,9 +143,9 @@ public static class Compile
             }
             catch (TargetInvocationException x)
 #if DEBUG
-                when (!System.Diagnostics.Debugger.IsAttached)
+            when (!System.Diagnostics.Debugger.IsAttached)
 #endif
-                {
+            {
                 ExceptionDispatchInfo.Capture(x.InnerException ?? x).Throw();
                 throw;
             }
@@ -304,7 +304,7 @@ public static class Compile
 
                 case Section.Function:
                     {
-                        var importedFunctionCount = internalFunctions == null ? 0 : internalFunctions.Length;
+                        var importedFunctionCount = internalFunctions?.Length ?? 0;
                         var functionIndexSize = checked((int)(importedFunctionCount + reader.ReadVarUInt32()));
                         if (functionSignatures != null)
                         {
@@ -317,7 +317,7 @@ public static class Compile
                         }
                         if (importedFunctionCount != 0)
                         {
-                            Array.Resize(ref internalFunctions, checked(functionSignatures.Length));
+                            Array.Resize(ref internalFunctions, functionSignatures.Length);
                             context.Methods = internalFunctions;
                         }
                         else
@@ -373,7 +373,7 @@ public static class Compile
                                             var parms = constructor.GetParameters();
                                             return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
                                         })
-                                        .Single()); ;
+                                        .Single());
                                     instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable)
                                         .GetTypeInfo()
                                         .DeclaredConstructors
@@ -730,7 +730,6 @@ public static class Compile
                             .GetTypeInfo()
                             .GetDeclaredProperty(nameof(MemoryImport.Method))!
                             .GetMethod!);
-                        ;
                         ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
