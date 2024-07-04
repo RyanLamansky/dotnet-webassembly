@@ -16,9 +16,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     sealed class FunctionOuterBlock(BlockType type) : BlockTypeInstruction(type)
     {
-        public sealed override OpCode OpCode => OpCode.Return; // "Return" is the most accurate fake opcode for the outer block.
+        public override OpCode OpCode => OpCode.Return; // "Return" is the most accurate fake opcode for the outer block.
 
-        internal sealed override void Compile(CompilationContext context) => throw new NotSupportedException();
+        internal override void Compile(CompilationContext context) => throw new NotSupportedException();
     }
 
     public void Reset(

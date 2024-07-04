@@ -215,7 +215,7 @@ public static class Compile
                 throw new ModuleLoadException("Unsupported version, only version 0x1 is accepted.", 4);
         }
 
-        uint memoryPagesMinimum = 0;
+        uint memoryPagesMinimum;
         uint memoryPagesMaximum = 0;
 
         Signature[]? signatures = null;
@@ -438,7 +438,7 @@ public static class Compile
                             return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
                         }).First());
 
-                        instanceConstructorIL.Emit(OpCodes.Stfld, memory!);
+                        instanceConstructorIL.Emit(OpCodes.Stfld, memory);
 
                         exportsBuilder.AddInterfaceImplementation(typeof(IDisposable));
 
@@ -452,7 +452,7 @@ public static class Compile
 
                         var disposeIL = dispose.GetILGenerator();
                         disposeIL.Emit(OpCodes.Ldarg_0);
-                        disposeIL.Emit(OpCodes.Ldfld, memory!);
+                        disposeIL.Emit(OpCodes.Ldfld, memory);
                         disposeIL.Emit(OpCodes.Call, typeof(UnmanagedMemory)
                             .GetTypeInfo()
                             .DeclaredMethods
@@ -560,7 +560,7 @@ public static class Compile
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Newobj, exportInfo!.DeclaredConstructors.First());
+            il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
             il.Emit(OpCodes.Call, instanceContainer
                 .GetTypeInfo()
                 .DeclaredConstructors
@@ -571,7 +571,7 @@ public static class Compile
                 );
             il.Emit(OpCodes.Ret);
 
-            instance = instanceBuilder.CreateTypeInfo()!;
+            instance = instanceBuilder.CreateTypeInfo();
         }
 
         module.CreateGlobalFunctions();
@@ -737,7 +737,7 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
-                        instanceConstructorIL.Emit(OpCodes.Stfld, memory!);
+                        instanceConstructorIL.Emit(OpCodes.Stfld, memory);
                     }
                     break;
                 case ExternalKind.Global:

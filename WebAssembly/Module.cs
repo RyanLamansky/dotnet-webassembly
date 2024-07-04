@@ -381,7 +381,6 @@ public class Module
         static bool LastOpCodeIsNotEnd(IList<Instruction> instruction)
         {
             return
-                instruction == null ||
                 instruction.Count == 0 ||
                 instruction[instruction.Count - 1].OpCode != OpCode.End
                 ;
@@ -436,7 +435,6 @@ public class Module
         }
 
         var customSectionsByPrecedingSection = this.customSections?
-            .Where(custom => custom != null)
             .GroupBy(custom => custom.PrecedingSection)
             .ToDictionary(group => group.Key);
 
@@ -453,7 +451,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.types.Count);
                 foreach (var type in this.types)
-                    type?.WriteTo(sectionWriter);
+                    type.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Type, customSectionsByPrecedingSection);
@@ -464,7 +462,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.imports.Count);
                 foreach (var import in this.imports)
-                    import?.WriteTo(sectionWriter);
+                    import.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Import, customSectionsByPrecedingSection);
@@ -475,7 +473,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.functions.Count);
                 foreach (var function in this.functions)
-                    function?.WriteTo(sectionWriter);
+                    function.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Function, customSectionsByPrecedingSection);
@@ -486,7 +484,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.tables.Count);
                 foreach (var table in this.tables)
-                    table?.WriteTo(sectionWriter);
+                    table.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Table, customSectionsByPrecedingSection);
@@ -497,7 +495,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.memories.Count);
                 foreach (var memory in this.memories)
-                    memory?.WriteTo(sectionWriter);
+                    memory.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Memory, customSectionsByPrecedingSection);
@@ -508,7 +506,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.globals.Count);
                 foreach (var global in this.globals)
-                    global?.WriteTo(sectionWriter);
+                    global.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Global, customSectionsByPrecedingSection);
@@ -519,7 +517,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.exports.Count);
                 foreach (var export in this.exports)
-                    export?.WriteTo(sectionWriter);
+                    export.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Export, customSectionsByPrecedingSection);
@@ -539,7 +537,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.elements.Count);
                 foreach (var element in this.elements)
-                    element?.WriteTo(sectionWriter);
+                    element.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Element, customSectionsByPrecedingSection);
@@ -550,7 +548,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.codes.Count);
                 foreach (var code in this.codes)
-                    code?.WriteTo(sectionWriter, buffer);
+                    code.WriteTo(sectionWriter, buffer);
             });
         }
         WriteCustomSection(buffer, writer, Section.Code, customSectionsByPrecedingSection);
@@ -561,7 +559,7 @@ public class Module
             {
                 sectionWriter.WriteVar((uint)this.data.Count);
                 foreach (var data in this.data)
-                    data?.WriteTo(sectionWriter);
+                    data.WriteTo(sectionWriter);
             });
         }
         WriteCustomSection(buffer, writer, Section.Data, customSectionsByPrecedingSection);

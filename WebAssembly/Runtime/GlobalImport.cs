@@ -111,7 +111,7 @@ public class GlobalImport : RuntimeImport
 
         var gret = getter.Method.ReturnType;
 
-        if (gret == null || !gret.TryConvertToValueType(out var gtype))
+        if (!gret.TryConvertToValueType(out var gtype))
             throw new ArgumentException("getter does not return a compatible type.", nameof(getter));
 
         if (setter != null)
@@ -124,7 +124,7 @@ public class GlobalImport : RuntimeImport
                 throw new ArgumentException("setter must have exactly 1 parameter.", nameof(setter));
 
             var sparm = sparms[0].ParameterType;
-            if (sparm == null || !sparm.TryConvertToValueType(out var stype))
+            if (!sparm.TryConvertToValueType(out var stype))
                 throw new ArgumentException("setter does not accept a compatible type.", nameof(setter));
 
             if (stype != gtype)
