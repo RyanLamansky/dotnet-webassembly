@@ -156,7 +156,20 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_conversions()
     {
-        var skips = new HashSet<uint> { 88, 89, 93, 133, 134, 139, 183, 187, 229, 234, 236 };
+        var skips = new HashSet<uint>
+        {
+            88,  // Arithmetic operation resulted in an overflow
+            89,  // Arithmetic operation resulted in an overflow
+            93,  // No exception thrown. OverflowException exception was expected
+            133, // Arithmetic operation resulted in an overflow
+            134, // Arithmetic operation resulted in an overflow
+            139, // No exception thrown. OverflowException exception was expected
+            183, // Arithmetic operation resulted in an overflow
+            187, // No exception thrown. OverflowException exception was expected
+            229, // Arithmetic operation resulted in an overflow
+            234, // Arithmetic operation resulted in an overflow
+            236  // OverflowException exception was expected
+        };
         if (!Environment.Is64BitProcess) // 32-bit JIT operates differently as of .NET Core 3.1.
             skips.UnionWith([454, 455, 470, 471]);
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "conversions"), "conversions.json", skips.Contains);
