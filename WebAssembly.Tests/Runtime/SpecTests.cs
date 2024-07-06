@@ -156,7 +156,20 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_conversions()
     {
-        var skips = new HashSet<uint> { 88, 89, 93, 133, 134, 139, 183, 187, 229, 234, 236 };
+        var skips = new HashSet<uint>
+        {
+            88,  // Arithmetic operation resulted in an overflow
+            89,  // Arithmetic operation resulted in an overflow
+            93,  // No exception thrown. OverflowException exception was expected
+            133, // Arithmetic operation resulted in an overflow
+            134, // Arithmetic operation resulted in an overflow
+            139, // No exception thrown. OverflowException exception was expected
+            183, // Arithmetic operation resulted in an overflow
+            187, // No exception thrown. OverflowException exception was expected
+            229, // Arithmetic operation resulted in an overflow
+            234, // Arithmetic operation resulted in an overflow
+            236  // OverflowException exception was expected
+        };
         if (!Environment.Is64BitProcess) // 32-bit JIT operates differently as of .NET Core 3.1.
             skips.UnionWith([454, 455, 470, 471]);
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "conversions"), "conversions.json", skips.Contains);
@@ -297,18 +310,7 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_f32()
     {
-        // .NET Core 3.1 is fine but .NET 5 has issues for some reason.
-        Func<uint, bool>? skips = !IsNet5OrHigher ? null : line => line is
-            >= 1943 and <= 1946 or
-            >= 1951 and <= 1954 or
-            >= 1959 and <= 1962 or
-            >= 1967 and <= 1970 or
-            >= 1975 and <= 1978 or
-            >= 1983 and <= 1986 or
-            >= 1991 and <= 1994 or
-            >= 1999 and <= 2002;
-
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "f32"), "f32.json", skips);
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "f32"), "f32.json");
     }
 
     /// <summary>
@@ -335,18 +337,7 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_f64()
     {
-        // .NET Core 3.1 is fine but .NET 5 has issues for some reason.
-        Func<uint, bool>? skips = !IsNet5OrHigher ? null : line => line is
-            >= 1943 and <= 1946 or
-            >= 1951 and <= 1954 or
-            >= 1959 and <= 1962 or
-            >= 1967 and <= 1970 or
-            >= 1975 and <= 1978 or
-            >= 1983 and <= 1986 or
-            >= 1991 and <= 1994 or
-            >= 1999 and <= 2002;
-
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "f64"), "f64.json", skips);
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "f64"), "f64.json");
     }
 
     /// <summary>
