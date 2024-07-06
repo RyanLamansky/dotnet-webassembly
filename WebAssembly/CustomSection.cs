@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace WebAssembly;
 
@@ -40,10 +41,13 @@ public class CustomSection
     /// <summary>
     /// The name of the custom section; nulls are converted to <see cref="string.Empty"/>.
     /// </summary>
+#if NET5_0_OR_GREATER
+    [AllowNull]
+#endif
     public string Name
     {
         get => this.name ??= string.Empty;
-        set => this.name = value ?? string.Empty;
+        set => this.name = value;
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
@@ -52,10 +56,13 @@ public class CustomSection
     /// <summary>
     /// The content of the custom section; nulls are converted to an empty modifiable collection.
     /// </summary>
+#if NET5_0_OR_GREATER
+    [AllowNull]
+#endif
     public IList<byte> Content
     {
-        get => this.content ??= new List<byte>();
-        set => this.content = value ?? new List<byte>();
+        get => this.content ??= [];
+        set => this.content = value ?? [];
     }
 
     internal void WriteTo(Writer writer)

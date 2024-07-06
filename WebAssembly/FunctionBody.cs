@@ -90,8 +90,8 @@ public class FunctionBody : IEquatable<FunctionBody>
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
         => HashCode.Combine(
-            this.Locals.Select(local => local?.GetHashCode())
-            .Concat(this.Code.Select(instruction => instruction?.GetHashCode()
+            this.Locals.Select(local => local.GetHashCode())
+            .Concat(this.Code.Select(instruction => instruction.GetHashCode()
             )));
 
     /// <summary>

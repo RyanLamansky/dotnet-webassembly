@@ -28,7 +28,7 @@ public static class Helpers
         ArgumentNullException.ThrowIfNull(field, nameof(field));
 #endif
 
-        if (!imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import) || import == null)
+        if (!imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import))
         {
             throw new ImportException($"Missing import for {module}::{field}.");
         }
