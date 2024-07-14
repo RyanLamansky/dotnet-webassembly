@@ -5,7 +5,7 @@ namespace WebAssembly;
 readonly struct RegeneratingWeakReference<T>(Func<T> regenerator)
     where T : class
 {
-    private readonly WeakReference<T> reference = new(regenerator(), false);
+    private readonly WeakReference<T> reference = new(null!);
 
     public T Reference
     {
