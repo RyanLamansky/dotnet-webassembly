@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float64Absolute : ValueOneToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Absolute"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Absolute"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Absolute;
 

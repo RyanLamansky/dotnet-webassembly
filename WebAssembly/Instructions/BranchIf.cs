@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class BranchIf : Instruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.BranchIf"/>.
+    /// Always <see cref="WebAssembly.OpCode.BranchIf"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.BranchIf;
 

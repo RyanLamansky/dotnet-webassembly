@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Float64Ceiling : ValueOneToOneCallInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64Ceiling"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64Ceiling"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64Ceiling;
 

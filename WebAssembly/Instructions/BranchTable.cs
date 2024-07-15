@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 public class BranchTable : Instruction, IEquatable<BranchTable>
 {
     /// <summary>
-    /// Always <see cref="OpCode.BranchTable"/>.
+    /// Always <see cref="WebAssembly.OpCode.BranchTable"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.BranchTable;
 

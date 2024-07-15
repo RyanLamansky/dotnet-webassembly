@@ -10,7 +10,7 @@ namespace WebAssembly.Instructions;
 public class Int64TruncateSaturateFloat64Unsigned : TruncateSaturateInstruction
 {
     /// <summary>
-    /// Always <see cref="MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned"/>.
+    /// Always <see cref="WebAssembly.MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned"/>.
     /// </summary>
     public sealed override MiscellaneousOpCode MiscellaneousOpCode =>
         MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned;

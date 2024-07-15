@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int32TruncateFloat64Signed : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int32TruncateFloat64Signed"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int32TruncateFloat64Signed"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int32TruncateFloat64Signed;
 

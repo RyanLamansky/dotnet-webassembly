@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Float64ReinterpretInt64 : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float64ReinterpretInt64"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float64ReinterpretInt64"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float64ReinterpretInt64;
 

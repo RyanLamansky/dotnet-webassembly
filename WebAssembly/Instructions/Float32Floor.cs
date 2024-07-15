@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 public class Float32Floor : Float64CallWrapperInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Float32Floor"/>.
+    /// Always <see cref="WebAssembly.OpCode.Float32Floor"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Float32Floor;
 

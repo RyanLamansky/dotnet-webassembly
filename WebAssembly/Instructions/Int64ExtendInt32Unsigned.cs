@@ -9,7 +9,7 @@ namespace WebAssembly.Instructions;
 public class Int64ExtendInt32Unsigned : SimpleInstruction
 {
     /// <summary>
-    /// Always <see cref="OpCode.Int64ExtendInt32Unsigned"/>.
+    /// Always <see cref="WebAssembly.OpCode.Int64ExtendInt32Unsigned"/>.
     /// </summary>
     public sealed override OpCode OpCode => OpCode.Int64ExtendInt32Unsigned;
 
