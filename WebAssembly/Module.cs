@@ -172,6 +172,18 @@ public class Module
         set => this.data = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private IList<WebAssemblyTag>? tags;
+
+    /// <summary>
+    /// The tags section.
+    /// </summary>
+    public IList<WebAssemblyTag> Tags
+    {
+        get => this.tags ??= new List<WebAssemblyTag>();
+        set => this.tags = value ?? throw new ArgumentNullException(nameof(value));
+    }
+
     /// <summary>
     /// Creates a new <see cref="Module"/> from a file.
     /// </summary>
@@ -224,11 +236,13 @@ public class Module
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
-                if (id != 0 && (Section)id < previousSection)
+                var section = (Section)id;
+
+                if (id != 0 && section.GetSectionIndex() < previousSection.GetSectionIndex())
                     throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
                 var payloadLength = reader.ReadVarUInt32();
 
-                switch ((Section)id)
+                switch (section)
                 {
                     case Section.None: //Custom section
                         {
@@ -252,6 +266,16 @@ public class Module
                             for (var i = 0; i < count; i++)
                                 types.Add(new WebAssemblyType(reader));
                         }
+                        break;
+
+                    case Section.Tag: //Type signature declarations
+                    {
+                        var count = reader.ReadVarUInt32();
+                        var tags = module.tags = new List<WebAssemblyTag>(checked((int)count));
+
+                        for (var i = 0; i < count; i++)
+                            tags.Add(new WebAssemblyTag(reader));
+                    }
                         break;
 
                     case Section.Import: //Import declarations
@@ -499,6 +523,17 @@ public class Module
             });
         }
         WriteCustomSection(buffer, writer, Section.Memory, customSectionsByPrecedingSection);
+
+        if (this.tags != null)
+        {
+            WriteSection(buffer, writer, Section.Tag, sectionWriter =>
+            {
+                sectionWriter.WriteVar((uint)this.tags.Count);
+                foreach (var tag in this.tags)
+                    tag?.WriteTo(sectionWriter);
+            });
+        }
+        WriteCustomSection(buffer, writer, Section.Tag, customSectionsByPrecedingSection);
 
         if (this.globals != null)
         {

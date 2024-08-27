@@ -47,6 +47,30 @@ public enum OpCode : byte
     Else = 0x05,
 
     /// <summary>
+    /// Begins a block which can handle thrown exceptions.
+    /// </summary>
+    [OpCodeCharacteristics("try")]
+    Try = 0x06,
+
+    /// <summary>
+    /// Begins the catch block of the try block.
+    /// </summary>
+    [OpCodeCharacteristics("catch")]
+    Catch = 0x07,
+
+    /// <summary>
+    /// Creates an exception defined by the tag and then throws it
+    /// </summary>
+    [OpCodeCharacteristics("throw")]
+    Throw = 0x08,
+
+    /// <summary>
+    /// Pops the exnref on top of the stack and throws it
+    /// </summary>
+    [OpCodeCharacteristics("rethrow")]
+    Rethrow = 0x09,
+
+    /// <summary>
     /// An instruction that marks the end of a block, loop, if, or function.
     /// </summary>
     [OpCodeCharacteristics("end")]
@@ -87,6 +111,18 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("call_indirect")]
     CallIndirect = 0x11,
+
+    /// <summary>
+    /// Begins the delegate block of the try block
+    /// </summary>
+    [OpCodeCharacteristics("delegate")]
+    Delegate = 0x18,
+
+    /// <summary>
+    /// Begins the catch_all block of the try block
+    /// </summary>
+    [OpCodeCharacteristics("catch_all")]
+    CatchAll = 0x19,
 
     /// <summary>
     /// A unary operator that discards the value of its operand.
