@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- I'd prefer to set a much older .NET Core as the baseline but it's not currently worth the inconvenience. -->
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <!-- .NET Standard 2.0 is very old but (so far) can still be built by the newest .NET SDK, so it makes a great baseline. -->
+    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
     <Title>WebAssembly for .NET</Title>
     <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
-    <LangVersion>12.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
     <Nullable>enable</Nullable>
     <RepositoryUrl>https://github.com/RyanLamansky/dotnet-webassembly</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
