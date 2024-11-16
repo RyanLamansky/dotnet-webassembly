@@ -27,7 +27,10 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <DebugType>embedded</DebugType>
+    <!--
+    Starting in .NET 9, this causes a huge amount of IDE errors in Visual Studio for some reason.
     <AnalysisMode>Minimum</AnalysisMode>
+    -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +44,8 @@
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <!-- Even though this is broken in .NET 9 + VS 2022 for this project, it builds fine so we should still run it. -->
+    <AnalysisMode>Minimum</AnalysisMode>
   </PropertyGroup>
 
 </Project>
