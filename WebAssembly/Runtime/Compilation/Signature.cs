@@ -120,4 +120,15 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
 
         return builder.ToString();
     }
+
+    public Type ToException()
+    {
+        return ParameterTypes.Length switch
+        {
+            0 => typeof(WebAssemblyException),
+            1 => typeof(WebAssemblyException<>).MakeGenericType(ParameterTypes[0]),
+            2 => typeof(WebAssemblyException<,>).MakeGenericType(ParameterTypes[0], ParameterTypes[1]),
+            _ => throw new NotSupportedException(),
+        };
+    }
 }

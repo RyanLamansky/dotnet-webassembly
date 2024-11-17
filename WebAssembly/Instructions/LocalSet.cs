@@ -53,23 +53,28 @@ public class LocalSet : VariableAccessInstruction
         else
         {
             //Referring to a local.
-            switch (localIndex)
-            {
-                default:
-                    if (localIndex > 65534) // https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.stloc
-                        throw new CompilerException($"Implementation limit exceeded: maximum accessible local index is 65534, tried to access {localIndex}.");
+            Emit(context, localIndex);
+        }
+    }
 
-                    if (localIndex <= byte.MaxValue)
-                        context.Emit(OpCodes.Stloc_S, (byte)localIndex);
-                    else
-                        context.Emit(OpCodes.Stloc, checked((ushort)localIndex));
-                    break;
+    internal static void Emit(CompilationContext context, long localIndex)
+    {
+        switch (localIndex)
+        {
+            default:
+                if (localIndex > 65534) // https://docs.microsoft.com/en-us/dotnet/api/system.reflection.emit.opcodes.stloc
+                    throw new CompilerException($"Implementation limit exceeded: maximum accessible local index is 65534, tried to access {localIndex}.");
 
-                case 0: context.Emit(OpCodes.Stloc_0); break;
-                case 1: context.Emit(OpCodes.Stloc_1); break;
-                case 2: context.Emit(OpCodes.Stloc_2); break;
-                case 3: context.Emit(OpCodes.Stloc_3); break;
-            }
+                if (localIndex <= byte.MaxValue)
+                    context.Emit(OpCodes.Stloc_S, (byte)localIndex);
+                else
+                    context.Emit(OpCodes.Stloc, checked((ushort)localIndex));
+                break;
+
+            case 0: context.Emit(OpCodes.Stloc_0); break;
+            case 1: context.Emit(OpCodes.Stloc_1); break;
+            case 2: context.Emit(OpCodes.Stloc_2); break;
+            case 3: context.Emit(OpCodes.Stloc_3); break;
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 using static System.Diagnostics.Debug;
 
@@ -53,7 +54,23 @@ public class Return : SimpleInstruction
         if (returnsLength == 1)
             context.PopStackNoReturn(OpCode.Return, returns[0]);
 
-        context.Emit(OpCodes.Ret);
+        if (context.ReturnContext.HasValue)
+        {
+            var returnContext = context.ReturnContext.Value;
+
+            Assert(returnsLength == returnContext.LocalIndexes.Length);
+
+            if (returnsLength > 0)
+            {
+                LocalSet.Emit(context, returnContext.LocalIndexes[0]);
+            }
+
+            context.Emit(OpCodes.Leave, returnContext.Label);
+        }
+        else
+        {
+            context.Emit(OpCodes.Ret);
+        }
 
         //Mark the subsequent code within this function is unreachable
         context.MarkUnreachable(functionWide: true);

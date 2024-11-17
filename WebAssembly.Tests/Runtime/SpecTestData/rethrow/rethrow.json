@@ -1,0 +1,18 @@
+{"source_filename": "rethrow.wast",
+ "commands": [
+  {"type": "module", "line": 3, "filename": "rethrow.0.wasm"}, 
+  {"type": "assert_exception", "line": 75, "action": {"type": "invoke", "field": "catch-rethrow-0", "args": []}, "expected": []}, 
+  {"type": "assert_exception", "line": 77, "action": {"type": "invoke", "field": "catch-rethrow-1", "args": [{"type": "i32", "value": "0"}]}, "expected": [{"type": "i32"}]}, 
+  {"type": "assert_return", "line": 78, "action": {"type": "invoke", "field": "catch-rethrow-1", "args": [{"type": "i32", "value": "1"}]}, "expected": [{"type": "i32", "value": "23"}]}, 
+  {"type": "assert_exception", "line": 80, "action": {"type": "invoke", "field": "catchall-rethrow-0", "args": []}, "expected": []}, 
+  {"type": "assert_exception", "line": 82, "action": {"type": "invoke", "field": "catchall-rethrow-1", "args": [{"type": "i32", "value": "0"}]}, "expected": [{"type": "i32"}]}, 
+  {"type": "assert_return", "line": 83, "action": {"type": "invoke", "field": "catchall-rethrow-1", "args": [{"type": "i32", "value": "1"}]}, "expected": [{"type": "i32", "value": "23"}]}, 
+  {"type": "assert_exception", "line": 84, "action": {"type": "invoke", "field": "rethrow-nested", "args": [{"type": "i32", "value": "0"}]}, "expected": [{"type": "i32"}]}, 
+  {"type": "assert_exception", "line": 85, "action": {"type": "invoke", "field": "rethrow-nested", "args": [{"type": "i32", "value": "1"}]}, "expected": [{"type": "i32"}]}, 
+  {"type": "assert_return", "line": 86, "action": {"type": "invoke", "field": "rethrow-nested", "args": [{"type": "i32", "value": "2"}]}, "expected": [{"type": "i32", "value": "23"}]}, 
+  {"type": "assert_return", "line": 88, "action": {"type": "invoke", "field": "rethrow-recatch", "args": [{"type": "i32", "value": "0"}]}, "expected": [{"type": "i32", "value": "23"}]}, 
+  {"type": "assert_return", "line": 89, "action": {"type": "invoke", "field": "rethrow-recatch", "args": [{"type": "i32", "value": "1"}]}, "expected": [{"type": "i32", "value": "42"}]}, 
+  {"type": "assert_exception", "line": 91, "action": {"type": "invoke", "field": "rethrow-stack-polymorphism", "args": []}, "expected": []}, 
+  {"type": "assert_invalid", "line": 93, "filename": "rethrow.1.wasm", "text": "invalid rethrow label", "module_type": "binary"}, 
+  {"type": "assert_invalid", "line": 94, "filename": "rethrow.2.wasm", "text": "invalid rethrow label", "module_type": "binary"}, 
+  {"type": "assert_invalid", "line": 95, "filename": "rethrow.3.wasm", "text": "invalid rethrow label", "module_type": "binary"}]}

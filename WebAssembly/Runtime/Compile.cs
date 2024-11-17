@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
+using WebAssembly.Instructions;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime;
@@ -221,6 +222,7 @@ public static class Compile
         Signature[]? signatures = null;
         Signature[]? functionSignatures = null;
         KeyValuePair<string, uint>[]? exportedFunctions = null;
+        Tag[]? tags = null;
         var previousSection = Section.None;
 
         var module = AssemblyBuilder.DefineDynamicAssembly(
@@ -266,11 +268,13 @@ public static class Compile
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
-            if (id != 0 && (Section)id < previousSection)
+            var section = (Section)id;
+
+            if (id != 0 && section.GetSectionIndex() < previousSection.GetSectionIndex())
                 throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
             var payloadLength = reader.ReadVarUInt32();
 
-            switch ((Section)id)
+            switch (section)
             {
                 case Section.None:
                     {
@@ -288,6 +292,15 @@ public static class Compile
                             signatures[i] = new Signature(reader, (uint)i);
                     }
                     break;
+
+                case Section.Tag:
+                {
+                    tags = context.Tags = new Tag[reader.ReadVarUInt32()];
+
+                    for (var i = 0; i < tags.Length; i++)
+                        tags[i] = new Tag(reader, (uint)i);
+                }
+                break;
 
                 case Section.Import:
                     (
@@ -890,7 +903,8 @@ public static class Compile
                 context.Reset(
                     il,
                     getterSignature,
-                    getterSignature.RawParameterTypes
+                    getterSignature.RawParameterTypes,
+                    null
                     );
 
                 foreach (var instruction in Instruction.ParseInitializerExpression(reader))
@@ -930,7 +944,8 @@ public static class Compile
                 context.Reset(
                     instanceConstructorIL,
                     emptySignature,
-                    emptySignature.RawParameterTypes
+                    emptySignature.RawParameterTypes,
+                    null
                     );
 
                 context.EmitLoadThis();
@@ -1222,6 +1237,30 @@ public static class Compile
 
             var il = ((MethodBuilder)internalFunctions[importedFunctions + functionBodyIndex]).GetILGenerator();
 
+            foreach (var local in locals.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type)))
+            {
+                il.DeclareLocal(local.ToSystemType());
+            }
+
+            int[] returnIndexes;
+            var returnLabel = il.DefineLabel();
+
+            if (signature.ReturnTypes.Length == 0)
+            {
+                returnIndexes = Array.Empty<int>();
+            }
+            else
+            {
+                returnIndexes = new int[signature.ReturnTypes.Length];
+
+                for (var i = 0; i < signature.ReturnTypes.Length; i++)
+                {
+                    var returnType = signature.ReturnTypes[i];
+                    var returnValue = il.DeclareLocal(returnType);
+                    returnIndexes[i] = returnValue.LocalIndex;
+                }
+            }
+
             context.Reset(
                 il,
                 signature,
@@ -1229,19 +1268,28 @@ public static class Compile
                     .. signature.RawParameterTypes,
                     .. locals
                     .SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
-,
-                ]);
-
-            foreach (var local in locals.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type)))
-            {
-                il.DeclareLocal(local.ToSystemType());
-            }
+                ],
+                new ReturnContext(returnIndexes, returnLabel));
 
             foreach (var instruction in Instruction.Parse(reader))
             {
                 instruction.Compile(context);
                 context.Previous = instruction.OpCode;
             }
+
+            // Create return label
+            il.MarkLabel(returnLabel);
+
+            if (returnIndexes.Length > 0)
+            {
+                for (var i = 0; i < returnIndexes.Length; i++)
+                {
+                    var localIndex = returnIndexes[i];
+                    LocalGet.Emit(context, localIndex);
+                }
+            }
+
+            il.Emit(OpCodes.Ret);
 
             if (reader.Offset - startingOffset != byteLength)
                 throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
@@ -1255,7 +1303,8 @@ public static class Compile
         context.Reset(
             instanceConstructorIL,
             Signature.Empty,
-            Signature.Empty.RawParameterTypes
+            Signature.Empty.RawParameterTypes,
+            null
             );
         var block = new Instructions.Block(BlockType.Int32);
 
