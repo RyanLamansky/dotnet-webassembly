@@ -1,5 +1,10 @@
 ﻿[*.cs]
 
-# IDE0008: Use explicit type
-csharp_style_var_elsewhere = true
+csharp_prefer_braces = when_multiline
 csharp_style_namespace_declarations=file_scoped:warning
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_for_built_in_types = true
+csharp_style_var_elsewhere = true
+
+# IDE0040: Add accessibility modifiers
+dotnet_diagnostic.IDE0040.severity = none
