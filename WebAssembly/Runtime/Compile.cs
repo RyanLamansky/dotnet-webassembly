@@ -209,7 +209,6 @@ public static class Compile
         switch (reader.ReadUInt32())
         {
             case 0x1: //First release
-                      // case 0xd: //Final pre-release, binary format is identical with first release.
                 break;
             default:
                 throw new ModuleLoadException("Unsupported version, only version 0x1 is accepted.", 4);
@@ -885,7 +884,7 @@ public static class Compile
             var getterSignature = new Signature(contentType);
             MethodBuilder? setter;
 
-            if (isMutable == false)
+            if (!isMutable)
             {
                 context.Reset(
                     il,

@@ -8,7 +8,6 @@ internal sealed class Reader : IDisposable
 {
     private readonly UTF8Encoding utf8 = new(false, false);
     private BinaryReader? reader;
-    private long offset;
 
     public Reader(Stream input)
     {
@@ -16,14 +15,14 @@ internal sealed class Reader : IDisposable
         this.reader = new BinaryReader(input, utf8, true);
     }
 
-    public long Offset => this.offset;
+    public long Offset { get; private set; }
 
     public BinaryReader CheckedReader => this.reader ?? throw new ObjectDisposedException(nameof(Reader));
 
     public uint ReadUInt32()
     {
         var result = CheckedReader.ReadUInt32();
-        this.offset += 4;
+        this.Offset += 4;
         return result;
     }
 
@@ -54,7 +53,7 @@ internal sealed class Reader : IDisposable
         while (true)
         {
             uint value = this.ReadByte();
-            result |= ((value & 0x7F) << shift);
+            result |= (value & 0x7F) << shift;
             if ((value & 0x80) == 0)
                 break;
             shift += 7;
@@ -69,7 +68,7 @@ internal sealed class Reader : IDisposable
         int current;
         var count = 0;
         var signBits = -1;
-        var initialOffset = this.offset;
+        var initialOffset = this.Offset;
         do
         {
             current = this.ReadByte();
@@ -93,7 +92,7 @@ internal sealed class Reader : IDisposable
         long current;
         var count = 0;
         var signBits = -1L;
-        var initialOffset = this.offset;
+        var initialOffset = this.Offset;
         do
         {
             current = this.ReadByte();
@@ -114,14 +113,14 @@ internal sealed class Reader : IDisposable
     public float ReadFloat32()
     {
         var result = CheckedReader.ReadSingle();
-        this.offset += 4;
+        this.Offset += 4;
         return result;
     }
 
     public double ReadFloat64()
     {
         var result = CheckedReader.ReadDouble();
-        this.offset += 8;
+        this.Offset += 8;
         return result;
     }
 
@@ -134,14 +133,14 @@ internal sealed class Reader : IDisposable
     public byte[] ReadBytes(uint length)
     {
         var result = CheckedReader.ReadBytes(checked((int)length));
-        this.offset += length;
+        this.Offset += length;
         return result;
     }
 
     public byte ReadByte()
     {
         var result = CheckedReader.ReadByte();
-        this.offset++;
+        this.Offset++;
         return result;
     }
 

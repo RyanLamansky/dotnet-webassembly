@@ -16,7 +16,7 @@ public sealed class MissingDelegateTypesException : CompilerException
     public IReadOnlyCollection<MissingDelegateType> MissingDelegateTypes { get; }
 
     internal MissingDelegateTypesException(List<MissingDelegateType> missing)
-        : base($"Configuration {nameof(CompilerConfiguration.GetDelegateForType)} could not provide { string.Join(", ", missing)}.")
+        : base($"Configuration {nameof(CompilerConfiguration.GetDelegateForType)} could not provide {string.Join(", ", missing)}.")
     {
         this.MissingDelegateTypes = new ReadOnlyCollection<MissingDelegateType>(missing);
     }

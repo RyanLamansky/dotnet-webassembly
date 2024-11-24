@@ -24,7 +24,7 @@ public class Data
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Instruction> InitializerExpression
     {
-        get => this.initializerExpression ??= new List<Instruction>();
+        get => this.initializerExpression ??= [];
         set => this.initializerExpression = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -37,7 +37,7 @@ public class Data
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<byte> RawData
     {
-        get => this.rawData ??= new List<byte>();
+        get => this.rawData ??= [];
         set => this.rawData = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -69,9 +69,13 @@ public class Data
 
         writer.WriteVar((uint)this.RawData.Count);
         if (this.RawData is byte[] bytes)
+        {
             writer.Write(bytes);
+        }
         else
+        {
             foreach (var b in this.RawData)
                 writer.Write(b);
+        }
     }
 }

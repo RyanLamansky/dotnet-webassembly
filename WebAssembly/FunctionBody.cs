@@ -20,7 +20,7 @@ public class FunctionBody : IEquatable<FunctionBody>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Local> Locals
     {
-        get => this.locals ??= new List<Local>();
+        get => this.locals ??= [];
         set => this.locals = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -33,7 +33,7 @@ public class FunctionBody : IEquatable<FunctionBody>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Instruction> Code
     {
-        get => this.code ??= new List<Instruction>();
+        get => this.code ??= [];
         set => this.code = value ?? throw new ArgumentNullException(nameof(value));
     }
 

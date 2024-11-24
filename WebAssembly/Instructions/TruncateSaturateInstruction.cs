@@ -35,61 +35,61 @@ public abstract class TruncateSaturateInstruction : MiscellaneousInstruction
                 [InputType]
             );
 
-                // The following code is an IL version of this C#,
-                // with "float" and "int" replaced by "double" and "uint"
-                // as appropriate for the overriding class:
-                //
-                // public static int Int32TruncateSaturateFloat32Signed(float f)
-                // {
-                //     if (f >= int.MaxValue)
-                //         return int.MaxValue;
-                // 
-                //     if (f <= int.MinValue)
-                //         return int.MinValue;
-                // 
-                //     if (float.IsNaN(f))
-                //         return 0;
-                // 
-                //     return (int)f;
-                // }
+            // The following code is an IL version of this C#,
+            // with "float" and "int" replaced by "double" and "uint"
+            // as appropriate for the overriding class:
+            //
+            // public static int Int32TruncateSaturateFloat32Signed(float f)
+            // {
+            //     if (f >= int.MaxValue)
+            //         return int.MaxValue;
+            // 
+            //     if (f <= int.MinValue)
+            //         return int.MinValue;
+            // 
+            //     if (float.IsNaN(f))
+            //         return 0;
+            // 
+            //     return (int)f;
+            // }
 
-                var il = builder.GetILGenerator();
+            var il = builder.GetILGenerator();
 
             var notAboveRangeLabel = il.DefineLabel();
             var notBelowRangeLabel = il.DefineLabel();
             var notNaNLabel = il.DefineLabel();
 
-                // if (f >= int.MaxValue)
-                il.Emit(OpCodes.Ldarg_0);
+            // if (f >= int.MaxValue)
+            il.Emit(OpCodes.Ldarg_0);
             EmitLoadFloatMaxValue(il);
             il.Emit(OpCodes.Blt_Un_S, notAboveRangeLabel);
 
-                // return int.MaxValue
-                EmitLoadIntegerMaxValue(il);
+            // return int.MaxValue
+            EmitLoadIntegerMaxValue(il);
             il.Emit(OpCodes.Ret);
 
-                // if (f <= int.MinValue)
-                il.MarkLabel(notAboveRangeLabel);
+            // if (f <= int.MinValue)
+            il.MarkLabel(notAboveRangeLabel);
             il.Emit(OpCodes.Ldarg_0);
             EmitLoadFloatMinValue(il);
             il.Emit(OpCodes.Bgt_Un_S, notBelowRangeLabel);
 
-                // return int.MinValue
-                EmitLoadIntegerMinValue(il);
+            // return int.MinValue
+            EmitLoadIntegerMinValue(il);
             il.Emit(OpCodes.Ret);
 
-                // if (float.IsNaN(f))
-                il.MarkLabel(notBelowRangeLabel);
+            // if (float.IsNaN(f))
+            il.MarkLabel(notBelowRangeLabel);
             il.Emit(OpCodes.Ldarg_0);
             il.EmitCall(OpCodes.Call, InputType.GetMethod(nameof(float.IsNaN))!, null);
             il.Emit(OpCodes.Brfalse_S, notNaNLabel);
 
-                // return 0
-                EmitLoadIntegerZero(il);
+            // return 0
+            EmitLoadIntegerZero(il);
             il.Emit(OpCodes.Ret);
 
-                // return (int)f
-                il.MarkLabel(notNaNLabel);
+            // return (int)f
+            il.MarkLabel(notNaNLabel);
             il.Emit(OpCodes.Ldarg_0);
             EmitConvert(il);
             il.Emit(OpCodes.Ret);

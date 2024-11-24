@@ -21,13 +21,14 @@
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>Properties\WebAssembly.snk</AssemblyOriginatorKeyFile>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <TreatSpecificWarningsAsErrors />
+    <NoWarn>CA1716;CA1720</NoWarn>
     <DocumentationFile>bin\WebAssembly.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <DebugType>embedded</DebugType>
-    <AnalysisMode>Minimum</AnalysisMode>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <ItemGroup>

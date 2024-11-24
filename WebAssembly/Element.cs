@@ -25,7 +25,7 @@ public class Element
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Instruction> InitializerExpression
     {
-        get => this.initializerExpression ??= new List<Instruction>();
+        get => this.initializerExpression ??= [];
         set => this.initializerExpression = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -38,7 +38,7 @@ public class Element
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<uint> Elements
     {
-        get => this.elements ??= new List<uint>();
+        get => this.elements ??= [];
         set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -80,7 +80,7 @@ public class Element
         this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
 
         var count = checked((int)reader.ReadVarUInt32());
-        var elements = this.elements = new List<uint>();
+        var elements = this.elements = [];
 
         for (var i = 0; i < count; i++)
             elements.Add(reader.ReadVarUInt32());

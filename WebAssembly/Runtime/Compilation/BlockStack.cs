@@ -7,7 +7,7 @@ namespace WebAssembly.Runtime.Compilation;
 // Simplified in other ways since, being internal, it doesn't need to validate input or the provide the full Stack feature set.
 internal sealed class BlockStack
 {
-    private BlockTypeInstruction?[] stack = [ ];
+    private BlockTypeInstruction?[] stack = [];
     public int Count { get; private set; }
 
     public void Clear()

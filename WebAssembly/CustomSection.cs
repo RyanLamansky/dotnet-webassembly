@@ -69,9 +69,13 @@ public class CustomSection
     {
         writer.Write(this.Name);
         if (this.content is byte[] bytes)
+        {
             writer.Write(bytes);
+        }
         else
+        {
             foreach (var b in this.Content)
                 writer.Write(b);
+        }
     }
 }

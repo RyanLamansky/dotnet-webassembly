@@ -25,7 +25,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<uint> Labels
     {
-        get => this.labels ??= new List<uint>();
+        get => this.labels ??= [];
         set => this.labels = value ?? throw new ArgumentNullException(nameof(value));
     }
 

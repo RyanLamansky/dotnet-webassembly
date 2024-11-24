@@ -40,7 +40,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             }
             else
             {
-                returnType = (signature.RawReturnTypes[0]) switch
+                returnType = signature.RawReturnTypes[0] switch
                 {
                     WebAssemblyValueType.Int64 => BlockType.Int64,
                     WebAssemblyValueType.Float32 => BlockType.Float32,
@@ -68,9 +68,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public GlobalInfo[]? Globals;
 
-    public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = new();
+    public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 
-    public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = new();
+    public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
 
     public FieldBuilder? FunctionTable;
 
@@ -80,7 +80,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         MethodAttributes.HideBySig
         ;
 
-    private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = new();
+    private readonly Dictionary<HelperMethod, MethodBuilder> helperMethods = [];
 
     public MethodInfo this[HelperMethod helper]
     {
@@ -115,13 +115,13 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public OpCode Previous;
 
-    public readonly Dictionary<uint, Label> Labels = new();
+    public readonly Dictionary<uint, Label> Labels = [];
 
-    public readonly HashSet<Label> LoopLabels = new();
+    public readonly HashSet<Label> LoopLabels = [];
 
     public readonly Stack<WebAssemblyValueType> Stack = new();
 
-    public readonly Dictionary<int, BlockContext> BlockContexts = new();
+    public readonly Dictionary<int, BlockContext> BlockContexts = [];
 
     public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 

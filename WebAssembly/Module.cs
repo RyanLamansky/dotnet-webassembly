@@ -33,7 +33,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<CustomSection> CustomSections
     {
-        get => this.customSections ??= new List<CustomSection>();
+        get => this.customSections ??= [];
         set => this.customSections = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -46,7 +46,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<WebAssemblyType> Types
     {
-        get => this.types ??= new List<WebAssemblyType>();
+        get => this.types ??= [];
         set => this.types = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -59,7 +59,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Import> Imports
     {
-        get => this.imports ??= new List<Import>();
+        get => this.imports ??= [];
         set => this.imports = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -72,7 +72,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Function> Functions
     {
-        get => this.functions ??= new List<Function>();
+        get => this.functions ??= [];
         set => this.functions = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -85,7 +85,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Table> Tables
     {
-        get => this.tables ??= new List<Table>();
+        get => this.tables ??= [];
         set => this.tables = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -98,7 +98,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Memory> Memories
     {
-        get => this.memories ??= new List<Memory>();
+        get => this.memories ??= [];
         set => this.memories = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -111,7 +111,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Global> Globals
     {
-        get => this.globals ??= new List<Global>();
+        get => this.globals ??= [];
         set => this.globals = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -124,7 +124,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Export> Exports
     {
-        get => this.exports ??= new List<Export>();
+        get => this.exports ??= [];
         set => this.exports = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -142,7 +142,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Element> Elements
     {
-        get => this.elements ??= new List<Element>();
+        get => this.elements ??= [];
         set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -155,7 +155,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<FunctionBody> Codes
     {
-        get => this.codes ??= new List<FunctionBody>();
+        get => this.codes ??= [];
         set => this.codes = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -168,7 +168,7 @@ public class Module
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Data> Data
     {
-        get => this.data ??= new List<Data>();
+        get => this.data ??= [];
         set => this.data = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -579,10 +579,7 @@ public class Module
 
         foreach (var custom in entries)
         {
-            WriteSection(buffer, writer, Section.None, sectionWriter =>
-            {
-                custom.WriteTo(sectionWriter);
-            });
+            WriteSection(buffer, writer, Section.None, custom.WriteTo);
         }
     }
 

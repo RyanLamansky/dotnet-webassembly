@@ -25,7 +25,7 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<WebAssemblyValueType> Parameters
     {
-        get => this.parameters ??= new List<WebAssemblyValueType>();
+        get => this.parameters ??= [];
         set => this.parameters = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -38,7 +38,7 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<WebAssemblyValueType> Returns
     {
-        get => this.returns ??= new List<WebAssemblyValueType>();
+        get => this.returns ??= [];
         set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
     }
 
@@ -169,13 +169,17 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
 
         var count = thisReturns.Count;
         for (var i = 0; i < count; i++)
+        {
             if (thisReturns[i] != otherReturns[i])
                 return false;
+        }
 
         count = thisParameters.Count;
         for (var i = 0; i < count; i++)
+        {
             if (thisParameters[i] != otherParameters[i])
                 return false;
+        }
 
         return true;
     }

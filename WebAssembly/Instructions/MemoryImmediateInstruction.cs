@@ -100,17 +100,14 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
-    private protected HelperMethod RangeCheckHelper
+    private protected HelperMethod RangeCheckHelper => this.Size switch
     {
-        get => this.Size switch
-        {
-            1 => HelperMethod.RangeCheck8,
-            2 => HelperMethod.RangeCheck16,
-            4 => HelperMethod.RangeCheck32,
-            8 => HelperMethod.RangeCheck64,
-            _ => throw new InvalidOperationException(),// Shouldn't be possible.
-        };
-    }
+        1 => HelperMethod.RangeCheck8,
+        2 => HelperMethod.RangeCheck16,
+        4 => HelperMethod.RangeCheck32,
+        8 => HelperMethod.RangeCheck64,
+        _ => throw new InvalidOperationException(),// Shouldn't be possible.
+    };
 
     private protected void EmitRangeCheck(CompilationContext context)
     {

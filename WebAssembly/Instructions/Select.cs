@@ -57,7 +57,7 @@ public class Select : SimpleInstruction
 
     static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
     {
-        MethodBuilder builder = helper switch
+        var builder = helper switch
         {
             HelperMethod.SelectInt32 => context.CheckedExportsBuilder.DefineMethod(
                                    "☣ Select Int32",

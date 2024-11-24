@@ -30,12 +30,12 @@ public abstract class RuntimeImport
         Delegate GetDelegate(MethodInfo method)
         {
             var parameters = method.GetParameters();
-            Type? returns = method.ReturnType;
+            var returns = method.ReturnType;
             if (returns == typeof(void))
                 returns = null;
             var del = CompilerConfiguration.GetStandardDelegateForType(parameters.Length, returns != null ? 1 : 0) ??
                 throw new ArgumentException($"Unable to produce a compatible delegate for export member {method.Name}.", nameof(exports));
-            if (del.IsGenericTypeDefinition == false)
+            if (!del.IsGenericTypeDefinition)
                 return Delegate.CreateDelegate(del, exports, method);
 
             var args = method.GetParameters().Select(parm => parm.ParameterType).ToList();
@@ -72,7 +72,7 @@ public abstract class RuntimeImport
                         if (getter == null)
                             continue; // TODO: Throw an exception for missing getter.
 
-                        if (getter.Invoke(exports, [ ]) is not FunctionTable table)
+                        if (getter.Invoke(exports, []) is not FunctionTable table)
                             continue; // TODO: Throw an exception for missing result.
 
                         yield return (native.Name, table);
