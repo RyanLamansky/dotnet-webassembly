@@ -136,6 +136,15 @@ public abstract class Instruction : IEquatable<Instruction>
                         yield break;
                     break;
 
+                case OpCode.Try:
+                    yield return new Try(reader);
+                    depth++;
+                    break;
+
+                case OpCode.Rethrow: yield return new Rethrow(reader); break;
+                case OpCode.Throw: yield return new Throw(reader); break;
+                case OpCode.Catch: yield return new Catch(reader); break;
+                case OpCode.CatchAll: yield return new CatchAll(); break;
                 case OpCode.Branch: yield return new Branch(reader); break;
                 case OpCode.BranchIf: yield return new BranchIf(reader); break;
                 case OpCode.BranchTable: yield return new BranchTable(reader); break;

@@ -9,7 +9,7 @@ namespace WebAssembly;
 /// </summary>
 static class AssemblyBuilder
 {
-    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, params Instruction[] code)
+    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, Instruction[] code, Action<Module>? configure)
     where TExport : class
     {
         Assert.IsNotNull(name);
@@ -37,6 +37,8 @@ static class AssemblyBuilder
             Code = code
         });
 
+        configure?.Invoke(module);
+
         var compiled = module.ToInstance<TExport>();
 
         Assert.IsNotNull(compiled);
@@ -45,7 +47,13 @@ static class AssemblyBuilder
         return compiled.Exports;
     }
 
-    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, IList<WebAssemblyValueType> parameters, params Instruction[] code)
+    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, params Instruction[] code)
+        where TExport : class
+    {
+        return CreateInstance<TExport>(name, @return, code, null);
+    }
+
+    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, IList<WebAssemblyValueType> parameters, Instruction[] code, Action<Module>? configure)
     where TExport : class
     {
         Assert.IsNotNull(name);
@@ -75,12 +83,20 @@ static class AssemblyBuilder
             Code = code
         });
 
+        configure?.Invoke(module);
+
         var compiled = module.ToInstance<TExport>();
 
         Assert.IsNotNull(compiled);
         Assert.IsNotNull(compiled.Exports);
 
         return compiled.Exports;
+    }
+
+    public static TExport CreateInstance<TExport>(string name, WebAssemblyValueType? @return, IList<WebAssemblyValueType> parameters, params Instruction[] code)
+        where TExport : class
+    {
+        return CreateInstance<TExport>(name, @return, parameters, code, null);
     }
 
     private static readonly Dictionary<System.Type, WebAssemblyValueType> map = new(4)
