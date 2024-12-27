@@ -45,9 +45,9 @@ public class Int32CountTrailingZeroes : SimpleInstruction
                 [ typeof(uint)
                 ]);
 
-                //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
-                //Based on the algorithm found here: http://aggregate.org/MAGIC/#Trailing%20Zero%20Count
-                var il = result.GetILGenerator();
+            //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
+            //Based on the algorithm found here: http://aggregate.org/MAGIC/#Trailing%20Zero%20Count
+            var il = result.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Neg);

@@ -45,9 +45,9 @@ public class Int32CountLeadingZeroes : SimpleInstruction
                 [ typeof(uint)
                 ]);
 
-                //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
-                //This algorithm is from https://stackoverflow.com/questions/10439242/count-leading-zeroes-in-an-int32
-                var il = result.GetILGenerator();
+            //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
+            //This algorithm is from https://stackoverflow.com/questions/10439242/count-leading-zeroes-in-an-int32
+            var il = result.GetILGenerator();
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldc_I4_1);
@@ -91,7 +91,7 @@ public class Int32CountLeadingZeroes : SimpleInstruction
 
             return result;
         }
-        ]);  
+        ]);
 #endif
     }
 }
