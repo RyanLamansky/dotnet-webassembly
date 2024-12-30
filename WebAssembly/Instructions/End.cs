@@ -60,7 +60,13 @@ public class End : SimpleInstruction
             var depth = checked((uint)context.Depth.Count);
             var label = context.Labels[depth];
 
-            if (!context.LoopLabels.Remove(label)) //Loop labels are marked where defined.
+            if (context.ExceptionLabels.Contains(label))
+            {
+                context.EndExceptionBlock();
+                context.ExceptionLabels.Remove(label);
+                context.MarkReachable();
+            }
+            else if (!context.LoopLabels.Remove(label)) //Loop labels are marked where defined.
                 context.MarkLabel(label);
 
             context.Labels.Remove(depth);
