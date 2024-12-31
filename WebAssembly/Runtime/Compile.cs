@@ -74,7 +74,7 @@ public static class Compile
     /// <summary>
     /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
     /// </summary>
-    /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
+    /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
     /// <returns>A function that creates instances on demand.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="input"/> cannot be null.</exception>
     public static InstanceCreator<TExports> FromBinary<TExports>(Stream input)
@@ -86,7 +86,7 @@ public static class Compile
     /// <summary>
     /// Uses streaming compilation to create an executable <see cref="Instance{TExports}"/> from a binary WebAssembly source.
     /// </summary>
-    /// <param name="input">The source of data.  The stream is left open after reading is complete.</param>
+    /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
     /// <param name="configuration">Configures the compiler.</param>
     /// <returns>A function that creates instances on demand.</returns>
     /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
@@ -102,8 +102,14 @@ public static class Compile
         {
             try
             {
+                CheckPreamble(reader);
+
                 constructor = FromBinary(
-                    reader,
+                    AssemblyBuilder.DefineDynamicAssembly(
+                    new AssemblyName("CompiledWebAssembly"),
+                    AssemblyBuilderAccess.RunAndCollect
+                    ),
+                reader,
                     configuration,
                     typeof(Instance<TExports>),
                     typeof(TExports)
@@ -189,11 +195,85 @@ public static class Compile
         FieldAttributes.InitOnly
         ;
 
+    private static void CheckPreamble(Reader reader)
+    {
+        if (reader.ReadUInt32() != Module.Magic)
+            throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
+    }
+
+#if NET9_0_OR_GREATER
+    /// <summary>
+    /// Creates an <see cref="AssemblyBuilder"/> from a binary WASM source.
+    /// </summary>
+    /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
+    /// <param name="configuration">Configures the compiler.</param>
+    /// <returns>The created assembly.</returns>
+    public static PersistedAssemblyBuilder CreatePersistedAssembly(
+        Stream input,
+        CompilerConfiguration configuration
+        )
+    {
+        ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
+
+        using var reader = new Reader(input);
+
+        try
+        {
+            CheckPreamble(reader);
+
+            var assembly = new PersistedAssemblyBuilder(
+                new AssemblyName("CompiledWebAssembly"),
+                typeof(object).Assembly
+                );
+
+            var module = assembly.DefineDynamicModule("CompiledWebAssembly");
+
+            var importBuilder = module.DefineType("Imports");
+            var instanceContainer = typeof(Instance<>).MakeGenericType(importBuilder);
+            var exportContainer = module.DefineType("Exports");
+
+            FromBinary(assembly, reader, configuration, instanceContainer, exportContainer, module, importBuilder);
+
+            importBuilder.CreateType();
+            exportContainer.CreateType();
+
+            return assembly;
+        }
+        catch (OverflowException x)
+#if DEBUG
+            when (!System.Diagnostics.Debugger.IsAttached)
+#endif
+        {
+            throw new ModuleLoadException("Overflow encountered.", reader.Offset, x);
+        }
+        catch (EndOfStreamException x)
+#if DEBUG
+            when (!System.Diagnostics.Debugger.IsAttached)
+#endif
+        {
+            throw new ModuleLoadException("Stream ended unexpectedly.", reader.Offset, x);
+        }
+        catch (Exception x) when (
+        x is not CompilerException
+        && x is not ModuleLoadException
+#if DEBUG
+            && !System.Diagnostics.Debugger.IsAttached
+#endif
+            )
+        {
+            throw new ModuleLoadException(x.Message, reader.Offset, x);
+        }
+    }
+#endif
+
     private static ConstructorInfo FromBinary(
+        AssemblyBuilder assembly,
         Reader reader,
         CompilerConfiguration configuration,
         Type instanceContainer,
-        Type exportContainer
+        Type exportContainer,
+        ModuleBuilder? module = null,
+        TypeBuilder? importBuilder = null
         )
     {
 #if NETSTANDARD
@@ -202,9 +282,6 @@ public static class Compile
 #else
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 #endif
-
-        if (reader.ReadUInt32() != Module.Magic)
-            throw new ModuleLoadException("File preamble magic value is incorrect.", 0);
 
         switch (reader.ReadUInt32())
         {
@@ -222,12 +299,7 @@ public static class Compile
         KeyValuePair<string, uint>[]? exportedFunctions = null;
         var previousSection = Section.None;
 
-        var module = AssemblyBuilder.DefineDynamicAssembly(
-            new AssemblyName("CompiledWebAssembly"),
-            AssemblyBuilderAccess.RunAndCollect
-            )
-            .DefineDynamicModule("CompiledWebAssembly")
-            ;
+        module ??= assembly.DefineDynamicModule("CompiledWebAssembly");
 
         var context = new CompilationContext(configuration);
         var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", ClassAttributes, exportContainer);
@@ -243,11 +315,18 @@ public static class Compile
                 );
             instanceConstructorIL = instanceConstructor.GetILGenerator();
             {
-                var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
-                if (usableConstructor != null)
+                if (exportContainer is TypeBuilder buildableExportContainer)
                 {
-                    instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                    instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
+                    var usableConstructor = buildableExportContainer.DefineDefaultConstructor(ConstructorAttributes);
+                }
+                else
+                {
+                    var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+                    if (usableConstructor != null)
+                    {
+                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                        instanceConstructorIL.Emit(OpCodes.Call, usableConstructor);
+                    }
                 }
             }
         }
@@ -266,7 +345,7 @@ public static class Compile
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
             if (id != 0 && (Section)id < previousSection)
-                throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
+                throw new ModuleLoadException($"Sections out of order; section {(Section)id} encountered after {previousSection}.", preSectionOffset);
             var payloadLength = reader.ReadVarUInt32();
 
             switch ((Section)id)
@@ -356,7 +435,7 @@ public static class Compile
 
                             if (functionTable == null)
                             {
-                                // It's legal to have multiple tables, but the extra tables are inaccessble to the initial version of WebAssembly.
+                                // It's legal to have multiple tables, but the extra tables are inaccessible to the initial version of WebAssembly.
                                 var limits = new ResizableLimits(reader);
                                 functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
                                 instanceConstructorIL.EmitLoadArg(0);
@@ -560,14 +639,31 @@ public static class Compile
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Newobj, exportInfo.DeclaredConstructors.First());
-            il.Emit(OpCodes.Call, instanceContainer
-                .GetTypeInfo()
-                .DeclaredConstructors
-                .First(info => info.GetParameters()
-                .FirstOrDefault()
-                ?.ParameterType == exportContainer
-                )
-                );
+
+            ConstructorInfo importConstructor;
+            if (importBuilder is not null)
+            {
+                var importConstructorBuilder = importBuilder.DefineConstructor(ConstructorAttributes, CallingConventions.Standard, []);
+
+                var importConstructorIL = importConstructorBuilder.GetILGenerator();
+                importConstructorIL.Emit(OpCodes.Ldarg_0);
+                importConstructorIL.Emit(OpCodes.Call, typeof(object).GetConstructor([])!);
+                importConstructorIL.Emit(OpCodes.Ret);
+
+                importConstructor = importConstructorBuilder;
+            }
+            else
+            {
+                importConstructor = instanceContainer
+                    .GetTypeInfo()
+                    .DeclaredConstructors
+                    .First(info => info.GetParameters()
+                    .FirstOrDefault()
+                    ?.ParameterType == exportContainer
+                    );
+            }
+
+            il.Emit(OpCodes.Call, importConstructor);
             il.Emit(OpCodes.Ret);
 
             instance = instanceBuilder.CreateTypeInfo();
@@ -1243,7 +1339,7 @@ public static class Compile
             }
 
             if (reader.Offset - startingOffset != byteLength)
-                throw new ModuleLoadException($"Instruction sequence reader ended after readering {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
+                throw new ModuleLoadException($"Instruction sequence reader ended after reading {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);
         }
     }
 
