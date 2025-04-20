@@ -22,7 +22,7 @@
     <AssemblyOriginatorKeyFile>Properties\WebAssembly.snk</AssemblyOriginatorKeyFile>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <NoWarn>CA1716;CA1720</NoWarn>
-    <DocumentationFile>bin\WebAssembly.xml</DocumentationFile>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

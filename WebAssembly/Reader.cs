@@ -4,16 +4,9 @@ using System.Text;
 
 namespace WebAssembly;
 
-internal sealed class Reader : IDisposable
+internal sealed class Reader(Stream input) : IDisposable
 {
-    private readonly UTF8Encoding utf8 = new(false, false);
-    private BinaryReader? reader;
-
-    public Reader(Stream input)
-    {
-        //The UTF8 encoding parameter is not actually used; it's just there so that the leaveOpen parameter can be reached.
-        this.reader = new BinaryReader(input, utf8, true);
-    }
+    private BinaryReader? reader = new(input, Encoding.UTF8, true);
 
     public long Offset { get; private set; }
 
@@ -127,7 +120,7 @@ internal sealed class Reader : IDisposable
     public string ReadString(uint length)
     {
         var bytes = this.ReadBytes(length);
-        return utf8.GetString(bytes, 0, bytes.Length);
+        return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
     }
 
     public byte[] ReadBytes(uint length)

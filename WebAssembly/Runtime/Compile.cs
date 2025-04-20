@@ -104,15 +104,17 @@ public static class Compile
             {
                 CheckPreamble(reader);
 
-                constructor = FromBinary(
-                    AssemblyBuilder.DefineDynamicAssembly(
+                var assembly = AssemblyBuilder.DefineDynamicAssembly(
                     new AssemblyName("CompiledWebAssembly"),
-                    AssemblyBuilderAccess.RunAndCollect
-                    ),
-                reader,
+                    AssemblyBuilderAccess.RunAndCollect);
+
+                constructor = FromBinary(
+                    assembly,
+                    reader,
                     configuration,
                     typeof(Instance<TExports>),
-                    typeof(TExports)
+                    typeof(TExports),
+                    assembly.DefineDynamicModule("CompiledWebAssembly")
                     );
             }
             catch (OverflowException x)
@@ -203,11 +205,19 @@ public static class Compile
 
 #if NET9_0_OR_GREATER
     /// <summary>
-    /// Creates an <see cref="AssemblyBuilder"/> from a binary WASM source.
+    /// Creates a <see cref="PersistedAssemblyBuilder"/> from a binary WASM source.
+    /// </summary>
+    /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
+    /// <returns>An assembly builder that can be used to further modify or save the assembly.</returns>
+    public static PersistedAssemblyBuilder CreatePersistedAssembly(Stream input)
+        => CreatePersistedAssembly(input, new());
+
+    /// <summary>
+    /// Creates a <see cref="PersistedAssemblyBuilder"/> from a binary WASM source.
     /// </summary>
     /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
     /// <param name="configuration">Configures the compiler.</param>
-    /// <returns>The created assembly.</returns>
+    /// <returns>An assembly builder that can be used to further modify or save the assembly.</returns>
     public static PersistedAssemblyBuilder CreatePersistedAssembly(
         Stream input,
         CompilerConfiguration configuration
@@ -272,7 +282,7 @@ public static class Compile
         CompilerConfiguration configuration,
         Type instanceContainer,
         Type exportContainer,
-        ModuleBuilder? module = null,
+        ModuleBuilder module,
         TypeBuilder? importBuilder = null
         )
     {
@@ -298,8 +308,6 @@ public static class Compile
         Signature[]? functionSignatures = null;
         KeyValuePair<string, uint>[]? exportedFunctions = null;
         var previousSection = Section.None;
-
-        module ??= assembly.DefineDynamicModule("CompiledWebAssembly");
 
         var context = new CompilationContext(configuration);
         var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", ClassAttributes, exportContainer);
