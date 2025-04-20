@@ -238,14 +238,7 @@ public static class Compile
 
             var module = assembly.DefineDynamicModule("CompiledWebAssembly");
 
-            var importBuilder = module.DefineType("Imports");
-            var instanceContainer = typeof(Instance<>).MakeGenericType(importBuilder);
-            var exportContainer = module.DefineType("Exports");
-
-            FromBinary(assembly, reader, configuration, instanceContainer, exportContainer, module, importBuilder);
-
-            importBuilder.CreateType();
-            exportContainer.CreateType();
+            FromBinary(assembly, reader, configuration, null, null, module, null);
 
             return assembly;
         }
@@ -280,8 +273,8 @@ public static class Compile
         AssemblyBuilder assembly,
         Reader reader,
         CompilerConfiguration configuration,
-        Type instanceContainer,
-        Type exportContainer,
+        Type? instanceContainer,
+        Type? exportContainer,
         ModuleBuilder module,
         TypeBuilder? importBuilder = null
         )
@@ -310,7 +303,14 @@ public static class Compile
         var previousSection = Section.None;
 
         var context = new CompilationContext(configuration);
-        var exportsBuilder = context.CheckedExportsBuilder = module.DefineType("CompiledExports", ClassAttributes, exportContainer);
+        var exportsBuilder = context.CheckedExportsBuilder = module.DefineType(
+#if NET9_0_OR_GREATER
+            configuration.TypeName,
+#else
+            "CompiledExports",
+#endif
+            ClassAttributes,
+            exportContainer);
         MethodBuilder? importedMemoryProvider = null;
         FieldBuilder? memory = null;
 
@@ -329,7 +329,7 @@ public static class Compile
                 }
                 else
                 {
-                    var usableConstructor = exportContainer.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
+                    var usableConstructor = exportContainer?.GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 0);
                     if (usableConstructor != null)
                     {
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -633,6 +633,9 @@ public static class Compile
         instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
         var exportInfo = exportsBuilder.CreateTypeInfo();
 
+        if (importBuilder is null && instanceContainer is null)
+            return exportInfo.DeclaredConstructors.First();
+
         TypeInfo instance;
         {
             var instanceBuilder = module.DefineType("CompiledInstance", ClassAttributes, instanceContainer);
@@ -660,7 +663,7 @@ public static class Compile
 
                 importConstructor = importConstructorBuilder;
             }
-            else
+            else if (instanceContainer is not null)
             {
                 importConstructor = instanceContainer
                     .GetTypeInfo()
@@ -669,6 +672,10 @@ public static class Compile
                     .FirstOrDefault()
                     ?.ParameterType == exportContainer
                     );
+            }
+            else
+            {
+                return exportInfo.DeclaredConstructors.First();
             }
 
             il.Emit(OpCodes.Call, importConstructor);

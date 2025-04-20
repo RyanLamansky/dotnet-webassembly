@@ -15,6 +15,24 @@ public class CompilerConfiguration
     {
     }
 
+#if NET9_0_OR_GREATER
+    private string typeName = "WebAssembly.CompiledFromWasm";
+
+    /// <summary>
+    /// Gets or sets the name of the type that hosts the compiled code.
+    /// Defaults to "WebAssembly.CompiledFromWasm".
+    /// </summary>
+    public string TypeName
+    {
+        get => typeName;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            typeName = value;
+        }
+    }
+#endif
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private GetDelegateForTypeCallback getDelegateForType = GetStandardDelegateForType;
 

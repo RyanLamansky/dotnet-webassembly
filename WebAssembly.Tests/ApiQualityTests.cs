@@ -97,4 +97,16 @@ public class ApiQualityTests
 
         Assert.AreEqual("", string.Join(", ", GatherViolations()), "Instruction intermediate types can only have internal constructors.");
     }
+
+#if NET9_0_OR_GREATER
+    /// <summary>
+    /// Ensures that there's no collision between the default value of <see cref="Runtime.CompilerConfiguration.TypeName"/> and any compiled type.
+    /// </summary>
+    [TestMethod]
+    public void NoTypeMatchingCompilerConfigurationDefaultNameExists()
+    {
+        var defaultTypeName = new Runtime.CompilerConfiguration().TypeName;
+        Assert.IsNull(typeof(Module).Assembly.GetType(defaultTypeName));
+    }
+#endif
 }
