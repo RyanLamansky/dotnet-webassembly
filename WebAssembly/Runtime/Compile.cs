@@ -147,7 +147,24 @@ public static class Compile
         {
             try
             {
-                return (Instance<TExports>)constructor.Invoke([imports]);
+                Func<string, string, RuntimeImport> findImport = (module, field) =>
+                {
+#if NETSTANDARD
+                    if (module == null)
+                        throw new ArgumentNullException(nameof(module));
+                    if (field == null)
+                        throw new ArgumentNullException(nameof(field));
+#else
+                    ArgumentNullException.ThrowIfNull(module, nameof(module));
+                    ArgumentNullException.ThrowIfNull(field, nameof(field));
+#endif
+
+                    return !imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import)
+                        ? throw new ImportException($"Missing import for {module}::{field}.")
+                        : import;
+                };
+
+                return (Instance<TExports>)constructor.Invoke([findImport]);
             }
             catch (TargetInvocationException x)
 #if DEBUG
@@ -319,8 +336,9 @@ public static class Compile
             var instanceConstructor = exportsBuilder.DefineConstructor(
                 ConstructorAttributes,
                 CallingConventions.Standard,
-                [typeof(IDictionary<string, IDictionary<string, RuntimeImport>>)]
+                [typeof(Func<string, string, RuntimeImport>)]
                 );
+            instanceConstructor.DefineParameter(1, ParameterAttributes.None, "findImport");
             instanceConstructorIL = instanceConstructor.GetILGenerator();
             {
                 if (exportContainer is TypeBuilder buildableExportContainer)
@@ -642,7 +660,7 @@ public static class Compile
             var instanceConstructor = instanceBuilder.DefineConstructor(
                 ConstructorAttributes,
                 CallingConventions.Standard,
-                [typeof(IDictionary<string, IDictionary<string, RuntimeImport>>)]
+                [typeof(Func<string, string, RuntimeImport>)]
                 );
             var il = instanceConstructor.GetILGenerator();
             var memoryAllocated = checked(memoryPagesMaximum * Memory.PageSize);
@@ -704,6 +722,7 @@ public static class Compile
         var functionImportTypes = new List<Signature>(count);
         var globalImports = new List<GlobalInfo>(count);
         var missingDelegates = new List<MissingDelegateType>();
+        var importFinderInvoke = typeof(Func<string, string, RuntimeImport>).GetMethod("Invoke")!;
 
         for (var i = 0; i < count; i++)
         {
@@ -759,12 +778,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                        instanceConstructorIL.Emit(OpCodes.Call,
-                            typeof(Helpers)
-                            .GetTypeInfo()
-                            .GetDeclaredMethod(nameof(Helpers.FindImport))!
-                            .MakeGenericMethod(typeof(FunctionImport))
-                            );
+                        instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(FunctionImport));
+
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
                             typeof(FunctionImport)
                             .GetTypeInfo()
@@ -794,12 +811,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                        instanceConstructorIL.Emit(OpCodes.Call,
-                            typeof(Helpers)
-                            .GetTypeInfo()
-                            .GetDeclaredMethod(nameof(Helpers.FindImport))!
-                            .MakeGenericMethod(typeof(FunctionTable))
-                            );
+                        instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(FunctionTable));
+
                         instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
                     }
                     break;
@@ -829,12 +844,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                        instanceConstructorIL.Emit(OpCodes.Call,
-                            typeof(Helpers)
-                            .GetTypeInfo()
-                            .GetDeclaredMethod(nameof(Helpers.FindImport))!
-                            .MakeGenericMethod(typeof(MemoryImport))
-                            );
+                        instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(MemoryImport));
+
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
                             typeof(MemoryImport)
                             .GetTypeInfo()
@@ -877,12 +890,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                        instanceConstructorIL.Emit(OpCodes.Call,
-                            typeof(Helpers)
-                            .GetTypeInfo()
-                            .GetDeclaredMethod(nameof(Helpers.FindImport))!
-                            .MakeGenericMethod(typeof(GlobalImport))
-                            );
+                        instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport));
+
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
                             typeof(GlobalImport)
                             .GetTypeInfo()
@@ -921,12 +932,10 @@ public static class Compile
                             instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                             instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
-                            instanceConstructorIL.Emit(OpCodes.Call,
-                                typeof(Helpers)
-                                .GetTypeInfo()
-                                .GetDeclaredMethod(nameof(Helpers.FindImport))!
-                                .MakeGenericMethod(typeof(GlobalImport))
-                                );
+                            instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                            ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport));
+
                             instanceConstructorIL.Emit(OpCodes.Callvirt,
                                 typeof(GlobalImport)
                                 .GetTypeInfo()
