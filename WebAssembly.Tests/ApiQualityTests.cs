@@ -100,12 +100,12 @@ public class ApiQualityTests
 
 #if NET9_0_OR_GREATER
     /// <summary>
-    /// Ensures that there's no collision between the default value of <see cref="Runtime.CompilerConfiguration.TypeName"/> and any compiled type.
+    /// Ensures that there's no collision between the default value of <see cref="Runtime.PersistedCompilerConfiguration.TypeName"/> and any compiled type.
     /// </summary>
     [TestMethod]
     public void NoTypeMatchingCompilerConfigurationDefaultNameExists()
     {
-        var defaultTypeName = new Runtime.CompilerConfiguration().TypeName;
+        var defaultTypeName = new Runtime.PersistedCompilerConfiguration(typeof(object).Assembly, typeof(Module).Assembly).TypeName;
         Assert.IsNull(typeof(Module).Assembly.GetType(defaultTypeName));
     }
 #endif

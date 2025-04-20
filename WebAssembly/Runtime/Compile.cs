@@ -225,19 +225,11 @@ public static class Compile
     /// Creates a <see cref="PersistedAssemblyBuilder"/> from a binary WASM source.
     /// </summary>
     /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
-    /// <returns>An assembly builder that can be used to further modify or save the assembly.</returns>
-    public static PersistedAssemblyBuilder CreatePersistedAssembly(Stream input)
-        => CreatePersistedAssembly(input, new());
-
-    /// <summary>
-    /// Creates a <see cref="PersistedAssemblyBuilder"/> from a binary WASM source.
-    /// </summary>
-    /// <param name="input">The source of data. The stream is left open after reading is complete.</param>
     /// <param name="configuration">Configures the compiler.</param>
     /// <returns>An assembly builder that can be used to further modify or save the assembly.</returns>
     public static PersistedAssemblyBuilder CreatePersistedAssembly(
         Stream input,
-        CompilerConfiguration configuration
+        PersistedCompilerConfiguration configuration
         )
     {
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
@@ -250,7 +242,7 @@ public static class Compile
 
             var assembly = new PersistedAssemblyBuilder(
                 new AssemblyName("CompiledWebAssembly"),
-                typeof(object).Assembly
+                configuration.CoreAssembly
                 );
 
             var module = assembly.DefineDynamicModule("CompiledWebAssembly");
@@ -321,11 +313,7 @@ public static class Compile
 
         var context = new CompilationContext(configuration);
         var exportsBuilder = context.CheckedExportsBuilder = module.DefineType(
-#if NET9_0_OR_GREATER
-            configuration.TypeName,
-#else
-            "CompiledExports",
-#endif
+            configuration.CompiledTypeName,
             ClassAttributes,
             exportContainer);
         MethodBuilder? importedMemoryProvider = null;
@@ -336,7 +324,7 @@ public static class Compile
             var instanceConstructor = exportsBuilder.DefineConstructor(
                 ConstructorAttributes,
                 CallingConventions.Standard,
-                [typeof(Func<string, string, RuntimeImport>)]
+                [configuration.NeutralizeType(typeof(Func<string, string, RuntimeImport>))]
                 );
             instanceConstructor.DefineParameter(1, ParameterAttributes.None, "findImport");
             instanceConstructorIL = instanceConstructor.GetILGenerator();
@@ -544,13 +532,13 @@ public static class Compile
 
                         instanceConstructorIL.Emit(OpCodes.Stfld, memory);
 
-                        exportsBuilder.AddInterfaceImplementation(typeof(IDisposable));
+                        exportsBuilder.AddInterfaceImplementation(configuration.NeutralizeType(typeof(IDisposable)));
 
                         var dispose = exportsBuilder.DefineMethod(
                             "Dispose",
                             MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
                             CallingConventions.HasThis,
-                            typeof(void),
+                            configuration.NeutralizeType(typeof(void)),
                             emptyTypes
                             );
 

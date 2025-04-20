@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace WebAssembly.Runtime;
 
@@ -15,23 +16,9 @@ public class CompilerConfiguration
     {
     }
 
-#if NET9_0_OR_GREATER
-    private string typeName = "WebAssembly.CompiledFromWasm";
+    internal virtual string CompiledTypeName => "CompiledExports";
 
-    /// <summary>
-    /// Gets or sets the name of the type that hosts the compiled code.
-    /// Defaults to "WebAssembly.CompiledFromWasm".
-    /// </summary>
-    public string TypeName
-    {
-        get => typeName;
-        set
-        {
-            ArgumentNullException.ThrowIfNull(value);
-            typeName = value;
-        }
-    }
-#endif
+    internal virtual Type NeutralizeType(Type type) => type;
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private GetDelegateForTypeCallback getDelegateForType = GetStandardDelegateForType;
