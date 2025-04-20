@@ -105,7 +105,7 @@ public class ApiQualityTests
     [TestMethod]
     public void NoTypeMatchingCompilerConfigurationDefaultNameExists()
     {
-        var defaultTypeName = new Runtime.PersistedCompilerConfiguration(typeof(object).Assembly, typeof(Module).Assembly).TypeName;
+        var defaultTypeName = new Runtime.PersistedCompilerConfiguration(typeof(object).Assembly, typeof(Module).Assembly, new("Test"), "Test").TypeName;
         Assert.IsNull(typeof(Module).Assembly.GetType(defaultTypeName));
     }
 #endif

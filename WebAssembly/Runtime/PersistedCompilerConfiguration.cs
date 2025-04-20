@@ -16,29 +16,41 @@ public class PersistedCompilerConfiguration : CompilerConfiguration
     /// </summary>
     /// <param name="coreAssembly">A reference to a .NET Standard or .NET core DLL.</param>
     /// <param name="webAssembly">A reference to a WebAssembly for .NET primary DLL linked to <paramref name="coreAssembly"/>.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="coreAssembly"/> and <paramref name="webAssembly"/> cannot be null.</exception>
-    public PersistedCompilerConfiguration(Assembly coreAssembly, Assembly webAssembly)
+    /// <param name="outputName">The name that will be given to the output.</param>
+    /// <param name="moduleName">The name that will be given to the module within the output assembly.</param>
+    /// <exception cref="ArgumentNullException">No parameters can be null.</exception>
+    public PersistedCompilerConfiguration(Assembly coreAssembly, Assembly webAssembly, AssemblyName outputName, string moduleName)
     {
         ArgumentNullException.ThrowIfNull(coreAssembly);
         ArgumentNullException.ThrowIfNull(webAssembly);
+        ArgumentNullException.ThrowIfNull(outputName);
+        ArgumentNullException.ThrowIfNull(moduleName);
 
         CoreAssembly = coreAssembly;
         WebAssembly = webAssembly;
+        OutputName = outputName;
+        ModuleName = moduleName;
     }
 
     /// <summary>
     /// Gets the reference assembly used to find standard types.
-    /// Defaults to the runtime host of the <see cref="Assembly"/> type.
-    /// Required when persisted assembly compilation is used to control which version of .NET is required.
     /// </summary>
     public Assembly CoreAssembly { get; }
 
     /// <summary>
     /// Gets the assembly used to find the various WebAssembly for .NET types.
-    /// Defaults to the runtime host of the <see cref="Compile"/> type.
-    /// Required when persisted assembly compilation is used to control which version of WebAssembly for .NET is required.
     /// </summary>
     public Assembly WebAssembly { get; }
+
+    /// <summary>
+    /// Gets the name that will be given to the output.
+    /// </summary>
+    public AssemblyName OutputName { get; }
+
+    /// <summary>
+    /// Gets the name that will be given to the module within the output assembly
+    /// </summary>
+    public string ModuleName { get; }
 
     private string typeName = "WebAssembly.CompiledFromWasm";
 
@@ -73,6 +85,7 @@ public class PersistedCompilerConfiguration : CompilerConfiguration
 
                 return CoreAssembly.GetType($"{type.Namespace}.{type.Name}")!;
             case "WebAssembly.Runtime":
+            case "WebAssembly.Runtime.Compilation":
                 return WebAssembly.GetType($"{type.Namespace}.{type.Name}")!;
         }
 

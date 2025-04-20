@@ -241,11 +241,11 @@ public static class Compile
             CheckPreamble(reader);
 
             var assembly = new PersistedAssemblyBuilder(
-                new AssemblyName("CompiledWebAssembly"),
+                configuration.OutputName,
                 configuration.CoreAssembly
                 );
 
-            var module = assembly.DefineDynamicModule("CompiledWebAssembly");
+            var module = assembly.DefineDynamicModule(configuration.ModuleName);
 
             FromBinary(assembly, reader, configuration, null, null, module, null);
 
@@ -377,7 +377,7 @@ public static class Compile
                         signatures = context.Types = new Signature[reader.ReadVarUInt32()];
 
                         for (var i = 0; i < signatures.Length; i++)
-                            signatures[i] = new Signature(reader, (uint)i);
+                            signatures[i] = new Signature(reader, (uint)i, configuration);
                     }
                     break;
 
@@ -451,42 +451,42 @@ public static class Compile
                             {
                                 // It's legal to have multiple tables, but the extra tables are inaccessible to the initial version of WebAssembly.
                                 var limits = new ResizableLimits(reader);
-                                functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
+                                functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
                                 instanceConstructorIL.EmitLoadArg(0);
                                 instanceConstructorIL.EmitLoadConstant(limits.Minimum);
                                 if (limits.Maximum.HasValue)
                                 {
                                     instanceConstructorIL.EmitLoadConstant(limits.Maximum);
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?)
+                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
                                         .GetTypeInfo()
                                         .DeclaredConstructors
                                         .Where(constructor =>
                                         {
                                             var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
                                         })
                                         .Single());
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable)
+                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
                                         .GetTypeInfo()
                                         .DeclaredConstructors
                                         .Where(constructor =>
                                         {
                                             var parms = constructor.GetParameters();
                                             return parms.Length == 2
-                                                && parms[0].ParameterType == typeof(uint)
-                                                && parms[1].ParameterType == typeof(uint?);
+                                                && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
+                                                && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
                                         })
                                         .Single());
                                 }
                                 else
                                 {
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, typeof(FunctionTable)
+                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
                                         .GetTypeInfo()
                                         .DeclaredConstructors
                                         .Where(constructor =>
                                         {
                                             var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
                                         })
                                         .Single());
                                 }
@@ -513,21 +513,24 @@ public static class Compile
                         else
                             memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
-                        memory = context.Memory = CreateMemoryField(exportsBuilder);
+                        memory = context.Memory = CreateMemoryField(exportsBuilder, configuration);
 
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
                         Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
-                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(uint?).GetTypeInfo().DeclaredConstructors.Where(info =>
+                        instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?)).GetTypeInfo().DeclaredConstructors.Where(info =>
                         {
                             var parms = info.GetParameters();
-                            return parms.Length == 1 && parms[0].ParameterType == typeof(uint);
+                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
                         }).First());
 
-                        instanceConstructorIL.Emit(OpCodes.Newobj, typeof(UnmanagedMemory).GetTypeInfo().DeclaredConstructors.Where(info =>
+                        instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(UnmanagedMemory)).GetTypeInfo().DeclaredConstructors.Where(info =>
                         {
                             var parms = info.GetParameters();
-                            return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint?);
+                            return
+                                parms.Length == 2 &&
+                                parms[0].ParameterType == configuration.NeutralizeType(typeof(uint)) &&
+                                parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
                         }).First());
 
                         instanceConstructorIL.Emit(OpCodes.Stfld, memory);
@@ -545,11 +548,11 @@ public static class Compile
                         var disposeIL = dispose.GetILGenerator();
                         disposeIL.Emit(OpCodes.Ldarg_0);
                         disposeIL.Emit(OpCodes.Ldfld, memory);
-                        disposeIL.Emit(OpCodes.Call, typeof(UnmanagedMemory)
+                        disposeIL.Emit(OpCodes.Call, configuration.NeutralizeType(typeof(UnmanagedMemory))
                             .GetTypeInfo()
                             .DeclaredMethods
                             .Where(info =>
-                            info.ReturnType == typeof(void)
+                            info.ReturnType == configuration.NeutralizeType(typeof(void))
                             && info.GetParameters().Length == 0
                             && info.Name == nameof(UnmanagedMemory.Dispose))
                             .First());
@@ -558,11 +561,11 @@ public static class Compile
                     break;
 
                 case Section.Global:
-                    globals = SectionGlobal(reader, context, globals, exportsBuilder, instanceConstructorIL, importedGlobals);
+                    globals = SectionGlobal(reader, context, globals, exportsBuilder, instanceConstructorIL, importedGlobals, configuration);
                     break;
 
                 case Section.Export:
-                    exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals);
+                    exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals, configuration);
                     break;
 
                 case Section.Start:
@@ -618,6 +621,9 @@ public static class Compile
                     signature.ReturnTypes.FirstOrDefault(),
                     signature.ParameterTypes
                     );
+#if NET9_0_OR_GREATER
+                if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
                 method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key));
 
                 var il = method.GetILGenerator();
@@ -710,7 +716,7 @@ public static class Compile
         var functionImportTypes = new List<Signature>(count);
         var globalImports = new List<GlobalInfo>(count);
         var missingDelegates = new List<MissingDelegateType>();
-        var importFinderInvoke = typeof(Func<string, string, RuntimeImport>).GetMethod("Invoke")!;
+        var importFinderInvoke = configuration.NeutralizeType(typeof(Func<string, string, RuntimeImport>)).GetMethod("Invoke")!;
 
         for (var i = 0; i < count; i++)
         {
@@ -738,7 +744,7 @@ public static class Compile
                             continue;
                         }
 
-                        var typedDelegate = del.IsGenericTypeDefinition ? del.MakeGenericType([.. signature.ParameterTypes, .. signature.ReturnTypes]) : del;
+                        var typedDelegate = configuration.NeutralizeType(del.IsGenericTypeDefinition ? del.MakeGenericType([.. signature.ParameterTypes, .. signature.ReturnTypes]) : del);
                         var delField = $"➡ {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -768,14 +774,14 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, typeof(FunctionImport));
+                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(FunctionImport)), configuration);
 
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
-                            typeof(FunctionImport)
+                            configuration.NeutralizeType(typeof(FunctionImport))
                             .GetTypeInfo()
                             .GetDeclaredProperty(nameof(FunctionImport.Method))!
                             .GetMethod!);
-                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
+                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                         functionImports.Add(invoker);
@@ -794,14 +800,14 @@ public static class Compile
                         if (functionTable != null)
                             throw new NotSupportedException("Unable to support multiple tables.");
 
-                        functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder);
+                        functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, typeof(FunctionTable));
+                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(FunctionTable)), configuration);
 
                         instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
                     }
@@ -834,17 +840,17 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, typeof(MemoryImport));
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(MemoryImport), configuration);
 
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
                             typeof(MemoryImport)
                             .GetTypeInfo()
                             .GetDeclaredProperty(nameof(MemoryImport.Method))!
                             .GetMethod!);
-                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
+                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
-                        memory = context.Memory = CreateMemoryField(exportsBuilder);
+                        memory = context.Memory = CreateMemoryField(exportsBuilder, configuration);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
@@ -856,7 +862,7 @@ public static class Compile
                         var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
                         var mutable = reader.ReadVarUInt1() == 1;
 
-                        var typedDelegate = typeof(Func<>).MakeGenericType([contentType.ToSystemType()]);
+                        var typedDelegate = configuration.NeutralizeType(typeof(Func<>).MakeGenericType([contentType.ToSystemType()]));
                         var delField = $"➡ Get {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -864,7 +870,7 @@ public static class Compile
                             $"Invoke {delField}",
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
-                            contentType.ToSystemType(),
+                            configuration.NeutralizeType(contentType.ToSystemType()),
                             [exportsBuilder]
                             );
 
@@ -880,14 +886,14 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport));
+                        ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport), configuration);
 
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
-                            typeof(GlobalImport)
+                             typeof(GlobalImport)
                             .GetTypeInfo()
                             .GetDeclaredProperty(nameof(GlobalImport.Getter))!
                             .GetMethod!);
-                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
+                        ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                         MethodBuilder? setterInvoker;
@@ -897,7 +903,7 @@ public static class Compile
                         }
                         else
                         {
-                            typedDelegate = typeof(Action<>).MakeGenericType([contentType.ToSystemType()]);
+                            typedDelegate = configuration.NeutralizeType(typeof(Action<>).MakeGenericType([contentType.ToSystemType()]));
                             delField = $"➡ Set {moduleName}::{fieldName}";
                             delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -906,14 +912,14 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             null,
-                            [contentType.ToSystemType(), exportsBuilder]
+                            [configuration.NeutralizeType(contentType.ToSystemType()), exportsBuilder]
                             );
 
                             invokerIL = setterInvoker.GetILGenerator();
                             invokerIL.EmitLoadArg(1);
                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
                             invokerIL.EmitLoadArg(0);
-                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), [contentType.ToSystemType()])!);
+                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), [configuration.NeutralizeType(contentType.ToSystemType())])!);
                             invokerIL.Emit(OpCodes.Ret);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -922,14 +928,14 @@ public static class Compile
                             instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                             instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                            ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport));
+                            ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport), configuration);
 
                             instanceConstructorIL.Emit(OpCodes.Callvirt,
                                 typeof(GlobalImport)
                                 .GetTypeInfo()
                                 .GetDeclaredProperty(nameof(GlobalImport.Setter))!
                                 .GetMethod!);
-                            ImportException.EmitTryCast(instanceConstructorIL, typedDelegate);
+                            ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                         }
 
@@ -960,7 +966,14 @@ public static class Compile
         );
     }
 
-    static GlobalInfo[] SectionGlobal(Reader reader, CompilationContext context, GlobalInfo[]? globals, TypeBuilder exportsBuilder, ILGenerator instanceConstructorIL, int importedGlobals)
+    static GlobalInfo[] SectionGlobal(
+        Reader reader,
+        CompilationContext context,
+        GlobalInfo[]? globals,
+        TypeBuilder exportsBuilder,
+        ILGenerator instanceConstructorIL,
+        int importedGlobals,
+        CompilerConfiguration configuration)
     {
         var count = reader.ReadVarUInt32();
         if (globals != null)
@@ -984,12 +997,12 @@ public static class Compile
                 $"🌍 Get {i}",
                 InternalFunctionAttributes,
                 CallingConventions.Standard,
-                contentType.ToSystemType(),
+                configuration.NeutralizeType(contentType.ToSystemType()),
                 isMutable ? [exportsBuilder] : null
                 );
 
             var il = getter.GetILGenerator();
-            var getterSignature = new Signature(contentType);
+            var getterSignature = new Signature(contentType, configuration);
             MethodBuilder? setter;
 
             if (!isMutable)
@@ -1012,7 +1025,7 @@ public static class Compile
             {
                 var field = exportsBuilder.DefineField(
                     $"🌍 {i}",
-                    contentType.ToSystemType(),
+                    configuration.NeutralizeType(contentType.ToSystemType()),
                     FieldAttributes.Private | (isMutable ? 0 : FieldAttributes.InitOnly)
                     );
 
@@ -1024,8 +1037,8 @@ public static class Compile
                 $"🌍 Set {i}",
                     InternalFunctionAttributes,
                     CallingConventions.Standard,
-                    typeof(void),
-                    [contentType.ToSystemType(), exportsBuilder]
+                    configuration.NeutralizeType(typeof(void)),
+                    [configuration.NeutralizeType(contentType.ToSystemType()), exportsBuilder]
                     );
 
                 il = setter.GetILGenerator();
@@ -1066,7 +1079,14 @@ public static class Compile
         return globals;
     }
 
-    static KeyValuePair<string, uint>[] SectionExport(Reader reader, FieldBuilder? functionTable, TypeBuilder exportsBuilder, Type[] emptyTypes, FieldBuilder? memory, GlobalInfo[]? globals)
+    static KeyValuePair<string, uint>[] SectionExport(
+        Reader reader,
+        FieldBuilder? functionTable,
+        TypeBuilder exportsBuilder,
+        Type[] emptyTypes,
+        FieldBuilder? memory,
+        GlobalInfo[]? globals,
+        CompilerConfiguration configuration)
     {
         const MethodAttributes exportedPropertyAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final;
         var totalExports = reader.ReadVarUInt32();
@@ -1094,16 +1114,19 @@ public static class Compile
                         var tableGetter = exportsBuilder.DefineMethod("get_" + name,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            typeof(FunctionTable),
+                            configuration.NeutralizeType(typeof(FunctionTable)),
                             emptyTypes
                             );
+#if NET9_0_OR_GREATER
+                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
                         tableGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
                         var getterIL = tableGetter.GetILGenerator();
                         getterIL.Emit(OpCodes.Ldarg_0);
                         getterIL.Emit(OpCodes.Ldfld, functionTable);
                         getterIL.Emit(OpCodes.Ret);
 
-                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(FunctionTable), emptyTypes)
+                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(FunctionTable)), emptyTypes)
                             .SetGetMethod(tableGetter);
                     }
                     break;
@@ -1117,16 +1140,19 @@ public static class Compile
                         var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            typeof(UnmanagedMemory),
+                            configuration.NeutralizeType(typeof(UnmanagedMemory)),
                             emptyTypes
                             );
+#if NET9_0_OR_GREATER
+                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
                         memoryGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Memory, name));
                         var getterIL = memoryGetter.GetILGenerator();
                         getterIL.Emit(OpCodes.Ldarg_0);
                         getterIL.Emit(OpCodes.Ldfld, memory);
                         getterIL.Emit(OpCodes.Ret);
 
-                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, typeof(UnmanagedMemory), emptyTypes)
+                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes)
                             .SetGetMethod(memoryGetter);
                     }
                     break;
@@ -1138,12 +1164,15 @@ public static class Compile
 
                     {
                         var global = globals[index];
-                        var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, global.Type.ToSystemType(), emptyTypes);
+                        var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(global.Type.ToSystemType()), emptyTypes);
+#if NET9_0_OR_GREATER
+                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
                         property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name));
                         var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            global.Type.ToSystemType(),
+                            configuration.NeutralizeType(global.Type.ToSystemType()),
                             emptyTypes
                             );
 
@@ -1161,7 +1190,7 @@ public static class Compile
                                 exportedPropertyAttributes,
                                 CallingConventions.HasThis,
                                 null,
-                                [global.Type.ToSystemType()]
+                                [configuration.NeutralizeType(global.Type.ToSystemType())]
                                 );
 
                             var wrappedSetIL = wrappedSet.GetILGenerator();
@@ -1422,13 +1451,15 @@ public static class Compile
         }
     }
 
-    static FieldBuilder CreateFunctionTableField(TypeBuilder exportsBuilder)
-    {
-        return exportsBuilder.DefineField("☣ FunctionTable", typeof(FunctionTable), FieldAttributes.Private | FieldAttributes.InitOnly);
-    }
+    static FieldBuilder CreateFunctionTableField(TypeBuilder exportsBuilder, CompilerConfiguration configuration)
+        => exportsBuilder.DefineField(
+            "☣ FunctionTable",
+            configuration.NeutralizeType(typeof(FunctionTable)),
+            FieldAttributes.Private | FieldAttributes.InitOnly);
 
-    static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder)
-    {
-        return exportsBuilder.DefineField("☣ Memory", typeof(UnmanagedMemory), PrivateReadonlyField);
-    }
+    static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder, CompilerConfiguration configuration)
+        => exportsBuilder.DefineField(
+            "☣ Memory",
+            configuration.NeutralizeType(typeof(UnmanagedMemory)),
+            PrivateReadonlyField);
 }

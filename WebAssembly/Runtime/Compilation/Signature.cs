@@ -22,14 +22,14 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
         this.RawReturnTypes = this.RawParameterTypes = [];
     }
 
-    public Signature(WebAssemblyValueType returnType)
+    public Signature(WebAssemblyValueType returnType, CompilerConfiguration configuration)
         : this()
     {
-        this.ReturnTypes = [returnType.ToSystemType()];
+        this.ReturnTypes = [configuration.NeutralizeType(returnType.ToSystemType())];
         this.RawReturnTypes = [returnType];
     }
 
-    public Signature(Reader reader, uint typeIndex)
+    public Signature(Reader reader, uint typeIndex, CompilerConfiguration configuration)
     {
         this.TypeIndex = typeIndex;
 
@@ -39,7 +39,7 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
         var rawParameters = this.RawParameterTypes = new WebAssemblyValueType[parameters.Length];
 
         for (var i = 0; i < parameters.Length; i++)
-            parameters[i] = (rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
+            parameters[i] = configuration.NeutralizeType((rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());
 
         var returns = this.ReturnTypes = new Type[reader.ReadVarUInt1()];
         var rawReturns = this.RawReturnTypes = new WebAssemblyValueType[returns.Length];
@@ -48,7 +48,7 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
             throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset - 1);
 
         for (var i = 0; i < returns.Length; i++)
-            returns[i] = (rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType();
+            returns[i] = configuration.NeutralizeType((rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());
     }
 
     public bool Equals(WebAssemblyType? other)

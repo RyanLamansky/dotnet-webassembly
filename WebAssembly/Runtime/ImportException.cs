@@ -26,7 +26,7 @@ public class ImportException : RuntimeException
     {
     }
 
-    internal static void EmitTryCast(ILGenerator il, Type target)
+    internal static void EmitTryCast(ILGenerator il, Type target, CompilerConfiguration configuration)
     {
         il.Emit(OpCodes.Isinst, target);
         il.Emit(OpCodes.Dup);
@@ -34,7 +34,7 @@ public class ImportException : RuntimeException
         var typeCheckPassed = il.DefineLabel();
         il.Emit(OpCodes.Brtrue, typeCheckPassed);
 
-        il.Emit(OpCodes.Newobj, typeof(ImportException).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
+        il.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(ImportException)).GetTypeInfo().DeclaredConstructors.First(c => c.GetParameters().Length == 0));
         il.Emit(OpCodes.Throw);
 
         il.MarkLabel(typeCheckPassed);

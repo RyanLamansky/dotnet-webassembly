@@ -5,7 +5,8 @@
 > Only WebAssembly 1.0 is supported!
 > Most WASM files target a higher version and will encounter errors if you try to load them with WebAssembly for .NET.
 
-A library able to create, read, modify, write and execute WebAssembly (WASM) files from .NET-based applications.
+A library able to create, read, modify, write, execute WebAssembly (WASM) files from .NET-based applications.
+It can also convert WASM files to .NET DLLs.
 *Execution does not use an interpreter or a 3rd party library:*
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
 
@@ -17,10 +18,11 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
   - `Module.ReadFromBinary` reads a stream into an instance, which can then be inspected and modified through its properties.
     - Most WASM files use post-1.0 features and will experience errors when you try to load them.
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
-- Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler.
+- Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler or convert it to a .NET DLL.
   - Most WASM files have many imports and exports--you'll need to cover these yourself.
   - This should work for most WASM 1.0 files, but spec compliance is not perfect.
   - This will not work for any newer-than-1.0 files
+  - Saving to a DLL requires .NET 9 or higher and has several additional steps.
 
 You're welcome to report a bug if you can share a WASM file that has a problem, but no one is actively working on this project so a fix may not come.
 
@@ -102,7 +104,68 @@ public abstract class Sample
     // Sometimes you can use C# dynamic instead of building an abstract class like this.
     public abstract int Demo(int value);
 }
+```
+## Sample: Convert a WASM file to a .NET DLL
 
+> [!NOTE]
+> This feature is experimental.
+
+The saving process uses the [PersistedAssemblyBuilder](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit.persistedassemblybuilder.-ctor) feature introduced in .NET 9.
+Aided by [MetadataLoadContext](https://www.nuget.org/packages/System.Reflection.MetadataLoadContext), this example produces a DLL for .NET Standard 2.0.
+
+```C#
+var resolver = new PathAssemblyResolver([
+    // A core DLL containing System.String and other basic features:
+    "C:\\Program Files\\dotnet\\sdk\\9.0.300-preview.0.25177.5\\ref\\netstandard.dll",
+    // One way or another you'll need a reference to the matching WebAssembly.dll built against the core DLL.
+    "C:\\dotnet-webassembly\\WebAssembly\\bin\\Release\\netstandard2.0\\WebAssembly.dll"
+    ]);
+using var context = new MetadataLoadContext(resolver);
+
+const string name = "HelloWorld"; // Name components should match.
+
+var assembly = Compile.CreatePersistedAssembly(
+    File.OpenRead("HelloWorld.wasm"), // This is part of the "RunExisting" sample.
+    new(
+        context.CoreAssembly,
+        resolver.Resolve(context, new("WebAssembly")),
+        new(name),
+        $"{name}.dll"
+        )
+    {
+        // The type name includes the namespace.
+        // If not set, defaults to WebAssembly.CompiledFromWasm.
+        TypeName = "Converted.HelloWorld"
+    }
+    );
+
+assembly.Save($"{name}.dll");
+```
+
+To use the new DLL, you directly reference it in your .csproj.
+
+```XML
+<ItemGroup>
+  <Reference Include="HelloWorld">
+    <HintPath>bin\HelloWorld.dll</HintPath> <!-- Relative path to the URL. -->
+  </Reference>
+</ItemGroup>
+```
+
+Once the DLL reference is in place, you can access it just like any other .NET library.
+
+```C#
+var helloWorld = new Converted.HelloWorld((module, field) =>
+{
+    // Imports are defined by the original WASM and must be supplied by you.
+    if (module == "env" && field == "sayc")
+        return new FunctionImport(new Action<int>(raw => Console.Write((char)raw)));
+
+    throw new Exception($"Unknown import: {module} {field}");
+});
+
+// You can directly access anything exported by the WASM.
+var result = helloWorld.main();
 ```
 
 ## Other Information
