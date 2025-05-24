@@ -348,6 +348,12 @@ public class Module
                         }
                         break;
 
+                    case Section.DataCount: //Optional section, indicates the expected length of the data segment vector
+                        {
+                            reader.ReadUInt32();
+                        }
+                        break;
+
                     default:
                         throw new ModuleLoadException($"Unrecognized section type {id}.", preSectionOffset);
                 }
