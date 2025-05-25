@@ -1,4 +1,6 @@
-﻿namespace WebAssembly;
+﻿using System;
+
+namespace WebAssembly;
 
 /// <summary>
 /// The standard section identifiers.
@@ -52,10 +54,14 @@ public enum Section : byte
     /// <summary>
     /// Data segments.
     /// </summary>
-    Data
+    Data,
+    /// <summary>
+    /// Optional segment which indicates the number of sata segments
+    /// </summary>
+    DataCount,
 }
 
 static class SectionExtensions
 {
-    public static bool IsValid(this Section section) => section <= Section.Data;
+    public static bool IsValid(this Section section) => section <= Section.DataCount;
 }
