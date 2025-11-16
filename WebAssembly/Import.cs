@@ -21,9 +21,6 @@ public abstract class Import
         set => module = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
-    private string? field;
-
     /// <summary>
     /// The field portion of the name.
     /// </summary>
@@ -49,7 +46,7 @@ public abstract class Import
     private protected Import(string module, string field)
     {
         this.module = module;
-        this.field = field;
+        this.Field = field;
     }
 
     /// <summary>
