@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
+using static WebAssembly.Runtime.Compilation.MultiValueHelper;
 
 namespace WebAssembly.Instructions;
 
@@ -105,17 +106,18 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             if (!context.DelegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
             {
-                var del = context.Configuration.GetDelegateForType(parms.Length, returns.Length) ??
+                var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                var del = context.Configuration.GetDelegateForType(parms.Length, clrRetCount) ??
                     throw new CompilerException($"Failed to get a delegate for type {signature}.");
                 if (del.IsGenericType)
-                    del = del.MakeGenericType([.. parms, .. returns]);
+                    del = del.MakeGenericType(DelegateTypeArgs(parms, returns));
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
             context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.CheckedExportsBuilder.DefineMethod(
                 $"🔁 {signature.TypeIndex}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
-                returns.Length == 0 ? typeof(void) : returns[0],
+                MultiValueHelper.ClrReturnType(returns),
                 [.. parms, typeof(uint), context.CheckedExportsBuilder]
                 ));
 
@@ -134,5 +136,8 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
         }
 
         context.Emit(OpCodes.Call, remapper);
+
+        if (returnTypes.Length > 1)
+            EmitTupleUnpack(context, signature.ReturnTypes);
     }
 }

@@ -358,7 +358,8 @@ public static class Compile
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
-            if (id != 0 && (Section)id < previousSection)
+            var isDataCountBeforeCode = (Section)id == Section.DataCount && previousSection <= Section.Element;
+            if (id != 0 && !isDataCountBeforeCode && (Section)id < previousSection)
                 throw new ModuleLoadException($"Sections out of order; section {(Section)id} encountered after {previousSection}.", preSectionOffset);
             var payloadLength = reader.ReadVarUInt32();
 
@@ -428,7 +429,7 @@ public static class Compile
                                 $"👻 {i}",
                                 InternalFunctionAttributes,
                                 CallingConventions.Standard,
-                                signature.ReturnTypes.FirstOrDefault(),
+                                Compilation.MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                                 parms
                                 );
                         }
@@ -444,12 +445,12 @@ public static class Compile
                         {
                             var preElementTypeOffset = reader.Offset;
                             var elementType = (ElementType)reader.ReadVarInt7();
-                            if (elementType != ElementType.FunctionReference)
-                                throw new ModuleLoadException($"The only supported table element type is {nameof(ElementType.FunctionReference)}, found {elementType}", preElementTypeOffset);
+                            if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
+                                throw new ModuleLoadException($"Unsupported table element type {elementType}.", preElementTypeOffset);
 
-                            if (functionTable == null)
+                            if (functionTable == null && elementType == ElementType.FunctionReference)
                             {
-                                // It's legal to have multiple tables, but the extra tables are inaccessible to the initial version of WebAssembly.
+                                // Only the first funcref table is wired to call_indirect; additional tables and externref tables are parsed but unused.
                                 var limits = new ResizableLimits(reader);
                                 functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
                                 instanceConstructorIL.EmitLoadArg(0);
@@ -491,6 +492,11 @@ public static class Compile
                                         .Single());
                                 }
                                 instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                            }
+                            else
+                            {
+                                // Additional tables (or externref tables): parse and discard limits.
+                                _ = new ResizableLimits(reader);
                             }
                         }
                     }
@@ -594,12 +600,29 @@ public static class Compile
                     SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
                     break;
 
+                case Section.DataCount:
+                    {
+                        // Pre-allocate passive data segment fields so memory.init / data.drop
+                        // can reference them during SectionCode (which runs before SectionData).
+                        var dataCount = reader.ReadVarUInt32();
+                        for (var di = 0u; di < dataCount; di++)
+                        {
+                            var segField = exportsBuilder.DefineField(
+                                $"☣ PassiveData {di}",
+                                typeof(byte[]),
+                                FieldAttributes.Private);
+                            context.DataSegments[di] = segField;
+                        }
+                    }
+                    break;
+
                 default:
                     throw new ModuleLoadException($"Unrecognized section type {(Section)id}.", preSectionOffset);
             }
 
             preSectionOffset = reader.Offset;
-            previousSection = (Section)id;
+            if ((Section)id != Section.DataCount)
+                previousSection = (Section)id;
         }
 
         if (exportedFunctions != null && exportedFunctions.Length != 0)
@@ -618,7 +641,7 @@ public static class Compile
                     NameCleaner.CleanName(exported.Key),
                     ExportedFunctionAttributes,
                     CallingConventions.HasThis,
-                    signature.ReturnTypes.FirstOrDefault(),
+                    Compilation.MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                     signature.ParameterTypes
                     );
 #if NET9_0_OR_GREATER
@@ -737,14 +760,16 @@ public static class Compile
                         if (typeIndex >= signatures.Length)
                             throw new ModuleLoadException($"Requested type index {typeIndex} but only {signatures.Length} are available.", preTypeIndexOffset);
                         var signature = signatures[typeIndex];
-                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
+                        var clrReturnCount = signature.ReturnTypes.Length > 1 ? 1 : signature.ReturnTypes.Length;
+                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, clrReturnCount);
                         if (del == null)
                         {
                             missingDelegates.Add(new MissingDelegateType(moduleName, fieldName, signature));
                             continue;
                         }
 
-                        var typedDelegate = configuration.NeutralizeType(del.IsGenericTypeDefinition ? del.MakeGenericType([.. signature.ParameterTypes, .. signature.ReturnTypes]) : del);
+                        var delegateTypeArgs = Compilation.MultiValueHelper.DelegateTypeArgs(signature.ParameterTypes, signature.ReturnTypes);
+                        var typedDelegate = configuration.NeutralizeType(del.IsGenericTypeDefinition ? del.MakeGenericType(delegateTypeArgs) : del);
                         var delField = $"➡ {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -752,7 +777,7 @@ public static class Compile
                             $"Invoke {delField}",
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
-                            signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
+                            Compilation.MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                             [.. signature.ParameterTypes, exportsBuilder]
                             );
 
@@ -1242,11 +1267,17 @@ public static class Compile
 
         for (var i = 0; i < count; i++)
         {
-            var preIndexOffset = reader.Offset;
-            var index = reader.ReadVarUInt32();
-            if (index != 0)
-                throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", preIndexOffset);
+            var kind = reader.ReadVarUInt32();
 
+            // Kinds 1–7 are passive, declarative, or use expression-based inits — skip them at runtime.
+            // They must be parsed to advance the reader, but produce no table-init code.
+            if (kind != 0)
+            {
+                SkipElementSegment(reader, kind);
+                continue;
+            }
+
+            // Kind 0: active, table 0, i32 constant offset, func indices.
             uint offset;
             {
                 var preInitializerOffset = reader.Offset;
@@ -1291,10 +1322,11 @@ public static class Compile
 
                 if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
                 {
-                    var del = configuration.GetDelegateForType(parms.Length, returns.Length) ??
+                    var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                    var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
                         throw new CompilerException($"Failed to get a delegate for type {signature}.");
                     if (del.IsGenericType)
-                        del = del.MakeGenericType([.. parms, .. returns]);
+                        del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
 
                     delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                 }
@@ -1315,7 +1347,7 @@ public static class Compile
                     var wrapper = exportsBuilder.DefineMethod(
                         $"📦 {functionIndex}",
                         MethodAttributes.Private | MethodAttributes.HideBySig,
-                        returns.Length == 0 ? typeof(void) : returns[0],
+                        Compilation.MultiValueHelper.ClrReturnType(returns),
                         parms
                         );
 
@@ -1334,6 +1366,66 @@ public static class Compile
                 instanceConstructorIL.Emit(OpCodes.Call, setter);
             }
         }
+    }
+
+    static void SkipElementSegment(Reader reader, uint kind)
+    {
+        // Parse and discard a non-kind-0 element segment to advance the reader past it.
+        switch (kind)
+        {
+            case 1: // passive, func indices, preceded by 0x00 elemkind
+            case 3: // declarative, func indices, preceded by 0x00 elemkind
+                reader.ReadByte(); // elemkind
+                SkipVarUInt32Vector(reader);
+                break;
+
+            case 2: // active explicit table, func indices
+                reader.ReadVarUInt32(); // table index
+                SkipInitializerExpression(reader);
+                reader.ReadByte(); // elemkind
+                SkipVarUInt32Vector(reader);
+                break;
+
+            case 4: // active table 0, init exprs
+                SkipInitializerExpression(reader);
+                SkipInitExprVector(reader);
+                break;
+
+            case 5: // passive, init exprs, reftype
+            case 7: // declarative, init exprs, reftype
+                reader.ReadVarInt7(); // reftype
+                SkipInitExprVector(reader);
+                break;
+
+            case 6: // active explicit table, init exprs
+                reader.ReadVarUInt32(); // table index
+                SkipInitializerExpression(reader);
+                reader.ReadVarInt7(); // reftype
+                SkipInitExprVector(reader);
+                break;
+
+            default:
+                throw new ModuleLoadException($"Unsupported element segment kind {kind}.", reader.Offset);
+        }
+    }
+
+    static void SkipVarUInt32Vector(Reader reader)
+    {
+        var n = reader.ReadVarUInt32();
+        for (var i = 0u; i < n; i++)
+            reader.ReadVarUInt32();
+    }
+
+    static void SkipInitializerExpression(Reader reader)
+    {
+        foreach (var _ in Instruction.ParseInitializerExpression(reader)) { }
+    }
+
+    static void SkipInitExprVector(Reader reader)
+    {
+        var n = reader.ReadVarUInt32();
+        for (var i = 0u; i < n; i++)
+            SkipInitializerExpression(reader);
     }
 
     static void SectionCode(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
@@ -1397,14 +1489,62 @@ public static class Compile
 
         var address = instanceConstructorIL.DeclareLocal(typeof(uint));
 
-        for (var i = 0; i < count; i++)
+        for (var i = 0u; i < count; i++)
         {
             var startingOffset = reader.Offset;
+            var kind = reader.ReadVarUInt32();
+
+            if (kind == 1)
             {
-                var index = reader.ReadVarUInt32();
-                if (index != 0)
-                    throw new ModuleLoadException($"Data index must be 0, found {index}.", startingOffset);
+                // Passive segment: initialize the pre-allocated byte[] instance field (registered during DataCount).
+                var rawBytes = reader.ReadBytes(reader.ReadVarUInt32());
+
+                // Get the pre-allocated field (registered during DataCount).
+                if (!context.DataSegments.TryGetValue(i, out var segField))
+                {
+                    // No DataCount section — allocate now (fallback for modules without DataCount).
+                    segField = exportsBuilder.DefineField(
+                        $"☣ PassiveData {i}",
+                        typeof(byte[]),
+                        FieldAttributes.Private);
+                    context.DataSegments[i] = segField;
+                }
+
+                if (rawBytes.Length > 0)
+                {
+                    if (rawBytes.Length > 0x3f0000)
+                        throw new NotSupportedException($"Passive data segment {i} is length {rawBytes.Length}, exceeding the implementation limit.");
+
+                    // Use the same RVA-field + RuntimeHelpers.InitializeArray pattern that C# uses for
+                    // array initializers: create new byte[], then bulk-initialize it from the PE's .sdata.
+                    var initField = exportsBuilder.DefineInitializedData(
+                        $"☣ PassiveDataInit {i}", rawBytes,
+                        FieldAttributes.Assembly | FieldAttributes.InitOnly);
+                    var dupLocal = instanceConstructorIL.DeclareLocal(typeof(byte[]));
+
+                    instanceConstructorIL.Emit(OpCodes.Ldc_I4, rawBytes.Length);
+                    instanceConstructorIL.Emit(OpCodes.Newarr, typeof(byte));
+                    instanceConstructorIL.Emit(OpCodes.Dup);
+                    instanceConstructorIL.Emit(OpCodes.Ldtoken, initField);
+                    instanceConstructorIL.Emit(OpCodes.Call,
+                        typeof(System.Runtime.CompilerServices.RuntimeHelpers).GetMethod(
+                            nameof(System.Runtime.CompilerServices.RuntimeHelpers.InitializeArray),
+                            [typeof(Array), typeof(RuntimeFieldHandle)])!);
+                    instanceConstructorIL.Emit(OpCodes.Stloc, dupLocal);
+
+                    // this.segField = newArray
+                    instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, dupLocal);
+                    instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+                }
+                continue;
             }
+
+            // Kind 2: active with explicit memory index — read and ignore the memory index (treat same as kind 0).
+            if (kind == 2)
+                reader.ReadVarUInt32(); // memory index (must be 0 for now)
+            else if (kind != 0)
+                throw new ModuleLoadException($"Data segment kind must be 0, 1, or 2, found {kind}.", startingOffset);
 
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))

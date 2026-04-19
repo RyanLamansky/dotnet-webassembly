@@ -16,6 +16,12 @@ public sealed class UnmanagedMemory : IDisposable
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.First(prop => prop.Name == nameof(Start)).GetMethod!);
     internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(()
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(prop => prop.Name == nameof(Grow)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(InitFromSegment)));
 
     private bool disposed;
 
@@ -130,6 +136,52 @@ public sealed class UnmanagedMemory : IDisposable
         }
 
         return failed;
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> bytes from <paramref name="src"/> to <paramref name="dst"/> within this memory.
+    /// Handles overlapping regions correctly.
+    /// </summary>
+    public unsafe void Copy(uint dst, uint src, uint length)
+    {
+        if (length == 0) return;
+        var end = checked(Math.Max(dst, src) + length);
+        if (end > this.Size)
+            throw new MemoryAccessOutOfRangeException(end, this.Size);
+        Buffer.MemoryCopy((void*)(this.Start + (int)src), (void*)(this.Start + (int)dst), length, length);
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> bytes from <paramref name="src"/> starting at <paramref name="srcOffset"/> into this memory at <paramref name="dst"/>.
+    /// Used to implement <c>memory.init</c>. If <paramref name="src"/> is null the segment has been dropped; traps.
+    /// </summary>
+    public unsafe void InitFromSegment(uint dst, byte[]? src, uint srcOffset, uint length)
+    {
+        if (src == null)
+            throw new InvalidOperationException("memory.init: data segment has been dropped.");
+        if (length == 0) return;
+        var srcEnd = checked(srcOffset + length);
+        if (srcEnd > (uint)src.Length)
+            throw new MemoryAccessOutOfRangeException(srcEnd, (uint)src.Length);
+        var dstEnd = checked(dst + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        fixed (byte* pSrc = src)
+            Buffer.MemoryCopy(pSrc + srcOffset, (void*)(this.Start + (int)dst), length, length);
+    }
+
+    /// <summary>
+    /// Fills <paramref name="length"/> bytes starting at <paramref name="dst"/> with the low 8 bits of <paramref name="value"/>.
+    /// </summary>
+    public unsafe void Fill(uint dst, uint value, uint length)
+    {
+        if (length == 0) return;
+        if (checked(dst + length) > this.Size)
+            throw new MemoryAccessOutOfRangeException(checked(dst + length), this.Size);
+        var p = (byte*)(this.Start + (int)dst);
+        var b = (byte)(value & 0xFF);
+        for (uint i = 0; i < length; i++)
+            p[i] = b;
     }
 
     /// <summary>

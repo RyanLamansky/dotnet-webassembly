@@ -215,6 +215,9 @@ static class SpecTestRunner
                             case "global is immutable":
                                 Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
                                 continue;
+                            // "invalid result arity" was a WASM 1.0 restriction; multi-value (2.0) allows multiple returns.
+                            case "invalid result arity":
+                                continue;
                             case "unknown memory 0":
                             case "constant expression required":
                             case "duplicate export name":
@@ -224,7 +227,6 @@ static class SpecTestRunner
                             case "size minimum must not be greater than maximum":
                             case "memory size must be at most 65536 pages (4GiB)":
                             case "unknown label":
-                            case "invalid result arity":
                             case "unknown type":
                                 Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
@@ -249,8 +251,8 @@ static class SpecTestRunner
                                     throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                            // "multiple tables" was a WASM 1.0 restriction; reference types (2.0) allows multiple tables.
                             case "multiple tables":
-                                Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");

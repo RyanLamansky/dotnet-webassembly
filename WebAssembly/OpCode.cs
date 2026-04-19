@@ -101,6 +101,12 @@ public enum OpCode : byte
     Select = 0x1b,
 
     /// <summary>
+    /// A typed ternary operator; like <see cref="Select"/> but carries an explicit value-type annotation.
+    /// </summary>
+    [OpCodeCharacteristics("select_with_type")]
+    SelectWithType = 0x1c,
+
+    /// <summary>
     /// Read the current value of a local variable.
     /// </summary>
     [OpCodeCharacteristics("local.get")]
@@ -129,6 +135,18 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("global.set")]
     GlobalSet = 0x24,
+
+    /// <summary>
+    /// Read an element from a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.get")]
+    TableGet = 0x25,
+
+    /// <summary>
+    /// Write an element to a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.set")]
+    TableSet = 0x26,
 
     /// <summary>
     /// Load 4 bytes as i32.
@@ -1077,6 +1095,30 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("misc")]
     MiscellaneousOperationPrefix = 0xfc,
+
+    /// <summary>
+    /// Produce a null reference value of the given reference type.
+    /// </summary>
+    [OpCodeCharacteristics("ref.null")]
+    RefNull = 0xd0,
+
+    /// <summary>
+    /// Test if a reference value is null; pushes 1 (i32) if null, 0 otherwise.
+    /// </summary>
+    [OpCodeCharacteristics("ref.is_null")]
+    RefIsNull = 0xd1,
+
+    /// <summary>
+    /// Produce a reference to the function at the given index.
+    /// </summary>
+    [OpCodeCharacteristics("ref.func")]
+    RefFunc = 0xd2,
+
+    /// <summary>
+    /// Prefix byte for SIMD operations (v128 / WASM 2.0).
+    /// </summary>
+    [OpCodeCharacteristics("simd")]
+    SimdOperationPrefix = 0xfd,
 }
 
 static class OpCodeExtensions

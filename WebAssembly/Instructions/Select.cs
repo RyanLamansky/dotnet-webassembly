@@ -50,12 +50,13 @@ public class Select : SimpleInstruction
             WebAssemblyValueType.Int64 => HelperMethod.SelectInt64,
             WebAssemblyValueType.Float32 => HelperMethod.SelectFloat32,
             WebAssemblyValueType.Float64 => HelperMethod.SelectFloat64,
+            WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef => HelperMethod.SelectObject,
             _ => throw new InvalidOperationException(),// Shouldn't be possible.
         };
         context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
     }
 
-    static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
+    internal static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
     {
         var builder = helper switch
         {
@@ -96,6 +97,16 @@ public class Select : SimpleInstruction
           [
                                 typeof(double),
                                 typeof(double),
+                                typeof(int),
+          ]
+          ),
+            HelperMethod.SelectObject => context.CheckedExportsBuilder.DefineMethod(
+          "☣ Select Object",
+          CompilationContext.HelperMethodAttributes,
+          typeof(object),
+          [
+                                typeof(object),
+                                typeof(object),
                                 typeof(int),
           ]
           ),

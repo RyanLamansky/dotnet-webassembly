@@ -41,11 +41,8 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
         for (var i = 0; i < parameters.Length; i++)
             parameters[i] = configuration.NeutralizeType((rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());
 
-        var returns = this.ReturnTypes = new Type[reader.ReadVarUInt1()];
+        var returns = this.ReturnTypes = new Type[reader.ReadVarUInt32()];
         var rawReturns = this.RawReturnTypes = new WebAssemblyValueType[returns.Length];
-
-        if (returns.Length > 1)
-            throw new ModuleLoadException("Multiple returns are not supported.", reader.Offset - 1);
 
         for (var i = 0; i < returns.Length; i++)
             returns[i] = configuration.NeutralizeType((rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());

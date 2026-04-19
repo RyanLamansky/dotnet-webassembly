@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
+using static WebAssembly.Runtime.Compilation.MultiValueHelper;
 
 namespace WebAssembly.Instructions;
 
@@ -94,5 +95,8 @@ public class Call : Instruction, IEquatable<Call>
         if (target is MethodBuilder) //Indicates a dynamically generated method.
             context.EmitLoadThis();
         context.Emit(OpCodes.Call, target);
+
+        if (returnTypes.Length > 1)
+            EmitTupleUnpack(context, signature.ReturnTypes);
     }
 }

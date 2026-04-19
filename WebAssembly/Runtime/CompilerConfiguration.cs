@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime;
 

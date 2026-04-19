@@ -56,6 +56,66 @@ public enum MiscellaneousOpCode : byte
     /// </summary>
     [OpCodeCharacteristics("i64.trunc_sat_f64_u")]
     Int64TruncateSaturateFloat64Unsigned = 0x07,
+
+    /// <summary>
+    /// Copy from a passive data segment into linear memory.
+    /// </summary>
+    [OpCodeCharacteristics("memory.init")]
+    MemoryInit = 0x08,
+
+    /// <summary>
+    /// Drop a passive data segment.
+    /// </summary>
+    [OpCodeCharacteristics("data.drop")]
+    DataDrop = 0x09,
+
+    /// <summary>
+    /// Copy data within (or between) linear memory regions.
+    /// </summary>
+    [OpCodeCharacteristics("memory.copy")]
+    MemoryCopy = 0x0A,
+
+    /// <summary>
+    /// Fill a region of linear memory with a byte value.
+    /// </summary>
+    [OpCodeCharacteristics("memory.fill")]
+    MemoryFill = 0x0B,
+
+    /// <summary>
+    /// Copy from a passive element segment into a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.init")]
+    TableInit = 0x0C,
+
+    /// <summary>
+    /// Drop a passive element segment.
+    /// </summary>
+    [OpCodeCharacteristics("elem.drop")]
+    ElemDrop = 0x0D,
+
+    /// <summary>
+    /// Copy entries within or between tables.
+    /// </summary>
+    [OpCodeCharacteristics("table.copy")]
+    TableCopy = 0x0E,
+
+    /// <summary>
+    /// Grow a table by a given delta, returning the old size or -1 on failure.
+    /// </summary>
+    [OpCodeCharacteristics("table.grow")]
+    TableGrow = 0x0F,
+
+    /// <summary>
+    /// Return the current size of a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.size")]
+    TableSize = 0x10,
+
+    /// <summary>
+    /// Fill a range of a table with a reference value.
+    /// </summary>
+    [OpCodeCharacteristics("table.fill")]
+    TableFill = 0x11,
 }
 
 static class MiscellaneousOpCodeExtensions

@@ -14,9 +14,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     private ILGenerator? generator;
     public readonly CompilerConfiguration Configuration = configuration;
 
-    sealed class FunctionOuterBlock(BlockType type) : BlockTypeInstruction(type)
+    sealed class FunctionOuterBlock : BlockTypeInstruction
     {
         public override OpCode OpCode => OpCode.Return; // "Return" is the most accurate fake opcode for the outer block.
+
+        public FunctionOuterBlock(BlockType type) : base(type) { }
 
         internal override void Compile(CompilationContext context) => throw new NotSupportedException();
     }
@@ -38,15 +40,21 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             {
                 returnType = BlockType.Empty;
             }
-            else
+            else if (signature.RawReturnTypes.Length == 1)
             {
                 returnType = signature.RawReturnTypes[0] switch
                 {
                     WebAssemblyValueType.Int64 => BlockType.Int64,
                     WebAssemblyValueType.Float32 => BlockType.Float32,
                     WebAssemblyValueType.Float64 => BlockType.Float64,
+                    WebAssemblyValueType.V128 => BlockType.V128,
                     _ => BlockType.Int32,
                 };
+            }
+            else
+            {
+                // Multi-value: use Empty as placeholder; Return/End read RawReturnTypes directly.
+                returnType = BlockType.Empty;
             }
             this.Depth.Push(new FunctionOuterBlock(returnType));
         }
@@ -73,6 +81,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
 
     public FieldBuilder? FunctionTable;
+
+    /// <summary>Maps data segment index → FieldBuilder for passive segment byte[] fields.</summary>
+    public readonly Dictionary<uint, FieldBuilder> DataSegments = [];
 
     internal const MethodAttributes HelperMethodAttributes =
         MethodAttributes.Private |
@@ -174,7 +185,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public void Emit(ILOpCode opcode, ConstructorInfo con) => CheckedGenerator.Emit(opcode, con);
 
+    public void Emit(ILOpCode opcode, Type type) => CheckedGenerator.Emit(opcode, type);
+
     public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
+
+    public void Emit(ILOpCode opcode, LocalBuilder local) => CheckedGenerator.Emit(opcode, local);
 
     public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
     {

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(python3 *)",
+      "Bash(xargs grep *)",
+      "Bash(python gen_tests.py)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git -c gpg.program= commit -m ' *)",
+      "Bash(git config *)",
+      "Bash(python gen_float_instrs.py)",
+      "Bash(git commit *)",
+      "Bash(grep -vE \"//|^$\" /c/Users/mreed/source/repos/dotnet-webassembly/WebAssembly/SimdOpCode.cs)",
+      "Bash(grep -v \"^{$\\\\|^}$\\\\|namespace\\\\|enum\\\\|summary\\\\|<\\\\|=>\")",
+      "Bash(sort comm *)",
+      "Bash(python gen_remaining_instrs.py)",
+      "Bash(git stash *)",
+      "Bash(git remote *)",
+      "Bash(git push *)"
+    ]
+  }
+}

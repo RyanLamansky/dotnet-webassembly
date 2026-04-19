@@ -83,6 +83,32 @@ static class AssemblyBuilder
         return compiled.Exports;
     }
 
+    public static TExport CreateInstance<TExport>(string name, IList<WebAssemblyValueType> returns, IList<WebAssemblyValueType> parameters, params Instruction[] code)
+    where TExport : class
+    {
+        Assert.IsNotNull(name);
+        Assert.IsNotNull(returns);
+        Assert.IsNotNull(parameters);
+        Assert.IsNotNull(code);
+
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType
+        {
+            Returns = returns,
+            Parameters = parameters,
+        });
+        module.Functions.Add(new Function());
+        module.Exports.Add(new Export { Name = name });
+        module.Codes.Add(new FunctionBody { Code = code });
+
+        var compiled = module.ToInstance<TExport>();
+
+        Assert.IsNotNull(compiled);
+        Assert.IsNotNull(compiled.Exports);
+
+        return compiled.Exports;
+    }
+
     private static readonly Dictionary<System.Type, WebAssemblyValueType> map = new(4)
     {
         { typeof(int), WebAssemblyValueType.Int32 },

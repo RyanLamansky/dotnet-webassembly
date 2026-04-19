@@ -1,6 +1,8 @@
+using System;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions;
 
@@ -27,35 +29,63 @@ public class Return : SimpleInstruction
         var stack = context.Stack;
 
         var returnsLength = returns.Length;
-        Assert(returnsLength is 0 or 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
-
         var stackCount = stack.Count;
 
-        if (stackCount > returnsLength)
+        if (returnsLength <= 1)
         {
-            if (returnsLength == 0)
+            if (stackCount > returnsLength)
             {
-                for (var i = 0; i < stackCount - returnsLength; i++)
-                    context.Emit(OpCodes.Pop);
-            }
-            else
-            {
-                var value = context.DeclareLocal(returns[0].ToSystemType());
-                context.Emit(OpCodes.Stloc, value.LocalIndex);
+                if (returnsLength == 0)
+                {
+                    for (var i = 0; i < stackCount - returnsLength; i++)
+                        context.Emit(OpCodes.Pop);
+                }
+                else
+                {
+                    var value = context.DeclareLocal(returns[0].ToSystemType());
+                    context.Emit(OpCodes.Stloc, value.LocalIndex);
 
-                for (var i = 0; i < stackCount - returnsLength; i++)
-                    context.Emit(OpCodes.Pop);
+                    for (var i = 0; i < stackCount - returnsLength; i++)
+                        context.Emit(OpCodes.Pop);
 
-                context.Emit(OpCodes.Ldloc, value.LocalIndex);
+                    context.Emit(OpCodes.Ldloc, value.LocalIndex);
+                }
             }
+
+            if (returnsLength == 1)
+                context.PopStackNoReturn(OpCode.Return, returns[0]);
         }
-
-        if (returnsLength == 1)
-            context.PopStackNoReturn(OpCode.Return, returns[0]);
+        else
+        {
+            EmitMultiValueReturn(context, returns);
+        }
 
         context.Emit(OpCodes.Ret);
 
-        //Mark the subsequent code within this function is unreachable
         context.MarkUnreachable(functionWide: true);
+    }
+
+    internal static void EmitMultiValueReturn(CompilationContext context, WebAssemblyValueType[] returns)
+    {
+        var clrTypes = context.CheckedSignature.ReturnTypes;
+
+        // Validate and consume the abstract value stack (last return is on top, so validate in reverse).
+        context.PopStackNoReturn(OpCode.Return, returns.Cast<WebAssemblyValueType?>().Reverse(), returns.Length);
+
+        // Store each value into a local (top of stack = last return).
+        var locals = new LocalBuilder[returns.Length];
+        for (var i = returns.Length - 1; i >= 0; i--)
+        {
+            locals[i] = context.DeclareLocal(clrTypes[i]);
+            context.Emit(OpCodes.Stloc, locals[i]);
+        }
+
+        // Reload in order (first return first) for the ValueTuple constructor.
+        for (var i = 0; i < returns.Length; i++)
+            context.Emit(OpCodes.Ldloc, locals[i]);
+
+        var tupleType = MultiValueHelper.ClrReturnType(clrTypes)!;
+        var ctor = tupleType.GetConstructor(clrTypes)!;
+        context.Emit(OpCodes.Newobj, ctor);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
-using static System.Diagnostics.Debug;
 
 namespace WebAssembly.Instructions;
 
@@ -36,13 +35,15 @@ public class End : SimpleInstruction
             if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable))
                 throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
-            Assert(returnsLength is 0 or 1); //WebAssembly doesn't currently offer multiple returns, which should be blocked earlier.
-
             if (returnsLength == 1)
             {
                 var popped = context.PopStack(OpCode.End, returns[0]);
                 if (!popped.HasValue)
                     throw new OpCodeCompilationException(OpCode.End, "Cannot determine stack type.");
+            }
+            else if (returnsLength > 1)
+            {
+                Return.EmitMultiValueReturn(context, returns);
             }
 
             context.Emit(OpCodes.Ret);

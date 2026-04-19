@@ -224,7 +224,10 @@ public class Module
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
-                if (id != 0 && (Section)id < previousSection)
+                // DataCount (0x0C) legitimately appears before Code (0x0A) in WASM 2.0 binaries,
+                // so skip the ordering check when DataCount follows Element or earlier sections.
+                var isDataCountBeforeCode = (Section)id == Section.DataCount && previousSection <= Section.Element;
+                if (id != 0 && !isDataCountBeforeCode && (Section)id < previousSection)
                     throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
                 var payloadLength = reader.ReadVarUInt32();
 
@@ -349,16 +352,16 @@ public class Module
                         break;
 
                     case Section.DataCount: //Optional section, indicates the expected length of the data segment vector
-                        {
-                            reader.ReadUInt32();
-                        }
+                        reader.ReadVarUInt32(); // count — consumed but ignored; Module tracks Data.Count directly
                         break;
 
                     default:
                         throw new ModuleLoadException($"Unrecognized section type {id}.", preSectionOffset);
                 }
 
-                previousSection = (Section)id;
+                // Don't advance previousSection for DataCount so that Code can follow it.
+                if ((Section)id != Section.DataCount)
+                    previousSection = (Section)id;
             }
 
             return module;
@@ -409,7 +412,9 @@ public class Module
             var index = 0;
             foreach (var element in this.elements)
             {
-                if (LastOpCodeIsNotEnd(element.InitializerExpression))
+                // Only active segments (kinds 0, 2, 4, 6) have an offset initializer expression.
+                var isActive = element.Kind == 0 || element.Kind == 2 || element.Kind == 4 || element.Kind == 6;
+                if (isActive && LastOpCodeIsNotEnd(element.InitializerExpression))
                     throw new InvalidOperationException($"Element at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;
@@ -433,7 +438,9 @@ public class Module
             var index = 0;
             foreach (var data in this.data)
             {
-                if (LastOpCodeIsNotEnd(data.InitializerExpression))
+                // Only active segments (kind 0 and 2) have an offset initializer expression.
+                var isActive = data.Kind == 0 || data.Kind == 2;
+                if (isActive && LastOpCodeIsNotEnd(data.InitializerExpression))
                     throw new InvalidOperationException($"Data at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;
@@ -547,6 +554,16 @@ public class Module
             });
         }
         WriteCustomSection(buffer, writer, Section.Element, customSectionsByPrecedingSection);
+
+        // DataCount section must precede Code when passive/explicit data segments are present,
+        // so the compiler can pre-allocate fields before processing memory.init / data.drop.
+        if (this.data != null && this.data.Any(d => d.Kind != 0))
+        {
+            WriteSection(buffer, writer, Section.DataCount, sectionWriter =>
+            {
+                sectionWriter.WriteVar((uint)this.data.Count);
+            });
+        }
 
         if (this.codes != null)
         {
