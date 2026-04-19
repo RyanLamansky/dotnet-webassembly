@@ -459,6 +459,134 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.Float64x2Max: yield return new Instructions.Float64x2Max(); break;
                         case SimdOpCode.Float64x2Pmin: yield return new Instructions.Float64x2Pmin(); break;
                         case SimdOpCode.Float64x2Pmax: yield return new Instructions.Float64x2Pmax(); break;
+                        // --- comparisons ---
+                        case SimdOpCode.Int8x16Equal: yield return new Instructions.Int8x16Equal(); break;
+                        case SimdOpCode.Int8x16NotEqual: yield return new Instructions.Int8x16NotEqual(); break;
+                        case SimdOpCode.Int8x16LessThanSigned: yield return new Instructions.Int8x16LessThanSigned(); break;
+                        case SimdOpCode.Int8x16LessThanUnsigned: yield return new Instructions.Int8x16LessThanUnsigned(); break;
+                        case SimdOpCode.Int8x16GreaterThanSigned: yield return new Instructions.Int8x16GreaterThanSigned(); break;
+                        case SimdOpCode.Int8x16GreaterThanUnsigned: yield return new Instructions.Int8x16GreaterThanUnsigned(); break;
+                        case SimdOpCode.Int8x16LessThanOrEqualSigned: yield return new Instructions.Int8x16LessThanOrEqualSigned(); break;
+                        case SimdOpCode.Int8x16LessThanOrEqualUnsigned: yield return new Instructions.Int8x16LessThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int8x16GreaterThanOrEqualSigned: yield return new Instructions.Int8x16GreaterThanOrEqualSigned(); break;
+                        case SimdOpCode.Int8x16GreaterThanOrEqualUnsigned: yield return new Instructions.Int8x16GreaterThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int16x8Equal: yield return new Instructions.Int16x8Equal(); break;
+                        case SimdOpCode.Int16x8NotEqual: yield return new Instructions.Int16x8NotEqual(); break;
+                        case SimdOpCode.Int16x8LessThanSigned: yield return new Instructions.Int16x8LessThanSigned(); break;
+                        case SimdOpCode.Int16x8LessThanUnsigned: yield return new Instructions.Int16x8LessThanUnsigned(); break;
+                        case SimdOpCode.Int16x8GreaterThanSigned: yield return new Instructions.Int16x8GreaterThanSigned(); break;
+                        case SimdOpCode.Int16x8GreaterThanUnsigned: yield return new Instructions.Int16x8GreaterThanUnsigned(); break;
+                        case SimdOpCode.Int16x8LessThanOrEqualSigned: yield return new Instructions.Int16x8LessThanOrEqualSigned(); break;
+                        case SimdOpCode.Int16x8LessThanOrEqualUnsigned: yield return new Instructions.Int16x8LessThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int16x8GreaterThanOrEqualSigned: yield return new Instructions.Int16x8GreaterThanOrEqualSigned(); break;
+                        case SimdOpCode.Int16x8GreaterThanOrEqualUnsigned: yield return new Instructions.Int16x8GreaterThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int32x4Equal: yield return new Instructions.Int32x4Equal(); break;
+                        case SimdOpCode.Int32x4NotEqual: yield return new Instructions.Int32x4NotEqual(); break;
+                        case SimdOpCode.Int32x4LessThanSigned: yield return new Instructions.Int32x4LessThanSigned(); break;
+                        case SimdOpCode.Int32x4LessThanUnsigned: yield return new Instructions.Int32x4LessThanUnsigned(); break;
+                        case SimdOpCode.Int32x4GreaterThanSigned: yield return new Instructions.Int32x4GreaterThanSigned(); break;
+                        case SimdOpCode.Int32x4GreaterThanUnsigned: yield return new Instructions.Int32x4GreaterThanUnsigned(); break;
+                        case SimdOpCode.Int32x4LessThanOrEqualSigned: yield return new Instructions.Int32x4LessThanOrEqualSigned(); break;
+                        case SimdOpCode.Int32x4LessThanOrEqualUnsigned: yield return new Instructions.Int32x4LessThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int32x4GreaterThanOrEqualSigned: yield return new Instructions.Int32x4GreaterThanOrEqualSigned(); break;
+                        case SimdOpCode.Int32x4GreaterThanOrEqualUnsigned: yield return new Instructions.Int32x4GreaterThanOrEqualUnsigned(); break;
+                        case SimdOpCode.Int64x2Equal: yield return new Instructions.Int64x2Equal(); break;
+                        case SimdOpCode.Int64x2NotEqual: yield return new Instructions.Int64x2NotEqual(); break;
+                        case SimdOpCode.Int64x2LessThanSigned: yield return new Instructions.Int64x2LessThanSigned(); break;
+                        case SimdOpCode.Int64x2GreaterThanSigned: yield return new Instructions.Int64x2GreaterThanSigned(); break;
+                        case SimdOpCode.Int64x2LessThanOrEqualSigned: yield return new Instructions.Int64x2LessThanOrEqualSigned(); break;
+                        case SimdOpCode.Int64x2GreaterThanOrEqualSigned: yield return new Instructions.Int64x2GreaterThanOrEqualSigned(); break;
+                        case SimdOpCode.Float32x4Equal: yield return new Instructions.Float32x4Equal(); break;
+                        case SimdOpCode.Float32x4NotEqual: yield return new Instructions.Float32x4NotEqual(); break;
+                        case SimdOpCode.Float32x4LessThan: yield return new Instructions.Float32x4LessThan(); break;
+                        case SimdOpCode.Float32x4GreaterThan: yield return new Instructions.Float32x4GreaterThan(); break;
+                        case SimdOpCode.Float32x4LessThanOrEqual: yield return new Instructions.Float32x4LessThanOrEqual(); break;
+                        case SimdOpCode.Float32x4GreaterThanOrEqual: yield return new Instructions.Float32x4GreaterThanOrEqual(); break;
+                        case SimdOpCode.Float64x2Equal: yield return new Instructions.Float64x2Equal(); break;
+                        case SimdOpCode.Float64x2NotEqual: yield return new Instructions.Float64x2NotEqual(); break;
+                        case SimdOpCode.Float64x2LessThan: yield return new Instructions.Float64x2LessThan(); break;
+                        case SimdOpCode.Float64x2GreaterThan: yield return new Instructions.Float64x2GreaterThan(); break;
+                        case SimdOpCode.Float64x2LessThanOrEqual: yield return new Instructions.Float64x2LessThanOrEqual(); break;
+                        case SimdOpCode.Float64x2GreaterThanOrEqual: yield return new Instructions.Float64x2GreaterThanOrEqual(); break;
+                        // --- shifts ---
+                        case SimdOpCode.Int8x16ShiftLeft: yield return new Instructions.Int8x16ShiftLeft(); break;
+                        case SimdOpCode.Int8x16ShiftRightSigned: yield return new Instructions.Int8x16ShiftRightSigned(); break;
+                        case SimdOpCode.Int8x16ShiftRightUnsigned: yield return new Instructions.Int8x16ShiftRightUnsigned(); break;
+                        case SimdOpCode.Int16x8ShiftLeft: yield return new Instructions.Int16x8ShiftLeft(); break;
+                        case SimdOpCode.Int16x8ShiftRightSigned: yield return new Instructions.Int16x8ShiftRightSigned(); break;
+                        case SimdOpCode.Int16x8ShiftRightUnsigned: yield return new Instructions.Int16x8ShiftRightUnsigned(); break;
+                        case SimdOpCode.Int32x4ShiftLeft: yield return new Instructions.Int32x4ShiftLeft(); break;
+                        case SimdOpCode.Int32x4ShiftRightSigned: yield return new Instructions.Int32x4ShiftRightSigned(); break;
+                        case SimdOpCode.Int32x4ShiftRightUnsigned: yield return new Instructions.Int32x4ShiftRightUnsigned(); break;
+                        case SimdOpCode.Int64x2ShiftLeft: yield return new Instructions.Int64x2ShiftLeft(); break;
+                        case SimdOpCode.Int64x2ShiftRightSigned: yield return new Instructions.Int64x2ShiftRightSigned(); break;
+                        case SimdOpCode.Int64x2ShiftRightUnsigned: yield return new Instructions.Int64x2ShiftRightUnsigned(); break;
+                        // --- AllTrue / Bitmask / AnyTrue ---
+                        case SimdOpCode.V128AnyTrue: yield return new Instructions.V128AnyTrue(); break;
+                        case SimdOpCode.Int8x16AllTrue: yield return new Instructions.Int8x16AllTrue(); break;
+                        case SimdOpCode.Int8x16Bitmask: yield return new Instructions.Int8x16Bitmask(); break;
+                        case SimdOpCode.Int16x8AllTrue: yield return new Instructions.Int16x8AllTrue(); break;
+                        case SimdOpCode.Int16x8Bitmask: yield return new Instructions.Int16x8Bitmask(); break;
+                        case SimdOpCode.Int32x4AllTrue: yield return new Instructions.Int32x4AllTrue(); break;
+                        case SimdOpCode.Int32x4Bitmask: yield return new Instructions.Int32x4Bitmask(); break;
+                        case SimdOpCode.Int64x2AllTrue: yield return new Instructions.Int64x2AllTrue(); break;
+                        case SimdOpCode.Int64x2Bitmask: yield return new Instructions.Int64x2Bitmask(); break;
+                        // --- misc unary ---
+                        case SimdOpCode.Int8x16Popcnt: yield return new Instructions.Int8x16Popcnt(); break;
+                        case SimdOpCode.Int8x16AvgrUnsigned: yield return new Instructions.Int8x16AvgrUnsigned(); break;
+                        case SimdOpCode.Int16x8AvgrUnsigned: yield return new Instructions.Int16x8AvgrUnsigned(); break;
+                        // --- narrow ---
+                        case SimdOpCode.Int8x16NarrowInt16x8Signed: yield return new Instructions.Int8x16NarrowInt16x8Signed(); break;
+                        case SimdOpCode.Int8x16NarrowInt16x8Unsigned: yield return new Instructions.Int8x16NarrowInt16x8Unsigned(); break;
+                        case SimdOpCode.Int16x8NarrowInt32x4Signed: yield return new Instructions.Int16x8NarrowInt32x4Signed(); break;
+                        case SimdOpCode.Int16x8NarrowInt32x4Unsigned: yield return new Instructions.Int16x8NarrowInt32x4Unsigned(); break;
+                        // --- extend ---
+                        case SimdOpCode.Int16x8ExtendLowInt8x16Signed: yield return new Instructions.Int16x8ExtendLowInt8x16Signed(); break;
+                        case SimdOpCode.Int16x8ExtendHighInt8x16Signed: yield return new Instructions.Int16x8ExtendHighInt8x16Signed(); break;
+                        case SimdOpCode.Int16x8ExtendLowInt8x16Unsigned: yield return new Instructions.Int16x8ExtendLowInt8x16Unsigned(); break;
+                        case SimdOpCode.Int16x8ExtendHighInt8x16Unsigned: yield return new Instructions.Int16x8ExtendHighInt8x16Unsigned(); break;
+                        case SimdOpCode.Int32x4ExtendLowInt16x8Signed: yield return new Instructions.Int32x4ExtendLowInt16x8Signed(); break;
+                        case SimdOpCode.Int32x4ExtendHighInt16x8Signed: yield return new Instructions.Int32x4ExtendHighInt16x8Signed(); break;
+                        case SimdOpCode.Int32x4ExtendLowInt16x8Unsigned: yield return new Instructions.Int32x4ExtendLowInt16x8Unsigned(); break;
+                        case SimdOpCode.Int32x4ExtendHighInt16x8Unsigned: yield return new Instructions.Int32x4ExtendHighInt16x8Unsigned(); break;
+                        case SimdOpCode.Int64x2ExtendLowInt32x4Signed: yield return new Instructions.Int64x2ExtendLowInt32x4Signed(); break;
+                        case SimdOpCode.Int64x2ExtendHighInt32x4Signed: yield return new Instructions.Int64x2ExtendHighInt32x4Signed(); break;
+                        case SimdOpCode.Int64x2ExtendLowInt32x4Unsigned: yield return new Instructions.Int64x2ExtendLowInt32x4Unsigned(); break;
+                        case SimdOpCode.Int64x2ExtendHighInt32x4Unsigned: yield return new Instructions.Int64x2ExtendHighInt32x4Unsigned(); break;
+                        // --- extmul ---
+                        case SimdOpCode.Int16x8ExtmulLowInt8x16Signed: yield return new Instructions.Int16x8ExtmulLowInt8x16Signed(); break;
+                        case SimdOpCode.Int16x8ExtmulHighInt8x16Signed: yield return new Instructions.Int16x8ExtmulHighInt8x16Signed(); break;
+                        case SimdOpCode.Int16x8ExtmulLowInt8x16Unsigned: yield return new Instructions.Int16x8ExtmulLowInt8x16Unsigned(); break;
+                        case SimdOpCode.Int16x8ExtmulHighInt8x16Unsigned: yield return new Instructions.Int16x8ExtmulHighInt8x16Unsigned(); break;
+                        case SimdOpCode.Int32x4ExtmulLowInt16x8Signed: yield return new Instructions.Int32x4ExtmulLowInt16x8Signed(); break;
+                        case SimdOpCode.Int32x4ExtmulHighInt16x8Signed: yield return new Instructions.Int32x4ExtmulHighInt16x8Signed(); break;
+                        case SimdOpCode.Int32x4ExtmulLowInt16x8Unsigned: yield return new Instructions.Int32x4ExtmulLowInt16x8Unsigned(); break;
+                        case SimdOpCode.Int32x4ExtmulHighInt16x8Unsigned: yield return new Instructions.Int32x4ExtmulHighInt16x8Unsigned(); break;
+                        case SimdOpCode.Int64x2ExtmulLowInt32x4Signed: yield return new Instructions.Int64x2ExtmulLowInt32x4Signed(); break;
+                        case SimdOpCode.Int64x2ExtmulHighInt32x4Signed: yield return new Instructions.Int64x2ExtmulHighInt32x4Signed(); break;
+                        case SimdOpCode.Int64x2ExtmulLowInt32x4Unsigned: yield return new Instructions.Int64x2ExtmulLowInt32x4Unsigned(); break;
+                        case SimdOpCode.Int64x2ExtmulHighInt32x4Unsigned: yield return new Instructions.Int64x2ExtmulHighInt32x4Unsigned(); break;
+                        // --- extadd pairwise ---
+                        case SimdOpCode.Int16x8ExtaddPairwiseInt8x16Signed: yield return new Instructions.Int16x8ExtaddPairwiseInt8x16Signed(); break;
+                        case SimdOpCode.Int16x8ExtaddPairwiseInt8x16Unsigned: yield return new Instructions.Int16x8ExtaddPairwiseInt8x16Unsigned(); break;
+                        case SimdOpCode.Int32x4ExtaddPairwiseInt16x8Signed: yield return new Instructions.Int32x4ExtaddPairwiseInt16x8Signed(); break;
+                        case SimdOpCode.Int32x4ExtaddPairwiseInt16x8Unsigned: yield return new Instructions.Int32x4ExtaddPairwiseInt16x8Unsigned(); break;
+                        // --- Q15MulrSat / Dot ---
+                        case SimdOpCode.Int16x8Q15MulrSatSigned: yield return new Instructions.Int16x8Q15MulrSatSigned(); break;
+                        case SimdOpCode.Int32x4DotInt16x8Signed: yield return new Instructions.Int32x4DotInt16x8Signed(); break;
+                        // --- bitselect ---
+                        case SimdOpCode.V128Bitselect: yield return new Instructions.V128Bitselect(); break;
+                        // --- trunc sat / convert / demote / promote ---
+                        case SimdOpCode.Int32x4TruncSatFloat32x4Signed: yield return new Instructions.Int32x4TruncSatFloat32x4Signed(); break;
+                        case SimdOpCode.Int32x4TruncSatFloat32x4Unsigned: yield return new Instructions.Int32x4TruncSatFloat32x4Unsigned(); break;
+                        case SimdOpCode.Int32x4TruncSatFloat64x2SignedZero: yield return new Instructions.Int32x4TruncSatFloat64x2SignedZero(); break;
+                        case SimdOpCode.Int32x4TruncSatFloat64x2UnsignedZero: yield return new Instructions.Int32x4TruncSatFloat64x2UnsignedZero(); break;
+                        case SimdOpCode.Float32x4ConvertInt32x4Signed: yield return new Instructions.Float32x4ConvertInt32x4Signed(); break;
+                        case SimdOpCode.Float32x4ConvertInt32x4Unsigned: yield return new Instructions.Float32x4ConvertInt32x4Unsigned(); break;
+                        case SimdOpCode.Float64x2ConvertLowInt32x4Signed: yield return new Instructions.Float64x2ConvertLowInt32x4Signed(); break;
+                        case SimdOpCode.Float64x2ConvertLowInt32x4Unsigned: yield return new Instructions.Float64x2ConvertLowInt32x4Unsigned(); break;
+                        case SimdOpCode.Float32x4DemoteFloat64x2Zero: yield return new Instructions.Float32x4DemoteFloat64x2Zero(); break;
+                        case SimdOpCode.Float64x2PromoteLowFloat32x4: yield return new Instructions.Float64x2PromoteLowFloat32x4(); break;
                     }
                     break;
             }
