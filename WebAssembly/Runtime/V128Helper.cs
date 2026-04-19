@@ -239,6 +239,20 @@ public static class V128Helper
     // --- V128Bitselect ---
     internal static readonly RegeneratingWeakReference<MethodInfo> V128BitselectMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Bitselect), BindingFlags.Public | BindingFlags.Static)!);
 
+    // --- load/store lane ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load8LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load8Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load16LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load16Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load32LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load32Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load64LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load64Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Store8LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Store8Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Store16LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Store16Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Store32LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Store32Lane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Store64LaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Store64Lane), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- load zero ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load32ZeroMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load32Zero), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128Load64ZeroMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load64Zero), BindingFlags.Public | BindingFlags.Static)!);
+
     // --- extended loads (ptr → v128) ---
     internal static readonly RegeneratingWeakReference<MethodInfo> V128Load8x8SMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load8x8S), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> V128Load8x8UMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Load8x8U), BindingFlags.Public | BindingFlags.Static)!);
@@ -746,6 +760,20 @@ public static class V128Helper
     public static Vector128<byte> Float32x4DemoteF64x2Zero(Vector128<byte> a) { var r = new float[4]; r[0] = (float)a.AsDouble().GetElement(0); r[1] = (float)a.AsDouble().GetElement(1); return Vector128.Create(r).AsByte(); }
     public static Vector128<byte> Float64x2PromoteLowF32x4(Vector128<byte> a) { var r = new double[2]; r[0] = a.AsSingle().GetElement(0); r[1] = a.AsSingle().GetElement(1); return Vector128.Create(r).AsByte(); }
 
+    // --- load/store lane (NET5+) ---
+    public static unsafe Vector128<byte> V128Load8Lane(IntPtr ptr, Vector128<byte> vec, int lane) => vec.WithElement(lane, *(byte*)ptr);
+    public static unsafe Vector128<byte> V128Load16Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var p=(byte*)ptr; return vec.AsInt16().WithElement(lane,(short)(p[0]|(p[1]<<8))).AsByte(); }
+    public static unsafe Vector128<byte> V128Load32Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var p=(byte*)ptr; return vec.AsInt32().WithElement(lane,p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24)).AsByte(); }
+    public static unsafe Vector128<byte> V128Load64Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var p=(byte*)ptr; return vec.AsInt64().WithElement(lane,(long)((ulong)p[0]|((ulong)p[1]<<8)|((ulong)p[2]<<16)|((ulong)p[3]<<24)|((ulong)p[4]<<32)|((ulong)p[5]<<40)|((ulong)p[6]<<48)|((ulong)p[7]<<56))).AsByte(); }
+    public static unsafe void V128Store8Lane(IntPtr ptr, Vector128<byte> vec, int lane) => *(byte*)ptr = vec.GetElement(lane);
+    public static unsafe void V128Store16Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var v=(ushort)(ushort)vec.AsInt16().GetElement(lane); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); }
+    public static unsafe void V128Store32Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var v=(uint)vec.AsInt32().GetElement(lane); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); p[2]=(byte)(v>>16); p[3]=(byte)(v>>24); }
+    public static unsafe void V128Store64Lane(IntPtr ptr, Vector128<byte> vec, int lane) { var v=(ulong)vec.AsInt64().GetElement(lane); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); p[2]=(byte)(v>>16); p[3]=(byte)(v>>24); p[4]=(byte)(v>>32); p[5]=(byte)(v>>40); p[6]=(byte)(v>>48); p[7]=(byte)(v>>56); }
+
+    // --- load zero (NET5+) ---
+    public static unsafe Vector128<byte> V128Load32Zero(IntPtr ptr) { var p=(byte*)ptr; return Vector128.Create(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24),0,0,0).AsByte(); }
+    public static unsafe Vector128<byte> V128Load64Zero(IntPtr ptr) { var p=(byte*)ptr; return Vector128.Create((long)((ulong)p[0]|((ulong)p[1]<<8)|((ulong)p[2]<<16)|((ulong)p[3]<<24)|((ulong)p[4]<<32)|((ulong)p[5]<<40)|((ulong)p[6]<<48)|((ulong)p[7]<<56)),0L).AsByte(); }
+
     // --- extended loads (NET5+) ---
     public static unsafe Vector128<byte> V128Load8x8S(IntPtr ptr) { var p = (byte*)ptr; var r = new short[8]; for (var i = 0; i < 8; i++) r[i] = (sbyte)p[i]; return Vector128.Create(r).AsByte(); }
     public static unsafe Vector128<byte> V128Load8x8U(IntPtr ptr) { var p = (byte*)ptr; var r = new ushort[8]; for (var i = 0; i < 8; i++) r[i] = p[i]; return Vector128.Create(r).AsByte(); }
@@ -1237,6 +1265,40 @@ public static class V128Helper
     public static V128Polyfill Float64x2ConvertLowI32x4U(V128Polyfill a) { V128Polyfill r=default; r=SetF64(r,false,(double)(uint)Int32x4ExtractLane(a,0)); r=SetF64(r,true,(double)(uint)Int32x4ExtractLane(a,1)); return r; }
     public static V128Polyfill Float32x4DemoteF64x2Zero(V128Polyfill a) { V128Polyfill r=default; r=SetF32(r,0,(float)GetF64Lo(a)); r=SetF32(r,4,(float)GetF64Hi(a)); return r; }
     public static V128Polyfill Float64x2PromoteLowF32x4(V128Polyfill a) { V128Polyfill r=default; r=SetF64(r,false,GetF32(a,0)); r=SetF64(r,true,GetF32(a,4)); return r; }
+
+    // --- load/store lane (polyfill) ---
+    public static unsafe V128Polyfill V128Load8Lane(IntPtr ptr, V128Polyfill vec, int lane)
+    {
+        var b = *(byte*)ptr;
+        var r = new byte[16]; for(var i=0;i<16;i++) r[i]=GetByte(vec,i); r[lane]=b;
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    public static unsafe V128Polyfill V128Load16Lane(IntPtr ptr, V128Polyfill vec, int lane)
+    {
+        var p=(byte*)ptr; var v=(ushort)(p[0]|(p[1]<<8));
+        var r=new byte[16]; for(var i=0;i<16;i++) r[i]=GetByte(vec,i); var b=lane*2; r[b]=(byte)v; r[b+1]=(byte)(v>>8);
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    public static unsafe V128Polyfill V128Load32Lane(IntPtr ptr, V128Polyfill vec, int lane)
+    {
+        var p=(byte*)ptr; var v=(uint)(p[0]|(p[1]<<8)|(p[2]<<16)|(p[3]<<24));
+        var r=new byte[16]; for(var i=0;i<16;i++) r[i]=GetByte(vec,i); var b=lane*4; r[b]=(byte)v; r[b+1]=(byte)(v>>8); r[b+2]=(byte)(v>>16); r[b+3]=(byte)(v>>24);
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    public static unsafe V128Polyfill V128Load64Lane(IntPtr ptr, V128Polyfill vec, int lane)
+    {
+        var p=(byte*)ptr; var v=(ulong)p[0]|((ulong)p[1]<<8)|((ulong)p[2]<<16)|((ulong)p[3]<<24)|((ulong)p[4]<<32)|((ulong)p[5]<<40)|((ulong)p[6]<<48)|((ulong)p[7]<<56);
+        var r=new byte[16]; for(var i=0;i<16;i++) r[i]=GetByte(vec,i); var b=lane*8; r[b]=(byte)v; r[b+1]=(byte)(v>>8); r[b+2]=(byte)(v>>16); r[b+3]=(byte)(v>>24); r[b+4]=(byte)(v>>32); r[b+5]=(byte)(v>>40); r[b+6]=(byte)(v>>48); r[b+7]=(byte)(v>>56);
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    public static unsafe void V128Store8Lane(IntPtr ptr, V128Polyfill vec, int lane) => *(byte*)ptr = GetByte(vec, lane);
+    public static unsafe void V128Store16Lane(IntPtr ptr, V128Polyfill vec, int lane) { var b=lane*2; var v=(ushort)(GetByte(vec,b)|(GetByte(vec,b+1)<<8)); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); }
+    public static unsafe void V128Store32Lane(IntPtr ptr, V128Polyfill vec, int lane) { var b=lane*4; var v=(uint)(GetByte(vec,b)|(GetByte(vec,b+1)<<8)|(GetByte(vec,b+2)<<16)|(GetByte(vec,b+3)<<24)); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); p[2]=(byte)(v>>16); p[3]=(byte)(v>>24); }
+    public static unsafe void V128Store64Lane(IntPtr ptr, V128Polyfill vec, int lane) { var b=lane*8; var v=(ulong)GetByte(vec,b)|((ulong)GetByte(vec,b+1)<<8)|((ulong)GetByte(vec,b+2)<<16)|((ulong)GetByte(vec,b+3)<<24)|((ulong)GetByte(vec,b+4)<<32)|((ulong)GetByte(vec,b+5)<<40)|((ulong)GetByte(vec,b+6)<<48)|((ulong)GetByte(vec,b+7)<<56); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); p[2]=(byte)(v>>16); p[3]=(byte)(v>>24); p[4]=(byte)(v>>32); p[5]=(byte)(v>>40); p[6]=(byte)(v>>48); p[7]=(byte)(v>>56); }
+
+    // --- load zero (polyfill) ---
+    public static unsafe V128Polyfill V128Load32Zero(IntPtr ptr) { var p=(byte*)ptr; return Create(p[0],p[1],p[2],p[3],0,0,0,0,0,0,0,0,0,0,0,0); }
+    public static unsafe V128Polyfill V128Load64Zero(IntPtr ptr) { var p=(byte*)ptr; return Create(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],0,0,0,0,0,0,0,0); }
 
     // --- extended loads (polyfill) ---
     public static unsafe V128Polyfill V128Load8x8S(IntPtr ptr) { var p=(byte*)ptr; var r=new byte[16]; for(var i=0;i<8;i++){var v=(short)(sbyte)p[i];r[i*2]=(byte)v;r[i*2+1]=(byte)((ushort)v>>8);} return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]); }

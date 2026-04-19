@@ -361,6 +361,16 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.V128Load32Splat: yield return new Instructions.V128Load32Splat(reader); break;
                         case SimdOpCode.V128Load64Splat: yield return new Instructions.V128Load64Splat(reader); break;
                         case SimdOpCode.V128Store: yield return new Instructions.V128Store(reader); break;
+                        case SimdOpCode.V128Load8Lane: yield return new Instructions.V128Load8Lane(reader); break;
+                        case SimdOpCode.V128Load16Lane: yield return new Instructions.V128Load16Lane(reader); break;
+                        case SimdOpCode.V128Load32Lane: yield return new Instructions.V128Load32Lane(reader); break;
+                        case SimdOpCode.V128Load64Lane: yield return new Instructions.V128Load64Lane(reader); break;
+                        case SimdOpCode.V128Store8Lane: yield return new Instructions.V128Store8Lane(reader); break;
+                        case SimdOpCode.V128Store16Lane: yield return new Instructions.V128Store16Lane(reader); break;
+                        case SimdOpCode.V128Store32Lane: yield return new Instructions.V128Store32Lane(reader); break;
+                        case SimdOpCode.V128Store64Lane: yield return new Instructions.V128Store64Lane(reader); break;
+                        case SimdOpCode.V128Load32Zero: yield return new Instructions.V128Load32Zero(reader); break;
+                        case SimdOpCode.V128Load64Zero: yield return new Instructions.V128Load64Zero(reader); break;
                         case SimdOpCode.V128Const: yield return new Instructions.V128Const(reader); break;
                         // shuffle / swizzle
                         case SimdOpCode.Int8x16Shuffle: yield return new Instructions.Int8x16Shuffle(reader); break;
