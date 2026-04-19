@@ -352,6 +352,32 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.V128Load: yield return new Instructions.V128Load(reader); break;
                         case SimdOpCode.V128Store: yield return new Instructions.V128Store(reader); break;
                         case SimdOpCode.V128Const: yield return new Instructions.V128Const(reader); break;
+                        // shuffle / swizzle
+                        case SimdOpCode.Int8x16Shuffle: yield return new Instructions.Int8x16Shuffle(reader); break;
+                        case SimdOpCode.Int8x16Swizzle: yield return new Instructions.Int8x16Swizzle(); break;
+                        // splats
+                        case SimdOpCode.Int8x16Splat: yield return new Instructions.Int8x16Splat(); break;
+                        case SimdOpCode.Int16x8Splat: yield return new Instructions.Int16x8Splat(); break;
+                        case SimdOpCode.Int32x4Splat: yield return new Instructions.Int32x4Splat(); break;
+                        case SimdOpCode.Int64x2Splat: yield return new Instructions.Int64x2Splat(); break;
+                        case SimdOpCode.Float32x4Splat: yield return new Instructions.Float32x4Splat(); break;
+                        case SimdOpCode.Float64x2Splat: yield return new Instructions.Float64x2Splat(); break;
+                        // extract lane
+                        case SimdOpCode.Int8x16ExtractLaneSigned: yield return new Instructions.Int8x16ExtractLaneSigned(reader); break;
+                        case SimdOpCode.Int8x16ExtractLaneUnsigned: yield return new Instructions.Int8x16ExtractLaneUnsigned(reader); break;
+                        case SimdOpCode.Int16x8ExtractLaneSigned: yield return new Instructions.Int16x8ExtractLaneSigned(reader); break;
+                        case SimdOpCode.Int16x8ExtractLaneUnsigned: yield return new Instructions.Int16x8ExtractLaneUnsigned(reader); break;
+                        case SimdOpCode.Int32x4ExtractLane: yield return new Instructions.Int32x4ExtractLane(reader); break;
+                        case SimdOpCode.Int64x2ExtractLane: yield return new Instructions.Int64x2ExtractLane(reader); break;
+                        case SimdOpCode.Float32x4ExtractLane: yield return new Instructions.Float32x4ExtractLane(reader); break;
+                        case SimdOpCode.Float64x2ExtractLane: yield return new Instructions.Float64x2ExtractLane(reader); break;
+                        // replace lane
+                        case SimdOpCode.Int8x16ReplaceLane: yield return new Instructions.Int8x16ReplaceLane(reader); break;
+                        case SimdOpCode.Int16x8ReplaceLane: yield return new Instructions.Int16x8ReplaceLane(reader); break;
+                        case SimdOpCode.Int32x4ReplaceLane: yield return new Instructions.Int32x4ReplaceLane(reader); break;
+                        case SimdOpCode.Int64x2ReplaceLane: yield return new Instructions.Int64x2ReplaceLane(reader); break;
+                        case SimdOpCode.Float32x4ReplaceLane: yield return new Instructions.Float32x4ReplaceLane(reader); break;
+                        case SimdOpCode.Float64x2ReplaceLane: yield return new Instructions.Float64x2ReplaceLane(reader); break;
                         // v128 bitwise
                         case SimdOpCode.V128Not: yield return new Instructions.V128Not(); break;
                         case SimdOpCode.V128And: yield return new Instructions.V128And(); break;

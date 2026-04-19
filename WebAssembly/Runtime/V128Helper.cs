@@ -112,6 +112,36 @@ public static class V128Helper
     internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2PminMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Pmin), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2PmaxMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Pmax), BindingFlags.Public | BindingFlags.Static)!);
 
+    // --- shuffle / swizzle ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ShuffleMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Shuffle), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SwizzleMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Swizzle), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- splats ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Splat), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Splat), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Splat), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Splat), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Splat), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2SplatMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Splat), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- extract lane ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ExtractLaneSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16ExtractLaneS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ExtractLaneUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16ExtractLaneU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8ExtractLaneSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8ExtractLaneS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8ExtractLaneUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8ExtractLaneU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4ExtractLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4ExtractLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2ExtractLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2ExtractLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4ExtractLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4ExtractLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2ExtractLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2ExtractLane), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- replace lane ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2ReplaceLaneMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2ReplaceLane), BindingFlags.Public | BindingFlags.Static)!);
+
 #if NET5_0_OR_GREATER
     /// <summary>The CLR type used to represent v128 at runtime on this platform.</summary>
     public static Type V128Type => typeof(System.Runtime.Intrinsics.Vector128<byte>);
@@ -140,6 +170,66 @@ public static class V128Helper
     public static Vector128<byte> V128Or(Vector128<byte> a, Vector128<byte> b) => a | b;
     /// <summary>v128 bitwise XOR.</summary>
     public static Vector128<byte> V128Xor(Vector128<byte> a, Vector128<byte> b) => a ^ b;
+
+    /// <summary>i8x16 shuffle (two vectors, 16 byte lane indices 0-31).</summary>
+    public static Vector128<byte> Int8x16Shuffle(Vector128<byte> a, Vector128<byte> b, byte[] indices)
+    {
+        var src = new byte[32];
+        for (var i = 0; i < 16; i++) { src[i] = a.GetElement(i); src[16+i] = b.GetElement(i); }
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) r[i] = indices[i] < 32 ? src[indices[i]] : (byte)0;
+        return Vector128.Create(r);
+    }
+    /// <summary>i8x16 swizzle (select lanes of a by indices in b, 0-15; out-of-range → 0).</summary>
+    public static Vector128<byte> Int8x16Swizzle(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) { var idx = b.GetElement(i); r[i] = idx < 16 ? a.GetElement(idx) : (byte)0; }
+        return Vector128.Create(r);
+    }
+
+    /// <summary>Splat i32 to all i8x16 lanes.</summary>
+    public static Vector128<byte> Int8x16Splat(int x) => Vector128.Create((byte)(x & 0xFF));
+    /// <summary>Splat i32 to all i16x8 lanes.</summary>
+    public static Vector128<byte> Int16x8Splat(int x) => Vector128.Create((short)(x & 0xFFFF)).AsByte();
+    /// <summary>Splat i32 to all i32x4 lanes.</summary>
+    public static Vector128<byte> Int32x4Splat(int x) => Vector128.Create(x).AsByte();
+    /// <summary>Splat i64 to all i64x2 lanes.</summary>
+    public static Vector128<byte> Int64x2Splat(long x) => Vector128.Create(x).AsByte();
+    /// <summary>Splat f32 to all f32x4 lanes.</summary>
+    public static Vector128<byte> Float32x4Splat(float x) => Vector128.Create(x).AsByte();
+    /// <summary>Splat f64 to both f64x2 lanes.</summary>
+    public static Vector128<byte> Float64x2Splat(double x) => Vector128.Create(x).AsByte();
+
+    /// <summary>Extract signed i8 lane as i32.</summary>
+    public static int Int8x16ExtractLaneS(Vector128<byte> v, int lane) => (sbyte)v.GetElement(lane);
+    /// <summary>Extract unsigned i8 lane as i32.</summary>
+    public static int Int8x16ExtractLaneU(Vector128<byte> v, int lane) => v.GetElement(lane);
+    /// <summary>Extract signed i16 lane as i32.</summary>
+    public static int Int16x8ExtractLaneS(Vector128<byte> v, int lane) => v.AsInt16().GetElement(lane);
+    /// <summary>Extract unsigned i16 lane as i32.</summary>
+    public static int Int16x8ExtractLaneU(Vector128<byte> v, int lane) => v.AsUInt16().GetElement(lane);
+    /// <summary>Extract i32 lane.</summary>
+    public static int Int32x4ExtractLane(Vector128<byte> v, int lane) => v.AsInt32().GetElement(lane);
+    /// <summary>Extract i64 lane.</summary>
+    public static long Int64x2ExtractLane(Vector128<byte> v, int lane) => v.AsInt64().GetElement(lane);
+    /// <summary>Extract f32 lane.</summary>
+    public static float Float32x4ExtractLane(Vector128<byte> v, int lane) => v.AsSingle().GetElement(lane);
+    /// <summary>Extract f64 lane.</summary>
+    public static double Float64x2ExtractLane(Vector128<byte> v, int lane) => v.AsDouble().GetElement(lane);
+
+    /// <summary>Replace i8x16 lane with low byte of i32.</summary>
+    public static Vector128<byte> Int8x16ReplaceLane(Vector128<byte> v, int lane, int x) => v.WithElement(lane, (byte)(x & 0xFF));
+    /// <summary>Replace i16x8 lane with low 16 bits of i32.</summary>
+    public static Vector128<byte> Int16x8ReplaceLane(Vector128<byte> v, int lane, int x) => v.AsInt16().WithElement(lane, (short)(x & 0xFFFF)).AsByte();
+    /// <summary>Replace i32x4 lane.</summary>
+    public static Vector128<byte> Int32x4ReplaceLane(Vector128<byte> v, int lane, int x) => v.AsInt32().WithElement(lane, x).AsByte();
+    /// <summary>Replace i64x2 lane.</summary>
+    public static Vector128<byte> Int64x2ReplaceLane(Vector128<byte> v, int lane, long x) => v.AsInt64().WithElement(lane, x).AsByte();
+    /// <summary>Replace f32x4 lane.</summary>
+    public static Vector128<byte> Float32x4ReplaceLane(Vector128<byte> v, int lane, float x) => v.AsSingle().WithElement(lane, x).AsByte();
+    /// <summary>Replace f64x2 lane.</summary>
+    public static Vector128<byte> Float64x2ReplaceLane(Vector128<byte> v, int lane, double x) => v.AsDouble().WithElement(lane, x).AsByte();
 
     /// <summary>i8x16 absolute value.</summary>
     public static Vector128<byte> Int8x16Abs(Vector128<byte> a) => Vector128.Abs(a.AsSByte()).AsByte();
@@ -408,6 +498,72 @@ public static class V128Helper
                                      v.B8, v.B9, v.B10, v.B11, v.B12, v.B13, v.B14, v.B15);
 
 #pragma warning disable CS1591
+    // shuffle / swizzle
+    public static V128Polyfill Int8x16Shuffle(V128Polyfill a, V128Polyfill b, byte[] indices)
+    {
+        var src = new byte[] { a.B0,a.B1,a.B2,a.B3,a.B4,a.B5,a.B6,a.B7,a.B8,a.B9,a.B10,a.B11,a.B12,a.B13,a.B14,a.B15,
+                               b.B0,b.B1,b.B2,b.B3,b.B4,b.B5,b.B6,b.B7,b.B8,b.B9,b.B10,b.B11,b.B12,b.B13,b.B14,b.B15 };
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) r[i] = indices[i] < 32 ? src[indices[i]] : (byte)0;
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    public static V128Polyfill Int8x16Swizzle(V128Polyfill a, V128Polyfill b)
+    {
+        var src = new byte[] { a.B0,a.B1,a.B2,a.B3,a.B4,a.B5,a.B6,a.B7,a.B8,a.B9,a.B10,a.B11,a.B12,a.B13,a.B14,a.B15 };
+        var idx = new byte[] { b.B0,b.B1,b.B2,b.B3,b.B4,b.B5,b.B6,b.B7,b.B8,b.B9,b.B10,b.B11,b.B12,b.B13,b.B14,b.B15 };
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) r[i] = idx[i] < 16 ? src[idx[i]] : (byte)0;
+        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
+    }
+    // splats
+    public static V128Polyfill Int8x16Splat(int x) { var b = (byte)(x & 0xFF); return Create(b,b,b,b,b,b,b,b,b,b,b,b,b,b,b,b); }
+    public static V128Polyfill Int16x8Splat(int x)
+    {
+        var lo = (byte)(x & 0xFF); var hi = (byte)((x >> 8) & 0xFF);
+        return Create(lo,hi,lo,hi,lo,hi,lo,hi,lo,hi,lo,hi,lo,hi,lo,hi);
+    }
+    public static V128Polyfill Int32x4Splat(int x)
+    {
+        var b0=(byte)x; var b1=(byte)(x>>8); var b2=(byte)(x>>16); var b3=(byte)(x>>24);
+        return Create(b0,b1,b2,b3,b0,b1,b2,b3,b0,b1,b2,b3,b0,b1,b2,b3);
+    }
+    public static V128Polyfill Int64x2Splat(long x)
+    {
+        var b0=(byte)x;var b1=(byte)(x>>8);var b2=(byte)(x>>16);var b3=(byte)(x>>24);
+        var b4=(byte)(x>>32);var b5=(byte)(x>>40);var b6=(byte)(x>>48);var b7=(byte)(x>>56);
+        return Create(b0,b1,b2,b3,b4,b5,b6,b7,b0,b1,b2,b3,b4,b5,b6,b7);
+    }
+    public static V128Polyfill Float32x4Splat(float x)
+    {
+        var u = Unsafe.As<float, uint>(ref x);
+        var b0=(byte)u;var b1=(byte)(u>>8);var b2=(byte)(u>>16);var b3=(byte)(u>>24);
+        return Create(b0,b1,b2,b3,b0,b1,b2,b3,b0,b1,b2,b3,b0,b1,b2,b3);
+    }
+    public static V128Polyfill Float64x2Splat(double x)
+    {
+        var u = Unsafe.As<double, ulong>(ref x);
+        var b0=(byte)u;var b1=(byte)(u>>8);var b2=(byte)(u>>16);var b3=(byte)(u>>24);
+        var b4=(byte)(u>>32);var b5=(byte)(u>>40);var b6=(byte)(u>>48);var b7=(byte)(u>>56);
+        return Create(b0,b1,b2,b3,b4,b5,b6,b7,b0,b1,b2,b3,b4,b5,b6,b7);
+    }
+    // extract lane
+    private static byte GetByte(V128Polyfill v, int i) => i switch { 0=>v.B0,1=>v.B1,2=>v.B2,3=>v.B3,4=>v.B4,5=>v.B5,6=>v.B6,7=>v.B7,8=>v.B8,9=>v.B9,10=>v.B10,11=>v.B11,12=>v.B12,13=>v.B13,14=>v.B14,_=>v.B15 };
+    public static int Int8x16ExtractLaneS(V128Polyfill v, int lane) => (sbyte)GetByte(v, lane);
+    public static int Int8x16ExtractLaneU(V128Polyfill v, int lane) => GetByte(v, lane);
+    public static int Int16x8ExtractLaneS(V128Polyfill v, int lane) { var b = lane*2; return (short)(GetByte(v,b)|(GetByte(v,b+1)<<8)); }
+    public static int Int16x8ExtractLaneU(V128Polyfill v, int lane) { var b = lane*2; return (ushort)(GetByte(v,b)|(GetByte(v,b+1)<<8)); }
+    public static int Int32x4ExtractLane(V128Polyfill v, int lane) { var b = lane*4; return GetByte(v,b)|(GetByte(v,b+1)<<8)|(GetByte(v,b+2)<<16)|(GetByte(v,b+3)<<24); }
+    public static long Int64x2ExtractLane(V128Polyfill v, int lane) { var b = lane*8; return (long)((ulong)GetByte(v,b)|((ulong)GetByte(v,b+1)<<8)|((ulong)GetByte(v,b+2)<<16)|((ulong)GetByte(v,b+3)<<24)|((ulong)GetByte(v,b+4)<<32)|((ulong)GetByte(v,b+5)<<40)|((ulong)GetByte(v,b+6)<<48)|((ulong)GetByte(v,b+7)<<56)); }
+    public static float Float32x4ExtractLane(V128Polyfill v, int lane) => GetF32(v, lane*4);
+    public static double Float64x2ExtractLane(V128Polyfill v, int lane) => lane == 0 ? GetF64Lo(v) : GetF64Hi(v);
+    // replace lane
+    private static V128Polyfill SetByte(V128Polyfill v, int i, byte val) { switch(i){case 0:v.B0=val;break;case 1:v.B1=val;break;case 2:v.B2=val;break;case 3:v.B3=val;break;case 4:v.B4=val;break;case 5:v.B5=val;break;case 6:v.B6=val;break;case 7:v.B7=val;break;case 8:v.B8=val;break;case 9:v.B9=val;break;case 10:v.B10=val;break;case 11:v.B11=val;break;case 12:v.B12=val;break;case 13:v.B13=val;break;case 14:v.B14=val;break;default:v.B15=val;break;} return v; }
+    public static V128Polyfill Int8x16ReplaceLane(V128Polyfill v, int lane, int x) => SetByte(v, lane, (byte)(x & 0xFF));
+    public static V128Polyfill Int16x8ReplaceLane(V128Polyfill v, int lane, int x) { var b = lane*2; v = SetByte(v,b,(byte)(x&0xFF)); v = SetByte(v,b+1,(byte)((x>>8)&0xFF)); return v; }
+    public static V128Polyfill Int32x4ReplaceLane(V128Polyfill v, int lane, int x) { var b = lane*4; v = SetByte(v,b,(byte)x); v = SetByte(v,b+1,(byte)(x>>8)); v = SetByte(v,b+2,(byte)(x>>16)); v = SetByte(v,b+3,(byte)(x>>24)); return v; }
+    public static V128Polyfill Int64x2ReplaceLane(V128Polyfill v, int lane, long x) { var b = lane*8; for(var i=0;i<8;i++) v = SetByte(v,b+i,(byte)(x>>(i*8))); return v; }
+    public static V128Polyfill Float32x4ReplaceLane(V128Polyfill v, int lane, float x) => SetF32(v, lane*4, x);
+    public static V128Polyfill Float64x2ReplaceLane(V128Polyfill v, int lane, double x) => SetF64(v, lane != 0, x);
     // v128 bitwise
     public static V128Polyfill V128Not(V128Polyfill a) => ApplyUnary(a, b => (byte)~b);
     public static V128Polyfill V128And(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x & y));
