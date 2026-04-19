@@ -1,0 +1,402 @@
+using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+
+#if NET5_0_OR_GREATER
+using System.Runtime.Intrinsics;
+#endif
+
+namespace WebAssembly.Runtime;
+
+/// <summary>
+/// Runtime helpers for SIMD v128 load/store/const operations.
+/// On .NET 5+ these operate on <c>Vector128&lt;byte&gt;</c>;
+/// on older runtimes they use <see cref="V128Polyfill"/>.
+/// </summary>
+public static class V128Helper
+{
+    internal static readonly RegeneratingWeakReference<MethodInfo> ReadUnalignedMethod = new(()
+        => typeof(V128Helper).GetMethod(nameof(ReadUnaligned), BindingFlags.Public | BindingFlags.Static)!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> WriteUnalignedMethod = new(()
+        => typeof(V128Helper).GetMethod(nameof(WriteUnaligned), BindingFlags.Public | BindingFlags.Static)!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CreateMethod = new(()
+        => typeof(V128Helper).GetMethod(nameof(Create), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- v128 bitwise ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128NotMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Not), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128AndMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128And), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128AndNotMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128AndNot), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128OrMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Or), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> V128XorMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Xor), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- i8x16 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16AddSatSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16AddSatS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16AddSatUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16AddSatU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SubSatSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16SubSatS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SubSatUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16SubSatU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16MinSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16MinS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16MinUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16MinU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16MaxSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16MaxS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16MaxUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16MaxU), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- i16x8 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8Mul), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8AddSatSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8AddSatS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8AddSatUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8AddSatU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8SubSatSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8SubSatS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8SubSatUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8SubSatU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8MinSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8MinS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8MinUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8MinU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8MaxSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8MaxS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int16x8MaxUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int16x8MaxU), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- i32x4 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4Mul), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4MinSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4MinS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4MinUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4MinU), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4MaxSMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4MaxS), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int32x4MaxUMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int32x4MaxU), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- i64x2 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Mul), BindingFlags.Public | BindingFlags.Static)!);
+
+#if NET5_0_OR_GREATER
+    /// <summary>The CLR type used to represent v128 at runtime on this platform.</summary>
+    public static Type V128Type => typeof(System.Runtime.Intrinsics.Vector128<byte>);
+
+    /// <summary>Read a 128-bit vector from an unaligned native pointer.</summary>
+    public static unsafe System.Runtime.Intrinsics.Vector128<byte> ReadUnaligned(IntPtr ptr)
+        => Unsafe.ReadUnaligned<System.Runtime.Intrinsics.Vector128<byte>>((void*)ptr);
+
+    /// <summary>Write a 128-bit vector to an unaligned native pointer.</summary>
+    public static unsafe void WriteUnaligned(IntPtr ptr, System.Runtime.Intrinsics.Vector128<byte> value)
+        => Unsafe.WriteUnaligned<System.Runtime.Intrinsics.Vector128<byte>>((void*)ptr, value);
+
+    /// <summary>Create a v128 from 16 bytes.</summary>
+    public static Vector128<byte> Create(
+        byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7,
+        byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
+        => Vector128.Create(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15);
+
+    /// <summary>v128 bitwise NOT.</summary>
+    public static Vector128<byte> V128Not(Vector128<byte> a) => ~a;
+    /// <summary>v128 bitwise AND.</summary>
+    public static Vector128<byte> V128And(Vector128<byte> a, Vector128<byte> b) => a & b;
+    /// <summary>v128 bitwise ANDNOT (a &amp; ~b).</summary>
+    public static Vector128<byte> V128AndNot(Vector128<byte> a, Vector128<byte> b) => Vector128.AndNot(a, b);
+    /// <summary>v128 bitwise OR.</summary>
+    public static Vector128<byte> V128Or(Vector128<byte> a, Vector128<byte> b) => a | b;
+    /// <summary>v128 bitwise XOR.</summary>
+    public static Vector128<byte> V128Xor(Vector128<byte> a, Vector128<byte> b) => a ^ b;
+
+    /// <summary>i8x16 absolute value.</summary>
+    public static Vector128<byte> Int8x16Abs(Vector128<byte> a) => Vector128.Abs(a.AsSByte()).AsByte();
+    /// <summary>i8x16 negate.</summary>
+    public static Vector128<byte> Int8x16Neg(Vector128<byte> a) => (-a.AsSByte()).AsByte();
+    /// <summary>i8x16 add.</summary>
+    public static Vector128<byte> Int8x16Add(Vector128<byte> a, Vector128<byte> b) => (a.AsSByte() + b.AsSByte()).AsByte();
+    /// <summary>i8x16 subtract.</summary>
+    public static Vector128<byte> Int8x16Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsSByte() - b.AsSByte()).AsByte();
+    /// <summary>i8x16 signed saturating add.</summary>
+    public static Vector128<byte> Int8x16AddSatS(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new sbyte[16];
+        for (var i = 0; i < 16; i++) { var v = a.AsSByte().GetElement(i) + b.AsSByte().GetElement(i); r[i] = v < -128 ? (sbyte)-128 : v > 127 ? (sbyte)127 : (sbyte)v; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i8x16 unsigned saturating add.</summary>
+    public static Vector128<byte> Int8x16AddSatU(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) { var v = a.GetElement(i) + b.GetElement(i); r[i] = v > 255 ? (byte)255 : (byte)v; }
+        return Vector128.Create(r);
+    }
+    /// <summary>i8x16 signed saturating subtract.</summary>
+    public static Vector128<byte> Int8x16SubSatS(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new sbyte[16];
+        for (var i = 0; i < 16; i++) { var v = a.AsSByte().GetElement(i) - b.AsSByte().GetElement(i); r[i] = v < -128 ? (sbyte)-128 : v > 127 ? (sbyte)127 : (sbyte)v; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i8x16 unsigned saturating subtract.</summary>
+    public static Vector128<byte> Int8x16SubSatU(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new byte[16];
+        for (var i = 0; i < 16; i++) { var x = a.GetElement(i); var y = b.GetElement(i); r[i] = x < y ? (byte)0 : (byte)(x - y); }
+        return Vector128.Create(r);
+    }
+    /// <summary>i8x16 signed min.</summary>
+    public static Vector128<byte> Int8x16MinS(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsSByte(), b.AsSByte()).AsByte();
+    /// <summary>i8x16 unsigned min.</summary>
+    public static Vector128<byte> Int8x16MinU(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a, b);
+    /// <summary>i8x16 signed max.</summary>
+    public static Vector128<byte> Int8x16MaxS(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsSByte(), b.AsSByte()).AsByte();
+    /// <summary>i8x16 unsigned max.</summary>
+    public static Vector128<byte> Int8x16MaxU(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a, b);
+
+    /// <summary>i16x8 absolute value.</summary>
+    public static Vector128<byte> Int16x8Abs(Vector128<byte> a) => Vector128.Abs(a.AsInt16()).AsByte();
+    /// <summary>i16x8 negate.</summary>
+    public static Vector128<byte> Int16x8Neg(Vector128<byte> a) => (-a.AsInt16()).AsByte();
+    /// <summary>i16x8 add.</summary>
+    public static Vector128<byte> Int16x8Add(Vector128<byte> a, Vector128<byte> b) => (a.AsInt16() + b.AsInt16()).AsByte();
+    /// <summary>i16x8 subtract.</summary>
+    public static Vector128<byte> Int16x8Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsInt16() - b.AsInt16()).AsByte();
+    /// <summary>i16x8 multiply.</summary>
+    public static Vector128<byte> Int16x8Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsInt16() * b.AsInt16()).AsByte();
+    /// <summary>i16x8 signed saturating add.</summary>
+    public static Vector128<byte> Int16x8AddSatS(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new short[8];
+        for (var i = 0; i < 8; i++) { var v = a.AsInt16().GetElement(i) + b.AsInt16().GetElement(i); r[i] = v < -32768 ? (short)-32768 : v > 32767 ? (short)32767 : (short)v; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i16x8 unsigned saturating add.</summary>
+    public static Vector128<byte> Int16x8AddSatU(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new ushort[8];
+        for (var i = 0; i < 8; i++) { var v = a.AsUInt16().GetElement(i) + b.AsUInt16().GetElement(i); r[i] = v > 65535u ? (ushort)65535 : (ushort)v; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i16x8 signed saturating subtract.</summary>
+    public static Vector128<byte> Int16x8SubSatS(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new short[8];
+        for (var i = 0; i < 8; i++) { var v = a.AsInt16().GetElement(i) - b.AsInt16().GetElement(i); r[i] = v < -32768 ? (short)-32768 : v > 32767 ? (short)32767 : (short)v; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i16x8 unsigned saturating subtract.</summary>
+    public static Vector128<byte> Int16x8SubSatU(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new ushort[8];
+        for (var i = 0; i < 8; i++) { var x = a.AsUInt16().GetElement(i); var y = b.AsUInt16().GetElement(i); r[i] = x < y ? (ushort)0 : (ushort)(x - y); }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>i16x8 signed min.</summary>
+    public static Vector128<byte> Int16x8MinS(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsInt16(), b.AsInt16()).AsByte();
+    /// <summary>i16x8 unsigned min.</summary>
+    public static Vector128<byte> Int16x8MinU(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsUInt16(), b.AsUInt16()).AsByte();
+    /// <summary>i16x8 signed max.</summary>
+    public static Vector128<byte> Int16x8MaxS(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsInt16(), b.AsInt16()).AsByte();
+    /// <summary>i16x8 unsigned max.</summary>
+    public static Vector128<byte> Int16x8MaxU(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsUInt16(), b.AsUInt16()).AsByte();
+
+    /// <summary>i32x4 absolute value.</summary>
+    public static Vector128<byte> Int32x4Abs(Vector128<byte> a) => Vector128.Abs(a.AsInt32()).AsByte();
+    /// <summary>i32x4 negate.</summary>
+    public static Vector128<byte> Int32x4Neg(Vector128<byte> a) => (-a.AsInt32()).AsByte();
+    /// <summary>i32x4 add.</summary>
+    public static Vector128<byte> Int32x4Add(Vector128<byte> a, Vector128<byte> b) => (a.AsInt32() + b.AsInt32()).AsByte();
+    /// <summary>i32x4 subtract.</summary>
+    public static Vector128<byte> Int32x4Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsInt32() - b.AsInt32()).AsByte();
+    /// <summary>i32x4 multiply.</summary>
+    public static Vector128<byte> Int32x4Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsInt32() * b.AsInt32()).AsByte();
+    /// <summary>i32x4 signed min.</summary>
+    public static Vector128<byte> Int32x4MinS(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsInt32(), b.AsInt32()).AsByte();
+    /// <summary>i32x4 unsigned min.</summary>
+    public static Vector128<byte> Int32x4MinU(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsUInt32(), b.AsUInt32()).AsByte();
+    /// <summary>i32x4 signed max.</summary>
+    public static Vector128<byte> Int32x4MaxS(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsInt32(), b.AsInt32()).AsByte();
+    /// <summary>i32x4 unsigned max.</summary>
+    public static Vector128<byte> Int32x4MaxU(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsUInt32(), b.AsUInt32()).AsByte();
+
+    /// <summary>i64x2 absolute value.</summary>
+    public static Vector128<byte> Int64x2Abs(Vector128<byte> a) => Vector128.Abs(a.AsInt64()).AsByte();
+    /// <summary>i64x2 negate.</summary>
+    public static Vector128<byte> Int64x2Neg(Vector128<byte> a) => (-a.AsInt64()).AsByte();
+    /// <summary>i64x2 add.</summary>
+    public static Vector128<byte> Int64x2Add(Vector128<byte> a, Vector128<byte> b) => (a.AsInt64() + b.AsInt64()).AsByte();
+    /// <summary>i64x2 subtract.</summary>
+    public static Vector128<byte> Int64x2Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsInt64() - b.AsInt64()).AsByte();
+    /// <summary>i64x2 multiply.</summary>
+    public static Vector128<byte> Int64x2Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsInt64() * b.AsInt64()).AsByte();
+#else
+    /// <summary>The CLR type used to represent v128 at runtime on this platform.</summary>
+    public static Type V128Type => typeof(V128Polyfill);
+
+    /// <summary>Read a 128-bit vector from an unaligned native pointer.</summary>
+    public static unsafe V128Polyfill ReadUnaligned(IntPtr ptr)
+        => Unsafe.ReadUnaligned<V128Polyfill>((void*)ptr);
+
+    /// <summary>Write a 128-bit vector to an unaligned native pointer.</summary>
+    public static unsafe void WriteUnaligned(IntPtr ptr, V128Polyfill value)
+        => Unsafe.WriteUnaligned<V128Polyfill>((void*)ptr, value);
+
+    /// <summary>Create a v128 from 16 bytes.</summary>
+    public static V128Polyfill Create(
+        byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7,
+        byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
+        => new()
+        {
+            B0 = b0, B1 = b1, B2 = b2, B3 = b3, B4 = b4, B5 = b5, B6 = b6, B7 = b7,
+            B8 = b8, B9 = b9, B10 = b10, B11 = b11, B12 = b12, B13 = b13, B14 = b14, B15 = b15,
+        };
+
+    private static V128Polyfill ApplyBinary(V128Polyfill a, V128Polyfill b, Func<byte, byte, byte> op)
+        => new() {
+            B0 = op(a.B0, b.B0), B1 = op(a.B1, b.B1), B2 = op(a.B2, b.B2), B3 = op(a.B3, b.B3),
+            B4 = op(a.B4, b.B4), B5 = op(a.B5, b.B5), B6 = op(a.B6, b.B6), B7 = op(a.B7, b.B7),
+            B8 = op(a.B8, b.B8), B9 = op(a.B9, b.B9), B10 = op(a.B10, b.B10), B11 = op(a.B11, b.B11),
+            B12 = op(a.B12, b.B12), B13 = op(a.B13, b.B13), B14 = op(a.B14, b.B14), B15 = op(a.B15, b.B15),
+        };
+
+    private static V128Polyfill ApplyUnary(V128Polyfill a, Func<byte, byte> op)
+        => new() {
+            B0 = op(a.B0), B1 = op(a.B1), B2 = op(a.B2), B3 = op(a.B3),
+            B4 = op(a.B4), B5 = op(a.B5), B6 = op(a.B6), B7 = op(a.B7),
+            B8 = op(a.B8), B9 = op(a.B9), B10 = op(a.B10), B11 = op(a.B11),
+            B12 = op(a.B12), B13 = op(a.B13), B14 = op(a.B14), B15 = op(a.B15),
+        };
+
+    private static unsafe (byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7,
+                            byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
+        GetBytes(V128Polyfill v) => (v.B0, v.B1, v.B2, v.B3, v.B4, v.B5, v.B6, v.B7,
+                                     v.B8, v.B9, v.B10, v.B11, v.B12, v.B13, v.B14, v.B15);
+
+#pragma warning disable CS1591
+    // v128 bitwise
+    public static V128Polyfill V128Not(V128Polyfill a) => ApplyUnary(a, b => (byte)~b);
+    public static V128Polyfill V128And(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x & y));
+    public static V128Polyfill V128AndNot(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x & ~y));
+    public static V128Polyfill V128Or(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x | y));
+    public static V128Polyfill V128Xor(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x ^ y));
+
+    // i8x16
+    public static V128Polyfill Int8x16Abs(V128Polyfill a) => ApplyUnary(a, b => (byte)Math.Abs((sbyte)b));
+    public static V128Polyfill Int8x16Neg(V128Polyfill a) => ApplyUnary(a, b => (byte)(-(sbyte)b));
+    public static V128Polyfill Int8x16Add(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)((sbyte)x + (sbyte)y));
+    public static V128Polyfill Int8x16Sub(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)((sbyte)x - (sbyte)y));
+    public static V128Polyfill Int8x16AddSatS(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => { var r = (int)(sbyte)x + (sbyte)y; return (byte)(sbyte)(r < -128 ? -128 : r > 127 ? 127 : r); });
+    public static V128Polyfill Int8x16AddSatU(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => { var r = x + y; return (byte)(r > 255 ? 255 : r); });
+    public static V128Polyfill Int8x16SubSatS(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => { var r = (int)(sbyte)x - (sbyte)y; return (byte)(sbyte)(r < -128 ? -128 : r > 127 ? 127 : r); });
+    public static V128Polyfill Int8x16SubSatU(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x < y ? 0 : x - y));
+    public static V128Polyfill Int8x16MinS(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)((sbyte)x < (sbyte)y ? (sbyte)x : (sbyte)y));
+    public static V128Polyfill Int8x16MinU(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => x < y ? x : y);
+    public static V128Polyfill Int8x16MaxS(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)((sbyte)x > (sbyte)y ? (sbyte)x : (sbyte)y));
+    public static V128Polyfill Int8x16MaxU(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => x > y ? x : y);
+
+    // i16x8 — work on pairs of bytes as little-endian int16
+    private static V128Polyfill ApplyI16Binary(V128Polyfill a, V128Polyfill b, Func<short, short, short> op)
+    {
+        static short Get(byte lo, byte hi) => (short)(lo | (hi << 8));
+        static (byte lo, byte hi) Put(short v) => ((byte)v, (byte)((ushort)v >> 8));
+        var (lo0, hi0) = Put(op(Get(a.B0, a.B1), Get(b.B0, b.B1)));
+        var (lo1, hi1) = Put(op(Get(a.B2, a.B3), Get(b.B2, b.B3)));
+        var (lo2, hi2) = Put(op(Get(a.B4, a.B5), Get(b.B4, b.B5)));
+        var (lo3, hi3) = Put(op(Get(a.B6, a.B7), Get(b.B6, b.B7)));
+        var (lo4, hi4) = Put(op(Get(a.B8, a.B9), Get(b.B8, b.B9)));
+        var (lo5, hi5) = Put(op(Get(a.B10, a.B11), Get(b.B10, b.B11)));
+        var (lo6, hi6) = Put(op(Get(a.B12, a.B13), Get(b.B12, b.B13)));
+        var (lo7, hi7) = Put(op(Get(a.B14, a.B15), Get(b.B14, b.B15)));
+        return new() { B0=lo0,B1=hi0,B2=lo1,B3=hi1,B4=lo2,B5=hi2,B6=lo3,B7=hi3,B8=lo4,B9=hi4,B10=lo5,B11=hi5,B12=lo6,B13=hi6,B14=lo7,B15=hi7 };
+    }
+    private static V128Polyfill ApplyI16Unary(V128Polyfill a, Func<short, short> op)
+    {
+        static short Get(byte lo, byte hi) => (short)(lo | (hi << 8));
+        static (byte lo, byte hi) Put(short v) => ((byte)v, (byte)((ushort)v >> 8));
+        var (lo0, hi0) = Put(op(Get(a.B0, a.B1)));
+        var (lo1, hi1) = Put(op(Get(a.B2, a.B3)));
+        var (lo2, hi2) = Put(op(Get(a.B4, a.B5)));
+        var (lo3, hi3) = Put(op(Get(a.B6, a.B7)));
+        var (lo4, hi4) = Put(op(Get(a.B8, a.B9)));
+        var (lo5, hi5) = Put(op(Get(a.B10, a.B11)));
+        var (lo6, hi6) = Put(op(Get(a.B12, a.B13)));
+        var (lo7, hi7) = Put(op(Get(a.B14, a.B15)));
+        return new() { B0=lo0,B1=hi0,B2=lo1,B3=hi1,B4=lo2,B5=hi2,B6=lo3,B7=hi3,B8=lo4,B9=hi4,B10=lo5,B11=hi5,B12=lo6,B13=hi6,B14=lo7,B15=hi7 };
+    }
+    public static V128Polyfill Int16x8Abs(V128Polyfill a) => ApplyI16Unary(a, x => x < 0 ? (short)-x : x);
+    public static V128Polyfill Int16x8Neg(V128Polyfill a) => ApplyI16Unary(a, x => (short)-x);
+    public static V128Polyfill Int16x8Add(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => (short)(x + y));
+    public static V128Polyfill Int16x8Sub(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => (short)(x - y));
+    public static V128Polyfill Int16x8Mul(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => (short)(x * y));
+    public static V128Polyfill Int16x8AddSatS(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => { var r = (int)x + y; return (short)(r < -32768 ? -32768 : r > 32767 ? 32767 : r); });
+    public static V128Polyfill Int16x8AddSatU(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => { var r = (ushort)x + (ushort)y; return (short)(r > 65535 ? 65535 : r); });
+    public static V128Polyfill Int16x8SubSatS(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => { var r = (int)x - y; return (short)(r < -32768 ? -32768 : r > 32767 ? 32767 : r); });
+    public static V128Polyfill Int16x8SubSatU(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => { var ux = (ushort)x; var uy = (ushort)y; return (short)(ushort)(ux < uy ? 0 : ux - uy); });
+    public static V128Polyfill Int16x8MinS(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => x < y ? x : y);
+    public static V128Polyfill Int16x8MinU(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => (short)((ushort)x < (ushort)y ? (ushort)x : (ushort)y));
+    public static V128Polyfill Int16x8MaxS(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => x > y ? x : y);
+    public static V128Polyfill Int16x8MaxU(V128Polyfill a, V128Polyfill b) => ApplyI16Binary(a, b, (x, y) => (short)((ushort)x > (ushort)y ? (ushort)x : (ushort)y));
+
+    // i32x4
+    private static V128Polyfill ApplyI32Binary(V128Polyfill a, V128Polyfill b, Func<int, int, int> op)
+    {
+        static int Get(byte b0, byte b1, byte b2, byte b3) => b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+        static (byte b0, byte b1, byte b2, byte b3) Put(int v) => ((byte)v, (byte)(v >> 8), (byte)(v >> 16), (byte)(v >> 24));
+        var (a0,a1,a2,a3) = Put(op(Get(a.B0,a.B1,a.B2,a.B3), Get(b.B0,b.B1,b.B2,b.B3)));
+        var (a4,a5,a6,a7) = Put(op(Get(a.B4,a.B5,a.B6,a.B7), Get(b.B4,b.B5,b.B6,b.B7)));
+        var (a8,a9,a10,a11) = Put(op(Get(a.B8,a.B9,a.B10,a.B11), Get(b.B8,b.B9,b.B10,b.B11)));
+        var (a12,a13,a14,a15) = Put(op(Get(a.B12,a.B13,a.B14,a.B15), Get(b.B12,b.B13,b.B14,b.B15)));
+        return new() { B0=a0,B1=a1,B2=a2,B3=a3,B4=a4,B5=a5,B6=a6,B7=a7,B8=a8,B9=a9,B10=a10,B11=a11,B12=a12,B13=a13,B14=a14,B15=a15 };
+    }
+    private static V128Polyfill ApplyI32Unary(V128Polyfill a, Func<int, int> op)
+    {
+        static int Get(byte b0, byte b1, byte b2, byte b3) => b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+        static (byte b0, byte b1, byte b2, byte b3) Put(int v) => ((byte)v, (byte)(v >> 8), (byte)(v >> 16), (byte)(v >> 24));
+        var (a0,a1,a2,a3) = Put(op(Get(a.B0,a.B1,a.B2,a.B3)));
+        var (a4,a5,a6,a7) = Put(op(Get(a.B4,a.B5,a.B6,a.B7)));
+        var (a8,a9,a10,a11) = Put(op(Get(a.B8,a.B9,a.B10,a.B11)));
+        var (a12,a13,a14,a15) = Put(op(Get(a.B12,a.B13,a.B14,a.B15)));
+        return new() { B0=a0,B1=a1,B2=a2,B3=a3,B4=a4,B5=a5,B6=a6,B7=a7,B8=a8,B9=a9,B10=a10,B11=a11,B12=a12,B13=a13,B14=a14,B15=a15 };
+    }
+    public static V128Polyfill Int32x4Abs(V128Polyfill a) => ApplyI32Unary(a, x => x < 0 ? -x : x);
+    public static V128Polyfill Int32x4Neg(V128Polyfill a) => ApplyI32Unary(a, x => -x);
+    public static V128Polyfill Int32x4Add(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, (x, y) => x + y);
+    public static V128Polyfill Int32x4Sub(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, (x, y) => x - y);
+    public static V128Polyfill Int32x4Mul(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, (x, y) => x * y);
+    public static V128Polyfill Int32x4MinS(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, Math.Min);
+    public static V128Polyfill Int32x4MinU(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, (x, y) => (int)((uint)x < (uint)y ? (uint)x : (uint)y));
+    public static V128Polyfill Int32x4MaxS(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, Math.Max);
+    public static V128Polyfill Int32x4MaxU(V128Polyfill a, V128Polyfill b) => ApplyI32Binary(a, b, (x, y) => (int)((uint)x > (uint)y ? (uint)x : (uint)y));
+
+    // i64x2
+    private static V128Polyfill ApplyI64Binary(V128Polyfill a, V128Polyfill b, Func<long, long, long> op)
+    {
+        static long GetLo(V128Polyfill v) => (long)(v.B0 | ((ulong)v.B1 << 8) | ((ulong)v.B2 << 16) | ((ulong)v.B3 << 24) | ((ulong)v.B4 << 32) | ((ulong)v.B5 << 40) | ((ulong)v.B6 << 48) | ((ulong)v.B7 << 56));
+        static long GetHi(V128Polyfill v) => (long)(v.B8 | ((ulong)v.B9 << 8) | ((ulong)v.B10 << 16) | ((ulong)v.B11 << 24) | ((ulong)v.B12 << 32) | ((ulong)v.B13 << 40) | ((ulong)v.B14 << 48) | ((ulong)v.B15 << 56));
+        static (byte b0,byte b1,byte b2,byte b3,byte b4,byte b5,byte b6,byte b7) Put(long v) {
+            var u = (ulong)v;
+            return ((byte)u,(byte)(u>>8),(byte)(u>>16),(byte)(u>>24),(byte)(u>>32),(byte)(u>>40),(byte)(u>>48),(byte)(u>>56));
+        }
+        var (l0,l1,l2,l3,l4,l5,l6,l7) = Put(op(GetLo(a), GetLo(b)));
+        var (h0,h1,h2,h3,h4,h5,h6,h7) = Put(op(GetHi(a), GetHi(b)));
+        return new() { B0=l0,B1=l1,B2=l2,B3=l3,B4=l4,B5=l5,B6=l6,B7=l7,B8=h0,B9=h1,B10=h2,B11=h3,B12=h4,B13=h5,B14=h6,B15=h7 };
+    }
+    private static V128Polyfill ApplyI64Unary(V128Polyfill a, Func<long, long> op)
+    {
+        static long GetLo(V128Polyfill v) => (long)(v.B0 | ((ulong)v.B1 << 8) | ((ulong)v.B2 << 16) | ((ulong)v.B3 << 24) | ((ulong)v.B4 << 32) | ((ulong)v.B5 << 40) | ((ulong)v.B6 << 48) | ((ulong)v.B7 << 56));
+        static long GetHi(V128Polyfill v) => (long)(v.B8 | ((ulong)v.B9 << 8) | ((ulong)v.B10 << 16) | ((ulong)v.B11 << 24) | ((ulong)v.B12 << 32) | ((ulong)v.B13 << 40) | ((ulong)v.B14 << 48) | ((ulong)v.B15 << 56));
+        static (byte b0,byte b1,byte b2,byte b3,byte b4,byte b5,byte b6,byte b7) Put(long v) {
+            var u = (ulong)v;
+            return ((byte)u,(byte)(u>>8),(byte)(u>>16),(byte)(u>>24),(byte)(u>>32),(byte)(u>>40),(byte)(u>>48),(byte)(u>>56));
+        }
+        var (l0,l1,l2,l3,l4,l5,l6,l7) = Put(op(GetLo(a)));
+        var (h0,h1,h2,h3,h4,h5,h6,h7) = Put(op(GetHi(a)));
+        return new() { B0=l0,B1=l1,B2=l2,B3=l3,B4=l4,B5=l5,B6=l6,B7=l7,B8=h0,B9=h1,B10=h2,B11=h3,B12=h4,B13=h5,B14=h6,B15=h7 };
+    }
+    public static V128Polyfill Int64x2Abs(V128Polyfill a) => ApplyI64Unary(a, x => x < 0 ? -x : x);
+    public static V128Polyfill Int64x2Neg(V128Polyfill a) => ApplyI64Unary(a, x => -x);
+    public static V128Polyfill Int64x2Add(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x + y);
+    public static V128Polyfill Int64x2Sub(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x - y);
+    public static V128Polyfill Int64x2Mul(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x * y);
+#pragma warning restore CS1591
+#endif
+}

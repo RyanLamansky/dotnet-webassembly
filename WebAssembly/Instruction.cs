@@ -81,6 +81,8 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Int64Constant: yield return new Int64Constant(reader); break;
                 case OpCode.Float32Constant: yield return new Float32Constant(reader); break;
                 case OpCode.Float64Constant: yield return new Float64Constant(reader); break;
+                case OpCode.RefNull: yield return new Instructions.RefNull(reader); break;
+                case OpCode.RefFunc: yield return new Instructions.RefFunc(reader); break;
                 case OpCode.End: yield return new End(); yield break;
             }
         }
@@ -144,11 +146,14 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.CallIndirect: yield return new CallIndirect(reader); break;
                 case OpCode.Drop: yield return new Drop(); break;
                 case OpCode.Select: yield return new Select(); break;
+                case OpCode.SelectWithType: yield return new Instructions.SelectWithType(reader); break;
                 case OpCode.LocalGet: yield return new LocalGet(reader); break;
                 case OpCode.LocalSet: yield return new LocalSet(reader); break;
                 case OpCode.LocalTee: yield return new LocalTee(reader); break;
                 case OpCode.GlobalGet: yield return new GlobalGet(reader); break;
                 case OpCode.GlobalSet: yield return new GlobalSet(reader); break;
+                case OpCode.TableGet: yield return new Instructions.TableGet(reader); break;
+                case OpCode.TableSet: yield return new Instructions.TableSet(reader); break;
                 case OpCode.Int32Load: yield return new Int32Load(reader); break;
                 case OpCode.Int64Load: yield return new Int64Load(reader); break;
                 case OpCode.Float32Load: yield return new Float32Load(reader); break;
@@ -307,6 +312,10 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Int64Extend16Signed: yield return new Int64Extend16Signed(); break;
                 case OpCode.Int64Extend32Signed: yield return new Int64Extend32Signed(); break;
 
+                case OpCode.RefNull: yield return new Instructions.RefNull(reader); break;
+                case OpCode.RefIsNull: yield return new Instructions.RefIsNull(); break;
+                case OpCode.RefFunc: yield return new Instructions.RefFunc(reader); break;
+
                 case OpCode.MiscellaneousOperationPrefix:
                     var miscellaneousOpCodeOffset = reader.Offset;
                     var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadByte();
@@ -321,6 +330,77 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned: yield return new Int64TruncateSaturateFloat32Unsigned(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed: yield return new Int64TruncateSaturateFloat64Signed(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned: yield return new Int64TruncateSaturateFloat64Unsigned(); break;
+                        case MiscellaneousOpCode.MemoryInit: yield return new Instructions.MemoryInit(reader); break;
+                        case MiscellaneousOpCode.DataDrop: yield return new Instructions.DataDrop(reader); break;
+                        case MiscellaneousOpCode.MemoryCopy: yield return new Instructions.MemoryCopy(reader); break;
+                        case MiscellaneousOpCode.MemoryFill: yield return new Instructions.MemoryFill(reader); break;
+                        case MiscellaneousOpCode.TableInit: yield return new Instructions.TableInit(reader); break;
+                        case MiscellaneousOpCode.ElemDrop: yield return new Instructions.ElemDrop(reader); break;
+                        case MiscellaneousOpCode.TableCopy: yield return new Instructions.TableCopy(reader); break;
+                        case MiscellaneousOpCode.TableGrow: yield return new Instructions.TableGrow(reader); break;
+                        case MiscellaneousOpCode.TableSize: yield return new Instructions.TableSize(reader); break;
+                        case MiscellaneousOpCode.TableFill: yield return new Instructions.TableFill(reader); break;
+                    }
+                    break;
+
+                case OpCode.SimdOperationPrefix:
+                    var simdOpCodeOffset = reader.Offset;
+                    var simdOpCode = (SimdOpCode)reader.ReadVarUInt32();
+                    switch (simdOpCode)
+                    {
+                        default: throw new ModuleLoadException($"Don't know how to parse SIMD opcode \"{simdOpCode}\".", simdOpCodeOffset);
+                        case SimdOpCode.V128Load: yield return new Instructions.V128Load(reader); break;
+                        case SimdOpCode.V128Store: yield return new Instructions.V128Store(reader); break;
+                        case SimdOpCode.V128Const: yield return new Instructions.V128Const(reader); break;
+                        // v128 bitwise
+                        case SimdOpCode.V128Not: yield return new Instructions.V128Not(); break;
+                        case SimdOpCode.V128And: yield return new Instructions.V128And(); break;
+                        case SimdOpCode.V128AndNot: yield return new Instructions.V128AndNot(); break;
+                        case SimdOpCode.V128Or: yield return new Instructions.V128Or(); break;
+                        case SimdOpCode.V128Xor: yield return new Instructions.V128Xor(); break;
+                        // i8x16
+                        case SimdOpCode.Int8x16Abs: yield return new Instructions.Int8x16Abs(); break;
+                        case SimdOpCode.Int8x16Neg: yield return new Instructions.Int8x16Neg(); break;
+                        case SimdOpCode.Int8x16Add: yield return new Instructions.Int8x16Add(); break;
+                        case SimdOpCode.Int8x16Sub: yield return new Instructions.Int8x16Sub(); break;
+                        case SimdOpCode.Int8x16AddSaturateSigned: yield return new Instructions.Int8x16AddSaturateSigned(); break;
+                        case SimdOpCode.Int8x16AddSaturateUnsigned: yield return new Instructions.Int8x16AddSaturateUnsigned(); break;
+                        case SimdOpCode.Int8x16SubSaturateSigned: yield return new Instructions.Int8x16SubSaturateSigned(); break;
+                        case SimdOpCode.Int8x16SubSaturateUnsigned: yield return new Instructions.Int8x16SubSaturateUnsigned(); break;
+                        case SimdOpCode.Int8x16MinSigned: yield return new Instructions.Int8x16MinSigned(); break;
+                        case SimdOpCode.Int8x16MinUnsigned: yield return new Instructions.Int8x16MinUnsigned(); break;
+                        case SimdOpCode.Int8x16MaxSigned: yield return new Instructions.Int8x16MaxSigned(); break;
+                        case SimdOpCode.Int8x16MaxUnsigned: yield return new Instructions.Int8x16MaxUnsigned(); break;
+                        // i16x8
+                        case SimdOpCode.Int16x8Abs: yield return new Instructions.Int16x8Abs(); break;
+                        case SimdOpCode.Int16x8Neg: yield return new Instructions.Int16x8Neg(); break;
+                        case SimdOpCode.Int16x8Add: yield return new Instructions.Int16x8Add(); break;
+                        case SimdOpCode.Int16x8Sub: yield return new Instructions.Int16x8Sub(); break;
+                        case SimdOpCode.Int16x8Mul: yield return new Instructions.Int16x8Mul(); break;
+                        case SimdOpCode.Int16x8AddSaturateSigned: yield return new Instructions.Int16x8AddSaturateSigned(); break;
+                        case SimdOpCode.Int16x8AddSaturateUnsigned: yield return new Instructions.Int16x8AddSaturateUnsigned(); break;
+                        case SimdOpCode.Int16x8SubSaturateSigned: yield return new Instructions.Int16x8SubSaturateSigned(); break;
+                        case SimdOpCode.Int16x8SubSaturateUnsigned: yield return new Instructions.Int16x8SubSaturateUnsigned(); break;
+                        case SimdOpCode.Int16x8MinSigned: yield return new Instructions.Int16x8MinSigned(); break;
+                        case SimdOpCode.Int16x8MinUnsigned: yield return new Instructions.Int16x8MinUnsigned(); break;
+                        case SimdOpCode.Int16x8MaxSigned: yield return new Instructions.Int16x8MaxSigned(); break;
+                        case SimdOpCode.Int16x8MaxUnsigned: yield return new Instructions.Int16x8MaxUnsigned(); break;
+                        // i32x4
+                        case SimdOpCode.Int32x4Abs: yield return new Instructions.Int32x4Abs(); break;
+                        case SimdOpCode.Int32x4Neg: yield return new Instructions.Int32x4Neg(); break;
+                        case SimdOpCode.Int32x4Add: yield return new Instructions.Int32x4Add(); break;
+                        case SimdOpCode.Int32x4Sub: yield return new Instructions.Int32x4Sub(); break;
+                        case SimdOpCode.Int32x4Mul: yield return new Instructions.Int32x4Mul(); break;
+                        case SimdOpCode.Int32x4MinSigned: yield return new Instructions.Int32x4MinSigned(); break;
+                        case SimdOpCode.Int32x4MinUnsigned: yield return new Instructions.Int32x4MinUnsigned(); break;
+                        case SimdOpCode.Int32x4MaxSigned: yield return new Instructions.Int32x4MaxSigned(); break;
+                        case SimdOpCode.Int32x4MaxUnsigned: yield return new Instructions.Int32x4MaxUnsigned(); break;
+                        // i64x2
+                        case SimdOpCode.Int64x2Abs: yield return new Instructions.Int64x2Abs(); break;
+                        case SimdOpCode.Int64x2Neg: yield return new Instructions.Int64x2Neg(); break;
+                        case SimdOpCode.Int64x2Add: yield return new Instructions.Int64x2Add(); break;
+                        case SimdOpCode.Int64x2Sub: yield return new Instructions.Int64x2Sub(); break;
+                        case SimdOpCode.Int64x2Mul: yield return new Instructions.Int64x2Mul(); break;
                     }
                     break;
             }
