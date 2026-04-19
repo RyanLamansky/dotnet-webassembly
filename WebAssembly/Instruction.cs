@@ -401,6 +401,38 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.Int64x2Add: yield return new Instructions.Int64x2Add(); break;
                         case SimdOpCode.Int64x2Sub: yield return new Instructions.Int64x2Sub(); break;
                         case SimdOpCode.Int64x2Mul: yield return new Instructions.Int64x2Mul(); break;
+                        // f32x4
+                        case SimdOpCode.Float32x4Abs: yield return new Instructions.Float32x4Abs(); break;
+                        case SimdOpCode.Float32x4Neg: yield return new Instructions.Float32x4Neg(); break;
+                        case SimdOpCode.Float32x4Sqrt: yield return new Instructions.Float32x4Sqrt(); break;
+                        case SimdOpCode.Float32x4Ceil: yield return new Instructions.Float32x4Ceil(); break;
+                        case SimdOpCode.Float32x4Floor: yield return new Instructions.Float32x4Floor(); break;
+                        case SimdOpCode.Float32x4Trunc: yield return new Instructions.Float32x4Trunc(); break;
+                        case SimdOpCode.Float32x4Nearest: yield return new Instructions.Float32x4Nearest(); break;
+                        case SimdOpCode.Float32x4Add: yield return new Instructions.Float32x4Add(); break;
+                        case SimdOpCode.Float32x4Sub: yield return new Instructions.Float32x4Sub(); break;
+                        case SimdOpCode.Float32x4Mul: yield return new Instructions.Float32x4Mul(); break;
+                        case SimdOpCode.Float32x4Div: yield return new Instructions.Float32x4Div(); break;
+                        case SimdOpCode.Float32x4Min: yield return new Instructions.Float32x4Min(); break;
+                        case SimdOpCode.Float32x4Max: yield return new Instructions.Float32x4Max(); break;
+                        case SimdOpCode.Float32x4Pmin: yield return new Instructions.Float32x4Pmin(); break;
+                        case SimdOpCode.Float32x4Pmax: yield return new Instructions.Float32x4Pmax(); break;
+                        // f64x2
+                        case SimdOpCode.Float64x2Abs: yield return new Instructions.Float64x2Abs(); break;
+                        case SimdOpCode.Float64x2Neg: yield return new Instructions.Float64x2Neg(); break;
+                        case SimdOpCode.Float64x2Sqrt: yield return new Instructions.Float64x2Sqrt(); break;
+                        case SimdOpCode.Float64x2Ceil: yield return new Instructions.Float64x2Ceil(); break;
+                        case SimdOpCode.Float64x2Floor: yield return new Instructions.Float64x2Floor(); break;
+                        case SimdOpCode.Float64x2Trunc: yield return new Instructions.Float64x2Trunc(); break;
+                        case SimdOpCode.Float64x2Nearest: yield return new Instructions.Float64x2Nearest(); break;
+                        case SimdOpCode.Float64x2Add: yield return new Instructions.Float64x2Add(); break;
+                        case SimdOpCode.Float64x2Sub: yield return new Instructions.Float64x2Sub(); break;
+                        case SimdOpCode.Float64x2Mul: yield return new Instructions.Float64x2Mul(); break;
+                        case SimdOpCode.Float64x2Div: yield return new Instructions.Float64x2Div(); break;
+                        case SimdOpCode.Float64x2Min: yield return new Instructions.Float64x2Min(); break;
+                        case SimdOpCode.Float64x2Max: yield return new Instructions.Float64x2Max(); break;
+                        case SimdOpCode.Float64x2Pmin: yield return new Instructions.Float64x2Pmin(); break;
+                        case SimdOpCode.Float64x2Pmax: yield return new Instructions.Float64x2Pmax(); break;
                     }
                     break;
             }

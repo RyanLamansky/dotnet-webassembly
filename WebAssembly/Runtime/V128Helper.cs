@@ -78,6 +78,40 @@ public static class V128Helper
     internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Sub), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> Int64x2MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int64x2Mul), BindingFlags.Public | BindingFlags.Static)!);
 
+    // --- f32x4 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4SqrtMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Sqrt), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4CeilMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Ceil), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4FloorMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Floor), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4TruncMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Trunc), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4NearestMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Nearest), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Mul), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4DivMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Div), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4MinMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Min), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4MaxMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Max), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4PminMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Pmin), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float32x4PmaxMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float32x4Pmax), BindingFlags.Public | BindingFlags.Static)!);
+
+    // --- f64x2 ---
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Abs), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Neg), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2SqrtMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Sqrt), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2CeilMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Ceil), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2FloorMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Floor), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2TruncMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Trunc), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2NearestMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Nearest), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2AddMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Add), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2SubMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Sub), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2MulMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Mul), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2DivMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Div), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2MinMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Min), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2MaxMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Max), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2PminMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Pmin), BindingFlags.Public | BindingFlags.Static)!);
+    internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2PmaxMethod = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2Pmax), BindingFlags.Public | BindingFlags.Static)!);
+
 #if NET5_0_OR_GREATER
     /// <summary>The CLR type used to represent v128 at runtime on this platform.</summary>
     public static Type V128Type => typeof(System.Runtime.Intrinsics.Vector128<byte>);
@@ -228,6 +262,108 @@ public static class V128Helper
     public static Vector128<byte> Int64x2Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsInt64() - b.AsInt64()).AsByte();
     /// <summary>i64x2 multiply.</summary>
     public static Vector128<byte> Int64x2Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsInt64() * b.AsInt64()).AsByte();
+
+    /// <summary>f32x4 absolute value.</summary>
+    public static Vector128<byte> Float32x4Abs(Vector128<byte> a) => Vector128.Abs(a.AsSingle()).AsByte();
+    /// <summary>f32x4 negate.</summary>
+    public static Vector128<byte> Float32x4Neg(Vector128<byte> a) => (-a.AsSingle()).AsByte();
+    /// <summary>f32x4 square root.</summary>
+    public static Vector128<byte> Float32x4Sqrt(Vector128<byte> a) => Vector128.Sqrt(a.AsSingle()).AsByte();
+    /// <summary>f32x4 ceiling.</summary>
+    public static Vector128<byte> Float32x4Ceil(Vector128<byte> a) => Vector128.Ceiling(a.AsSingle()).AsByte();
+    /// <summary>f32x4 floor.</summary>
+    public static Vector128<byte> Float32x4Floor(Vector128<byte> a) => Vector128.Floor(a.AsSingle()).AsByte();
+    /// <summary>f32x4 truncate toward zero.</summary>
+    public static Vector128<byte> Float32x4Trunc(Vector128<byte> a)
+    {
+        var r = new float[4];
+        for (var i = 0; i < 4; i++) r[i] = MathF.Truncate(a.AsSingle().GetElement(i));
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f32x4 round to nearest even.</summary>
+    public static Vector128<byte> Float32x4Nearest(Vector128<byte> a)
+    {
+        var r = new float[4];
+        for (var i = 0; i < 4; i++) r[i] = MathF.Round(a.AsSingle().GetElement(i), MidpointRounding.ToEven);
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f32x4 add.</summary>
+    public static Vector128<byte> Float32x4Add(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() + b.AsSingle()).AsByte();
+    /// <summary>f32x4 subtract.</summary>
+    public static Vector128<byte> Float32x4Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() - b.AsSingle()).AsByte();
+    /// <summary>f32x4 multiply.</summary>
+    public static Vector128<byte> Float32x4Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() * b.AsSingle()).AsByte();
+    /// <summary>f32x4 divide.</summary>
+    public static Vector128<byte> Float32x4Div(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() / b.AsSingle()).AsByte();
+    /// <summary>f32x4 IEEE min (propagates NaN).</summary>
+    public static Vector128<byte> Float32x4Min(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsSingle(), b.AsSingle()).AsByte();
+    /// <summary>f32x4 IEEE max (propagates NaN).</summary>
+    public static Vector128<byte> Float32x4Max(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsSingle(), b.AsSingle()).AsByte();
+    /// <summary>f32x4 pseudo-min (returns b if b &lt; a, else a).</summary>
+    public static Vector128<byte> Float32x4Pmin(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new float[4];
+        for (var i = 0; i < 4; i++) { var ai = a.AsSingle().GetElement(i); var bi = b.AsSingle().GetElement(i); r[i] = bi < ai ? bi : ai; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f32x4 pseudo-max (returns b if b &gt; a, else a).</summary>
+    public static Vector128<byte> Float32x4Pmax(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new float[4];
+        for (var i = 0; i < 4; i++) { var ai = a.AsSingle().GetElement(i); var bi = b.AsSingle().GetElement(i); r[i] = bi > ai ? bi : ai; }
+        return Vector128.Create(r).AsByte();
+    }
+
+    /// <summary>f64x2 absolute value.</summary>
+    public static Vector128<byte> Float64x2Abs(Vector128<byte> a) => Vector128.Abs(a.AsDouble()).AsByte();
+    /// <summary>f64x2 negate.</summary>
+    public static Vector128<byte> Float64x2Neg(Vector128<byte> a) => (-a.AsDouble()).AsByte();
+    /// <summary>f64x2 square root.</summary>
+    public static Vector128<byte> Float64x2Sqrt(Vector128<byte> a) => Vector128.Sqrt(a.AsDouble()).AsByte();
+    /// <summary>f64x2 ceiling.</summary>
+    public static Vector128<byte> Float64x2Ceil(Vector128<byte> a) => Vector128.Ceiling(a.AsDouble()).AsByte();
+    /// <summary>f64x2 floor.</summary>
+    public static Vector128<byte> Float64x2Floor(Vector128<byte> a) => Vector128.Floor(a.AsDouble()).AsByte();
+    /// <summary>f64x2 truncate toward zero.</summary>
+    public static Vector128<byte> Float64x2Trunc(Vector128<byte> a)
+    {
+        var r = new double[2];
+        for (var i = 0; i < 2; i++) r[i] = Math.Truncate(a.AsDouble().GetElement(i));
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f64x2 round to nearest even.</summary>
+    public static Vector128<byte> Float64x2Nearest(Vector128<byte> a)
+    {
+        var r = new double[2];
+        for (var i = 0; i < 2; i++) r[i] = Math.Round(a.AsDouble().GetElement(i), MidpointRounding.ToEven);
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f64x2 add.</summary>
+    public static Vector128<byte> Float64x2Add(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() + b.AsDouble()).AsByte();
+    /// <summary>f64x2 subtract.</summary>
+    public static Vector128<byte> Float64x2Sub(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() - b.AsDouble()).AsByte();
+    /// <summary>f64x2 multiply.</summary>
+    public static Vector128<byte> Float64x2Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() * b.AsDouble()).AsByte();
+    /// <summary>f64x2 divide.</summary>
+    public static Vector128<byte> Float64x2Div(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() / b.AsDouble()).AsByte();
+    /// <summary>f64x2 IEEE min (propagates NaN).</summary>
+    public static Vector128<byte> Float64x2Min(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsDouble(), b.AsDouble()).AsByte();
+    /// <summary>f64x2 IEEE max (propagates NaN).</summary>
+    public static Vector128<byte> Float64x2Max(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsDouble(), b.AsDouble()).AsByte();
+    /// <summary>f64x2 pseudo-min (returns b if b &lt; a, else a).</summary>
+    public static Vector128<byte> Float64x2Pmin(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new double[2];
+        for (var i = 0; i < 2; i++) { var ai = a.AsDouble().GetElement(i); var bi = b.AsDouble().GetElement(i); r[i] = bi < ai ? bi : ai; }
+        return Vector128.Create(r).AsByte();
+    }
+    /// <summary>f64x2 pseudo-max (returns b if b &gt; a, else a).</summary>
+    public static Vector128<byte> Float64x2Pmax(Vector128<byte> a, Vector128<byte> b)
+    {
+        var r = new double[2];
+        for (var i = 0; i < 2; i++) { var ai = a.AsDouble().GetElement(i); var bi = b.AsDouble().GetElement(i); r[i] = bi > ai ? bi : ai; }
+        return Vector128.Create(r).AsByte();
+    }
 #else
     /// <summary>The CLR type used to represent v128 at runtime on this platform.</summary>
     public static Type V128Type => typeof(V128Polyfill);
@@ -397,6 +533,100 @@ public static class V128Helper
     public static V128Polyfill Int64x2Add(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x + y);
     public static V128Polyfill Int64x2Sub(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x - y);
     public static V128Polyfill Int64x2Mul(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x * y);
+
+    // f32x4 helpers
+    private static float GetF32(V128Polyfill v, int offset)
+    {
+        uint u = offset switch { 0 => (uint)(v.B0|(v.B1<<8)|(v.B2<<16)|(v.B3<<24)), 4 => (uint)(v.B4|(v.B5<<8)|(v.B6<<16)|(v.B7<<24)), 8 => (uint)(v.B8|(v.B9<<8)|(v.B10<<16)|(v.B11<<24)), _ => (uint)(v.B12|(v.B13<<8)|(v.B14<<16)|(v.B15<<24)) };
+        return Unsafe.As<uint, float>(ref u);
+    }
+    private static V128Polyfill SetF32(V128Polyfill v, int offset, float f)
+    {
+        var u = Unsafe.As<float, uint>(ref f);
+        var b0 = (byte)u; var b1 = (byte)(u>>8); var b2 = (byte)(u>>16); var b3 = (byte)(u>>24);
+        if (offset == 0)  { v.B0=b0; v.B1=b1; v.B2=b2; v.B3=b3; }
+        else if (offset == 4) { v.B4=b0; v.B5=b1; v.B6=b2; v.B7=b3; }
+        else if (offset == 8) { v.B8=b0; v.B9=b1; v.B10=b2; v.B11=b3; }
+        else { v.B12=b0; v.B13=b1; v.B14=b2; v.B15=b3; }
+        return v;
+    }
+    private static V128Polyfill ApplyF32x4Binary(V128Polyfill a, V128Polyfill b, Func<float, float, float> op)
+    {
+        V128Polyfill r = default;
+        for (var i = 0; i < 4; i++) r = SetF32(r, i*4, op(GetF32(a, i*4), GetF32(b, i*4)));
+        return r;
+    }
+    private static V128Polyfill ApplyF32x4Unary(V128Polyfill a, Func<float, float> op)
+    {
+        V128Polyfill r = default;
+        for (var i = 0; i < 4; i++) r = SetF32(r, i*4, op(GetF32(a, i*4)));
+        return r;
+    }
+    public static V128Polyfill Float32x4Abs(V128Polyfill a) => ApplyF32x4Unary(a, x => x < 0 ? -x : x);
+    public static V128Polyfill Float32x4Neg(V128Polyfill a) => ApplyF32x4Unary(a, x => -x);
+    public static V128Polyfill Float32x4Sqrt(V128Polyfill a) => ApplyF32x4Unary(a, x => (float)Math.Sqrt(x));
+    public static V128Polyfill Float32x4Ceil(V128Polyfill a) => ApplyF32x4Unary(a, x => (float)Math.Ceiling(x));
+    public static V128Polyfill Float32x4Floor(V128Polyfill a) => ApplyF32x4Unary(a, x => (float)Math.Floor(x));
+    public static V128Polyfill Float32x4Trunc(V128Polyfill a) => ApplyF32x4Unary(a, x => (float)Math.Truncate(x));
+    public static V128Polyfill Float32x4Nearest(V128Polyfill a) => ApplyF32x4Unary(a, x => (float)Math.Round(x, MidpointRounding.ToEven));
+    public static V128Polyfill Float32x4Add(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x + y);
+    public static V128Polyfill Float32x4Sub(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x - y);
+    public static V128Polyfill Float32x4Mul(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x * y);
+    public static V128Polyfill Float32x4Div(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x / y);
+    public static V128Polyfill Float32x4Min(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x < y ? x : y);
+    public static V128Polyfill Float32x4Max(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x > y ? x : y);
+    public static V128Polyfill Float32x4Pmin(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => y < x ? y : x);
+    public static V128Polyfill Float32x4Pmax(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => y > x ? y : x);
+
+    // f64x2 helpers
+    private static double GetF64Lo(V128Polyfill v)
+    {
+        var u = (ulong)v.B0|((ulong)v.B1<<8)|((ulong)v.B2<<16)|((ulong)v.B3<<24)|((ulong)v.B4<<32)|((ulong)v.B5<<40)|((ulong)v.B6<<48)|((ulong)v.B7<<56);
+        return Unsafe.As<ulong, double>(ref u);
+    }
+    private static double GetF64Hi(V128Polyfill v)
+    {
+        var u = (ulong)v.B8|((ulong)v.B9<<8)|((ulong)v.B10<<16)|((ulong)v.B11<<24)|((ulong)v.B12<<32)|((ulong)v.B13<<40)|((ulong)v.B14<<48)|((ulong)v.B15<<56);
+        return Unsafe.As<ulong, double>(ref u);
+    }
+    private static V128Polyfill SetF64(V128Polyfill v, bool hi, double d)
+    {
+        var u = Unsafe.As<double, ulong>(ref d);
+        var b = new byte[8];
+        for (var i = 0; i < 8; i++) b[i] = (byte)(u >> (i*8));
+        if (!hi) { v.B0=b[0];v.B1=b[1];v.B2=b[2];v.B3=b[3];v.B4=b[4];v.B5=b[5];v.B6=b[6];v.B7=b[7]; }
+        else      { v.B8=b[0];v.B9=b[1];v.B10=b[2];v.B11=b[3];v.B12=b[4];v.B13=b[5];v.B14=b[6];v.B15=b[7]; }
+        return v;
+    }
+    private static V128Polyfill ApplyF64x2Binary(V128Polyfill a, V128Polyfill b, Func<double, double, double> op)
+    {
+        V128Polyfill r = default;
+        r = SetF64(r, false, op(GetF64Lo(a), GetF64Lo(b)));
+        r = SetF64(r, true,  op(GetF64Hi(a), GetF64Hi(b)));
+        return r;
+    }
+    private static V128Polyfill ApplyF64x2Unary(V128Polyfill a, Func<double, double> op)
+    {
+        V128Polyfill r = default;
+        r = SetF64(r, false, op(GetF64Lo(a)));
+        r = SetF64(r, true,  op(GetF64Hi(a)));
+        return r;
+    }
+    public static V128Polyfill Float64x2Abs(V128Polyfill a) => ApplyF64x2Unary(a, Math.Abs);
+    public static V128Polyfill Float64x2Neg(V128Polyfill a) => ApplyF64x2Unary(a, x => -x);
+    public static V128Polyfill Float64x2Sqrt(V128Polyfill a) => ApplyF64x2Unary(a, Math.Sqrt);
+    public static V128Polyfill Float64x2Ceil(V128Polyfill a) => ApplyF64x2Unary(a, Math.Ceiling);
+    public static V128Polyfill Float64x2Floor(V128Polyfill a) => ApplyF64x2Unary(a, Math.Floor);
+    public static V128Polyfill Float64x2Trunc(V128Polyfill a) => ApplyF64x2Unary(a, Math.Truncate);
+    public static V128Polyfill Float64x2Nearest(V128Polyfill a) => ApplyF64x2Unary(a, x => Math.Round(x, MidpointRounding.ToEven));
+    public static V128Polyfill Float64x2Add(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x + y);
+    public static V128Polyfill Float64x2Sub(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x - y);
+    public static V128Polyfill Float64x2Mul(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x * y);
+    public static V128Polyfill Float64x2Div(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x / y);
+    public static V128Polyfill Float64x2Min(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, Math.Min);
+    public static V128Polyfill Float64x2Max(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, Math.Max);
+    public static V128Polyfill Float64x2Pmin(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => y < x ? y : x);
+    public static V128Polyfill Float64x2Pmax(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => y > x ? y : x);
 #pragma warning restore CS1591
 #endif
 }
