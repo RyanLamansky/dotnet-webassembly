@@ -350,6 +350,16 @@ public abstract class Instruction : IEquatable<Instruction>
                     {
                         default: throw new ModuleLoadException($"Don't know how to parse SIMD opcode \"{simdOpCode}\".", simdOpCodeOffset);
                         case SimdOpCode.V128Load: yield return new Instructions.V128Load(reader); break;
+                        case SimdOpCode.V128Load8X8Signed: yield return new Instructions.V128Load8X8Signed(reader); break;
+                        case SimdOpCode.V128Load8X8Unsigned: yield return new Instructions.V128Load8X8Unsigned(reader); break;
+                        case SimdOpCode.V128Load16X4Signed: yield return new Instructions.V128Load16X4Signed(reader); break;
+                        case SimdOpCode.V128Load16X4Unsigned: yield return new Instructions.V128Load16X4Unsigned(reader); break;
+                        case SimdOpCode.V128Load32X2Signed: yield return new Instructions.V128Load32X2Signed(reader); break;
+                        case SimdOpCode.V128Load32X2Unsigned: yield return new Instructions.V128Load32X2Unsigned(reader); break;
+                        case SimdOpCode.V128Load8Splat: yield return new Instructions.V128Load8Splat(reader); break;
+                        case SimdOpCode.V128Load16Splat: yield return new Instructions.V128Load16Splat(reader); break;
+                        case SimdOpCode.V128Load32Splat: yield return new Instructions.V128Load32Splat(reader); break;
+                        case SimdOpCode.V128Load64Splat: yield return new Instructions.V128Load64Splat(reader); break;
                         case SimdOpCode.V128Store: yield return new Instructions.V128Store(reader); break;
                         case SimdOpCode.V128Const: yield return new Instructions.V128Const(reader); break;
                         // shuffle / swizzle
