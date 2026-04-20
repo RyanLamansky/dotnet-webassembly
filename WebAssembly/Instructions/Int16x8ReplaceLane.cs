@@ -11,6 +11,7 @@ public class Int16x8ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Int16x8
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8ReplaceLane;
     internal override WebAssemblyValueType ScalarType => WebAssemblyValueType.Int32;
     internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8ReplaceLaneMethod;
+    internal override byte MaxLaneCount => 8;
 
     /// <summary>Creates a new <see cref="Int16x8ReplaceLane"/> instance.</summary>
     public Int16x8ReplaceLane() { }

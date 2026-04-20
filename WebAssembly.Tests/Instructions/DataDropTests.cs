@@ -72,14 +72,14 @@ public class DataDropTests
     }
 
     /// <summary>
-    /// Tests that memory.init after data.drop traps with InvalidOperationException.
+    /// Tests that memory.init after data.drop traps with MemoryAccessOutOfRangeException.
     /// </summary>
     [TestMethod]
     public void DataDrop_MemoryInitAfterDrop_Traps()
     {
         var compiled = BuildModule().ToInstance<DataDropExport>();
         compiled.Exports.Drop();
-        Assert.ThrowsException<System.InvalidOperationException>(
+        Assert.ThrowsException<WebAssembly.Runtime.MemoryAccessOutOfRangeException>(
             () => compiled.Exports.Init(0, 0, 1));
     }
 }

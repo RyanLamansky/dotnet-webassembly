@@ -35,6 +35,8 @@ public class V128Load32X2Unsigned : SimdInstruction, IEquatable<V128Load32X2Unsi
 
     internal override void Compile(CompilationContext context)
     {
+        if (this.Flags > 3)
+            throw new Runtime.CompilerException("alignment must not be larger than natural");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
         if (this.Offset != 0)

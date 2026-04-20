@@ -39,6 +39,10 @@ public class V128Load8Lane : SimdInstruction, IEquatable<V128Load8Lane>
     internal override void Compile(CompilationContext context)
     {
         // Stack: [..., i32_addr, v128] — pop v128, then i32 address
+        if (this.Flags > 0)
+            throw new Runtime.CompilerException("alignment must not be larger than natural");
+        if (this.LaneIndex >= 16)
+            throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for V128Load8Lane (max 15).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
 
         var vecLocal = context.DeclareLocal(V128Helper.V128Type);

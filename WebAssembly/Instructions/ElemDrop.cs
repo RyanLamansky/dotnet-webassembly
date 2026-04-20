@@ -1,4 +1,6 @@
 using System;
+using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -38,6 +40,12 @@ public class ElemDrop : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        throw new NotSupportedException("elem.drop is not yet supported.");
+        // Active segments are implicitly dropped at instantiation; elem.drop on them is a no-op.
+        if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField))
+            return;
+
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldnull);
+        context.Emit(OpCodes.Stfld, segField);
     }
 }

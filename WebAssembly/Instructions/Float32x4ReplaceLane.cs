@@ -11,6 +11,7 @@ public class Float32x4ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Float
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Float32x4ReplaceLane;
     internal override WebAssemblyValueType ScalarType => WebAssemblyValueType.Float32;
     internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Float32x4ReplaceLaneMethod;
+    internal override byte MaxLaneCount => 4;
 
     /// <summary>Creates a new <see cref="Float32x4ReplaceLane"/> instance.</summary>
     public Float32x4ReplaceLane() { }

@@ -11,6 +11,7 @@ public class Float32x4ExtractLane : SimdExtractLaneInstruction, IEquatable<Float
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Float32x4ExtractLane;
     internal override WebAssemblyValueType ResultType => WebAssemblyValueType.Float32;
     internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Float32x4ExtractLaneMethod;
+    internal override byte MaxLaneCount => 4;
 
     /// <summary>Creates a new <see cref="Float32x4ExtractLane"/> instance.</summary>
     public Float32x4ExtractLane() { }

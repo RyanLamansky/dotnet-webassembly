@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.Intrinsics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -134,6 +135,14 @@ static class SpecTestRunner
                                         Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                     }
                                     continue;
+                                case RawValueType.v128:
+                                    {
+                                        var v128Expected = (V128Value)rawExpected;
+                                        var actual = (Vector128<byte>)result!;
+                                        if (!v128Expected.IsMatch(actual))
+                                            Assert.AreEqual(v128Expected.ActualValue, actual, $"{command.line}: v128 compare");
+                                    }
+                                    continue;
                             }
 
                             throw new AssertFailedException($"{command.line}: Not equal {rawExpected.type}: {rawExpected.BoxedValue} and {result}");
@@ -168,6 +177,8 @@ static class SpecTestRunner
                                 throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
                         }
                     case AssertInvalid assert:
+                        if (assert.module_type == "text")
+                            continue; // WAT format — not parsing WAT
                         trapExpected = () =>
                         {
                             try
@@ -233,7 +244,9 @@ static class SpecTestRunner
                             case "unknown global":
                             case "unknown memory":
                             case "unknown function":
+                            case "unknown function 0":
                             case "unknown table 0":
+                            case "unknown local 2":
                                 try
                                 {
                                     trapExpected();
@@ -254,6 +267,25 @@ static class SpecTestRunner
                             // "multiple tables" was a WASM 1.0 restriction; reference types (2.0) allows multiple tables.
                             case "multiple tables":
                                 continue;
+                            case "invalid lane index":
+                            case "offset out of range":
+                                try
+                                {
+                                    trapExpected();
+                                }
+                                catch (CompilerException)
+                                {
+                                    continue;
+                                }
+                                catch (ModuleLoadException)
+                                {
+                                    continue;
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                }
+                                throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                         }
@@ -318,6 +350,24 @@ static class SpecTestRunner
                                     throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but received {x.GetType().Name}.");
                                 }
                                 continue;
+                            case "out of bounds table access":
+                                try
+                                {
+                                    trapExpected();
+                                }
+                                catch (IndexOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (MemoryAccessOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                }
+                                throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "indirect call type mismatch":
                                 Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
                                 continue;
@@ -325,6 +375,7 @@ static class SpecTestRunner
                                 Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
                                 continue;
                             case "uninitialized element":
+                            case "uninitialized element 2":
                             case "uninitialized":
                                 try
                                 {
@@ -551,6 +602,7 @@ static class SpecTestRunner
         i64 = WebAssemblyValueType.Int64,
         f32 = WebAssemblyValueType.Float32,
         f64 = WebAssemblyValueType.Float64,
+        v128 = WebAssemblyValueType.V128,
     }
 
     class TypeOnly
@@ -565,6 +617,7 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(Int64Value), typeDiscriminator: nameof(RawValueType.i64))]
     [JsonDerivedType(typeof(Float32Value), typeDiscriminator: nameof(RawValueType.f32))]
     [JsonDerivedType(typeof(Float64Value), typeDiscriminator: nameof(RawValueType.f64))]
+    [JsonDerivedType(typeof(V128Value), typeDiscriminator: nameof(RawValueType.v128))]
     abstract class TypedValue : TypeOnly
     {
         public abstract object BoxedValue { get; }
@@ -606,6 +659,116 @@ static class SpecTestRunner
         public override object BoxedValue => ActualValue;
 
         public override string ToString() => $"{type}: {BoxedValue}";
+    }
+
+    class V128Value : TypedValue
+    {
+        public string? lane_type;
+        public string[]? value;
+
+        public override object BoxedValue => ActualValue;
+
+        // Returns true if any lane is a NaN pattern ("nan:canonical" or "nan:arithmetic").
+        public bool HasNaN => value != null && value.Any(v => v.StartsWith("nan:", StringComparison.Ordinal));
+
+        // Parses a lane value string to ulong. NaN patterns map to a canonical NaN for the lane type.
+        private ulong ParseLane(string s)
+        {
+            if (!s.StartsWith("nan:", StringComparison.Ordinal))
+                return ulong.Parse(s);
+            return lane_type == "f64" ? 0x7FF8000000000000UL : 0x7FC00000UL;
+        }
+
+        public Vector128<byte> ActualValue
+        {
+            get
+            {
+                if (value == null || value.Length == 0)
+                    return Vector128<byte>.Zero;
+                var bytes = new byte[16];
+                switch (lane_type)
+                {
+                    case "i8":
+                        for (var i = 0; i < 16 && i < value.Length; i++)
+                            bytes[i] = (byte)ParseLane(value[i]);
+                        break;
+                    case "i16":
+                        for (var i = 0; i < 8 && i < value.Length; i++)
+                        {
+                            var v = (ushort)ParseLane(value[i]);
+                            bytes[i * 2] = (byte)v;
+                            bytes[i * 2 + 1] = (byte)(v >> 8);
+                        }
+                        break;
+                    case "i32":
+                    case "f32":
+                        for (var i = 0; i < 4 && i < value.Length; i++)
+                        {
+                            var v = (uint)ParseLane(value[i]);
+                            bytes[i * 4] = (byte)v;
+                            bytes[i * 4 + 1] = (byte)(v >> 8);
+                            bytes[i * 4 + 2] = (byte)(v >> 16);
+                            bytes[i * 4 + 3] = (byte)(v >> 24);
+                        }
+                        break;
+                    case "i64":
+                    case "f64":
+                        for (var i = 0; i < 2 && i < value.Length; i++)
+                        {
+                            var v = ParseLane(value[i]);
+                            bytes[i * 8] = (byte)v;
+                            bytes[i * 8 + 1] = (byte)(v >> 8);
+                            bytes[i * 8 + 2] = (byte)(v >> 16);
+                            bytes[i * 8 + 3] = (byte)(v >> 24);
+                            bytes[i * 8 + 4] = (byte)(v >> 32);
+                            bytes[i * 8 + 5] = (byte)(v >> 40);
+                            bytes[i * 8 + 6] = (byte)(v >> 48);
+                            bytes[i * 8 + 7] = (byte)(v >> 56);
+                        }
+                        break;
+                }
+                return Vector128.Create(bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                    bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]);
+            }
+        }
+
+        // NaN-aware lane-by-lane match: a "nan:*" pattern matches any NaN in that lane.
+        public bool IsMatch(Vector128<byte> actual)
+        {
+            if (!HasNaN) return ActualValue.Equals(actual);
+            if (value == null) return false;
+            switch (lane_type)
+            {
+                case "f32":
+                {
+                    var af = actual.As<byte, float>();
+                    for (var i = 0; i < 4 && i < value.Length; i++)
+                    {
+                        if (value[i].StartsWith("nan:", StringComparison.Ordinal))
+                        { if (!float.IsNaN(af[i])) return false; }
+                        else
+                        { if ((uint)ParseLane(value[i]) != BitConverter.SingleToUInt32Bits(af[i])) return false; }
+                    }
+                    return true;
+                }
+                case "f64":
+                {
+                    var ad = actual.As<byte, double>();
+                    for (var i = 0; i < 2 && i < value.Length; i++)
+                    {
+                        if (value[i].StartsWith("nan:", StringComparison.Ordinal))
+                        { if (!double.IsNaN(ad[i])) return false; }
+                        else
+                        { if (ParseLane(value[i]) != BitConverter.DoubleToUInt64Bits(ad[i])) return false; }
+                    }
+                    return true;
+                }
+                default:
+                    return ActualValue.Equals(actual);
+            }
+        }
+
+        public override string ToString() => $"v128({lane_type})[{string.Join(',', value ?? [])}]";
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<TestActionType>))]

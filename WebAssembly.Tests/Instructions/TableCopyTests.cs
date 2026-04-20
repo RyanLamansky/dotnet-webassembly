@@ -1,5 +1,6 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -17,10 +18,10 @@ public class TableCopyTests
     }
 
     /// <summary>
-    /// Tests that table.copy throws NotSupportedException at runtime (stub).
+    /// Tests that table.copy throws CompilerException when no function table is defined.
     /// </summary>
     [TestMethod]
-    public void TableCopy_ThrowsNotSupported()
+    public void TableCopy_NoTable_ThrowsCompilerException()
     {
         var module = new Module();
         module.Types.Add(new WebAssemblyType { Returns = [], Parameters = [] });
@@ -38,6 +39,6 @@ public class TableCopyTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
+        Assert.ThrowsException<CompilerException>(() => module.ToInstance<VoidExport>());
     }
 }

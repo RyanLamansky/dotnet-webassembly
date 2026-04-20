@@ -50,6 +50,7 @@ public class Select : SimpleInstruction
             WebAssemblyValueType.Int64 => HelperMethod.SelectInt64,
             WebAssemblyValueType.Float32 => HelperMethod.SelectFloat32,
             WebAssemblyValueType.Float64 => HelperMethod.SelectFloat64,
+            WebAssemblyValueType.V128 => HelperMethod.SelectV128,
             WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef => HelperMethod.SelectObject,
             _ => throw new InvalidOperationException(),// Shouldn't be possible.
         };
@@ -107,6 +108,16 @@ public class Select : SimpleInstruction
           [
                                 typeof(object),
                                 typeof(object),
+                                typeof(int),
+          ]
+          ),
+            HelperMethod.SelectV128 => context.CheckedExportsBuilder.DefineMethod(
+          "☣ Select V128",
+          CompilationContext.HelperMethodAttributes,
+          Runtime.V128Helper.V128Type,
+          [
+                                Runtime.V128Helper.V128Type,
+                                Runtime.V128Helper.V128Type,
                                 typeof(int),
           ]
           ),

@@ -16,6 +16,7 @@ public abstract class SimdExtractLaneInstruction : SimdInstruction
 
     internal abstract WebAssemblyValueType ResultType { get; }
     internal abstract RegeneratingWeakReference<MethodInfo> Method { get; }
+    internal abstract byte MaxLaneCount { get; }
 
     private protected SimdExtractLaneInstruction(Reader reader)
     {
@@ -30,6 +31,8 @@ public abstract class SimdExtractLaneInstruction : SimdInstruction
 
     internal override void Compile(CompilationContext context)
     {
+        if (LaneIndex >= MaxLaneCount)
+            throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for {SimdOpCode} (max {MaxLaneCount - 1}).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128);
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);
         context.Emit(OpCodes.Call, Method.Reference);

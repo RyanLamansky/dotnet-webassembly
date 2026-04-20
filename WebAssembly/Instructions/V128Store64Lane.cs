@@ -38,6 +38,10 @@ public class V128Store64Lane : SimdInstruction, IEquatable<V128Store64Lane>
 
     internal override void Compile(CompilationContext context)
     {
+        if (this.Flags > 3)
+            throw new Runtime.CompilerException("alignment must not be larger than natural");
+        if (this.LaneIndex >= 2)
+            throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for V128Store64Lane (max 1).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
 
         var vecLocal = context.DeclareLocal(V128Helper.V128Type);

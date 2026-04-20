@@ -11,6 +11,7 @@ public class Int32x4ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Int32x4
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4ReplaceLane;
     internal override WebAssemblyValueType ScalarType => WebAssemblyValueType.Int32;
     internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int32x4ReplaceLaneMethod;
+    internal override byte MaxLaneCount => 4;
 
     /// <summary>Creates a new <see cref="Int32x4ReplaceLane"/> instance.</summary>
     public Int32x4ReplaceLane() { }

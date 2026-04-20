@@ -16,6 +16,7 @@ public abstract class SimdReplaceLaneInstruction : SimdInstruction
 
     internal abstract WebAssemblyValueType ScalarType { get; }
     internal abstract RegeneratingWeakReference<MethodInfo> Method { get; }
+    internal abstract byte MaxLaneCount { get; }
 
     private protected SimdReplaceLaneInstruction(Reader reader)
     {
@@ -30,6 +31,8 @@ public abstract class SimdReplaceLaneInstruction : SimdInstruction
 
     internal override void Compile(CompilationContext context)
     {
+        if (LaneIndex >= MaxLaneCount)
+            throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for {SimdOpCode} (max {MaxLaneCount - 1}).");
         // Stack on entry: [..., v128, scalar] (scalar on top)
         // Method signature: (v128, int lane, scalar) → v128
         context.PopStackNoReturn(this.OpCode, ScalarType, WebAssemblyValueType.V128);

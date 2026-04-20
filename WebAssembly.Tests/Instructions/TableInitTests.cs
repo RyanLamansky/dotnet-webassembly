@@ -1,5 +1,6 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -17,10 +18,10 @@ public class TableInitTests
     }
 
     /// <summary>
-    /// Tests that table.init throws NotSupportedException at runtime (stub).
+    /// Tests that table.init throws CompilerException when the referenced element segment is not passive.
     /// </summary>
     [TestMethod]
-    public void TableInit_ThrowsNotSupported()
+    public void TableInit_NoPassiveSegment_ThrowsCompilerException()
     {
         var module = new Module();
         module.Types.Add(new WebAssemblyType { Returns = [], Parameters = [] });
@@ -38,6 +39,6 @@ public class TableInitTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
+        Assert.ThrowsException<CompilerException>(() => module.ToInstance<VoidExport>());
     }
 }

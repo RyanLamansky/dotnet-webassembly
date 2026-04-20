@@ -11,6 +11,7 @@ public class Int16x8ExtractLaneSigned : SimdExtractLaneInstruction, IEquatable<I
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8ExtractLaneSigned;
     internal override WebAssemblyValueType ResultType => WebAssemblyValueType.Int32;
     internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8ExtractLaneSMethod;
+    internal override byte MaxLaneCount => 8;
 
     /// <summary>Creates a new <see cref="Int16x8ExtractLaneSigned"/> instance.</summary>
     public Int16x8ExtractLaneSigned() { }

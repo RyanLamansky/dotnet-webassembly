@@ -1,4 +1,6 @@
 using System;
+using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -43,6 +45,28 @@ public class TableCopy : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        throw new NotSupportedException("table.copy is not yet supported.");
+        // Stack: dst src len → (nothing)
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+
+        if (context.FunctionTable == null)
+            throw new CompilerException("table.copy: no function table is defined.");
+
+        var len = context.DeclareLocal(typeof(uint));
+        var src = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(typeof(uint));
+
+        context.Emit(OpCodes.Stloc, len);
+        context.Emit(OpCodes.Stloc, src);
+        context.Emit(OpCodes.Stloc, dst);
+
+        // this.functionTable.Copy(dst, src, len)
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldloc, dst);
+        context.Emit(OpCodes.Ldloc, src);
+        context.Emit(OpCodes.Ldloc, len);
+        context.Emit(OpCodes.Call, FunctionTable.CopyMethod.Reference);
     }
 }

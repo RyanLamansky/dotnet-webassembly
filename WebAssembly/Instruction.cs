@@ -83,6 +83,14 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Float64Constant: yield return new Float64Constant(reader); break;
                 case OpCode.RefNull: yield return new Instructions.RefNull(reader); break;
                 case OpCode.RefFunc: yield return new Instructions.RefFunc(reader); break;
+                case OpCode.SimdOperationPrefix:
+                {
+                    var simdOpCode = (SimdOpCode)reader.ReadVarUInt32();
+                    if (simdOpCode != SimdOpCode.V128Const)
+                        throw new ModuleLoadException($"Opcode \"{simdOpCode}\" is not permitted in intializer expressions.", initialOffset);
+                    yield return new Instructions.V128Const(reader);
+                    break;
+                }
                 case OpCode.End: yield return new End(); yield break;
             }
         }

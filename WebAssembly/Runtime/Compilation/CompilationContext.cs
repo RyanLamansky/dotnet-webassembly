@@ -85,6 +85,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>Maps data segment index → FieldBuilder for passive segment byte[] fields.</summary>
     public readonly Dictionary<uint, FieldBuilder> DataSegments = [];
 
+    /// <summary>Maps element segment index → FieldBuilder for passive segment Delegate?[] fields.</summary>
+    public readonly Dictionary<uint, FieldBuilder> ElementSegments = [];
+
     internal const MethodAttributes HelperMethodAttributes =
         MethodAttributes.Private |
         MethodAttributes.Static |

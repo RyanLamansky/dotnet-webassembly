@@ -37,6 +37,8 @@ public class V128Store : SimdInstruction, IEquatable<V128Store>
 
     internal override void Compile(CompilationContext context)
     {
+        if (this.Flags > 4)
+            throw new Runtime.CompilerException("alignment must not be larger than natural");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
 
         var valueLocal = context.DeclareLocal(V128Helper.V128Type);

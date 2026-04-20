@@ -925,4 +925,294 @@ public class SpecTests
     {
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "utf8-import-module"), "utf8-import-module.json");
     }
+
+    /// <summary>Runs the bulk memory tests.</summary>
+    [TestMethod]
+    public void SpecTest_bulk() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "bulk"), "bulk.json");
+
+    /// <summary>Runs the simd_address tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_address() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_address"), "simd_address.json");
+
+    /// <summary>Runs the simd_align tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_align() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_align"), "simd_align.json");
+
+    /// <summary>Runs the simd_bit_shift tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_bit_shift() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_bit_shift"), "simd_bit_shift.json");
+
+    /// <summary>Runs the simd_bitwise tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_bitwise() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_bitwise"), "simd_bitwise.json");
+
+    /// <summary>Runs the simd_boolean tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_boolean() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_boolean"), "simd_boolean.json");
+
+    /// <summary>Runs the simd_const tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_const() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_const"), "simd_const.json");
+
+    /// <summary>Runs the simd_conversions tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_conversions() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_conversions"), "simd_conversions.json");
+
+    /// <summary>Runs the simd_f32x4 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f32x4() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4"), "simd_f32x4.json");
+
+    /// <summary>Runs the simd_f32x4_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f32x4_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4_arith"), "simd_f32x4_arith.json");
+
+    /// <summary>Runs the simd_f32x4_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f32x4_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4_cmp"), "simd_f32x4_cmp.json");
+
+    /// <summary>Runs the simd_f32x4_pmin_pmax tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f32x4_pmin_pmax() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4_pmin_pmax"), "simd_f32x4_pmin_pmax.json");
+
+    /// <summary>Runs the simd_f32x4_rounding tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f32x4_rounding() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4_rounding"), "simd_f32x4_rounding.json");
+
+    /// <summary>Runs the simd_f64x2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f64x2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2"), "simd_f64x2.json");
+
+    /// <summary>Runs the simd_f64x2_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f64x2_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2_arith"), "simd_f64x2_arith.json");
+
+    /// <summary>Runs the simd_f64x2_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f64x2_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2_cmp"), "simd_f64x2_cmp.json");
+
+    /// <summary>Runs the simd_f64x2_pmin_pmax tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f64x2_pmin_pmax() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2_pmin_pmax"), "simd_f64x2_pmin_pmax.json");
+
+    /// <summary>Runs the simd_f64x2_rounding tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_f64x2_rounding() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2_rounding"), "simd_f64x2_rounding.json");
+
+    /// <summary>Runs the simd_i16x8_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_arith"), "simd_i16x8_arith.json");
+
+    /// <summary>Runs the simd_i16x8_arith2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_arith2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_arith2"), "simd_i16x8_arith2.json");
+
+    /// <summary>Runs the simd_i16x8_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_cmp"), "simd_i16x8_cmp.json");
+
+    /// <summary>Runs the simd_i16x8_extadd_pairwise_i8x16 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_extadd_pairwise_i8x16() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_extadd_pairwise_i8x16"), "simd_i16x8_extadd_pairwise_i8x16.json");
+
+    /// <summary>Runs the simd_i16x8_extmul_i8x16 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_extmul_i8x16() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_extmul_i8x16"), "simd_i16x8_extmul_i8x16.json");
+
+    /// <summary>Runs the simd_i16x8_q15mulr_sat_s tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_q15mulr_sat_s() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_q15mulr_sat_s"), "simd_i16x8_q15mulr_sat_s.json");
+
+    /// <summary>Runs the simd_i16x8_sat_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i16x8_sat_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i16x8_sat_arith"), "simd_i16x8_sat_arith.json");
+
+    /// <summary>Runs the simd_i32x4_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_arith"), "simd_i32x4_arith.json");
+
+    /// <summary>Runs the simd_i32x4_arith2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_arith2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_arith2"), "simd_i32x4_arith2.json");
+
+    /// <summary>Runs the simd_i32x4_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_cmp"), "simd_i32x4_cmp.json");
+
+    /// <summary>Runs the simd_i32x4_dot_i16x8 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_dot_i16x8() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_dot_i16x8"), "simd_i32x4_dot_i16x8.json");
+
+    /// <summary>Runs the simd_i32x4_extadd_pairwise_i16x8 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_extadd_pairwise_i16x8() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_extadd_pairwise_i16x8"), "simd_i32x4_extadd_pairwise_i16x8.json");
+
+    /// <summary>Runs the simd_i32x4_extmul_i16x8 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_extmul_i16x8() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_extmul_i16x8"), "simd_i32x4_extmul_i16x8.json");
+
+    /// <summary>Runs the simd_i32x4_trunc_sat_f32x4 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_trunc_sat_f32x4() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_trunc_sat_f32x4"), "simd_i32x4_trunc_sat_f32x4.json");
+
+    /// <summary>Runs the simd_i32x4_trunc_sat_f64x2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i32x4_trunc_sat_f64x2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i32x4_trunc_sat_f64x2"), "simd_i32x4_trunc_sat_f64x2.json");
+
+    /// <summary>Runs the simd_i64x2_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i64x2_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i64x2_arith"), "simd_i64x2_arith.json");
+
+    /// <summary>Runs the simd_i64x2_arith2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i64x2_arith2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i64x2_arith2"), "simd_i64x2_arith2.json");
+
+    /// <summary>Runs the simd_i64x2_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i64x2_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i64x2_cmp"), "simd_i64x2_cmp.json");
+
+    /// <summary>Runs the simd_i64x2_extmul_i32x4 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i64x2_extmul_i32x4() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i64x2_extmul_i32x4"), "simd_i64x2_extmul_i32x4.json");
+
+    /// <summary>Runs the simd_i8x16_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i8x16_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i8x16_arith"), "simd_i8x16_arith.json");
+
+    /// <summary>Runs the simd_i8x16_arith2 tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i8x16_arith2() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i8x16_arith2"), "simd_i8x16_arith2.json");
+
+    /// <summary>Runs the simd_i8x16_cmp tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i8x16_cmp() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i8x16_cmp"), "simd_i8x16_cmp.json");
+
+    /// <summary>Runs the simd_i8x16_sat_arith tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_i8x16_sat_arith() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_i8x16_sat_arith"), "simd_i8x16_sat_arith.json");
+
+    /// <summary>Runs the simd_int_to_int_extend tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_int_to_int_extend() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_int_to_int_extend"), "simd_int_to_int_extend.json");
+
+    /// <summary>Runs the simd_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_lane"), "simd_lane.json");
+
+    /// <summary>Runs the simd_load tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load"), "simd_load.json");
+
+    /// <summary>Runs the simd_load8_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load8_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load8_lane"), "simd_load8_lane.json");
+
+    /// <summary>Runs the simd_load16_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load16_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load16_lane"), "simd_load16_lane.json");
+
+    /// <summary>Runs the simd_load32_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load32_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load32_lane"), "simd_load32_lane.json");
+
+    /// <summary>Runs the simd_load64_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load64_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load64_lane"), "simd_load64_lane.json");
+
+    /// <summary>Runs the simd_load_extend tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load_extend() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load_extend"), "simd_load_extend.json");
+
+    /// <summary>Runs the simd_load_splat tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load_splat() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load_splat"), "simd_load_splat.json");
+
+    /// <summary>Runs the simd_load_zero tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_load_zero() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_load_zero"), "simd_load_zero.json");
+
+    /// <summary>Runs the simd_select tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_select() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_select"), "simd_select.json");
+
+    /// <summary>Runs the simd_splat tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_splat() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_splat"), "simd_splat.json");
+
+    /// <summary>Runs the simd_store tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_store() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_store"), "simd_store.json");
+
+    /// <summary>Runs the simd_store8_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_store8_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_store8_lane"), "simd_store8_lane.json");
+
+    /// <summary>Runs the simd_store16_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_store16_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_store16_lane"), "simd_store16_lane.json");
+
+    /// <summary>Runs the simd_store32_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_store32_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_store32_lane"), "simd_store32_lane.json");
+
+    /// <summary>Runs the simd_store64_lane tests.</summary>
+    [TestMethod]
+    public void SpecTest_simd_store64_lane() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_store64_lane"), "simd_store64_lane.json");
 }

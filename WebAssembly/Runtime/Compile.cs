@@ -581,9 +581,7 @@ public static class Compile
                     break;
 
                 case Section.Element:
-                    if (functionTable == null)
-                        throw new ModuleLoadException("Element section found without an associated table section or import.", preSectionOffset);
-                    SectionElement(reader, functionTable, instanceConstructorIL, functionSignatures, internalFunctions, delegateInvokersByTypeIndex, configuration, exportsBuilder);
+                    SectionElement(reader, functionTable, context, instanceConstructorIL, functionSignatures, internalFunctions, delegateInvokersByTypeIndex, configuration, exportsBuilder, preSectionOffset);
                     break;
 
                 case Section.Code:
@@ -595,9 +593,7 @@ public static class Compile
                     break;
 
                 case Section.Data:
-                    if (memory == null)
-                        throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
-                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
+                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, preSectionOffset);
                     break;
 
                 case Section.DataCount:
@@ -1247,7 +1243,7 @@ public static class Compile
         return internalFunctions[startIndex];
     }
 
-    static void SectionElement(Reader reader, FieldBuilder functionTable, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+    static void SectionElement(Reader reader, FieldBuilder? functionTable, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder, long sectionOffset = 0)
     {
         // Holds the function table index of where an exsting function index has been mapped, for re-use.
         var existingDelegates = new Dictionary<uint, uint>();
@@ -1257,11 +1253,8 @@ public static class Compile
         if (count == 0)
             return;
 
-        var localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
-        instanceConstructorIL.EmitLoadArg(0);
-        instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable);
-        instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
-
+        // Only load the function table local when there are active segments that need it.
+        LocalBuilder? localFunctionTable = null;
         var getter = FunctionTable.IndexGetter;
         var setter = FunctionTable.IndexSetter;
 
@@ -1269,8 +1262,62 @@ public static class Compile
         {
             var kind = reader.ReadVarUInt32();
 
-            // Kinds 1–7 are passive, declarative, or use expression-based inits — skip them at runtime.
-            // They must be parsed to advance the reader, but produce no table-init code.
+            // Kind 1: passive element segment — store function references for use by table.init.
+            if (kind == 1)
+            {
+                reader.ReadByte(); // elemkind (always 0x00 = funcref)
+                var elemCount = reader.ReadVarUInt32();
+                var segField = exportsBuilder.DefineField(
+                    $"☣ PassiveElem {i}",
+                    typeof(Delegate[]),
+                    FieldAttributes.Private);
+                context.ElementSegments[(uint)i] = segField;
+
+                if (elemCount > 0 && functionSignatures != null && internalFunctions != null)
+                {
+                    var funcIndices = new uint[elemCount];
+                    for (var j = 0u; j < elemCount; j++)
+                        funcIndices[j] = reader.ReadVarUInt32();
+
+                    // Emit constructor IL: allocate Delegate[] and fill it with method delegates.
+                    var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
+                    instanceConstructorIL.EmitLoadConstant((int)elemCount);
+                    instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
+                    instanceConstructorIL.Emit(OpCodes.Stloc, arrLocal);
+
+                    for (var j = 0u; j < elemCount; j++)
+                    {
+                        var functionIndex = funcIndices[j];
+                        var signature = functionSignatures[functionIndex];
+                        var parms = signature.ParameterTypes;
+                        var returns = signature.ReturnTypes;
+
+                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                        {
+                            var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                            var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
+                                throw new CompilerException($"Failed to get a delegate for type {signature}.");
+                            if (del.IsGenericType)
+                                del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
+                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
+                        }
+
+                        instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                        instanceConstructorIL.EmitLoadConstant((int)j);
+                        instanceConstructorIL.EmitLoadArg(0);
+                        instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions[functionIndex]);
+                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                        instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
+                    }
+
+                    instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                    instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+                }
+                continue;
+            }
+
+            // Kinds 2–7: skip them (active w/ explicit table, declarative, expression-based).
             if (kind != 0)
             {
                 SkipElementSegment(reader, kind);
@@ -1278,6 +1325,12 @@ public static class Compile
             }
 
             // Kind 0: active, table 0, i32 constant offset, func indices.
+            // Register in ElementSegments as null (active segments are dropped after instantiation).
+            context.ElementSegments[(uint)i] = exportsBuilder.DefineField(
+                $"☣ ActiveElem {i}",
+                typeof(Delegate[]),
+                FieldAttributes.Private);
+
             uint offset;
             {
                 var preInitializerOffset = reader.Offset;
@@ -1291,11 +1344,22 @@ public static class Compile
             var preElementOffset = reader.Offset;
             var elements = reader.ReadVarUInt32();
 
+            if (functionTable == null)
+                throw new ModuleLoadException("Active element segment requires a table section or import.", preElementOffset);
+
             if (elements == 0)
                 continue;
 
             if (functionSignatures == null || internalFunctions == null)
                 throw new ModuleLoadException("Element section must be empty if there are no functions to reference.", preElementOffset);
+
+            if (localFunctionTable == null)
+            {
+                localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable);
+                instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
+            }
 
             var isBigEnough = instanceConstructorIL.DefineLabel();
             instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
@@ -1476,7 +1540,7 @@ public static class Compile
         }
     }
 
-    static void SectionData(Reader reader, CompilationContext context, FieldBuilder memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder)
+    static void SectionData(Reader reader, CompilationContext context, FieldBuilder? memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder, long sectionOffset = 0)
     {
         var count = reader.ReadVarUInt32();
 
@@ -1546,6 +1610,10 @@ public static class Compile
             else if (kind != 0)
                 throw new ModuleLoadException($"Data segment kind must be 0, 1, or 2, found {kind}.", startingOffset);
 
+            // Active data segments (kind 0 or 2) require a memory.
+            if (memory == null)
+                throw new ModuleLoadException("Active data segment cannot be used unless a memory section is defined.", startingOffset);
+
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))
             {
@@ -1562,8 +1630,9 @@ public static class Compile
                 continue;
 
             //Ensure sufficient memory is allocated, error if max is exceeded.
+            // Check the last byte (address + data.Length - 1) is within bounds. RangeCheck8 checks ptr+1 <= size.
             instanceConstructorIL.Emit(OpCodes.Ldloc, address);
-            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
+            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length - 1);
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);

@@ -17,10 +17,10 @@ public class ElemDropTests
     }
 
     /// <summary>
-    /// Tests that elem.drop throws NotSupportedException at runtime (stub).
+    /// Tests that elem.drop on a non-existent (active/dropped) segment compiles without error and runs as a no-op.
     /// </summary>
     [TestMethod]
-    public void ElemDrop_ThrowsNotSupported()
+    public void ElemDrop_NonPassiveSegmentIsNoOp()
     {
         var module = new Module();
         module.Types.Add(new WebAssemblyType { Returns = [], Parameters = [] });
@@ -35,6 +35,8 @@ public class ElemDropTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
+        // elem.drop on an unknown segment (active or already dropped) is a no-op — should compile and run fine.
+        var instance = module.ToInstance<VoidExport>();
+        instance.Exports.Test(); // Should not throw.
     }
 }

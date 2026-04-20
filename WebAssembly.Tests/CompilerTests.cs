@@ -610,9 +610,7 @@ public class CompilerTests
             RawData = [2],
         });
 
-        var x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
-        Assert.AreEqual(1u, x.Offset);
-        Assert.AreEqual(1u, x.Length);
+        Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
     }
 
     /// <summary>

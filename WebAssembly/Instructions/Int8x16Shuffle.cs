@@ -30,6 +30,9 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
 
     internal override void Compile(CompilationContext context)
     {
+        for (var i = 0; i < 16; i++)
+            if (Indices[i] >= 32)
+                throw new Runtime.CompilerException($"Lane index {Indices[i]} at position {i} is out of range for i8x16.shuffle (max 31).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.V128);
 
         // Push indices as a byte[] constant: newarr + stelem per element

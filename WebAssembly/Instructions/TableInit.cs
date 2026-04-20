@@ -1,4 +1,6 @@
 using System;
+using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -43,6 +45,33 @@ public class TableInit : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        throw new NotSupportedException("table.init is not yet supported.");
+        // Stack: dst src len → (nothing)
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+
+        if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField))
+            throw new CompilerException($"table.init: element segment {SegmentIndex} is not a passive segment or does not exist.");
+
+        if (context.FunctionTable == null)
+            throw new CompilerException("table.init: no function table is defined.");
+
+        var len = context.DeclareLocal(typeof(uint));
+        var src = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(typeof(uint));
+
+        context.Emit(OpCodes.Stloc, len);
+        context.Emit(OpCodes.Stloc, src);
+        context.Emit(OpCodes.Stloc, dst);
+
+        // this.functionTable.InitFromSegment(dst, this.segField, src, len)
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldloc, dst);
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, segField);
+        context.Emit(OpCodes.Ldloc, src);
+        context.Emit(OpCodes.Ldloc, len);
+        context.Emit(OpCodes.Call, FunctionTable.InitFromSegmentMethod.Reference);
     }
 }

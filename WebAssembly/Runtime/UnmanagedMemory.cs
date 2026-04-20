@@ -144,28 +144,31 @@ public sealed class UnmanagedMemory : IDisposable
     /// </summary>
     public unsafe void Copy(uint dst, uint src, uint length)
     {
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(src + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        if (srcEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(srcEnd, this.Size);
         if (length == 0) return;
-        var end = checked(Math.Max(dst, src) + length);
-        if (end > this.Size)
-            throw new MemoryAccessOutOfRangeException(end, this.Size);
         Buffer.MemoryCopy((void*)(this.Start + (int)src), (void*)(this.Start + (int)dst), length, length);
     }
 
     /// <summary>
     /// Copies <paramref name="length"/> bytes from <paramref name="src"/> starting at <paramref name="srcOffset"/> into this memory at <paramref name="dst"/>.
-    /// Used to implement <c>memory.init</c>. If <paramref name="src"/> is null the segment has been dropped; traps.
+    /// Used to implement <c>memory.init</c>. A null <paramref name="src"/> is treated as a dropped (length-0) segment.
     /// </summary>
     public unsafe void InitFromSegment(uint dst, byte[]? src, uint srcOffset, uint length)
     {
-        if (src == null)
-            throw new InvalidOperationException("memory.init: data segment has been dropped.");
-        if (length == 0) return;
-        var srcEnd = checked(srcOffset + length);
-        if (srcEnd > (uint)src.Length)
-            throw new MemoryAccessOutOfRangeException(srcEnd, (uint)src.Length);
+        // A dropped (null) segment is treated as length-0 for bounds checking purposes (WASM spec).
+        var srcLen = src != null ? (uint)src.Length : 0u;
         var dstEnd = checked(dst + length);
+        var srcEnd = checked(srcOffset + length);
         if (dstEnd > this.Size)
             throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        if (srcEnd > srcLen)
+            throw new MemoryAccessOutOfRangeException(srcEnd, srcLen);
+        if (length == 0) return;
         fixed (byte* pSrc = src)
             Buffer.MemoryCopy(pSrc + srcOffset, (void*)(this.Start + (int)dst), length, length);
     }
@@ -175,9 +178,9 @@ public sealed class UnmanagedMemory : IDisposable
     /// </summary>
     public unsafe void Fill(uint dst, uint value, uint length)
     {
-        if (length == 0) return;
         if (checked(dst + length) > this.Size)
             throw new MemoryAccessOutOfRangeException(checked(dst + length), this.Size);
+        if (length == 0) return;
         var p = (byte*)(this.Start + (int)dst);
         var b = (byte)(value & 0xFF);
         for (uint i = 0; i < length; i++)
