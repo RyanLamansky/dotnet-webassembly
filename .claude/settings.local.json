@@ -18,7 +18,27 @@
       "Bash(python gen_remaining_instrs.py)",
       "Bash(git stash *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(where wast2json *)",
+      "Bash(wast2json --version)",
+      "Bash(where wabt *)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/tools/**)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -L -o /tmp/wabt.zip \"https://github.com/WebAssembly/wabt/releases/download/1.0.40/wabt-1.0.40-windows-x64.zip\")",
+      "Bash(curl -sI \"https://github.com/WebAssembly/wabt/releases/latest\")",
+      "Bash(curl -sL \"https://api.github.com/repos/WebAssembly/wabt/releases/latest\")",
+      "Bash(curl -L -o /tmp/wabt.tar.gz \"https://github.com/WebAssembly/wabt/releases/download/1.0.40/wabt-1.0.40-windows-x64.tar.gz\")",
+      "Bash(tar -xzf /tmp/wabt.tar.gz -C /tmp/wabt)",
+      "Bash(/tmp/wabt/wabt-1.0.40/bin/wast2json.exe *)",
+      "Bash(curl -sL \"https://api.github.com/repos/WebAssembly/testsuite/git/trees/main?recursive=1\")",
+      "Bash(curl -sL \"https://api.github.com/repos/WebAssembly/testsuite/contents/proposals/simd\")",
+      "Bash(curl -sL \"https://api.github.com/repos/WebAssembly/testsuite/contents\")",
+      "Bash(curl -sL \"https://api.github.com/repos/WebAssembly/testsuite/commits/main\")",
+      "Bash(curl -sf \"https://raw.githubusercontent.com/WebAssembly/testsuite/51279a9d02cbba193cb25142d115388d7b83299c/bulk.wast\" -o /tmp/simd_wast/bulk.wast)",
+      "Bash(/tmp/wabt/bin/wasm-objdump.exe -d /c/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/simd_align/simd_align.44.wasm)",
+      "Bash(grep -v \"message NETSDK\\\\|warning\\\\|^$\")",
+      "Bash(dotnet run *)"
     ]
   }
 }

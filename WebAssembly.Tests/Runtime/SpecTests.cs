@@ -188,20 +188,7 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_data()
     {
-        var skips = new HashSet<uint>
-            {
-                78, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
-                83, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
-                89, // MemoryAccessOutOfRangeException: Attempted to access 1 bytes of memory starting at offset 131072, which would have exceeded the allocated memory.
-                94, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                103, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                108, // Attempted to access 1 bytes of memory starting at offset 65536, which would have exceeded the allocated memory.
-                113, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                122, // Attempted to access 1 bytes of memory starting at offset 0, which would have exceeded the allocated memory.
-                186, // No exception thrown. ModuleLoadException exception was expected.
-                194, // No exception thrown. ModuleLoadException exception was expected.
-            };
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "data"), "data.json", skips.Contains);
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "data"), "data.json");
     }
 
     /// <summary>
@@ -278,28 +265,7 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_exports()
     {
-        var skips = new HashSet<uint>
-            {
-                33, // Exception expected but not thrown.
-                37, // Exception expected but not thrown.
-                41, // Exception expected but not thrown.
-                45, // Exception expected but not thrown.
-                49, // Exception expected but not thrown.
-                82, // Exception expected but not thrown.
-                86, // Exception expected but not thrown.
-                90, // Exception expected but not thrown.
-                94, // Exception expected but not thrown.
-                98, // Exception expected but not thrown.
-                130, // Exception expected but not thrown.
-                139, // Exception expected but not thrown.
-                143, // Exception expected but not thrown.
-                147, // Exception expected but not thrown.
-                179, // Exception expected but not thrown.
-                188, // Exception expected but not thrown.
-                192, // Exception expected but not thrown.
-                196, // Exception expected but not thrown.
-            };
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "exports"), "exports.json", skips.Contains);
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "exports"), "exports.json");
     }
 
     /// <summary>
@@ -712,19 +678,13 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_memory()
     {
-        var skip = new HashSet<uint>
-            {
-                49, // No exception thrown. ModuleLoadException exception was expected.
-                53, // No exception thrown. ModuleLoadException exception was expected.
-                57, // No exception thrown. ModuleLoadException exception was expected.
-                61, // No exception thrown. ModuleLoadException exception was expected.
-                65, // No exception thrown. ModuleLoadException exception was expected.
-                69, // No exception thrown. ModuleLoadException exception was expected.
-                73, // No exception thrown. ModuleLoadException exception was expected.
-            };
+        HashSet<uint>? skip = null;
         if (!Environment.Is64BitProcess)
+        {
+            skip = new HashSet<uint>();
             skip.UnionWith(Enumerable.Range(187, 26).Select(i => (uint)i)); // Common Language Runtime detected an invalid program.
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory"), "memory.json", skip.Contains);
+        }
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "memory"), "memory.json", skip != null ? (Func<uint, bool>)skip.Contains : null);
     }
 
     /// <summary>

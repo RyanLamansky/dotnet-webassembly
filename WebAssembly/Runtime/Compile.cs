@@ -513,9 +513,20 @@ public static class Compile
                             throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
 
                         var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+                        var preMinOffset = reader.Offset;
                         memoryPagesMinimum = reader.ReadVarUInt32();
+                        if (memoryPagesMinimum > 65536)
+                            throw new ModuleLoadException($"Memory size must be at most 65536 pages (4GiB), but initial size is {memoryPagesMinimum}.", preMinOffset);
                         if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
-                            memoryPagesMaximum = Math.Min(reader.ReadVarUInt32(), uint.MaxValue / Memory.PageSize);
+                        {
+                            var preMaxOffset = reader.Offset;
+                            var rawMax = reader.ReadVarUInt32();
+                            if (rawMax > 65536)
+                                throw new ModuleLoadException($"Memory size must be at most 65536 pages (4GiB), but maximum size is {rawMax}.", preMaxOffset);
+                            if (memoryPagesMinimum > rawMax)
+                                throw new ModuleLoadException($"Memory size minimum ({memoryPagesMinimum}) must not be greater than maximum ({rawMax}).", preMaxOffset);
+                            memoryPagesMaximum = Math.Min(rawMax, uint.MaxValue / Memory.PageSize);
+                        }
                         else
                             memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
@@ -1112,10 +1123,14 @@ public static class Compile
         const MethodAttributes exportedPropertyAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final;
         var totalExports = reader.ReadVarUInt32();
         var xFunctions = new List<KeyValuePair<string, uint>>((int)Math.Min(int.MaxValue, totalExports));
+        var exportNames = new HashSet<string>();
 
         for (var i = 0; i < totalExports; i++)
         {
+            var preNameOffset = reader.Offset;
             var name = reader.ReadString(reader.ReadVarUInt32());
+            if (!exportNames.Add(name))
+                throw new ModuleLoadException($"Duplicate export name \"{name}\".", preNameOffset);
             var preKindOffset = reader.Offset;
             var kind = (ExternalKind)reader.ReadByte();
             var preIndexOffset = reader.Offset;
@@ -1626,8 +1641,28 @@ public static class Compile
 
             var data = reader.ReadBytes(reader.ReadVarUInt32());
 
+            // Spec: dst + len <= memory.size must hold even for zero-length segments.
+            // RangeCheck8 checks: memory.size > address + 1 (i.e. address + 1 byte is in range).
+            // For len == 0: check address + 0 <= memory.size, equivalent to RangeCheck8(address - 1).
+            // For len > 0:  check address + len - 1 is in range, equivalent to RangeCheck8(address + len - 1).
+            // Special case: address == 0 && len == 0 is always valid — skip check entirely.
             if (data.Length == 0)
+            {
+                // Emit a runtime check: if address > 0, verify address - 1 is in range.
+                var skipCheck = instanceConstructorIL.DefineLabel();
+                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+                instanceConstructorIL.Emit(OpCodes.Brfalse_S, skipCheck);
+
+                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+                instanceConstructorIL.Emit(OpCodes.Ldc_I4_1);
+                instanceConstructorIL.Emit(OpCodes.Sub_Ovf_Un);
+                instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                instanceConstructorIL.Emit(OpCodes.Call, context[HelperMethod.RangeCheck8, Instructions.MemoryImmediateInstruction.CreateRangeCheck]);
+                instanceConstructorIL.Emit(OpCodes.Pop);
+
+                instanceConstructorIL.MarkLabel(skipCheck);
                 continue;
+            }
 
             //Ensure sufficient memory is allocated, error if max is exceeded.
             // Check the last byte (address + data.Length - 1) is within bounds. RangeCheck8 checks ptr+1 <= size.
