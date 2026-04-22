@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -46,6 +47,15 @@ public class Float32Constant : Constant<float>
     internal sealed override void Compile(CompilationContext context)
     {
         context.Stack.Push(WebAssemblyValueType.Float32);
-        context.Emit(OpCodes.Ldc_R4, this.Value);
+        if (float.IsNaN(this.Value))
+        {
+            // ldc.r4 lets the JIT canonicalize NaN payloads; go through integer bits instead.
+            context.Emit(OpCodes.Ldc_I4, unchecked((int)FloatHelper.FloatToUInt32Bits(this.Value)));
+            context.Emit(OpCodes.Call, FloatHelper.UInt32BitsToFloatMethod);
+        }
+        else
+        {
+            context.Emit(OpCodes.Ldc_R4, this.Value);
+        }
     }
 }

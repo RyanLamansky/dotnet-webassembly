@@ -48,7 +48,9 @@
       "Bash(dotnet script -e ' *)",
       "Bash(wasm2wat \"C:/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/unreached-invalid/unreached-invalid.17.wasm\")",
       "Bash(linking\\\\.[23]\")",
-      "Bash(bash /tmp/inspect_linking.sh)"
+      "Bash(bash /tmp/inspect_linking.sh)",
+      "Bash(awk '{print $NF}')",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }

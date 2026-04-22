@@ -1,6 +1,7 @@
 ﻿using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
+using FloatHelper = WebAssembly.Runtime.FloatHelper;
 
 namespace WebAssembly.Instructions;
 
@@ -58,7 +59,21 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
         il.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         il.Emit(OpCodes.Add);
         il.Emit(OpCodes.Ldarg_1);
-        il.Emit(this.EmittedOpCode);
+        // For float types, reinterpret as integer bits before storing to preserve NaN payloads.
+        if (this.Type == WebAssemblyValueType.Float32)
+        {
+            il.Emit(OpCodes.Call, FloatHelper.FloatToUInt32BitsMethod);
+            il.Emit(OpCodes.Stind_I4);
+        }
+        else if (this.Type == WebAssemblyValueType.Float64)
+        {
+            il.Emit(OpCodes.Call, FloatHelper.DoubleToUInt64BitsMethod);
+            il.Emit(OpCodes.Stind_I8);
+        }
+        else
+        {
+            il.Emit(this.EmittedOpCode);
+        }
         il.Emit(OpCodes.Ret);
 
         return builder;

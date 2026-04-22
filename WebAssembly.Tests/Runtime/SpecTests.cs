@@ -264,27 +264,11 @@ public class SpecTests
             {
                 511, // Arithmetic operation resulted in an overflow.
                 519, // Arithmetic operation resulted in an overflow.
-                2349, // NaN bit pattern: CLR canonicalizes sNaN to qNaN
-                2350, // NaN bit pattern: CLR canonicalizes sNaN to qNaN
-                2352, // NaN bit pattern: CLR canonicalizes sNaN to qNaN
-                2354, // NaN bit pattern: CLR canonicalizes sNaN to qNaN
-                2355, // NaN bit pattern: CLR canonicalizes sNaN to qNaN (f64)
-                2356, // NaN bit pattern: CLR canonicalizes sNaN to qNaN (f64)
-                2358, // NaN bit pattern: CLR canonicalizes sNaN to qNaN (f64)
-                2360, // NaN bit pattern: CLR canonicalizes sNaN to qNaN (f64)
-                2361, // NaN bit pattern: CLR canonicalizes sNaN to qNaN
+                // CLR arithmetic on sNaN does not always quiet to qNaN as required by WASM spec:
+                2349, 2350, 2351, 2352, 2353, 2354, // f32 sNaN arithmetic
+                2355, 2356, 2357, 2358, 2359, 2360, // f64 sNaN arithmetic
+                2361, // f32 promote/demote sNaN
             };
-
-#if NET5_0_OR_GREATER
-        skips.Add(2351);
-        skips.Add(2357);
-#endif
-
-#if NET8_0_OR_GREATER
-        skips.Add(2353);
-        skips.Add(2359);
-#endif
-
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json", skips.Contains);
     }
 
@@ -292,49 +276,15 @@ public class SpecTests
     /// Runs the float_literals tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_float_literals()
-    {
-        // The CLR canonicalizes NaN bit patterns when values pass through floating-point registers,
-        // replacing arbitrary NaN payloads with the platform's canonical quiet NaN. WASM requires
-        // bit-exact NaN propagation, so tests that check specific NaN payloads (not just "any NaN")
-        // fail when the CLR has discarded the original payload.
-        var skips = new HashSet<uint>
-            {
-                109, // f32 NaN payload lost: expected 0x7F810000, got 0x7FC00000 (canonical NaN)
-                111, // f32 NaN payload lost: expected 0x7F810005, got 0x7FC00005 after CLR canonicalization
-                112, // f32 NaN payload lost
-                113, // f32 NaN payload lost
-            };
-        if (!Environment.Is64BitProcess)
-        {
-            // 32-bit JIT also loses f64 NaN payloads.
-            skips.UnionWith(
-            [
-                    141, // f64 NaN payload lost
-                    143, // f64 NaN payload lost
-                    144, // f64 NaN payload lost
-                    145, // f64 NaN payload lost
-            ]);
-        }
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_literals"), "float_literals.json", skips.Contains);
-    }
+    public void SpecTest_float_literals() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_literals"), "float_literals.json");
 
     /// <summary>
     /// Runs the float_memory tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_float_memory()
-    {
-        // The CLR canonicalizes NaN bit patterns in floating-point registers; NaN payloads written
-        // to WASM linear memory via a float store are canonicalized before the write, so the bytes
-        // read back differ from what a spec-compliant runtime would store.
-        var skips = new HashSet<uint>
-            {
-                21, // f32 NaN payload lost in store: expected 0x7F810000, got 0x7FC00000
-                73, // f32 NaN payload lost in store
-            };
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_memory"), "float_memory.json", skips.Contains);
-    }
+    public void SpecTest_float_memory() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_memory"), "float_memory.json");
 
     /// <summary>
     /// Runs the float_misc tests.

@@ -1,6 +1,7 @@
 ﻿using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
+using FloatHelper = WebAssembly.Runtime.FloatHelper;
 
 namespace WebAssembly.Instructions;
 
@@ -58,10 +59,24 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
         if (alignment != 4 && alignment != 8)
             context.Emit(OpCodes.Unaligned, alignment);
 
-        context.Emit(this.EmittedOpCode);
-        var conversion = this.ConversionOpCode;
-        if (conversion != OpCodes.Nop)
-            context.Emit(conversion);
+        // For float types, load as integer bits and reinterpret to preserve NaN payloads.
+        if (this.Type == WebAssemblyValueType.Float32)
+        {
+            context.Emit(OpCodes.Ldind_I4);
+            context.Emit(OpCodes.Call, FloatHelper.UInt32BitsToFloatMethod);
+        }
+        else if (this.Type == WebAssemblyValueType.Float64)
+        {
+            context.Emit(OpCodes.Ldind_I8);
+            context.Emit(OpCodes.Call, FloatHelper.UInt64BitsToDoubleMethod);
+        }
+        else
+        {
+            context.Emit(this.EmittedOpCode);
+            var conversion = this.ConversionOpCode;
+            if (conversion != OpCodes.Nop)
+                context.Emit(conversion);
+        }
 
         stack.Push(this.Type);
     }
