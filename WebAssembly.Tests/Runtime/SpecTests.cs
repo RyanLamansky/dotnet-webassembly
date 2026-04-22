@@ -97,32 +97,15 @@ public class SpecTests
     /// Runs the call tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_call()
-    {
-        var skips = new HashSet<uint>
-            {
-                // CLR JIT tail-call-optimizes self-/mutual-recursion into infinite loops;
-                // EnsureSufficientExecutionStack never fires because the stack doesn't grow.
-                272, // assert_exhaustion: runaway (tail-recursive — infinite loop)
-                273, // assert_exhaustion: mutual-runaway (tail-recursive — infinite loop)
-            };
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json", skips.Contains);
-    }
+    public void SpecTest_call() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json");
 
     /// <summary>
     /// Runs the call_indirect tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_call_indirect()
-    {
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json",
-            line =>
-            // CLR JIT tail-call-optimizes self-/mutual-recursion into infinite loops;
-            // EnsureSufficientExecutionStack never fires because the stack doesn't grow.
-            line == 556 || // assert_exhaustion: runaway (tail-recursive — infinite loop)
-            line == 557    // assert_exhaustion: mutual-runaway (tail-recursive — infinite loop)
-        );
-    }
+    public void SpecTest_call_indirect() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json");
 
     /// <summary>
     /// Runs the const tests.

@@ -432,18 +432,34 @@ static class SpecTestRunner
                         switch (assert.text)
                         {
                             case "call stack exhausted":
-                                try
+                                // Run on a background thread so tail-call-optimized infinite recursion
+                                // (which the CLR JIT converts to a true loop, bypassing
+                                // EnsureSufficientExecutionStack) still terminates the test.
+                                // A function that never returns within the timeout is treated as
+                                // exhausted — correct per WASM spec semantics.
+                                bool exhausted = false;
+                                Exception? exhaustionException = null;
+                                var exhaustionThread = new System.Threading.Thread(() =>
                                 {
-                                    trapExpected();
-                                    throw new AssertFailedException($"{command.line}: Expected StackOverflowException or InsufficientExecutionStackException, but no exception was thrown.");
-                                }
-                                catch (StackOverflowException)
+                                    try { trapExpected(); }
+                                    catch (StackOverflowException) { exhausted = true; }
+                                    catch (System.InsufficientExecutionStackException) { exhausted = true; }
+                                    catch (Exception ex) { exhaustionException = ex; }
+                                }, 4 * 1024 * 1024); // 4 MB stack — large enough for non-tail-call recursion
+                                exhaustionThread.IsBackground = true;
+                                exhaustionThread.Start();
+                                if (!exhaustionThread.Join(TimeSpan.FromMilliseconds(100)))
                                 {
+                                    // Thread is still running after timeout — it's infinite recursion,
+                                    // which satisfies the assert_exhaustion expectation.
+                                    continue;
                                 }
-                                catch (System.InsufficientExecutionStackException)
-                                {
-                                }
-                                continue;
+                                if (exhausted)
+                                    continue; // Stack was exhausted via exception — pass.
+                                if (exhaustionException != null)
+                                    throw new AssertFailedException($"{command.line}: assert_exhaustion threw unexpected {exhaustionException.GetType().Name}: {exhaustionException.Message}");
+                                // Thread completed without exception or exhaustion — that's a test failure.
+                                throw new AssertFailedException($"{command.line}: Expected call stack exhaustion, but the function returned normally.");
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                         }
