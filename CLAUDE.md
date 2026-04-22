@@ -51,7 +51,7 @@ Prefixed opcode families use separate enums: `MiscellaneousOpCode` (0xFC prefix:
 
 ### Test project
 
-Uses **MSTest**. Base classes (`CompilerTestBase<T>`, `ComparisonTestBase`, `ConversionTestBase`, etc.) reduce boilerplate for instruction tests. Each instruction class in `WebAssembly.Instructions/` has a corresponding `*Tests.cs` in `WebAssembly.Tests/Instructions/`. WASM spec test data lives in `WebAssembly.Tests/Runtime/SpecTestData/` — all 62 WASM spec test suites pass, including 45 SIMD suites. The only skipped tests are permanent CLR limitations (see below).
+Uses **MSTest**. Base classes (`CompilerTestBase<T>`, `ComparisonTestBase`, `ConversionTestBase`, etc.) reduce boilerplate for instruction tests. Each instruction class in `WebAssembly.Instructions/` has a corresponding `*Tests.cs` in `WebAssembly.Tests/Instructions/`. WASM spec test data lives in `WebAssembly.Tests/Runtime/SpecTestData/` — all 62 WASM spec test suites pass (712/713 tests), including 45 SIMD suites. The only permanently skipped test is `skip-stack-guard-page` which crashes the CLR test host by design.
 
 ## Code style
 
@@ -68,7 +68,7 @@ Enforced via `.editorconfig` and treated as build errors:
 - **Strong-named assembly.** The SNK file (`Properties/WebAssembly.snk`) must remain in place; do not remove it.
 - **Multi-framework targets.** The library targets `netstandard2.0`, `net8.0`, and `net9.0`. Tests target `net8.0`, `net9.0`, and `net10.0`. CI tests both Debug and Release.
 - **Flaky timeout tests:** `Loop_Compiled` and `Branch_LoopValue` occasionally time out when all three framework test runs execute concurrently (resource contention). Run frameworks sequentially to avoid this.
-- **Tail-call optimization and stack exhaustion:** The CLR JIT tail-call-optimizes simple self-recursion into a true loop, so `EnsureSufficientExecutionStack()` (emitted at the start of every compiled function) never fires. The `assert_exhaustion` tests for `runaway`/`mutual-runaway` in `call` and `call_indirect` remain permanently skipped for this reason.
+- **Tail-call optimization and stack exhaustion:** The CLR JIT tail-call-optimizes simple self-recursion into a true loop, so `EnsureSufficientExecutionStack()` never fires for those functions. The `assert_exhaustion` tests for `runaway`/`mutual-runaway` work around this by running the function on a background thread with a 100ms timeout — a function that hasn't returned within the timeout is treated as exhausted (infinite recursion = effectively exhausted per WASM spec). True stack exhaustion from deep non-tail-call recursion is caught via `InsufficientExecutionStackException`.
 
 ## CLR workarounds already in place
 
@@ -82,8 +82,6 @@ These issues were fixed and should not be regressed:
 
 ## Permanently skipped spec tests
 
-| Test | Lines | Reason |
-|------|-------|--------|
-| `call` | 272, 273 | `assert_exhaustion`: CLR JIT tail-call-optimizes `runaway`/`mutual-runaway` into infinite loops; `EnsureSufficientExecutionStack` never fires |
-| `call_indirect` | 556, 557 | Same as above |
-| `skip-stack-guard-page` | entire suite | Invoking this WASM causes an uncatchable `StackOverflowException` that crashes the CLR test host |
+| Test | Reason |
+|------|--------|
+| `skip-stack-guard-page` | Invoking this WASM causes an uncatchable `StackOverflowException` that crashes the CLR test host |
