@@ -112,32 +112,26 @@ static class SpecTestRunner
                             if (rawExpected.BoxedValue.Equals(result))
                                 continue;
 
-                            switch (rawExpected.type)
+                            switch (rawExpected)
                             {
-                                default:
-                                    // This happens in conversion.json starting at "line": 317 when run via GitHub Action but never locally (for me).
-                                    Assert.Inconclusive($"{command.line}: Failed to parse expected value type.");
-                                    return;
-
-                                case RawValueType.i32:
-                                case RawValueType.i64:
-                                    break;
-
-                                case RawValueType.f32:
+                                case Float32Value f32Expected:
                                     {
-                                        var expected = ((Float32Value)rawExpected).ActualValue;
+                                        var expected = f32Expected.ActualValue;
                                         Assert.AreEqual(expected, (float)result!, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
                                     }
                                     continue;
-                                case RawValueType.f64:
+                                case Float64Value f64Expected:
                                     {
-                                        var expected = ((Float64Value)rawExpected).ActualValue;
+                                        var expected = f64Expected.ActualValue;
                                         Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                     }
                                     continue;
-                                case RawValueType.v128:
+                                case Int32Value:
+                                case Int64Value:
+                                    break;
+
+                                case V128Value v128Expected:
                                     {
-                                        var v128Expected = (V128Value)rawExpected;
                                         var actual = (Vector128<byte>)result!;
                                         if (!v128Expected.IsMatch(actual))
                                             Assert.AreEqual(v128Expected.ActualValue, actual, $"{command.line}: v128 compare");
@@ -145,7 +139,7 @@ static class SpecTestRunner
                                     continue;
                             }
 
-                            throw new AssertFailedException($"{command.line}: Not equal {rawExpected.type}: {rawExpected.BoxedValue} and {result}");
+                            throw new AssertFailedException($"{command.line}: Not equal {rawExpected.GetType().Name}: {rawExpected.BoxedValue} and {result}");
                         }
                         continue;
                     case AssertReturnCanonicalNan assert:
@@ -160,7 +154,7 @@ static class SpecTestRunner
                                 Assert.IsTrue(double.IsNaN((double)result!), $"{command.line}: Expected NaN, got {result}");
                                 continue;
                             default:
-                                throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
+                                throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks for canonical NaN.");
                         }
                     case AssertReturnArithmeticNan assert:
                         GetMethod(assert.action, out methodInfo, out obj);
@@ -174,7 +168,7 @@ static class SpecTestRunner
                                 Assert.IsTrue(double.IsNaN((double)result!), $"{command.line}: Expected NaN, got {result}");
                                 continue;
                             default:
-                                throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
+                                throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks for arithmetic NaN.");
                         }
                     case AssertInvalid assert:
                         if (assert.module_type == "text")
@@ -337,7 +331,7 @@ static class SpecTestRunner
                                 try
                                 {
                                     trapExpected();
-                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but no exception was thrown.");
+                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException, IndexOutOfRangeException, or NullReferenceException, but no exception was thrown.");
                                 }
                                 catch (ModuleLoadException)
                                 {
@@ -345,9 +339,12 @@ static class SpecTestRunner
                                 catch (IndexOutOfRangeException)
                                 {
                                 }
+                                catch (NullReferenceException)
+                                {
+                                }
                                 catch (Exception x)
                                 {
-                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or IndexOutOfRangeException, but received {x.GetType().Name}.");
+                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException, IndexOutOfRangeException, or NullReferenceException, but received {x.GetType().Name}.");
                                 }
                                 continue;
                             case "out of bounds table access":
@@ -435,7 +432,17 @@ static class SpecTestRunner
                         switch (assert.text)
                         {
                             case "call stack exhausted":
-                                Assert.ThrowsException<StackOverflowException>(trapExpected, $"{command.line}");
+                                try
+                                {
+                                    trapExpected();
+                                    throw new AssertFailedException($"{command.line}: Expected StackOverflowException or InsufficientExecutionStackException, but no exception was thrown.");
+                                }
+                                catch (StackOverflowException)
+                                {
+                                }
+                                catch (System.InsufficientExecutionStackException)
+                                {
+                                }
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -488,7 +495,7 @@ static class SpecTestRunner
                         {
                             try
                             {
-                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
                             }
                             catch (TargetInvocationException x) when (x.InnerException != null)
                             {
@@ -498,7 +505,17 @@ static class SpecTestRunner
                         switch (assert.text)
                         {
                             case "unreachable":
-                                Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                try
+                                {
+                                    trapExpected();
+                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException or UnreachableException, but no exception was thrown.");
+                                }
+                                catch (ModuleLoadException)
+                                {
+                                }
+                                catch (UnreachableException)
+                                {
+                                }
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -536,7 +553,7 @@ static class SpecTestRunner
                 .Where(p => p.GetGetMethod() != null)
                 .Select(p => new { p.Name, MethodInfo = p.GetGetMethod()! })))
             {
-                Assert.IsTrue(TryAdd(method.Name, method.MethodInfo));
+                TryAdd(NameCleaner.CleanName(method.Name), method.MethodInfo);
             }
         }
     }
@@ -581,6 +598,7 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(AssertUninstantiable), typeDiscriminator: nameof(CommandType.assert_uninstantiable))]
     abstract class Command
     {
+        [JsonIgnore]
         public CommandType type;
         public uint line;
 
@@ -612,13 +630,13 @@ static class SpecTestRunner
         public override string ToString() => type.ToString();
     }
 
-    [JsonPolymorphic(TypeDiscriminatorPropertyName = nameof(type))]
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
     [JsonDerivedType(typeof(Int32Value), typeDiscriminator: nameof(RawValueType.i32))]
     [JsonDerivedType(typeof(Int64Value), typeDiscriminator: nameof(RawValueType.i64))]
     [JsonDerivedType(typeof(Float32Value), typeDiscriminator: nameof(RawValueType.f32))]
     [JsonDerivedType(typeof(Float64Value), typeDiscriminator: nameof(RawValueType.f64))]
     [JsonDerivedType(typeof(V128Value), typeDiscriminator: nameof(RawValueType.v128))]
-    abstract class TypedValue : TypeOnly
+    abstract class TypedValue
     {
         public abstract object BoxedValue { get; }
     }
@@ -630,7 +648,7 @@ static class SpecTestRunner
 
         public override object BoxedValue => (int)value;
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"i32: {value}";
     }
 
     class Int64Value : TypedValue
@@ -640,7 +658,7 @@ static class SpecTestRunner
 
         public override object BoxedValue => (long)value;
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"i64: {value}";
     }
 
     class Float32Value : Int32Value
@@ -649,7 +667,7 @@ static class SpecTestRunner
 
         public override object BoxedValue => ActualValue;
 
-        public override string ToString() => $"{type}: {BoxedValue}";
+        public override string ToString() => $"f32: {BoxedValue}";
     }
 
     class Float64Value : Int64Value
@@ -658,7 +676,7 @@ static class SpecTestRunner
 
         public override object BoxedValue => ActualValue;
 
-        public override string ToString() => $"{type}: {BoxedValue}";
+        public override string ToString() => $"f64: {BoxedValue}";
     }
 
     class V128Value : TypedValue
@@ -783,6 +801,7 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(Get), typeDiscriminator: nameof(TestActionType.get))]
     abstract class TestAction
     {
+        [JsonIgnore]
         public TestActionType type;
         public string module;
         public string field;

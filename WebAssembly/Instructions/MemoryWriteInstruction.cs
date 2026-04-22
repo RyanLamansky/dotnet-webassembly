@@ -23,6 +23,7 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        this.ValidateAlignment();
         context.PopStackNoReturn(this.OpCode, this.Type, WebAssemblyValueType.Int32);
 
         Int32Constant.Emit(context, (int)this.Offset);

@@ -38,10 +38,15 @@ public class If : BlockTypeInstruction
     {
         context.PopStackNoReturn(OpCode.If, WebAssemblyValueType.Int32);
 
-        var label = context.DefineLabel();
-        context.Labels.Add(checked((uint)context.Depth.Count), label);
+        // exitLabel: where br/end should jump (after the if-else construct).
+        // falseLabel: where brfalse jumps (else-entry, or same as exitLabel if no else).
+        var exitLabel = context.DefineLabel();
+        var falseLabel = context.DefineLabel();
+        context.Labels.Add(checked((uint)context.Depth.Count), exitLabel);
         context.Depth.Push(this);
-        context.BlockContexts.Add(context.Depth.Count, new BlockContext(context.Stack.Count));
-        context.Emit(OpCodes.Brfalse, label);
+        var blockCtx = new BlockContext(context.Stack.Count);
+        blockCtx.IfFalseLabel = falseLabel;
+        context.BlockContexts.Add(context.Depth.Count, blockCtx);
+        context.Emit(OpCodes.Brfalse, falseLabel);
     }
 }

@@ -28,32 +28,83 @@ public class End : SimpleInstruction
 
         if (context.Depth.Count == 1)
         {
-            context.MarkLabel(context.Labels[0]);
-
+            var functionBlockCtx = context.BlockContexts[1];
             var returns = context.CheckedSignature.RawReturnTypes;
             var returnsLength = returns.Length;
+
             if (returnsLength < stack.Count || (returnsLength > stack.Count && !context.IsUnreachable))
                 throw new StackSizeIncorrectException(OpCode.End, returnsLength, stack.Count);
 
             if (returnsLength == 1)
             {
+                // Validate type (throws on mismatch even in unreachable mode for correctness).
                 var popped = context.PopStack(OpCode.End, returns[0]);
-                if (!popped.HasValue)
+                if (!popped.HasValue && !context.IsUnreachable)
                     throw new OpCodeCompilationException(OpCode.End, "Cannot determine stack type.");
+
+                // Use result-local pattern so br-to-function-block and fall-through both work:
+                // fall-through stlocs here; branch already stloc'd; both ldloc after markLabel.
+                if (!context.IsUnreachable)
+                {
+                    var resultLocal = functionBlockCtx.ResultLocal
+                        ?? context.GetOrCreateResultLocal(0, returns[0]);
+                    context.Emit(OpCodes.Stloc, resultLocal);
+                    context.MarkLabel(context.Labels[0]);
+                    context.Emit(OpCodes.Ldloc, resultLocal);
+                }
+                else if (functionBlockCtx.ResultLocal != null)
+                {
+                    // A br targeted the function outer block; reload its stashed result.
+                    context.MarkLabel(context.Labels[0]);
+                    context.Emit(OpCodes.Ldloc, functionBlockCtx.ResultLocal);
+                }
+                else
+                {
+                    // All paths return via `return` instruction; nothing to emit at label.
+                    context.MarkLabel(context.Labels[0]);
+                }
             }
-            else if (returnsLength > 1)
+            else
             {
-                Return.EmitMultiValueReturn(context, returns);
+                if (returnsLength > 1)
+                    Return.EmitMultiValueReturn(context, returns);
+                context.MarkLabel(context.Labels[0]);
             }
 
             context.Emit(OpCodes.Ret);
         }
         else
         {
+            var blockContext = context.BlockContexts[context.Depth.Count];
             if (blockType.TryToValueType(out var expectedType))
             {
                 context.ValidateStack(OpCode.End, expectedType);
+
+                // Stash fall-through value to result local (so the label target has an empty IL stack),
+                // then reload it after marking the label. The same local is used when a br/br_if jumps
+                // to this block, so both paths converge correctly.
+                // Only allocate if reachable (fall-through produces a value); if unreachable, only use
+                // an already-allocated local (set by a prior br to this block).
+                if (!context.IsUnreachable)
+                {
+                    var resultLocal = context.GetOrCreateResultLocal(0, expectedType);
+                    context.Emit(OpCodes.Stloc, resultLocal);
+                }
             }
+            else if (stack.Count != blockContext.InitialStackSize && (!context.IsUnreachable || stack.Count > blockContext.InitialStackSize))
+            {
+                throw new StackSizeIncorrectException(OpCode.End, blockContext.InitialStackSize, stack.Count);
+            }
+
+            // For if-without-else: validate it's void (typed if requires else), then mark the false-branch.
+            if (blockContext.IfFalseLabel.HasValue)
+            {
+                if (blockType.TryToValueType(out _))
+                    throw new StackSizeIncorrectException(OpCode.End, blockContext.InitialStackSize + 1, blockContext.InitialStackSize);
+                context.MarkLabel(blockContext.IfFalseLabel.Value);
+            }
+
+            var wasUnreachable = context.IsUnreachable;
 
             context.BlockContexts.Remove(context.Depth.Count);
             context.Depth.PopNoReturn();
@@ -61,10 +112,33 @@ public class End : SimpleInstruction
             var depth = checked((uint)context.Depth.Count);
             var label = context.Labels[depth];
 
-            if (!context.LoopLabels.Remove(label)) //Loop labels are marked where defined.
+            var isLoopLabel = context.LoopLabels.Remove(label);
+            if (!isLoopLabel)
                 context.MarkLabel(label);
 
             context.Labels.Remove(depth);
+
+            // A non-loop block exit label is a forward branch target — code is reachable from here.
+            // When the block was unreachable, reset the tracking stack (unreachable code may have left
+            // stale values) to represent the correct state: parent's initial items plus the block result.
+            // Only applies when the parent block context still exists (SectionData removes it manually).
+            if (!isLoopLabel && context.BlockContexts.TryGetValue(context.Depth.Count, out _))
+            {
+                context.MarkReachable();
+                if (wasUnreachable)
+                {
+                    while (context.Stack.Count > blockContext.InitialStackSize)
+                        context.Stack.Pop();
+                    // If block has a typed result, push it on the tracking stack.
+                    if (blockType.TryToValueType(out var blockResultType))
+                        context.Stack.Push(blockResultType);
+                }
+            }
+
+            // Reload the result value after the label (both fall-through and branch paths arrive here).
+            // The tracking stack already has the type from ValidateStack above; we only emit IL.
+            if (blockContext.ResultLocal != null)
+                context.Emit(OpCodes.Ldloc, blockContext.ResultLocal);
         }
     }
 }

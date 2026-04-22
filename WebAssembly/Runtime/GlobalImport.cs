@@ -116,7 +116,7 @@ public class GlobalImport : RuntimeImport
 
         if (setter != null)
         {
-            if (setter.Method.ReturnType != null)
+            if (setter.Method.ReturnType != typeof(void))
                 throw new ArgumentException("setter cannot have a return type.", nameof(setter));
 
             var sparms = setter.Method.GetParameters();

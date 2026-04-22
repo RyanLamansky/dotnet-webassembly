@@ -70,8 +70,35 @@ public class Branch : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
-        if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType))
-            context.ValidateStack(this.OpCode, expectedType);
+        var targetDepthKey = context.Depth.Count - checked((int)this.Index);
+
+        if (blockType.OpCode != OpCode.Loop && !context.IsUnreachable)
+        {
+            var targetBlockCtx = context.BlockContexts[targetDepthKey];
+            if (blockType.Type.TryToValueType(out var expectedType))
+            {
+                context.ValidateStack(this.OpCode, expectedType);
+                var resultLocal = context.GetOrCreateResultLocal(checked((int)this.Index), expectedType);
+                // After ValidateStack: tracking stack = [..., intermediates..., T]
+                // Stash T, pop intermediates, then branch.
+                context.Emit(OpCodes.Stloc, resultLocal);
+                var intermediateCount = context.Stack.Count - targetBlockCtx.InitialStackSize - 1;
+                for (var i = 0; i < intermediateCount; i++)
+                    context.Emit(OpCodes.Pop);
+            }
+            else
+            {
+                // Void block: discard all values pushed inside this block before branching.
+                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                for (var i = 0; i < discardCount; i++)
+                    context.Emit(OpCodes.Pop);
+            }
+        }
+        else if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType2))
+        {
+            // In unreachable mode: still validate stack (for type checking), no IL emitted.
+            context.ValidateStack(this.OpCode, expectedType2);
+        }
 
         context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
 

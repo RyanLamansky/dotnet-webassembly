@@ -26,7 +26,7 @@ public class Int64TruncateFloat32Unsigned : SimpleInstruction
 
         context.PopStackNoReturn(OpCode.Int64TruncateFloat32Unsigned, WebAssemblyValueType.Float32);
 
-        context.Emit(OpCodes.Conv_Ovf_I8_Un);
+        context.Emit(OpCodes.Conv_Ovf_U8);
 
         stack.Push(WebAssemblyValueType.Int64);
     }

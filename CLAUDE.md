@@ -60,3 +60,4 @@ Enforced via `.editorconfig` and treated as build errors:
 - **WASM 1.0 only.** Post-1.0 features (SIMD, threads, multi-memory, etc.) are not supported and will fail at read time.
 - **Strong-named assembly.** The SNK file (`Properties/WebAssembly.snk`) must remain in place; do not remove it.
 - **Multi-framework targets.** The library targets `netstandard2.0`, `net8.0`, and `net9.0`. Tests target `net8.0`, `net9.0`, and `net10.0`. CI tests both Debug and Release.
+- **CLR NaN canonicalization:** The CLR replaces arbitrary NaN bit payloads with the platform's canonical quiet NaN when values pass through floating-point registers. WASM requires bit-exact NaN propagation, so a small number of `float_literals` and `float_memory` spec tests are permanently skipped. This is a CLR limitation, not a bug in this library. Tests involving `nan:arithmetic` or non-canonical NaN payloads should be skipped rather than fixed.

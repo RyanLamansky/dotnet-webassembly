@@ -66,10 +66,72 @@ public class BranchIf : Instruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
-        if (blockType.Type.TryToValueType(out var expectedType))
+        var label = context.Labels[checked((uint)context.Depth.Count) - this.Index - 1];
+
+        if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType))
+        {
             context.ValidateStack(this.OpCode, expectedType);
 
-        context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
+            if (!context.IsUnreachable)
+            {
+                var targetBlockCtx = context.BlockContexts[context.Depth.Count - checked((int)this.Index)];
+                var resultLocal = context.GetOrCreateResultLocal(checked((int)this.Index), expectedType);
+                var condLocal = context.DeclareLocal(typeof(int));
+                // IL stack: [..., intermediates..., value, cond]
+                // Save cond, dup value into result local (for taken path), reload cond.
+                // On taken: pop value + intermediates, then br label (empty IL stack at label).
+                // On not-taken: leave [..., intermediates..., value] on stack.
+                var skipTaken = context.DefineLabel();
+                var intermediateCount = context.Stack.Count - targetBlockCtx.InitialStackSize - 1;
+                context.Emit(OpCodes.Stloc, condLocal);
+                context.Emit(OpCodes.Dup);
+                context.Emit(OpCodes.Stloc, resultLocal);
+                context.Emit(OpCodes.Ldloc, condLocal);
+                context.Emit(OpCodes.Brfalse, skipTaken);
+                context.Emit(OpCodes.Pop); // pop the duplicated value
+                for (var i = 0; i < intermediateCount; i++)
+                    context.Emit(OpCodes.Pop);
+                context.Emit(OpCodes.Br, label);
+                context.MarkLabel(skipTaken);
+            }
+            else
+            {
+                context.Emit(OpCodes.Brtrue, label);
+            }
+        }
+        else if (!context.IsUnreachable)
+        {
+            // Void block: on taken path, discard all intermediate values before jumping.
+            var targetBlockCtx = context.BlockContexts[context.Depth.Count - checked((int)this.Index)];
+            var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
+            if (discardCount > 0)
+            {
+                // Need to conditionally discard intermediates before jumping.
+                var skipTaken = context.DefineLabel();
+                var condLocal = context.DeclareLocal(typeof(int));
+                context.Emit(OpCodes.Stloc, condLocal);         // save cond; stack = [..., intermediates...]
+                context.Emit(OpCodes.Ldloc, condLocal);
+                context.Emit(OpCodes.Brfalse, skipTaken);       // if false, skip the cleanup
+                for (var i = 0; i < discardCount; i++)
+                    context.Emit(OpCodes.Pop);                  // discard intermediates
+                context.Emit(OpCodes.Br, label);                // jump with empty stack
+                context.MarkLabel(skipTaken);                   // not-taken: reload cond... but we consumed it
+                // Restore stack state for not-taken: push a dummy 0 back? No — cond was already consumed.
+                // Actually: not-taken just continues with [..., intermediates...] on stack. ✓
+                // We stored cond to local but for the not-taken path, cond is consumed (PopStackNoReturn already did it in tracking).
+            }
+            else
+            {
+                context.Emit(OpCodes.Brtrue, label);
+            }
+        }
+        else
+        {
+            context.Emit(OpCodes.Brtrue, label);
+        }
+
+        // Code following br_if is conditionally reachable even if we were in unreachable mode.
+        context.MarkReachable();
     }
 
     /// <summary>

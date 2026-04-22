@@ -100,6 +100,17 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
+    private protected void ValidateAlignment()
+    {
+        // Alignment must not be larger than the natural alignment of the type.
+        // Flags encodes log2(alignment); natural log2 alignment = log2(Size).
+        // Use the raw uint value — the Options enum only covers bits 0-1, but the binary may encode larger values.
+        var flagAlignment = (uint)this.Flags;
+        var naturalAlignment = this.Size switch { 1 => 0u, 2 => 1u, 4 => 2u, _ => 3u };
+        if (flagAlignment > naturalAlignment)
+            throw new CompilerException($"Alignment {1u << (int)flagAlignment} is larger than natural alignment {this.Size} for {this.OpCode}.");
+    }
+
     private protected HelperMethod RangeCheckHelper => this.Size switch
     {
         1 => HelperMethod.RangeCheck8,

@@ -39,4 +39,26 @@ public class ImportException : RuntimeException
 
         il.MarkLabel(typeCheckPassed);
     }
+
+    /// <summary>Validates that the provided table's limits satisfy the module's requirements.</summary>
+    public static void ValidateTableLimits(FunctionTable table, uint requiredMin, uint requiredMax)
+    {
+        if (table.Initial < requiredMin || table.Maximum.GetValueOrDefault(uint.MaxValue) > requiredMax)
+            throw new ImportException("Incompatible import type: table limits do not match.");
+    }
+
+    /// <summary>Validates that the provided memory's limits satisfy the module's requirements.</summary>
+    public static void ValidateMemoryLimits(UnmanagedMemory memory, uint requiredMin, uint requiredMax)
+    {
+        if (memory.Minimum < requiredMin || memory.Maximum > requiredMax)
+            throw new ImportException("Incompatible import type: memory limits do not match.");
+    }
+
+    /// <summary>Validates that the provided global's mutability matches what the module requires.</summary>
+    public static void ValidateGlobalMutability(GlobalImport global, bool requiredMutable)
+    {
+        var isMutable = global.Setter != null;
+        if (isMutable != requiredMutable)
+            throw new ImportException($"Incompatible import type: global mutability mismatch (required {(requiredMutable ? "mutable" : "immutable")}, got {(isMutable ? "mutable" : "immutable")}).");
+    }
 }

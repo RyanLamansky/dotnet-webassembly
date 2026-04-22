@@ -204,22 +204,22 @@ public class GlobalSetTests
         /// <summary>
         /// Receives a value.
         /// </summary>
-        public abstract void TestInt32(int value);
+        public abstract void SetTestInt32(int value);
 
         /// <summary>
         /// Receives a value.
         /// </summary>
-        public abstract void TestInt64(long value);
+        public abstract void SetTestInt64(long value);
 
         /// <summary>
         /// Receives a value.
         /// </summary>
-        public abstract void TestFloat32(float value);
+        public abstract void SetTestFloat32(float value);
 
         /// <summary>
         /// Receives a value.
         /// </summary>
-        public abstract void TestFloat64(double value);
+        public abstract void SetTestFloat64(double value);
 
         /// <summary>
         /// Returns a value.
@@ -363,42 +363,42 @@ public class GlobalSetTests
         module.Exports.Add(new Export
         {
             Index = 0,
-            Name = nameof(TestBase.TestInt32)
+            Name = nameof(RoundTripTestBase.SetTestInt32)
         });
         module.Exports.Add(new Export
         {
             Index = 1,
-            Name = nameof(TestBase.TestInt64)
+            Name = nameof(RoundTripTestBase.SetTestInt64)
         });
         module.Exports.Add(new Export
         {
             Index = 2,
-            Name = nameof(TestBase.TestFloat32)
+            Name = nameof(RoundTripTestBase.SetTestFloat32)
         });
         module.Exports.Add(new Export
         {
             Index = 3,
-            Name = nameof(TestBase.TestFloat64)
+            Name = nameof(RoundTripTestBase.SetTestFloat64)
         });
         module.Exports.Add(new Export
         {
             Index = 4,
-            Name = nameof(TestBase.TestInt32)
+            Name = nameof(RoundTripTestBase.TestInt32)
         });
         module.Exports.Add(new Export
         {
             Index = 5,
-            Name = nameof(TestBase.TestInt64)
+            Name = nameof(RoundTripTestBase.TestInt64)
         });
         module.Exports.Add(new Export
         {
             Index = 6,
-            Name = nameof(TestBase.TestFloat32)
+            Name = nameof(RoundTripTestBase.TestFloat32)
         });
         module.Exports.Add(new Export
         {
             Index = 7,
-            Name = nameof(TestBase.TestFloat64)
+            Name = nameof(RoundTripTestBase.TestFloat64)
         });
         module.Codes.Add(new FunctionBody
         {
@@ -472,10 +472,10 @@ public class GlobalSetTests
         var compiled = module.ToInstance<RoundTripTestBase>();
 
         var exports = compiled.Exports;
-        exports.TestInt32(4);
-        exports.TestInt64(5);
-        exports.TestFloat32(6);
-        exports.TestFloat64(7);
+        exports.SetTestInt32(4);
+        exports.SetTestInt64(5);
+        exports.SetTestFloat32(6);
+        exports.SetTestFloat64(7);
 
         Assert.AreEqual(4, exports.TestInt32());
         Assert.AreEqual(5, exports.TestInt64());

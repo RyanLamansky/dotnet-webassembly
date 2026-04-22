@@ -25,6 +25,7 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
     {
         var stack = context.Stack;
 
+        this.ValidateAlignment();
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
         if (this.Offset != 0)

@@ -340,6 +340,19 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     private BlockContext CurrentBlockContext => this.BlockContexts[this.Depth.Count];
 
     /// <summary>
+    /// Returns the result-carrying local for the block at the given depth (ancestor index from current).
+    /// The local is allocated on first access.
+    /// </summary>
+    public LocalBuilder GetOrCreateResultLocal(int depthIndex, WebAssemblyValueType valueType)
+    {
+        var targetDepthKey = this.Depth.Count - depthIndex;
+        var blockCtx = this.BlockContexts[targetDepthKey];
+        if (blockCtx.ResultLocal == null)
+            blockCtx.ResultLocal = this.DeclareLocal(valueType.ToSystemType());
+        return blockCtx.ResultLocal;
+    }
+
+    /// <summary>
     /// Marks the subsequent instructions as unreachable.
     /// </summary>
     public void MarkUnreachable(bool functionWide = false)

@@ -27,14 +27,19 @@ public class Else : SimpleInstruction
         if (blockType.TryToValueType(out var expectedType))
         {
             context.PopStackNoReturn(OpCode.Else, expectedType);
+            // Store then-block result before jumping over the else block.
+            if (!context.IsUnreachable)
+                context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(0, expectedType));
         }
 
-        var afterElse = context.DefineLabel();
-        context.Emit(OpCodes.Br, afterElse);
-
+        // Jump over the else block to the exit label (Labels[target] is already the exit label).
         var target = checked((uint)context.Depth.Count) - 1;
-        context.MarkLabel(context.Labels[target]);
-        context.Labels[target] = afterElse;
+        context.Emit(OpCodes.Br, context.Labels[target]);
+
+        // Mark where the false-branch (brfalse from If) lands.
+        var blockCtx = context.BlockContexts[context.Depth.Count];
+        context.MarkLabel(blockCtx.IfFalseLabel!.Value);
+        blockCtx.IfFalseLabel = null;
 
         //Else-block is reachable even if the then-block is unreachable
         context.MarkReachable();

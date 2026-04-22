@@ -38,7 +38,17 @@
       "Bash(curl -sf \"https://raw.githubusercontent.com/WebAssembly/testsuite/51279a9d02cbba193cb25142d115388d7b83299c/bulk.wast\" -o /tmp/simd_wast/bulk.wast)",
       "Bash(/tmp/wabt/bin/wasm-objdump.exe -d /c/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/simd_align/simd_align.44.wasm)",
       "Bash(grep -v \"message NETSDK\\\\|warning\\\\|^$\")",
-      "Bash(dotnet run *)"
+      "Bash(dotnet run *)",
+      "Bash(xxd \"WebAssembly.Tests\\\\Runtime\\\\SpecTestData\\\\traps\\\\traps.3.wasm\")",
+      "Bash(xxd *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(wasm-dis unreached-invalid.__TRACKED_VAR__.wasm)",
+      "Bash(wasm-objdump -d \"C:/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/labels/labels.0.wasm\")",
+      "Bash(wasm2wat \"C:/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/labels/labels.0.wasm\")",
+      "Bash(dotnet script -e ' *)",
+      "Bash(wasm2wat \"C:/Users/mreed/source/repos/dotnet-webassembly/WebAssembly.Tests/Runtime/SpecTestData/unreached-invalid/unreached-invalid.17.wasm\")",
+      "Bash(linking\\\\.[23]\")",
+      "Bash(bash /tmp/inspect_linking.sh)"
     ]
   }
 }

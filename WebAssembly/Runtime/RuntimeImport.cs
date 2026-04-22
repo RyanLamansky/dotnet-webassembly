@@ -64,16 +64,13 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Table:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
-
-                        var getter = property.GetGetMethod();
+                        // The attribute is placed on the getter method; handle both getter method and property.
+                        MethodInfo? getter = member as MethodInfo ?? (member as PropertyInfo)?.GetGetMethod();
                         if (getter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                            continue;
 
                         if (getter.Invoke(exports, []) is not FunctionTable table)
-                            continue; // TODO: Throw an exception for missing result.
+                            continue;
 
                         yield return (native.Name, table);
                     }
@@ -81,13 +78,9 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Memory:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
-
-                        var getter = property.GetGetMethod();
+                        MethodInfo? getter = member as MethodInfo ?? (member as PropertyInfo)?.GetGetMethod();
                         if (getter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                            continue;
 
                         yield return (
                             native.Name,
@@ -98,15 +91,14 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Global:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
-
-                        var rawGetter = property.GetGetMethod();
+                        MethodInfo? rawGetter = member as MethodInfo ?? (member as PropertyInfo)?.GetGetMethod();
                         if (rawGetter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                            continue;
 
-                        var rawSetter = property.GetSetMethod();
+                        // For getter-only exports, there's no setter on the method itself; look up the property.
+                        var property = member as PropertyInfo ??
+                            exports.GetType().GetProperty(rawGetter.Name.StartsWith("get_", StringComparison.Ordinal) ? rawGetter.Name.Substring(4) : rawGetter.Name);
+                        var rawSetter = property?.GetSetMethod();
 
                         var getter = GetDelegate(rawGetter);
                         var setter = rawSetter != null ? GetDelegate(rawSetter) : null;

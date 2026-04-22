@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace WebAssembly.Instructions;
 
@@ -19,10 +19,10 @@ public class Int32TruncateFloat64UnsignedTests
             new Int32TruncateFloat64Unsigned(),
             new End());
 
-        foreach (var value in new[] { 0, 1.5, -1.5 })
-            Assert.AreEqual((int)value, exports.Test(value));
+        foreach (var value in new[] { 0, 1.5 })
+            Assert.AreEqual((int)(uint)value, exports.Test(value));
 
-        const double exceptional = 123445678901234.0;
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(exceptional));
+        Assert.ThrowsException<System.OverflowException>(() => exports.Test(-1.5));
+        Assert.ThrowsException<System.OverflowException>(() => exports.Test(123445678901234.0));
     }
 }

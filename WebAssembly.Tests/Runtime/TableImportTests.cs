@@ -178,7 +178,7 @@ public class TableImportTests
             Kind = ExternalKind.Table,
         });
 
-        var table = new FunctionTable(0);
+        var table = new FunctionTable(1);
 
         var exportedTable = module.ToInstance<ExportedTable>(
             new ImportDictionary {
@@ -337,8 +337,8 @@ public class TableImportTests
             ],
         });
 
-        var table = new FunctionTable(0, 1);
-        Assert.AreEqual(0u, table.Length);
+        var table = new FunctionTable(1, 1);
+        Assert.AreEqual(1u, table.Length);
 
         var compiled = module.ToInstance<CompilerTestBase<int>>(
             new ImportDictionary {
