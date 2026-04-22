@@ -101,9 +101,10 @@ public class SpecTests
     {
         var skips = new HashSet<uint>
             {
-                272, // Infinite loop
-                273, // Infinite loop
-                289, // IndexOutOfRangeException (expected to fail, but a better exception needed)
+                // CLR JIT tail-call-optimizes self-/mutual-recursion into infinite loops;
+                // EnsureSufficientExecutionStack never fires because the stack doesn't grow.
+                272, // assert_exhaustion: runaway (tail-recursive — infinite loop)
+                273, // assert_exhaustion: mutual-runaway (tail-recursive — infinite loop)
             };
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call"), "call.json", skips.Contains);
     }
@@ -116,9 +117,10 @@ public class SpecTests
     {
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "call_indirect"), "call_indirect.json",
             line =>
-            line == 556 || // Infinite loop
-            (line >= 557 && line <= 589) || // No method source
-            line == 940 // unknown function 0 doesn't have a test procedure set up.
+            // CLR JIT tail-call-optimizes self-/mutual-recursion into infinite loops;
+            // EnsureSufficientExecutionStack never fires because the stack doesn't grow.
+            line == 556 || // assert_exhaustion: runaway (tail-recursive — infinite loop)
+            line == 557    // assert_exhaustion: mutual-runaway (tail-recursive — infinite loop)
         );
     }
 
@@ -258,19 +260,8 @@ public class SpecTests
     /// Runs the float_exprs tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_float_exprs()
-    {
-        var skips = new HashSet<uint>
-            {
-                511, // Arithmetic operation resulted in an overflow.
-                519, // Arithmetic operation resulted in an overflow.
-                // CLR arithmetic on sNaN does not always quiet to qNaN as required by WASM spec:
-                2349, 2350, 2351, 2352, 2353, 2354, // f32 sNaN arithmetic
-                2355, 2356, 2357, 2358, 2359, 2360, // f64 sNaN arithmetic
-                2361, // f32 promote/demote sNaN
-            };
-        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json", skips.Contains);
-    }
+    public void SpecTest_float_exprs() =>
+        SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "float_exprs"), "float_exprs.json");
 
     /// <summary>
     /// Runs the float_literals tests.
@@ -370,27 +361,15 @@ public class SpecTests
     /// Runs the i32 tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_i32()
-    {
-        var skip = new HashSet<uint>
-            {
-               106, // Arithmetic operation resulted in an overflow.
-            };
-        SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json", skip.Contains);
-    }
+    public void SpecTest_i32() =>
+        SpecTestRunner.Run<IntegerMath<int>>(Path.Combine("Runtime", "SpecTestData", "i32"), "i32.json");
 
     /// <summary>
     /// Runs the i64 tests.
     /// </summary>
     [TestMethod]
-    public void SpecTest_i64()
-    {
-        var skip = new HashSet<uint>
-            {
-               106, // Arithmetic operation resulted in an overflow.
-            };
-        SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json", skip.Contains);
-    }
+    public void SpecTest_i64() =>
+        SpecTestRunner.Run<IntegerMath<long>>(Path.Combine("Runtime", "SpecTestData", "i64"), "i64.json");
 
     /// <summary>
     /// Runs the if tests.
@@ -737,15 +716,8 @@ public class SpecTests
 
     /// <summary>Runs the simd_f32x4 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4()
-    {
-#if NET9_0_OR_GREATER
+    public void SpecTest_simd_f32x4() =>
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f32x4"), "simd_f32x4.json");
-#else
-        // SIMD min/max NaN and negative-zero semantics differ from the spec on .NET 8.
-        Assert.Inconclusive("simd_f32x4 min/max tests require .NET 9+ for spec-compliant NaN and -0 semantics.");
-#endif
-    }
 
     /// <summary>Runs the simd_f32x4_arith tests.</summary>
     [TestMethod]
@@ -769,15 +741,8 @@ public class SpecTests
 
     /// <summary>Runs the simd_f64x2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2()
-    {
-#if NET9_0_OR_GREATER
+    public void SpecTest_simd_f64x2() =>
         SpecTestRunner.Run(Path.Combine("Runtime", "SpecTestData", "simd_f64x2"), "simd_f64x2.json");
-#else
-        // SIMD min/max NaN and negative-zero semantics differ from the spec on .NET 8.
-        Assert.Inconclusive("simd_f64x2 min/max tests require .NET 9+ for spec-compliant NaN and -0 semantics.");
-#endif
-    }
 
     /// <summary>Runs the simd_f64x2_arith tests.</summary>
     [TestMethod]

@@ -43,4 +43,38 @@ public static class FloatHelper
     /// <summary>Reinterprets the bit pattern of a <see cref="double"/> as a <see cref="ulong"/>, preserving NaN payloads.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong DoubleToUInt64Bits(double value) => Unsafe.As<double, ulong>(ref value);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CanonicalizeFloat32Method = new(
+        () => typeof(FloatHelper).GetMethod(nameof(CanonicalizeFloat32), BindingFlags.Public | BindingFlags.Static)!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CanonicalizeFloat64Method = new(
+        () => typeof(FloatHelper).GetMethod(nameof(CanonicalizeFloat64), BindingFlags.Public | BindingFlags.Static)!);
+
+    // Canonical qNaN bit patterns per WASM spec
+    private const uint CanonicalFloat32NaN = 0x7FC00000u;
+    private const ulong CanonicalFloat64NaN = 0x7FF8000000000000UL;
+
+    /// <summary>Returns the canonical qNaN if <paramref name="value"/> is NaN; otherwise returns <paramref name="value"/> unchanged.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float CanonicalizeFloat32(float value)
+    {
+        if (float.IsNaN(value))
+        {
+            var canonical = CanonicalFloat32NaN;
+            return Unsafe.As<uint, float>(ref canonical);
+        }
+        return value;
+    }
+
+    /// <summary>Returns the canonical qNaN if <paramref name="value"/> is NaN; otherwise returns <paramref name="value"/> unchanged.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static double CanonicalizeFloat64(double value)
+    {
+        if (double.IsNaN(value))
+        {
+            var canonical = CanonicalFloat64NaN;
+            return Unsafe.As<ulong, double>(ref canonical);
+        }
+        return value;
+    }
 }

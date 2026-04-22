@@ -49,4 +49,6 @@ enum HelperMethod
     Int64TruncateSaturateFloat32Unsigned,
     Int64TruncateSaturateFloat64Signed,
     Int64TruncateSaturateFloat64Unsigned,
+    Int32RemainderSigned,
+    Int64RemainderSigned,
 }

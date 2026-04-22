@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -27,6 +28,7 @@ public class Float64PromoteFloat32 : SimpleInstruction
         context.PopStackNoReturn(OpCode.Float64PromoteFloat32, WebAssemblyValueType.Float32);
 
         context.Emit(OpCodes.Conv_R8);
+        context.Emit(OpCodes.Call, FloatHelper.CanonicalizeFloat64Method);
 
         stack.Push(WebAssemblyValueType.Float64);
     }

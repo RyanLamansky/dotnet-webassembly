@@ -1,4 +1,5 @@
-﻿using WebAssembly.Runtime.Compilation;
+﻿using WebAssembly.Runtime;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
 
@@ -15,7 +16,7 @@ public abstract class ValueTwoToOneInstruction : SimpleInstruction
 
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
-    internal sealed override void Compile(CompilationContext context)
+    internal override void Compile(CompilationContext context)
     {
         var stack = context.Stack;
 
@@ -23,5 +24,12 @@ public abstract class ValueTwoToOneInstruction : SimpleInstruction
         stack.Push(this.ValueType);
 
         context.Emit(this.EmittedOpCode);
+
+        // WASM spec: arithmetic producing NaN must yield the canonical qNaN.
+        // The CLR may propagate non-canonical payloads from sNaN inputs.
+        if (this.ValueType == WebAssemblyValueType.Float32)
+            context.Emit(System.Reflection.Emit.OpCodes.Call, FloatHelper.CanonicalizeFloat32Method);
+        else if (this.ValueType == WebAssemblyValueType.Float64)
+            context.Emit(System.Reflection.Emit.OpCodes.Call, FloatHelper.CanonicalizeFloat64Method);
     }
 }

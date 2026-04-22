@@ -50,7 +50,12 @@
       "Bash(linking\\\\.[23]\")",
       "Bash(bash /tmp/inspect_linking.sh)",
       "Bash(awk '{print $NF}')",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(taskkill /F /IM testhost.exe)",
+      "Bash(taskkill //F //IM testhost.exe)",
+      "Bash(tasklist)",
+      "Bash(tasklist *)",
+      "Bash(taskkill //F //IM dotnet.exe //FI \"MEMUSAGE gt 100000\")"
     ]
   }
 }

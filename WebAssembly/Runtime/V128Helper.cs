@@ -550,10 +550,46 @@ public static class V128Helper
     public static Vector128<byte> Float32x4Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() * b.AsSingle()).AsByte();
     /// <summary>f32x4 divide.</summary>
     public static Vector128<byte> Float32x4Div(Vector128<byte> a, Vector128<byte> b) => (a.AsSingle() / b.AsSingle()).AsByte();
-    /// <summary>f32x4 IEEE min (propagates NaN).</summary>
-    public static Vector128<byte> Float32x4Min(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsSingle(), b.AsSingle()).AsByte();
-    /// <summary>f32x4 IEEE max (propagates NaN).</summary>
-    public static Vector128<byte> Float32x4Max(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsSingle(), b.AsSingle()).AsByte();
+    /// <summary>f32x4 IEEE min (propagates NaN, returns -0 over +0).</summary>
+    public static Vector128<byte> Float32x4Min(Vector128<byte> a, Vector128<byte> b)
+    {
+#if NET9_0_OR_GREATER
+        return Vector128.Min(a.AsSingle(), b.AsSingle()).AsByte();
+#else
+        var r = new float[4];
+        var sa = a.AsSingle(); var sb = b.AsSingle();
+        for (var i = 0; i < 4; i++)
+        {
+            var ai = sa.GetElement(i); var bi = sb.GetElement(i);
+            float ri;
+            if (float.IsNaN(ai) || float.IsNaN(bi)) ri = float.NaN;
+            else if (ai == 0 && bi == 0) ri = FloatHelper.UInt32BitsToFloat(FloatHelper.FloatToUInt32Bits(ai) | FloatHelper.FloatToUInt32Bits(bi));
+            else ri = ai < bi ? ai : bi;
+            r[i] = ri;
+        }
+        return Vector128.Create(r).AsByte();
+#endif
+    }
+    /// <summary>f32x4 IEEE max (propagates NaN, returns +0 over -0).</summary>
+    public static Vector128<byte> Float32x4Max(Vector128<byte> a, Vector128<byte> b)
+    {
+#if NET9_0_OR_GREATER
+        return Vector128.Max(a.AsSingle(), b.AsSingle()).AsByte();
+#else
+        var r = new float[4];
+        var sa = a.AsSingle(); var sb = b.AsSingle();
+        for (var i = 0; i < 4; i++)
+        {
+            var ai = sa.GetElement(i); var bi = sb.GetElement(i);
+            float ri;
+            if (float.IsNaN(ai) || float.IsNaN(bi)) ri = float.NaN;
+            else if (ai == 0 && bi == 0) ri = FloatHelper.UInt32BitsToFloat(FloatHelper.FloatToUInt32Bits(ai) & FloatHelper.FloatToUInt32Bits(bi));
+            else ri = ai > bi ? ai : bi;
+            r[i] = ri;
+        }
+        return Vector128.Create(r).AsByte();
+#endif
+    }
     /// <summary>f32x4 pseudo-min (returns b if b &lt; a, else a).</summary>
     public static Vector128<byte> Float32x4Pmin(Vector128<byte> a, Vector128<byte> b)
     {
@@ -601,10 +637,46 @@ public static class V128Helper
     public static Vector128<byte> Float64x2Mul(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() * b.AsDouble()).AsByte();
     /// <summary>f64x2 divide.</summary>
     public static Vector128<byte> Float64x2Div(Vector128<byte> a, Vector128<byte> b) => (a.AsDouble() / b.AsDouble()).AsByte();
-    /// <summary>f64x2 IEEE min (propagates NaN).</summary>
-    public static Vector128<byte> Float64x2Min(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsDouble(), b.AsDouble()).AsByte();
-    /// <summary>f64x2 IEEE max (propagates NaN).</summary>
-    public static Vector128<byte> Float64x2Max(Vector128<byte> a, Vector128<byte> b) => Vector128.Max(a.AsDouble(), b.AsDouble()).AsByte();
+    /// <summary>f64x2 IEEE min (propagates NaN, returns -0 over +0).</summary>
+    public static Vector128<byte> Float64x2Min(Vector128<byte> a, Vector128<byte> b)
+    {
+#if NET9_0_OR_GREATER
+        return Vector128.Min(a.AsDouble(), b.AsDouble()).AsByte();
+#else
+        var r = new double[2];
+        var sa = a.AsDouble(); var sb = b.AsDouble();
+        for (var i = 0; i < 2; i++)
+        {
+            var ai = sa.GetElement(i); var bi = sb.GetElement(i);
+            double ri;
+            if (double.IsNaN(ai) || double.IsNaN(bi)) ri = double.NaN;
+            else if (ai == 0 && bi == 0) ri = FloatHelper.UInt64BitsToDouble(FloatHelper.DoubleToUInt64Bits(ai) | FloatHelper.DoubleToUInt64Bits(bi));
+            else ri = ai < bi ? ai : bi;
+            r[i] = ri;
+        }
+        return Vector128.Create(r).AsByte();
+#endif
+    }
+    /// <summary>f64x2 IEEE max (propagates NaN, returns +0 over -0).</summary>
+    public static Vector128<byte> Float64x2Max(Vector128<byte> a, Vector128<byte> b)
+    {
+#if NET9_0_OR_GREATER
+        return Vector128.Max(a.AsDouble(), b.AsDouble()).AsByte();
+#else
+        var r = new double[2];
+        var sa = a.AsDouble(); var sb = b.AsDouble();
+        for (var i = 0; i < 2; i++)
+        {
+            var ai = sa.GetElement(i); var bi = sb.GetElement(i);
+            double ri;
+            if (double.IsNaN(ai) || double.IsNaN(bi)) ri = double.NaN;
+            else if (ai == 0 && bi == 0) ri = FloatHelper.UInt64BitsToDouble(FloatHelper.DoubleToUInt64Bits(ai) & FloatHelper.DoubleToUInt64Bits(bi));
+            else ri = ai > bi ? ai : bi;
+            r[i] = ri;
+        }
+        return Vector128.Create(r).AsByte();
+#endif
+    }
     /// <summary>f64x2 pseudo-min (returns b if b &lt; a, else a).</summary>
     public static Vector128<byte> Float64x2Pmin(Vector128<byte> a, Vector128<byte> b)
     {
@@ -1022,6 +1094,32 @@ public static class V128Helper
     public static V128Polyfill Int64x2Sub(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x - y);
     public static V128Polyfill Int64x2Mul(V128Polyfill a, V128Polyfill b) => ApplyI64Binary(a, b, (x, y) => x * y);
 
+    // WASM IEEE min/max scalars: propagate NaN, handle ±0 per spec
+    private static float WasmF32Min(float a, float b)
+    {
+        if (float.IsNaN(a) || float.IsNaN(b)) return float.NaN;
+        if (a == 0 && b == 0) return FloatHelper.UInt32BitsToFloat(FloatHelper.FloatToUInt32Bits(a) | FloatHelper.FloatToUInt32Bits(b));
+        return a < b ? a : b;
+    }
+    private static float WasmF32Max(float a, float b)
+    {
+        if (float.IsNaN(a) || float.IsNaN(b)) return float.NaN;
+        if (a == 0 && b == 0) return FloatHelper.UInt32BitsToFloat(FloatHelper.FloatToUInt32Bits(a) & FloatHelper.FloatToUInt32Bits(b));
+        return a > b ? a : b;
+    }
+    private static double WasmF64Min(double a, double b)
+    {
+        if (double.IsNaN(a) || double.IsNaN(b)) return double.NaN;
+        if (a == 0 && b == 0) return FloatHelper.UInt64BitsToDouble(FloatHelper.DoubleToUInt64Bits(a) | FloatHelper.DoubleToUInt64Bits(b));
+        return a < b ? a : b;
+    }
+    private static double WasmF64Max(double a, double b)
+    {
+        if (double.IsNaN(a) || double.IsNaN(b)) return double.NaN;
+        if (a == 0 && b == 0) return FloatHelper.UInt64BitsToDouble(FloatHelper.DoubleToUInt64Bits(a) & FloatHelper.DoubleToUInt64Bits(b));
+        return a > b ? a : b;
+    }
+
     // f32x4 helpers
     private static float GetF32(V128Polyfill v, int offset)
     {
@@ -1061,8 +1159,8 @@ public static class V128Helper
     public static V128Polyfill Float32x4Sub(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x - y);
     public static V128Polyfill Float32x4Mul(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x * y);
     public static V128Polyfill Float32x4Div(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x / y);
-    public static V128Polyfill Float32x4Min(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x < y ? x : y);
-    public static V128Polyfill Float32x4Max(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => x > y ? x : y);
+    public static V128Polyfill Float32x4Min(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, WasmF32Min);
+    public static V128Polyfill Float32x4Max(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, WasmF32Max);
     public static V128Polyfill Float32x4Pmin(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => y < x ? y : x);
     public static V128Polyfill Float32x4Pmax(V128Polyfill a, V128Polyfill b) => ApplyF32x4Binary(a, b, (x, y) => y > x ? y : x);
 
@@ -1111,8 +1209,8 @@ public static class V128Helper
     public static V128Polyfill Float64x2Sub(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x - y);
     public static V128Polyfill Float64x2Mul(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x * y);
     public static V128Polyfill Float64x2Div(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => x / y);
-    public static V128Polyfill Float64x2Min(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, Math.Min);
-    public static V128Polyfill Float64x2Max(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, Math.Max);
+    public static V128Polyfill Float64x2Min(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, WasmF64Min);
+    public static V128Polyfill Float64x2Max(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, WasmF64Max);
     public static V128Polyfill Float64x2Pmin(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => y < x ? y : x);
     public static V128Polyfill Float64x2Pmax(V128Polyfill a, V128Polyfill b) => ApplyF64x2Binary(a, b, (x, y) => y > x ? y : x);
 

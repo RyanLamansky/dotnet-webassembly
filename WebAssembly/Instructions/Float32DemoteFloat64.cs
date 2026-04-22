@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -26,5 +27,6 @@ public class Float32DemoteFloat64 : SimpleInstruction
         context.Stack.Push(WebAssemblyValueType.Float32);
 
         context.Emit(OpCodes.Conv_R4);
+        context.Emit(OpCodes.Call, FloatHelper.CanonicalizeFloat32Method);
     }
 }

@@ -51,7 +51,7 @@ Prefixed opcode families use separate enums: `MiscellaneousOpCode` (0xFC prefix:
 
 ### Test project
 
-Uses **MSTest**. Base classes (`CompilerTestBase<T>`, `ComparisonTestBase`, `ConversionTestBase`, etc.) reduce boilerplate for instruction tests. Each instruction class in `WebAssembly.Instructions/` has a corresponding `*Tests.cs` in `WebAssembly.Tests/Instructions/`. WASM spec test data lives in `WebAssembly.Tests/Runtime/SpecTestData/` — 62 test suites covering WASM 1.0, WASM 2.0, bulk memory, and 45 SIMD suites.
+Uses **MSTest**. Base classes (`CompilerTestBase<T>`, `ComparisonTestBase`, `ConversionTestBase`, etc.) reduce boilerplate for instruction tests. Each instruction class in `WebAssembly.Instructions/` has a corresponding `*Tests.cs` in `WebAssembly.Tests/Instructions/`. WASM spec test data lives in `WebAssembly.Tests/Runtime/SpecTestData/` — all 62 WASM spec test suites pass, including 45 SIMD suites. The only skipped tests are permanent CLR limitations (see below).
 
 ## Code style
 
@@ -67,18 +67,23 @@ Enforced via `.editorconfig` and treated as build errors:
 - **WASM 2.0.** All WASM 2.0 opcodes are implemented: non-trapping conversions (0xFC), bulk memory (0xFC), reference types (`ref.null`, `ref.is_null`, `ref.func`, `table.get/set`), typed select, and SIMD (0xFD, 200+ sub-opcodes).
 - **Strong-named assembly.** The SNK file (`Properties/WebAssembly.snk`) must remain in place; do not remove it.
 - **Multi-framework targets.** The library targets `netstandard2.0`, `net8.0`, and `net9.0`. Tests target `net8.0`, `net9.0`, and `net10.0`. CI tests both Debug and Release.
-- **CLR NaN canonicalization:** The CLR replaces arbitrary NaN bit payloads with the platform's canonical quiet NaN when values pass through floating-point registers. This affects `Float32Constant`/`Float64Constant` (`ldc.r4`/`ldc.r8`) and float store instructions (`Stind_R4`/`Stind_R8`). A small number of `float_literals`, `float_memory`, and `float_exprs` spec tests are currently skipped as a result. The fix is to emit integer-reinterpret IL for NaN values (e.g., `ldc.i4 <bits>` + `BitConverter.Int32BitsToSingle`) to bypass FP register canonicalization.
 - **Flaky timeout tests:** `Loop_Compiled` and `Branch_LoopValue` occasionally time out when all three framework test runs execute concurrently (resource contention). Run frameworks sequentially to avoid this.
-- **SIMD NaN/−0 on .NET 8:** `simd_f32x4` and `simd_f64x2` min/max semantics for NaN inputs and −0 differ from spec on .NET 8. These tests are marked `Assert.Inconclusive` on .NET < 9.
+- **Tail-call optimization and stack exhaustion:** The CLR JIT tail-call-optimizes simple self-recursion into a true loop, so `EnsureSufficientExecutionStack()` (emitted at the start of every compiled function) never fires. The `assert_exhaustion` tests for `runaway`/`mutual-runaway` in `call` and `call_indirect` remain permanently skipped for this reason.
 
-## Known spec test gaps (work in progress)
+## CLR workarounds already in place
 
-| Gap | Spec tests affected | Issue |
-|-----|---------------------|-------|
-| NaN constant canonicalization | `float_literals` (lines 109-113), `float_exprs` (lines 2349-2361) | `ldc.r4`/`ldc.r8` clobbers NaN payload |
-| NaN store canonicalization | `float_memory` (lines 21, 73) | `Stind_R4` clobbers NaN payload |
-| `float_exprs` overflow | lines 511, 519 | Arithmetic overflow on CLR |
-| Stack exhaustion / `assert_exhaustion` | `call` (272-273), `call_indirect` (556) | StackOverflowException not catchable |
-| `bulk` spec test not wired up | `bulk.json` | Test method missing in SpecTests.cs |
-| `call_indirect` harness gaps | lines 557-589, 940 | No method source / unknown function |
-| SIMD min/max on .NET 8 | `simd_f32x4`, `simd_f64x2` | Platform NaN/−0 semantics differ |
+These issues were fixed and should not be regressed:
+
+- **NaN payload preservation in constants:** `Float32Constant`/`Float64Constant` emit `ldc.i4`/`ldc.i8` + `FloatHelper.UInt32BitsToFloat`/`UInt64BitsToDouble` for NaN values instead of `ldc.r4`/`ldc.r8`, which would let the JIT canonicalize the payload.
+- **NaN payload preservation in memory:** `MemoryReadInstruction` loads float data as integer bits (`Ldind_I4`/`Ldind_I8`) then reinterprets; `MemoryWriteInstruction` reinterprets float to integer bits (`FloatHelper.FloatToUInt32Bits`/`DoubleToUInt64Bits`) before storing with `Stind_I4`/`Stind_I8`.
+- **Canonical NaN from arithmetic:** `ValueTwoToOneInstruction.Compile` calls `FloatHelper.CanonicalizeFloat32`/`CanonicalizeFloat64` after float32/float64 binary ops (add/sub/mul/div) to replace non-canonical NaN payloads from sNaN inputs with the WASM canonical qNaN. `Float32DemoteFloat64` and `Float64PromoteFloat32` do the same after conversion.
+- **`rem_s` INT_MIN % -1:** `Int32RemainderSigned`/`Int64RemainderSigned` emit a helper that returns 0 when divisor is −1 (CLR `Rem` would throw `OverflowException`; WASM spec requires 0).
+- **SIMD f32x4/f64x2 min/max on .NET 8:** `Vector128.Min`/`Max` maps to `MINPS`/`MAXPS` on .NET 8, which has wrong NaN-propagation and ±0 semantics. `V128Helper.Float32x4Min/Max` and `Float64x2Min/Max` use a scalar per-lane fallback on .NET < 9 that implements WASM spec precisely.
+
+## Permanently skipped spec tests
+
+| Test | Lines | Reason |
+|------|-------|--------|
+| `call` | 272, 273 | `assert_exhaustion`: CLR JIT tail-call-optimizes `runaway`/`mutual-runaway` into infinite loops; `EnsureSufficientExecutionStack` never fires |
+| `call_indirect` | 556, 557 | Same as above |
+| `skip-stack-guard-page` | entire suite | Invoking this WASM causes an uncatchable `StackOverflowException` that crashes the CLR test host |
