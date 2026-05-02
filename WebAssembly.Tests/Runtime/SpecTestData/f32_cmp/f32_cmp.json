@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cf32_cmp.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/f32_cmp.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "f32_cmp.0.wasm"}, 
   {"type": "assert_return", "line": 13, "action": {"type": "invoke", "field": "eq", "args": [{"type": "f32", "value": "2147483648"}, {"type": "f32", "value": "2147483648"}]}, "expected": [{"type": "i32", "value": "1"}]}, 

@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005ctraps.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/traps.wast",
  "commands": [
   {"type": "module", "line": 5, "filename": "traps.0.wasm"}, 
   {"type": "assert_trap", "line": 16, "action": {"type": "invoke", "field": "no_dce.i32.div_s", "args": [{"type": "i32", "value": "1"}, {"type": "i32", "value": "0"}]}, "text": "integer divide by zero", "expected": []}, 

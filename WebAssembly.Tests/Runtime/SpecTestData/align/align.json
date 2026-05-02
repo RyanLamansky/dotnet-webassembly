@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005calign.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/align.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "align.0.wasm"}, 
   {"type": "module", "line": 4, "filename": "align.1.wasm"}, 

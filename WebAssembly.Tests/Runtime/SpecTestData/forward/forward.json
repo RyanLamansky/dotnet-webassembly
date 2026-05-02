@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cforward.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/forward.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "forward.0.wasm"}, 
   {"type": "assert_return", "line": 17, "action": {"type": "invoke", "field": "even", "args": [{"type": "i32", "value": "13"}]}, "expected": [{"type": "i32", "value": "0"}]}, 

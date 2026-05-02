@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cnop.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/nop.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "nop.0.wasm"}, 
   {"type": "assert_return", "line": 306, "action": {"type": "invoke", "field": "as-func-first", "args": []}, "expected": [{"type": "i32", "value": "1"}]}, 

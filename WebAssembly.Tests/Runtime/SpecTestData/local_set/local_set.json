@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005clocal_set.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/local_set.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "local_set.0.wasm"}, 
   {"type": "assert_return", "line": 107, "action": {"type": "invoke", "field": "type-local-i32", "args": []}, "expected": []}, 
