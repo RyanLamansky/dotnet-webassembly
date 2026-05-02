@@ -1,4 +1,4 @@
-{"source_filename": "C:/Users/mreed/AppData/Local/Temp/simd_wast/bulk.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/bulk.wast",
  "commands": [
   {"type": "module", "line": 2, "filename": "bulk.0.wasm"}, 
   {"type": "module", "line": 6, "filename": "bulk.1.wasm"}, 

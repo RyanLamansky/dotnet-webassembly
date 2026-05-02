@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cbr_if.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/br_if.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "br_if.0.wasm"}, 
   {"type": "assert_return", "line": 372, "action": {"type": "invoke", "field": "type-i32", "args": []}, "expected": []}, 

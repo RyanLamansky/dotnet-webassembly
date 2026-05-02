@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cmemory_redundancy.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/memory_redundancy.wast",
  "commands": [
   {"type": "module", "line": 5, "filename": "memory_redundancy.0.wasm"}, 
   {"type": "assert_return", "line": 59, "action": {"type": "invoke", "field": "test_store_to_load", "args": []}, "expected": [{"type": "i32", "value": "128"}]}, 

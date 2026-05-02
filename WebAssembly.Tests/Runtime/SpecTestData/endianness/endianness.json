@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cendianness.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/endianness.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "endianness.0.wasm"}, 
   {"type": "assert_return", "line": 133, "action": {"type": "invoke", "field": "i32_load16_s", "args": [{"type": "i32", "value": "4294967295"}]}, "expected": [{"type": "i32", "value": "4294967295"}]}, 

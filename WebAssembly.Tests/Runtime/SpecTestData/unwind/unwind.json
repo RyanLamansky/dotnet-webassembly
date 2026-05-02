@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cunwind.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/unwind.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "unwind.0.wasm"}, 
   {"type": "assert_trap", "line": 212, "action": {"type": "invoke", "field": "func-unwind-by-unreachable", "args": []}, "text": "unreachable", "expected": []}, 

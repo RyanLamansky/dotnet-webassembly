@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cfloat_memory.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/float_memory.wast",
  "commands": [
   {"type": "module", "line": 5, "filename": "float_memory.0.wasm"}, 
   {"type": "assert_return", "line": 15, "action": {"type": "invoke", "field": "i32.load", "args": []}, "expected": [{"type": "i32", "value": "2141192192"}]}, 

@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cfunc_ptrs.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/func_ptrs.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "func_ptrs.0.wasm"}, 
   {"type": "assert_return", "line": 27, "action": {"type": "invoke", "field": "one", "args": []}, "expected": [{"type": "i32", "value": "13"}]}, 

@@ -26,6 +26,19 @@ static class SpecTestRunner
         Run<TExports>(pathBase, json, null);
     }
 
+    /// <summary>
+    /// Runs every command in the JSON file, catching all failures into the returned list rather
+    /// than throwing on the first one. Used by <see cref="SpecDiscovery"/> to enumerate the line
+    /// numbers that need skip-predicate coverage after a spec test refresh.
+    /// </summary>
+    public static List<(uint Line, string Message)> Discover(string pathBase, string json)
+    {
+        var failures = new List<(uint, string)>();
+        Run<object>(pathBase, json, skip: null,
+            onFailure: (line, x) => failures.Add((line, $"{x.GetType().Name}: {x.Message.Split('\n')[0]}")));
+        return failures;
+    }
+
     private static readonly RegeneratingWeakReference<JsonSerializerOptions> serializerOptions =
         new(() => new JsonSerializerOptions
         {
@@ -33,6 +46,12 @@ static class SpecTestRunner
         });
 
     public static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip)
+        where TExports : class
+    {
+        Run<TExports>(pathBase, json, skip, onFailure: null);
+    }
+
+    private static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip, Action<uint, Exception>? onFailure)
         where TExports : class
     {
         TestInfo testInfo;
@@ -541,13 +560,18 @@ static class SpecTestRunner
                 }
             }
             catch (Exception x)
-            when (!System.Diagnostics.Debugger.IsAttached && x is not UnitTestAssertException)
+            when (!System.Diagnostics.Debugger.IsAttached && (onFailure != null || x is not UnitTestAssertException))
             {
+                if (onFailure != null)
+                {
+                    onFailure(command.line, x);
+                    continue;
+                }
                 throw new AssertFailedException($"{command.line}: {x}", x);
             }
         }
 
-        if (skip != null)
+        if (onFailure == null && skip != null)
             Assert.Inconclusive("Some scenarios were skipped.");
     }
 
@@ -612,16 +636,20 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(Register), typeDiscriminator: nameof(CommandType.register))]
     [JsonDerivedType(typeof(NoReturn), typeDiscriminator: nameof(CommandType.action))]
     [JsonDerivedType(typeof(AssertUninstantiable), typeDiscriminator: nameof(CommandType.assert_uninstantiable))]
-    abstract class Command
+    abstract class Command(CommandType commandType)
     {
+        // [JsonIgnore] is required on .NET 10+: the JsonPolymorphic discriminator above is named
+        // "type", and STJ now treats a regular property of the same name as a conflict with the
+        // metadata property. Each concrete subclass passes its discriminator value through this
+        // primary constructor so callers can still read command.type after deserialization.
         [JsonIgnore]
-        public CommandType type;
+        public readonly CommandType type = commandType;
         public uint line;
 
         public override string ToString() => type.ToString();
     }
 
-    class ModuleCommand : Command
+    class ModuleCommand() : Command(CommandType.module)
     {
         public string name;
         public string filename;
@@ -637,6 +665,48 @@ static class SpecTestRunner
         f32 = WebAssemblyValueType.Float32,
         f64 = WebAssemblyValueType.Float64,
         v128 = WebAssemblyValueType.V128,
+        // Reference types (WASM 2.0). Library doesn't implement them yet; these exist only so
+        // STJ can deserialize the JSON. Tests that reach the runtime path on a ref-type value
+        // will fail (caught per-line by Discover or by skip predicates).
+        externref = -100,
+        funcref = -101,
+    }
+
+    // Custom converter that accepts both numeric-string values ("0", "4286578688", ...) and the
+    // post-2.0 inline NaN markers ("nan:canonical", "nan:arithmetic"), which replaced the older
+    // separate assert_return_canonical_nan / assert_return_arithmetic_nan command types.
+    // Map each NaN marker to a NaN bit pattern; the runner's existing equality fast-path then
+    // matches any NaN result (float.NaN.Equals(float.NaN) is true, regardless of payload).
+    class NanCapableUInt32Converter : JsonConverter<uint>
+    {
+        public override uint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetUInt32();
+            var s = reader.GetString()!;
+            return s switch
+            {
+                "nan:canonical" => 0x7FC00000u,
+                "nan:arithmetic" => 0x7FC00001u,
+                _ => uint.Parse(s),
+            };
+        }
+        public override void Write(Utf8JsonWriter writer, uint value, JsonSerializerOptions options) => writer.WriteNumberValue(value);
+    }
+
+    class NanCapableUInt64Converter : JsonConverter<ulong>
+    {
+        public override ulong Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.Number) return reader.GetUInt64();
+            var s = reader.GetString()!;
+            return s switch
+            {
+                "nan:canonical" => 0x7FF8000000000000u,
+                "nan:arithmetic" => 0x7FF8000000000001u,
+                _ => ulong.Parse(s),
+            };
+        }
+        public override void Write(Utf8JsonWriter writer, ulong value, JsonSerializerOptions options) => writer.WriteNumberValue(value);
     }
 
     class TypeOnly
@@ -652,14 +722,27 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(Float32Value), typeDiscriminator: nameof(RawValueType.f32))]
     [JsonDerivedType(typeof(Float64Value), typeDiscriminator: nameof(RawValueType.f64))]
     [JsonDerivedType(typeof(V128Value), typeDiscriminator: nameof(RawValueType.v128))]
-    abstract class TypedValue
+    [JsonDerivedType(typeof(ExternRefValue), typeDiscriminator: nameof(RawValueType.externref))]
+    [JsonDerivedType(typeof(FuncRefValue), typeDiscriminator: nameof(RawValueType.funcref))]
+    abstract class TypedValue(RawValueType valueType)
     {
+        // Not inheriting TypeOnly here: the inherited `type` field would conflict with the
+        // polymorphism discriminator on .NET 10+ (see Command for details). The two hierarchies
+        // are used independently — TypeOnly[] in canonical/arithmetic-NaN asserts, TypedValue[]
+        // in regular asserts and invoke args — so keeping them separate is safe.
+        [JsonIgnore]
+        public readonly RawValueType type = valueType;
         public abstract object BoxedValue { get; }
     }
 
-    class Int32Value : TypedValue
+    // Same two-ctor pattern as AssertReturn (see comment there): the parameterized primary lets
+    // Float32Value override; the [JsonConstructor]-marked parameterless ctor is what STJ uses.
+    class Int32Value(RawValueType valueType) : TypedValue(valueType)
     {
-        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        [JsonConstructor]
+        public Int32Value() : this(RawValueType.i32) { }
+
+        [JsonConverter(typeof(NanCapableUInt32Converter))]
         public uint value;
 
         public override object BoxedValue => (int)value;
@@ -667,9 +750,12 @@ static class SpecTestRunner
         public override string ToString() => $"i32: {value}";
     }
 
-    class Int64Value : TypedValue
+    class Int64Value(RawValueType valueType) : TypedValue(valueType)
     {
-        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        [JsonConstructor]
+        public Int64Value() : this(RawValueType.i64) { }
+
+        [JsonConverter(typeof(NanCapableUInt64Converter))]
         public ulong value;
 
         public override object BoxedValue => (long)value;
@@ -677,7 +763,7 @@ static class SpecTestRunner
         public override string ToString() => $"i64: {value}";
     }
 
-    class Float32Value : Int32Value
+    class Float32Value() : Int32Value(RawValueType.f32)
     {
         public float ActualValue => BitConverter.Int32BitsToSingle(unchecked((int)value));
 
@@ -686,7 +772,7 @@ static class SpecTestRunner
         public override string ToString() => $"f32: {BoxedValue}";
     }
 
-    class Float64Value : Int64Value
+    class Float64Value() : Int64Value(RawValueType.f64)
     {
         public double ActualValue => BitConverter.Int64BitsToDouble(unchecked((long)value));
 
@@ -695,7 +781,7 @@ static class SpecTestRunner
         public override string ToString() => $"f64: {BoxedValue}";
     }
 
-    class V128Value : TypedValue
+    class V128Value() : TypedValue(RawValueType.v128)
     {
         public string? lane_type;
         public string[]? value;
@@ -805,6 +891,28 @@ static class SpecTestRunner
         public override string ToString() => $"v128({lane_type})[{string.Join(',', value ?? [])}]";
     }
 
+    // Reference-type stubs. Library doesn't implement reference types yet (WASM 2.0 feature),
+    // so BoxedValue throws — execution-time failures are caught per-line by Discover or skipped
+    // by per-category skip predicates. The class only exists so STJ can deserialize JSON files
+    // that mention `externref` / `funcref`.
+    class ExternRefValue() : TypedValue(RawValueType.externref)
+    {
+        public string value;
+
+        public override object BoxedValue => throw new NotSupportedException("externref values not implemented (WASM 2.0)");
+
+        public override string ToString() => $"{type}: {value}";
+    }
+
+    class FuncRefValue() : TypedValue(RawValueType.funcref)
+    {
+        public string value;
+
+        public override object BoxedValue => throw new NotSupportedException("funcref values not implemented (WASM 2.0)");
+
+        public override string ToString() => $"{type}: {value}";
+    }
+
     [JsonConverter(typeof(JsonStringEnumConverter<TestActionType>))]
     enum TestActionType
     {
@@ -815,17 +923,17 @@ static class SpecTestRunner
     [JsonPolymorphic(TypeDiscriminatorPropertyName = nameof(type))]
     [JsonDerivedType(typeof(Invoke), typeDiscriminator: nameof(TestActionType.invoke))]
     [JsonDerivedType(typeof(Get), typeDiscriminator: nameof(TestActionType.get))]
-    abstract class TestAction
+    abstract class TestAction(TestActionType actionType)
     {
         [JsonIgnore]
-        public TestActionType type;
+        public readonly TestActionType type = actionType;
         public string module;
         public string field;
 
         public abstract object? Call(MethodInfo methodInfo, object obj);
     }
 
-    class Invoke : TestAction
+    class Invoke() : TestAction(TestActionType.invoke)
     {
         public TypedValue[] args;
 
@@ -837,7 +945,7 @@ static class SpecTestRunner
         public override string ToString() => $"{field}({module})[{string.Join(',', (IEnumerable<TypedValue>)args)}]";
     }
 
-    class Get : TestAction
+    class Get() : TestAction(TestActionType.get)
     {
         public override object? Call(MethodInfo methodInfo, object obj)
         {
@@ -845,40 +953,47 @@ static class SpecTestRunner
         }
     }
 
-    abstract class AssertCommand : Command
+    abstract class AssertCommand(CommandType commandType) : Command(commandType)
     {
         public TestAction action;
 
         public override string ToString() => $"{base.ToString()}: {action}";
     }
 
-    class AssertReturn : AssertCommand
+    // Two ctors: the parameterized primary lets NoReturn pass `action` through; the explicit
+    // parameterless ctor (marked [JsonConstructor]) is what STJ uses when deserializing
+    // `assert_return` directly. Without the [JsonConstructor] hint, STJ would try to bind the
+    // primary ctor's `commandType` parameter to a JSON property, which doesn't exist.
+    class AssertReturn(CommandType commandType) : AssertCommand(commandType)
     {
+        [JsonConstructor]
+        public AssertReturn() : this(CommandType.assert_return) { }
+
         public TypedValue[] expected;
 
         public override string ToString() => $"{base.ToString()} = [{string.Join(',', (IEnumerable<TypedValue>)expected)}]";
     }
 
-    class NoReturn : AssertReturn
+    class NoReturn() : AssertReturn(CommandType.action)
     {
         public override string ToString() => $"{base.ToString()}";
     }
 
-    class AssertReturnCanonicalNan : AssertCommand
+    class AssertReturnCanonicalNan() : AssertCommand(CommandType.assert_return_canonical_nan)
     {
         public TypeOnly[] expected;
 
         public override string ToString() => $"{base.ToString()} = [{string.Join(',', (IEnumerable<TypeOnly>)expected)}]";
     }
 
-    class AssertReturnArithmeticNan : AssertCommand
+    class AssertReturnArithmeticNan() : AssertCommand(CommandType.assert_return_arithmetic_nan)
     {
         public TypeOnly[] expected;
 
         public override string ToString() => $"{base.ToString()} = [{string.Join(',', (IEnumerable<TypeOnly>)expected)}]";
     }
 
-    abstract class InvalidCommand : Command
+    abstract class InvalidCommand(CommandType commandType) : Command(commandType)
     {
         public string filename;
         public string text;
@@ -887,34 +1002,26 @@ static class SpecTestRunner
         public override string ToString() => $"{base.ToString()}: {filename} \"{text}\" {module_type}";
     }
 
-    class AssertInvalid : InvalidCommand
-    {
-    }
+    class AssertInvalid() : InvalidCommand(CommandType.assert_invalid);
 
-    class AssertTrap : AssertCommand
+    class AssertTrap() : AssertCommand(CommandType.assert_trap)
     {
         public TypeOnly[] expected;
         public string text;
     }
 
-    class AssertMalformed : InvalidCommand
-    {
-    }
+    class AssertMalformed() : InvalidCommand(CommandType.assert_malformed);
 
-    class AssertExhaustion : AssertCommand
+    class AssertExhaustion() : AssertCommand(CommandType.assert_exhaustion)
     {
         public string text;
     }
 
-    class AssertUnlinkable : InvalidCommand
-    {
-    }
+    class AssertUnlinkable() : InvalidCommand(CommandType.assert_unlinkable);
 
-    class AssertUninstantiable : InvalidCommand
-    {
-    }
+    class AssertUninstantiable() : InvalidCommand(CommandType.assert_uninstantiable);
 
-    class Register : Command
+    class Register() : Command(CommandType.register)
     {
         public string name;
         public string @as;

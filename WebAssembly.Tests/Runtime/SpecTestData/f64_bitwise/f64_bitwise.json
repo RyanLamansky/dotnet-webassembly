@@ -1,4 +1,4 @@
-{"source_filename": "..\u005c..\u005cspec\u005ctest\u005ccore\u005cf64_bitwise.wast",
+{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/f64_bitwise.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "f64_bitwise.0.wasm"}, 
   {"type": "assert_return", "line": 10, "action": {"type": "invoke", "field": "copysign", "args": [{"type": "f64", "value": "9223372036854775808"}, {"type": "f64", "value": "9223372036854775808"}]}, "expected": [{"type": "f64", "value": "9223372036854775808"}]}, 
