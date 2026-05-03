@@ -1362,7 +1362,72 @@ public static class Compile
                 continue;
             }
 
-            // Kinds 2–7: skip them (active w/ explicit table, declarative, expression-based).
+            // Kind 5: passive element segment with init-exprs (each is [ref.func idx, end] or [ref.null type, end]).
+            if (kind == 5)
+            {
+                reader.ReadVarInt7(); // reftype (0x70 = funcref)
+                var elemCount = reader.ReadVarUInt32();
+                var segField = exportsBuilder.DefineField(
+                    $"☣ PassiveElem {i}",
+                    typeof(Delegate[]),
+                    FieldAttributes.Private);
+                context.ElementSegments[(uint)i] = segField;
+
+                if (elemCount > 0 && functionSignatures != null && internalFunctions != null)
+                {
+                    // Parse all init-exprs first (null = ref.null slot).
+                    var funcIndices = new uint?[elemCount];
+                    for (var j = 0u; j < elemCount; j++)
+                    {
+                        var expr = Instruction.ParseInitializerExpression(reader).ToArray();
+                        if (expr.Length == 2 && expr[0] is Instructions.RefFunc rf)
+                            funcIndices[j] = rf.Index;
+                        else if (expr.Length == 2 && expr[0] is Instructions.RefNull)
+                            funcIndices[j] = null; // null slot
+                        else
+                            throw new ModuleLoadException($"Kind-5 element segment {i}: unsupported init expression.", reader.Offset);
+                    }
+
+                    var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
+                    instanceConstructorIL.EmitLoadConstant((int)elemCount);
+                    instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
+                    instanceConstructorIL.Emit(OpCodes.Stloc, arrLocal);
+
+                    for (var j = 0u; j < elemCount; j++)
+                    {
+                        if (funcIndices[j] is not uint functionIndex)
+                            continue; // null slot — leave array element as null
+
+                        var signature = functionSignatures[functionIndex];
+                        var parms = signature.ParameterTypes;
+                        var returns = signature.ReturnTypes;
+
+                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                        {
+                            var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                            var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
+                                throw new CompilerException($"Failed to get a delegate for type {signature}.");
+                            if (del.IsGenericType)
+                                del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
+                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
+                        }
+
+                        instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                        instanceConstructorIL.EmitLoadConstant((int)j);
+                        instanceConstructorIL.EmitLoadArg(0);
+                        instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions[functionIndex]);
+                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                        instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
+                    }
+
+                    instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                    instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+                }
+                continue;
+            }
+
+            // Kinds 2–4, 6–7: skip them (active w/ explicit table, declarative, expression-based active).
             if (kind != 0)
             {
                 SkipElementSegment(reader, kind);
