@@ -76,6 +76,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public GlobalInfo[]? Globals;
 
+    /// <summary>Number of globals that came from the import section (indices 0..ImportedGlobalCount-1).</summary>
+    public int ImportedGlobalCount;
+
+    /// <summary>Element types for each table, indexed by table index (funcref or externref).</summary>
+    public readonly List<ElementType> TableElementTypes = [];
+
     public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 
     public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
@@ -87,6 +93,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     /// <summary>Maps element segment index → FieldBuilder for passive segment Delegate?[] fields.</summary>
     public readonly Dictionary<uint, FieldBuilder> ElementSegments = [];
+
+    /// <summary>Maps passive element segment index → its element type (funcref or externref).</summary>
+    public readonly Dictionary<uint, ElementType> ElementSegmentTypes = [];
 
     internal const MethodAttributes HelperMethodAttributes =
         MethodAttributes.Private |

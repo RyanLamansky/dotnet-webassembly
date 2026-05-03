@@ -450,6 +450,8 @@ public static class Compile
                             if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
                                 throw new ModuleLoadException($"Unsupported table element type {elementType}.", preElementTypeOffset);
 
+                            context.TableElementTypes.Add(elementType);
+
                             if (functionTable == null && elementType == ElementType.FunctionReference)
                             {
                                 // Only the first funcref table is wired to call_indirect; additional tables and externref tables are parsed but unused.
@@ -834,6 +836,7 @@ public static class Compile
                         if (elementType != ElementType.FunctionReference)
                             throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", preElementTypeoffset);
 
+                        context.TableElementTypes.Add(elementType);
                         var limits = new ResizableLimits(reader);
 
                         if (functionTable != null)
@@ -1014,6 +1017,7 @@ public static class Compile
         context.Methods = [.. functionImports];
         context.FunctionSignatures = [.. functionImportTypes];
         context.Globals = [.. globalImports];
+        context.ImportedGlobalCount = globalImports.Count;
 
         return (
             importedMemoryProvider,
@@ -1121,6 +1125,10 @@ public static class Compile
                         ended = true;
                         continue;
                     }
+
+                    if (instruction is Instructions.GlobalGet ggInit && context.Globals != null &&
+                        ggInit.Index < (uint)context.Globals.Length && context.Globals[ggInit.Index].Setter != null)
+                        throw new ModuleLoadException("constant expression required", reader.Offset);
 
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
@@ -1317,12 +1325,21 @@ public static class Compile
                     typeof(Delegate[]),
                     FieldAttributes.Private);
                 context.ElementSegments[(uint)i] = segField;
+                context.ElementSegmentTypes[(uint)i] = ElementType.FunctionReference;
 
-                if (elemCount > 0 && functionSignatures != null && internalFunctions != null)
+                if (elemCount > 0)
                 {
                     var funcIndices = new uint[elemCount];
                     for (var j = 0u; j < elemCount; j++)
-                        funcIndices[j] = reader.ReadVarUInt32();
+                    {
+                        var idx = reader.ReadVarUInt32();
+                        if (functionSignatures == null || idx >= (uint)functionSignatures.Length)
+                            throw new ModuleLoadException($"Element segment {i}: function index {idx} is unknown.", reader.Offset);
+                        funcIndices[j] = idx;
+                    }
+
+                    if (functionSignatures == null || internalFunctions == null)
+                        continue;
 
                     // Emit constructor IL: allocate Delegate[] and fill it with method delegates.
                     var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
@@ -1365,13 +1382,14 @@ public static class Compile
             // Kind 5: passive element segment with init-exprs (each is [ref.func idx, end] or [ref.null type, end]).
             if (kind == 5)
             {
-                reader.ReadVarInt7(); // reftype (0x70 = funcref)
+                var segRefType = (ElementType)reader.ReadVarInt7();
                 var elemCount = reader.ReadVarUInt32();
                 var segField = exportsBuilder.DefineField(
                     $"☣ PassiveElem {i}",
                     typeof(Delegate[]),
                     FieldAttributes.Private);
                 context.ElementSegments[(uint)i] = segField;
+                context.ElementSegmentTypes[(uint)i] = segRefType;
 
                 if (elemCount > 0 && functionSignatures != null && internalFunctions != null)
                 {
@@ -1381,7 +1399,11 @@ public static class Compile
                     {
                         var expr = Instruction.ParseInitializerExpression(reader).ToArray();
                         if (expr.Length == 2 && expr[0] is Instructions.RefFunc rf)
+                        {
+                            if (rf.Index >= (uint)functionSignatures.Length)
+                                throw new ModuleLoadException($"Element segment {i}: function index {rf.Index} is unknown.", reader.Offset);
                             funcIndices[j] = rf.Index;
+                        }
                         else if (expr.Length == 2 && expr[0] is Instructions.RefNull)
                             funcIndices[j] = null; // null slot
                         else
@@ -1427,7 +1449,54 @@ public static class Compile
                 continue;
             }
 
-            // Kinds 2–4, 6–7: skip them (active w/ explicit table, declarative, expression-based active).
+            // Kind 4: active, table 0, init-exprs. Validate element types and ref.func indices.
+            if (kind == 4)
+            {
+                SkipInitializerExpression(reader); // offset expr
+                var tableElemType = context.TableElementTypes.Count > 0 ? context.TableElementTypes[0] : ElementType.FunctionReference;
+                var exprCount = reader.ReadVarUInt32();
+                for (var j = 0u; j < exprCount; j++)
+                {
+                    var preExprOffset = reader.Offset;
+                    var expr = Instruction.ParseInitializerExpression(reader).ToArray();
+                    if (expr.Length != 2)
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                    if (expr[0] is Instructions.RefFunc rf4)
+                    {
+                        if (tableElemType != ElementType.FunctionReference)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (functionSignatures == null || rf4.Index >= (uint)functionSignatures.Length)
+                            throw new ModuleLoadException($"Element segment {i}: function index {rf4.Index} is unknown.", preExprOffset);
+                    }
+                    else if (expr[0] is Instructions.RefNull rn4)
+                    {
+                        var exprElemType = rn4.Type == WebAssemblyValueType.FuncRef ? ElementType.FunctionReference : ElementType.ExternRef;
+                        if (exprElemType != tableElemType)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                    }
+                    else
+                    {
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                    }
+                }
+                continue;
+            }
+
+            // Kind 6: active, explicit table index, init-exprs. Validate reftype against table.
+            if (kind == 6)
+            {
+                var preKind6Offset = reader.Offset;
+                var tableIdx = reader.ReadVarUInt32();
+                SkipInitializerExpression(reader); // offset expr
+                var reftype = (ElementType)reader.ReadVarInt7();
+                var targetElemType = tableIdx < (uint)context.TableElementTypes.Count ? context.TableElementTypes[(int)tableIdx] : ElementType.FunctionReference;
+                if (reftype != targetElemType)
+                    throw new ModuleLoadException("type mismatch", preKind6Offset);
+                SkipInitExprVector(reader);
+                continue;
+            }
+
+            // Kinds 2–3, 7: skip them (active w/ explicit table/func-indices, declarative).
             if (kind != 0)
             {
                 SkipElementSegment(reader, kind);
@@ -1453,6 +1522,10 @@ public static class Compile
                 }
                 else if (initializer.Length == 2 && initializer[0] is Instructions.GlobalGet gg && initializer[1] is Instructions.End)
                 {
+                    if (gg.Index >= (uint)context.ImportedGlobalCount)
+                        throw new ModuleLoadException("unknown global", preInitializerOffset);
+                    if (context.Globals != null && gg.Index < (uint)context.Globals.Length && context.Globals[gg.Index].Setter != null)
+                        throw new ModuleLoadException("constant expression required", preInitializerOffset);
                     globalIndex = gg.Index;
                     isDynamicOffset = true;
                 }
@@ -1805,6 +1878,13 @@ public static class Compile
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))
             {
+                if (instruction is Instructions.GlobalGet ggData)
+                {
+                    if (ggData.Index >= (uint)context.ImportedGlobalCount)
+                        throw new ModuleLoadException("unknown global", reader.Offset);
+                    if (context.Globals != null && ggData.Index < (uint)context.Globals.Length && context.Globals[ggData.Index].Setter != null)
+                        throw new ModuleLoadException("constant expression required", reader.Offset);
+                }
                 instruction.Compile(context);
                 context.Previous = instruction.OpCode;
             }

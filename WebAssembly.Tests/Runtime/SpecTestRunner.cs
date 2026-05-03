@@ -218,15 +218,19 @@ static class SpecTestRunner
                                 {
                                     continue;
                                 }
-                                catch (ModuleLoadException)
-                                {
-                                    continue;
-                                }
                                 catch (StackSizeIncorrectException)
                                 {
                                     continue;
                                 }
                                 catch (LabelTypeMismatchException)
+                                {
+                                    continue;
+                                }
+                                catch (CompilerException)
+                                {
+                                    continue;
+                                }
+                                catch (ModuleLoadException)
                                 {
                                     continue;
                                 }

@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -88,10 +89,34 @@ public class Branch : Instruction
             }
             else
             {
-                // Void block: discard all values pushed inside this block before branching.
-                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
-                for (var i = 0; i < discardCount; i++)
-                    context.Emit(OpCodes.Pop);
+                // Void-typed block: check whether it's really a multi-value function outer block.
+                var returns = targetDepthKey == 1 ? context.CheckedSignature.RawReturnTypes : System.Array.Empty<WebAssemblyValueType>();
+                if (returns.Length > 0)
+                {
+                    // Multi-value br to function outer block: validate stack has exactly the right return types.
+                    var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                    if (available != returns.Length)
+                        throw new StackSizeIncorrectException(this.OpCode, returns.Length, available);
+                    // Validate types bottom-up.
+                    var stackSnapshot = context.Stack.ToArray(); // top at [0]
+                    for (var k = 0; k < returns.Length; k++)
+                    {
+                        var actual = stackSnapshot[returns.Length - 1 - k];
+                        if (actual != returns[k])
+                            throw new StackTypeInvalidException(this.OpCode, returns[k], actual);
+                    }
+                    // Pop intermediates (they get emitted as multi-value return in End).
+                    var discardCount2 = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                    for (var i = 0; i < discardCount2; i++)
+                        context.Emit(OpCodes.Pop);
+                }
+                else
+                {
+                    // True void block: discard all values pushed inside this block before branching.
+                    var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                }
             }
         }
         else if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType2))

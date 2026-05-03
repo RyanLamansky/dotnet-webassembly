@@ -56,6 +56,10 @@ public class TableInit : MiscellaneousInstruction
         if (context.FunctionTable == null)
             throw new CompilerException("table.init: no function table is defined.");
 
+        var tableElemType = TableIndex < (uint)context.TableElementTypes.Count ? context.TableElementTypes[(int)TableIndex] : ElementType.FunctionReference;
+        if (context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType) && segElemType != tableElemType)
+            throw new CompilerException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).");
+
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
         var dst = context.DeclareLocal(typeof(uint));
