@@ -1126,9 +1126,13 @@ public static class Compile
                         continue;
                     }
 
-                    if (instruction is Instructions.GlobalGet ggInit && context.Globals != null &&
-                        ggInit.Index < (uint)context.Globals.Length && context.Globals[ggInit.Index].Setter != null)
-                        throw new ModuleLoadException("constant expression required", reader.Offset);
+                    if (instruction is Instructions.GlobalGet ggInit)
+                    {
+                        if (ggInit.Index >= (uint)context.ImportedGlobalCount)
+                            throw new ModuleLoadException("unknown global", reader.Offset);
+                        if (context.Globals != null && ggInit.Index < (uint)context.Globals.Length && context.Globals[ggInit.Index].Setter != null)
+                            throw new ModuleLoadException("constant expression required", reader.Offset);
+                    }
 
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
@@ -1449,12 +1453,31 @@ public static class Compile
                 continue;
             }
 
-            // Kind 4: active, table 0, init-exprs. Validate element types and ref.func indices.
+            // Kind 4: active, table 0, init-exprs. Parse offset, validate and populate.
             if (kind == 4)
             {
-                SkipInitializerExpression(reader); // offset expr
+                var preKind4Offset = reader.Offset;
+                var kind4Initializer = Instruction.ParseInitializerExpression(reader).ToArray();
+                uint? constOffset4 = null;
+                uint globalIndex4 = 0;
+                bool isDynamic4 = false;
+                if (kind4Initializer.Length == 2 && kind4Initializer[0] is Instructions.Int32Constant ic4 && kind4Initializer[1] is Instructions.End)
+                    constOffset4 = (uint)ic4.Value;
+                else if (kind4Initializer.Length == 2 && kind4Initializer[0] is Instructions.GlobalGet gg4 && kind4Initializer[1] is Instructions.End)
+                {
+                    if (gg4.Index >= (uint)context.ImportedGlobalCount)
+                        throw new ModuleLoadException("unknown global", preKind4Offset);
+                    if (context.Globals != null && gg4.Index < (uint)context.Globals.Length && context.Globals[gg4.Index].Setter != null)
+                        throw new ModuleLoadException("constant expression required", preKind4Offset);
+                    globalIndex4 = gg4.Index;
+                    isDynamic4 = true;
+                }
+                else
+                    throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant or global.get followed by end.", preKind4Offset);
+
                 var tableElemType = context.TableElementTypes.Count > 0 ? context.TableElementTypes[0] : ElementType.FunctionReference;
                 var exprCount = reader.ReadVarUInt32();
+                var funcIndices4 = new uint[exprCount];
                 for (var j = 0u; j < exprCount; j++)
                 {
                     var preExprOffset = reader.Offset;
@@ -1467,17 +1490,45 @@ public static class Compile
                             throw new ModuleLoadException("type mismatch", preExprOffset);
                         if (functionSignatures == null || rf4.Index >= (uint)functionSignatures.Length)
                             throw new ModuleLoadException($"Element segment {i}: function index {rf4.Index} is unknown.", preExprOffset);
+                        funcIndices4[j] = rf4.Index;
                     }
                     else if (expr[0] is Instructions.RefNull rn4)
                     {
                         var exprElemType = rn4.Type == WebAssemblyValueType.FuncRef ? ElementType.FunctionReference : ElementType.ExternRef;
                         if (exprElemType != tableElemType)
                             throw new ModuleLoadException("type mismatch", preExprOffset);
+                        funcIndices4[j] = uint.MaxValue; // null slot
                     }
                     else
-                    {
                         throw new ModuleLoadException("type mismatch", preExprOffset);
+                }
+
+                if (exprCount > 0 && functionTable == null)
+                    throw new ModuleLoadException("Active element segment requires a table section or import.", preKind4Offset);
+
+                if (exprCount > 0)
+                {
+                    if (localFunctionTable == null)
+                    {
+                        localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                        instanceConstructorIL.EmitLoadArg(0);
+                        instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable!);
+                        instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
                     }
+
+                    LocalBuilder? dynamicOffsetLocal4 = null;
+                    if (isDynamic4)
+                    {
+                        dynamicOffsetLocal4 = instanceConstructorIL.DeclareLocal(typeof(uint));
+                        var global4 = (context.Globals ?? throw new CompilerException("global.get requires a global section."))[globalIndex4];
+                        if (global4.RequiresInstance)
+                            instanceConstructorIL.EmitLoadArg(0);
+                        instanceConstructorIL.Emit(OpCodes.Call, global4.Getter);
+                        instanceConstructorIL.Emit(OpCodes.Stloc, dynamicOffsetLocal4);
+                    }
+
+                    context.ElementSegments[(uint)i] = exportsBuilder.DefineField($"☣ ActiveElem {i}", typeof(Delegate[]), FieldAttributes.Private);
+                    activeSegments.Add((constOffset4, isDynamic4, globalIndex4, funcIndices4, dynamicOffsetLocal4));
                 }
                 continue;
             }
@@ -1620,6 +1671,11 @@ public static class Compile
                 for (var j = 0u; j < elements; j++)
                 {
                     var functionIndex = funcIndices[j];
+                    if (functionIndex == uint.MaxValue)
+                    {
+                        // ref.null slot: store null delegate (skip writing — FunctionTable default is null).
+                        continue;
+                    }
                     var signature = functionSignatures![functionIndex];
                     var parms = signature.ParameterTypes;
                     var returns = signature.ReturnTypes;

@@ -55,7 +55,25 @@
       "Bash(taskkill //F //IM testhost.exe)",
       "Bash(tasklist)",
       "Bash(tasklist *)",
-      "Bash(taskkill //F //IM dotnet.exe //FI \"MEMUSAGE gt 100000\")"
+      "Bash(taskkill //F //IM dotnet.exe //FI \"MEMUSAGE gt 100000\")",
+      "Bash(git fetch *)",
+      "Bash(git merge *)",
+      "Bash(git checkout *)",
+      "Bash(git ls-tree *)",
+      "Bash(awk '{print $4}')",
+      "Bash(wasm2wat \"WebAssembly.Tests/Runtime/SpecTestData/bulk/bulk.8.wasm\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c *)",
+      "Bash(grep -E \"should have|threw|[0-9]{3,}\")",
+      "Bash(wasm-objdump -d WebAssembly.Tests/Runtime/SpecTestData/if/if.32.wasm)",
+      "Bash(wasm2wat WebAssembly.Tests/Runtime/SpecTestData/if/if.32.wasm)",
+      "Bash(taskkill /F /IM dotnet.exe)",
+      "Bash(rm -f /c/Users/mreed/AppData/Local/Temp/spec-discovery.txt)",
+      "Read(//c/Users/mreed/AppData/Local/Temp/**)",
+      "Bash(cmd *)",
+      "Bash(powershell *)",
+      "Bash(wasm-objdump -d WebAssembly.Tests/Runtime/SpecTestData/func/func.__TRACKED_VAR__.wasm)",
+      "Bash(wasm-objdump -d \"WebAssembly.Tests/Runtime/SpecTestData/br/br.0.wasm\")"
     ]
   }
 }

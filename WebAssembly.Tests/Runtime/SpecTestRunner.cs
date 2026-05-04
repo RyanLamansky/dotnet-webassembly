@@ -125,6 +125,23 @@ static class SpecTestRunner
                         {
                             throw new AssertFailedException($"{command.line}: {x.Message}", x);
                         }
+                        if (assert.expected?.Length > 1)
+                        {
+                            // Multi-value return: result is a ValueTuple; compare each field.
+                            var resultType = result?.GetType();
+                            var fields = resultType?.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+                                ?? System.Array.Empty<System.Reflection.FieldInfo>();
+                            if (fields.Length != assert.expected.Length)
+                                throw new AssertFailedException($"{command.line}: Not equal Int32Value: ({string.Join(", ", assert.expected.Select(e => e.BoxedValue))}) and {result}");
+                            for (var ei = 0; ei < assert.expected.Length; ei++)
+                            {
+                                var actualVal = fields[ei].GetValue(result);
+                                var expectedVal = assert.expected[ei].BoxedValue;
+                                if (!expectedVal.Equals(actualVal))
+                                    throw new AssertFailedException($"{command.line}: Not equal {assert.expected[ei].GetType().Name}[{ei}]: {expectedVal} and {actualVal} (full: {result})");
+                            }
+                            continue;
+                        }
                         if (assert.expected?.Length > 0)
                         {
                             var rawExpected = assert.expected[0];

@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System.Linq;
+using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
@@ -76,7 +77,35 @@ public class End : SimpleInstruction
         else
         {
             var blockContext = context.BlockContexts[context.Depth.Count];
-            if (blockType.TryToValueType(out var expectedType))
+
+            if (blockContext.BlockSignature != null)
+            {
+                // Multi-value TypeIndex block: validate and stash all results.
+                var returns = blockContext.BlockSignature.RawReturnTypes;
+                var expected = blockContext.InitialStackSize + returns.Length;
+                if (stack.Count != expected && (!context.IsUnreachable || stack.Count > expected))
+                    throw new StackSizeIncorrectException(OpCode.End, expected, stack.Count);
+
+                // For if-without-else (IfFalseLabel still set) with params≡results: don't stash/reload.
+                // Both paths naturally leave the same values on the IL stack.
+                var isIfNoElsePassThrough = blockContext.IfFalseLabel.HasValue
+                    && blockContext.BlockSignature.RawParameterTypes.SequenceEqual(returns);
+
+                if (!context.IsUnreachable && !isIfNoElsePassThrough)
+                {
+                    // Allocate result locals if not yet created.
+                    if (blockContext.ResultLocals == null)
+                    {
+                        blockContext.ResultLocals = new LocalBuilder[returns.Length];
+                        for (var i = 0; i < returns.Length; i++)
+                            blockContext.ResultLocals[i] = context.DeclareLocal(returns[i].ToSystemType());
+                    }
+                    // Stash from top-of-stack down (last result first).
+                    for (var i = returns.Length - 1; i >= 0; i--)
+                        context.Emit(OpCodes.Stloc, blockContext.ResultLocals[i]);
+                }
+            }
+            else if (blockType.TryToValueType(out var expectedType))
             {
                 context.ValidateStack(OpCode.End, expectedType);
 
@@ -96,12 +125,33 @@ public class End : SimpleInstruction
                 throw new StackSizeIncorrectException(OpCode.End, blockContext.InitialStackSize, stack.Count);
             }
 
-            // For if-without-else: validate it's void (typed if requires else), then mark the false-branch.
+            // For if-without-else: validate the block is void-equivalent (results must equal params for TypeIndex,
+            // or be void for inline types). If valid, mark the false-branch label (jumps here on false condition).
             if (blockContext.IfFalseLabel.HasValue)
             {
-                if (blockType.TryToValueType(out _))
+                if (blockContext.BlockSignature != null)
+                {
+                    // TypeIndex if-without-else: valid only if params == results (implicit pass-through).
+                    var p = blockContext.BlockSignature.RawParameterTypes;
+                    var r = blockContext.BlockSignature.RawReturnTypes;
+                    if (!p.SequenceEqual(r))
+                        throw new StackSizeIncorrectException(OpCode.End, blockContext.InitialStackSize + r.Length, blockContext.InitialStackSize + p.Length);
+                }
+                else if (blockType.TryToValueType(out _))
                     throw new StackSizeIncorrectException(OpCode.End, blockContext.InitialStackSize + 1, blockContext.InitialStackSize);
                 context.MarkLabel(blockContext.IfFalseLabel.Value);
+
+                // If a br targeted this block before the else/end (allocating ResultLocals),
+                // the false-path arrives here with params on the IL stack. Stash them so the
+                // exit label has a clean stack, matching the true/br path.
+                if (blockContext.BlockSignature != null && blockContext.ResultLocals != null)
+                {
+                    var returns = blockContext.BlockSignature.RawReturnTypes;
+                    for (var i = returns.Length - 1; i >= 0; i--)
+                        context.Emit(OpCodes.Stloc, blockContext.ResultLocals[i]);
+                }
+                else if (blockContext.ResultLocal != null)
+                    context.Emit(OpCodes.Stloc, blockContext.ResultLocal);
             }
 
             var wasUnreachable = context.IsUnreachable;
@@ -129,15 +179,24 @@ public class End : SimpleInstruction
                 {
                     while (context.Stack.Count > blockContext.InitialStackSize)
                         context.Stack.Pop();
-                    // If block has a typed result, push it on the tracking stack.
-                    if (blockType.TryToValueType(out var blockResultType))
+                    // Push results onto the tracking stack.
+                    if (blockContext.BlockSignature != null)
+                    {
+                        foreach (var t in blockContext.BlockSignature.RawReturnTypes)
+                            context.Stack.Push(t);
+                    }
+                    else if (blockType.TryToValueType(out var blockResultType))
                         context.Stack.Push(blockResultType);
                 }
             }
 
-            // Reload the result value after the label (both fall-through and branch paths arrive here).
-            // The tracking stack already has the type from ValidateStack above; we only emit IL.
-            if (blockContext.ResultLocal != null)
+            // Reload result values after the label (both fall-through and branch paths arrive here).
+            if (blockContext.ResultLocals != null)
+            {
+                foreach (var local in blockContext.ResultLocals)
+                    context.Emit(OpCodes.Ldloc, local);
+            }
+            else if (blockContext.ResultLocal != null)
                 context.Emit(OpCodes.Ldloc, blockContext.ResultLocal);
         }
     }

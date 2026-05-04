@@ -1,4 +1,5 @@
 ﻿using System;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
 
@@ -82,4 +83,28 @@ public abstract class BlockTypeInstruction : Instruction
     public override string ToString() => TypeIndex.HasValue
         ? $"{base.ToString()} (type {TypeIndex})"
         : Type == BlockType.Empty ? base.ToString() : $"{base.ToString()} {Type.ToTypeString()}";
+
+    /// <summary>
+    /// Creates the <see cref="BlockContext"/> for this block instruction, handling both inline-typed
+    /// and multi-value (TypeIndex) blocks. For TypeIndex blocks, pops the block's input parameters
+    /// from the stack and sets <see cref="BlockContext.BlockSignature"/> so End can validate results.
+    /// </summary>
+    internal static BlockContext MakeBlockContext(BlockTypeInstruction instr, CompilationContext context)
+    {
+        if (!instr.TypeIndex.HasValue)
+            return new BlockContext(context.Stack.Count);
+
+        var sig = context.CheckedTypes[instr.TypeIndex.Value];
+        var paramTypes = sig.RawParameterTypes;
+        // Pop params from the stack (they are consumed on block entry).
+        for (var i = paramTypes.Length - 1; i >= 0; i--)
+            context.PopStackNoReturn(instr.OpCode, paramTypes[i]);
+        // InitialStackSize is AFTER consuming params (the "outer" baseline).
+        var blockCtx = new BlockContext(context.Stack.Count);
+        blockCtx.BlockSignature = sig;
+        // Push params back — they are available inside the block.
+        for (var i = 0; i < paramTypes.Length; i++)
+            context.Stack.Push(paramTypes[i]);
+        return blockCtx;
+    }
 }

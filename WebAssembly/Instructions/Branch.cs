@@ -72,11 +72,48 @@ public class Branch : Instruction
     {
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
         var targetDepthKey = context.Depth.Count - checked((int)this.Index);
+        var targetBlockCtx = context.BlockContexts[targetDepthKey];
 
-        if (blockType.OpCode != OpCode.Loop && !context.IsUnreachable)
+        // Determine the branch arity: for loops it's their params; for blocks/ifs it's their results.
+        var isLoop = blockType.OpCode == OpCode.Loop;
+        var branchSig = targetBlockCtx.BlockSignature;
+
+        if (!context.IsUnreachable)
         {
-            var targetBlockCtx = context.BlockContexts[targetDepthKey];
-            if (blockType.Type.TryToValueType(out var expectedType))
+            if (branchSig != null)
+            {
+                // TypeIndex block: multi-value branch handling.
+                var branchTypes = isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes;
+                var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                if (available < branchTypes.Length)
+                    throw new StackSizeIncorrectException(this.OpCode, branchTypes.Length, available);
+                // Validate types (bottom-up: stackSnapshot[0] is TOS).
+                var stackSnapshot = context.Stack.ToArray();
+                for (var k = 0; k < branchTypes.Length; k++)
+                {
+                    var actual = stackSnapshot[branchTypes.Length - 1 - k];
+                    if (actual != branchTypes[k])
+                        throw new StackTypeInvalidException(this.OpCode, branchTypes[k], actual);
+                }
+                if (!isLoop && branchTypes.Length > 0)
+                {
+                    // Stash results into ResultLocals (create if needed).
+                    if (targetBlockCtx.ResultLocals == null)
+                    {
+                        targetBlockCtx.ResultLocals = new LocalBuilder[branchTypes.Length];
+                        for (var i = 0; i < branchTypes.Length; i++)
+                            targetBlockCtx.ResultLocals[i] = context.DeclareLocal(branchTypes[i].ToSystemType());
+                    }
+                    for (var i = branchTypes.Length - 1; i >= 0; i--)
+                        context.Emit(OpCodes.Stloc, targetBlockCtx.ResultLocals[i]);
+                }
+                // Pop all intermediates above the baseline (excluding the results already stloc'd for non-loop,
+                // or the params that stay on the IL stack for a loop back-edge).
+                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize - branchTypes.Length;
+                for (var i = 0; i < discardCount; i++)
+                    context.Emit(OpCodes.Pop);
+            }
+            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
             {
                 context.ValidateStack(this.OpCode, expectedType);
                 var resultLocal = context.GetOrCreateResultLocal(checked((int)this.Index), expectedType);
@@ -90,7 +127,7 @@ public class Branch : Instruction
             else
             {
                 // Void-typed block: check whether it's really a multi-value function outer block.
-                var returns = targetDepthKey == 1 ? context.CheckedSignature.RawReturnTypes : System.Array.Empty<WebAssemblyValueType>();
+                var returns = (!isLoop && targetDepthKey == 1) ? context.CheckedSignature.RawReturnTypes : System.Array.Empty<WebAssemblyValueType>();
                 if (returns.Length > 0)
                 {
                     // Multi-value br to function outer block: validate stack has exactly the right return types.
@@ -119,7 +156,7 @@ public class Branch : Instruction
                 }
             }
         }
-        else if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType2))
+        else if (!isLoop && branchSig == null && blockType.Type.TryToValueType(out var expectedType2))
         {
             // In unreachable mode: still validate stack (for type checking), no IL emitted.
             context.ValidateStack(this.OpCode, expectedType2);

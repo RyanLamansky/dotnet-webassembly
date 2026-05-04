@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -66,21 +67,101 @@ public class BranchIf : Instruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
 
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
+        var targetDepthKey = context.Depth.Count - checked((int)this.Index);
+        var targetBlockCtx = context.BlockContexts[targetDepthKey];
         var label = context.Labels[checked((uint)context.Depth.Count) - this.Index - 1];
+        var isLoop = blockType.OpCode == OpCode.Loop;
+        var branchSig = targetBlockCtx.BlockSignature;
 
-        if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType))
+        if (!context.IsUnreachable)
         {
-            context.ValidateStack(this.OpCode, expectedType);
-
-            if (!context.IsUnreachable)
+            if (branchSig != null)
             {
-                var targetBlockCtx = context.BlockContexts[context.Depth.Count - checked((int)this.Index)];
+                // TypeIndex block: br_if with multi-value handling.
+                // IL stack at this point: [...baseline, intermediates, branchValues, cond]
+                // (tracking stack has cond already popped, so it shows [...baseline, intermediates, branchValues])
+                var branchTypes = isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes;
+                var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                if (available < branchTypes.Length)
+                    throw new StackSizeIncorrectException(this.OpCode, branchTypes.Length, available);
+                var stackSnapshot = context.Stack.ToArray();
+                for (var k = 0; k < branchTypes.Length; k++)
+                {
+                    var actual = stackSnapshot[branchTypes.Length - 1 - k];
+                    if (actual != branchTypes[k])
+                        throw new StackTypeInvalidException(this.OpCode, branchTypes[k], actual);
+                }
+
+                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize - branchTypes.Length;
+
+                if (branchTypes.Length == 0)
+                {
+                    // Zero-arity: like void block.
+                    if (discardCount > 0)
+                    {
+                        var skipTaken = context.DefineLabel();
+                        var condLocal = context.DeclareLocal(typeof(int));
+                        context.Emit(OpCodes.Stloc, condLocal);
+                        context.Emit(OpCodes.Ldloc, condLocal);
+                        context.Emit(OpCodes.Brfalse, skipTaken);
+                        for (var k = 0; k < discardCount; k++)
+                            context.Emit(OpCodes.Pop);
+                        context.Emit(OpCodes.Br, label);
+                        context.MarkLabel(skipTaken);
+                    }
+                    else
+                        context.Emit(OpCodes.Brtrue, label);
+                }
+                else if (isLoop && discardCount == 0)
+                {
+                    // Loop back-edge, no intermediates: params already on stack, just branch.
+                    context.Emit(OpCodes.Brtrue, label);
+                }
+                else
+                {
+                    // General case: save condition, stash branchValues, conditionally pop intermediates and jump.
+                    // IL stack: [...baseline, intermediates, branchValues, cond]
+                    var condLocal = context.DeclareLocal(typeof(int));
+                    context.Emit(OpCodes.Stloc, condLocal);
+                    // Now: [...baseline, intermediates, branchValues]
+
+                    // Stash branchValues into locals.
+                    var tempLocals = new LocalBuilder[branchTypes.Length];
+                    if (!isLoop && targetBlockCtx.ResultLocals == null)
+                    {
+                        targetBlockCtx.ResultLocals = new LocalBuilder[branchTypes.Length];
+                        for (var k = 0; k < branchTypes.Length; k++)
+                            targetBlockCtx.ResultLocals[k] = context.DeclareLocal(branchTypes[k].ToSystemType());
+                    }
+                    for (var k = 0; k < branchTypes.Length; k++)
+                        tempLocals[k] = isLoop ? context.DeclareLocal(branchTypes[k].ToSystemType()) : targetBlockCtx.ResultLocals![k];
+
+                    for (var k = branchTypes.Length - 1; k >= 0; k--)
+                        context.Emit(OpCodes.Stloc, tempLocals[k]);
+                    // Now: [...baseline, intermediates]
+
+                    context.Emit(OpCodes.Ldloc, condLocal);
+                    var skipTaken = context.DefineLabel();
+                    context.Emit(OpCodes.Brfalse, skipTaken);
+                    // Taken path: discard intermediates and jump.
+                    for (var k = 0; k < discardCount; k++)
+                        context.Emit(OpCodes.Pop);
+                    for (var k = 0; k < branchTypes.Length; k++)
+                        context.Emit(OpCodes.Ldloc, tempLocals[k]);
+                    context.Emit(OpCodes.Br, label);
+
+                    context.MarkLabel(skipTaken);
+                    // Not-taken path: restore branchValues on top of intermediates.
+                    for (var k = 0; k < branchTypes.Length; k++)
+                        context.Emit(OpCodes.Ldloc, tempLocals[k]);
+                }
+            }
+            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+            {
+                context.ValidateStack(this.OpCode, expectedType);
+
                 var resultLocal = context.GetOrCreateResultLocal(checked((int)this.Index), expectedType);
                 var condLocal = context.DeclareLocal(typeof(int));
-                // IL stack: [..., intermediates..., value, cond]
-                // Save cond, dup value into result local (for taken path), reload cond.
-                // On taken: pop value + intermediates, then br label (empty IL stack at label).
-                // On not-taken: leave [..., intermediates..., value] on stack.
                 var skipTaken = context.DefineLabel();
                 var intermediateCount = context.Stack.Count - targetBlockCtx.InitialStackSize - 1;
                 context.Emit(OpCodes.Stloc, condLocal);
@@ -96,33 +177,24 @@ public class BranchIf : Instruction
             }
             else
             {
-                context.Emit(OpCodes.Brtrue, label);
-            }
-        }
-        else if (!context.IsUnreachable)
-        {
-            // Void block: on taken path, discard all intermediate values before jumping.
-            var targetBlockCtx = context.BlockContexts[context.Depth.Count - checked((int)this.Index)];
-            var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
-            if (discardCount > 0)
-            {
-                // Need to conditionally discard intermediates before jumping.
-                var skipTaken = context.DefineLabel();
-                var condLocal = context.DeclareLocal(typeof(int));
-                context.Emit(OpCodes.Stloc, condLocal);         // save cond; stack = [..., intermediates...]
-                context.Emit(OpCodes.Ldloc, condLocal);
-                context.Emit(OpCodes.Brfalse, skipTaken);       // if false, skip the cleanup
-                for (var i = 0; i < discardCount; i++)
-                    context.Emit(OpCodes.Pop);                  // discard intermediates
-                context.Emit(OpCodes.Br, label);                // jump with empty stack
-                context.MarkLabel(skipTaken);                   // not-taken: reload cond... but we consumed it
-                // Restore stack state for not-taken: push a dummy 0 back? No — cond was already consumed.
-                // Actually: not-taken just continues with [..., intermediates...] on stack. ✓
-                // We stored cond to local but for the not-taken path, cond is consumed (PopStackNoReturn already did it in tracking).
-            }
-            else
-            {
-                context.Emit(OpCodes.Brtrue, label);
+                // Void block: on taken path, discard all intermediate values before jumping.
+                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                if (discardCount > 0)
+                {
+                    var skipTaken = context.DefineLabel();
+                    var condLocal = context.DeclareLocal(typeof(int));
+                    context.Emit(OpCodes.Stloc, condLocal);
+                    context.Emit(OpCodes.Ldloc, condLocal);
+                    context.Emit(OpCodes.Brfalse, skipTaken);
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                    context.Emit(OpCodes.Br, label);
+                    context.MarkLabel(skipTaken);
+                }
+                else
+                {
+                    context.Emit(OpCodes.Brtrue, label);
+                }
             }
         }
         else

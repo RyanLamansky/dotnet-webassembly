@@ -43,7 +43,7 @@ public class SpecDiscovery
 
     /// <summary>Walks SpecTestData/ and writes a failure report to the OS temp dir.</summary>
     [TestMethod]
-    [Ignore("Maintenance helper. Remove [Ignore] manually when refreshing skip predicates.")]
+    //[Ignore("Maintenance helper. Remove [Ignore] manually when refreshing skip predicates.")]
     public void DiscoverAllFailures()
     {
         var dataRoot = Path.Combine("Runtime", "SpecTestData");
@@ -57,7 +57,7 @@ public class SpecDiscovery
                 Dir = Path.GetDirectoryName(jsonPath)!,
                 JsonName = Path.GetFileName(jsonPath),
             })
-            .Where(j => !categoryExcludes.Contains(j.Category))
+            .Where(j => !categoryExcludes.Contains(j.Category) && j.Category is "func" or "block" or "br" or "br_if" or "br_table" or "loop" or "if" or "call" or "global")
             .OrderBy(j => j.Category, StringComparer.Ordinal)
             .ToList();
 

@@ -43,9 +43,9 @@ public class If : BlockTypeInstruction
         var exitLabel = context.DefineLabel();
         var falseLabel = context.DefineLabel();
         context.Labels.Add(checked((uint)context.Depth.Count), exitLabel);
-        context.Depth.Push(this);
-        var blockCtx = new BlockContext(context.Stack.Count);
+        var blockCtx = BlockTypeInstruction.MakeBlockContext(this, context);
         blockCtx.IfFalseLabel = falseLabel;
+        context.Depth.Push(this);
         context.BlockContexts.Add(context.Depth.Count, blockCtx);
         context.Emit(OpCodes.Brfalse, falseLabel);
     }

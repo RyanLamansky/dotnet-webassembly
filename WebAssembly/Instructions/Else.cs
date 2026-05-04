@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -23,8 +24,36 @@ public class Else : SimpleInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek().Type;
+        var blockCtx = context.BlockContexts[context.Depth.Count];
 
-        if (blockType.TryToValueType(out var expectedType))
+        if (blockCtx.BlockSignature != null)
+        {
+            // Multi-value TypeIndex if-block: validate then-branch produced all result values.
+            var returns = blockCtx.BlockSignature.RawReturnTypes;
+            var expected = blockCtx.InitialStackSize + returns.Length;
+            if (!context.IsUnreachable && context.Stack.Count != expected)
+                throw new StackSizeIncorrectException(OpCode.Else, expected, context.Stack.Count);
+
+            if (!context.IsUnreachable && returns.Length > 0)
+            {
+                // Stash then-branch results into ResultLocals.
+                if (blockCtx.ResultLocals == null)
+                {
+                    blockCtx.ResultLocals = new LocalBuilder[returns.Length];
+                    for (var i = 0; i < returns.Length; i++)
+                        blockCtx.ResultLocals[i] = context.DeclareLocal(returns[i].ToSystemType());
+                }
+                for (var i = returns.Length - 1; i >= 0; i--)
+                    context.Emit(OpCodes.Stloc, blockCtx.ResultLocals[i]);
+            }
+
+            // Reset tracking stack to InitialStackSize, then push params so else-branch starts with params available.
+            while (context.Stack.Count > blockCtx.InitialStackSize)
+                context.Stack.Pop();
+            foreach (var pt in blockCtx.BlockSignature.RawParameterTypes)
+                context.Stack.Push(pt);
+        }
+        else if (blockType.TryToValueType(out var expectedType))
         {
             context.PopStackNoReturn(OpCode.Else, expectedType);
             // Store then-block result before jumping over the else block.
@@ -37,7 +66,6 @@ public class Else : SimpleInstruction
         context.Emit(OpCodes.Br, context.Labels[target]);
 
         // Mark where the false-branch (brfalse from If) lands.
-        var blockCtx = context.BlockContexts[context.Depth.Count];
         context.MarkLabel(blockCtx.IfFalseLabel!.Value);
         blockCtx.IfFalseLabel = null;
 

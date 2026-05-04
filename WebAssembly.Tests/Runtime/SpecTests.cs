@@ -78,6 +78,8 @@ public class SpecTests
     {
         // 1x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
         // 52x AssertFailedException: no method source (cascaded module-load failure)
+        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
+        // 52x AssertFailedException: no method source (cascaded module-load failure)
         var skips = new HashSet<uint>
         {
             3, 353, 354, 355, 356, 357, 359, 360, 361, 363, 364, 365, 367, 368, 369, 371, 372, 374, 375,
@@ -456,9 +458,11 @@ public class SpecTests
         // 123x AssertFailedException: no method source (cascaded module-load failure)
         // 1x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
         // 2x AssertFailedException: expected exception not thrown
+        // Multi-value TypeIndex if blocks: many cascade failures from missing runner support for
+        // multi-value returns and call_indirect with multi-value blocks.
         var skips = new HashSet<uint>
         {
-            3, 537, 538, 539, 540, 542, 543, 544, 545, 547, 548, 549, 550, 552, 553, 554, 555, 556, 557,
+            537, 538, 539, 540, 542, 543, 544, 545, 547, 548, 549, 550, 552, 553, 554, 555, 556, 557,
             558, 559, 561, 562, 563, 564, 565, 566, 568, 569, 570, 571, 572, 573, 575, 576, 578, 579, 580,
             581, 583, 584, 585, 586, 588, 589, 590, 591, 592, 593, 595, 596, 597, 598, 600, 601, 603, 604,
             606, 607, 609, 610, 612, 613, 615, 616, 618, 619, 621, 622, 624, 625, 627, 628, 629, 631, 632,

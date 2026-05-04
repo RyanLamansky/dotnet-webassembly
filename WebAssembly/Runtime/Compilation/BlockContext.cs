@@ -21,6 +21,18 @@ internal sealed class BlockContext
     /// </summary>
     public Label? IfFalseLabel;
 
+    /// <summary>
+    /// For multi-value blocks (TypeIndex != null), the full function-type signature (params → results).
+    /// Null for inline-typed blocks.
+    /// </summary>
+    public Signature? BlockSignature;
+
+    /// <summary>
+    /// For multi-value TypeIndex blocks with N>1 results, holds the locals that ferry result values
+    /// across branches. Indexed 0..N-1 (first result at index 0).
+    /// </summary>
+    public LocalBuilder[]? ResultLocals;
+
     public BlockContext()
     {
     }
