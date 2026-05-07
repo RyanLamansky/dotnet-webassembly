@@ -1381,8 +1381,8 @@ public static class Compile
 
         // Buffer active segment data so all bounds checks can be emitted before any writes.
         // This ensures atomicity: if any segment doesn't fit, no writes occur.
-        // (constOffset, isDynamicOffset, globalIndex, funcIndices, dynamicOffsetLocal)
-        var activeSegments = new System.Collections.Generic.List<(uint? ConstOffset, bool IsDynamic, uint GlobalIndex, uint[] FuncIndices, LocalBuilder? DynLocal)>();
+        // (tableIndex, constOffset, isDynamicOffset, globalIndex, funcIndices, dynamicOffsetLocal)
+        var activeSegments = new System.Collections.Generic.List<(uint TableIndex, uint? ConstOffset, bool IsDynamic, uint GlobalIndex, uint[] FuncIndices, LocalBuilder? DynLocal)>();
         
         // Buffer passive segment data to defer IL emission until after Code section.
         // (segmentIndex, segField, funcIndices (uint.MaxValue = null slot), elemType)
@@ -1532,7 +1532,7 @@ public static class Compile
                     }
 
                     context.ElementSegments[(uint)i] = exportsBuilder.DefineField($"☣ ActiveElem {i}", typeof(Delegate[]), FieldAttributes.Private);
-                    activeSegments.Add((constOffset4, isDynamic4, globalIndex4, funcIndices4, dynamicOffsetLocal4));
+                    activeSegments.Add((0, constOffset4, isDynamic4, globalIndex4, funcIndices4, dynamicOffsetLocal4));
                 }
                 continue;
             }
@@ -1551,7 +1551,87 @@ public static class Compile
                 continue;
             }
 
-            // Kinds 2–3, 7: skip them (active w/ explicit table/func-indices, declarative).
+            // Kind 2: active, explicit table index, offset expr, elemkind, func indices.
+            if (kind == 2)
+            {
+                var preKind2Offset = reader.Offset;
+                var tableIdx2 = reader.ReadVarUInt32();
+
+                if (tableIdx2 >= (uint)context.TableElementTypes.Count)
+                    throw new ModuleLoadException($"Table index {tableIdx2} out of range.", preKind2Offset);
+
+                context.ElementSegments[(uint)i] = exportsBuilder.DefineField(
+                    $"☣ ActiveElem {i}",
+                    typeof(Delegate[]),
+                    FieldAttributes.Private);
+
+                uint? constOffset2 = null;
+                uint globalIndex2 = 0;
+                bool isDynamicOffset2 = false;
+                {
+                    var preInitializerOffset = reader.Offset;
+                    var initializer2 = Instruction.ParseInitializerExpression(reader).ToArray();
+                    if (initializer2.Length == 2 && initializer2[0] is Instructions.Int32Constant ic2 && initializer2[1] is Instructions.End)
+                    {
+                        constOffset2 = (uint)ic2.Value;
+                    }
+                    else if (initializer2.Length == 2 && initializer2[0] is Instructions.GlobalGet gg2 && initializer2[1] is Instructions.End)
+                    {
+                        if (gg2.Index >= (uint)context.ImportedGlobalCount)
+                            throw new ModuleLoadException("unknown global", preInitializerOffset);
+                        if (context.Globals != null && gg2.Index < (uint)context.Globals.Length && context.Globals[gg2.Index].Setter != null)
+                            throw new ModuleLoadException("constant expression required", preInitializerOffset);
+                        globalIndex2 = gg2.Index;
+                        isDynamicOffset2 = true;
+                    }
+                    else
+                    {
+                        throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant or global.get followed by end.", preInitializerOffset);
+                    }
+                }
+
+                reader.ReadByte(); // elemkind (0x00 = funcref)
+                
+                var elements2 = reader.ReadVarUInt32();
+                var funcIndicesArr2 = new uint[elements2];
+                if (elements2 > 0)
+                {
+                    if (functionSignatures == null || internalFunctions == null)
+                        throw new ModuleLoadException("Element section must be empty if there are no functions to reference.", reader.Offset);
+                    for (var j = 0u; j < elements2; j++)
+                    {
+                        var funcIdx = reader.ReadVarUInt32();
+                        if (funcIdx >= (uint)functionSignatures.Length)
+                            throw new ModuleLoadException($"Element segment {i}: function index {funcIdx} is unknown.", reader.Offset);
+                        funcIndicesArr2[j] = funcIdx;
+                    }
+                }
+
+                // For dynamic offsets (global.get), emit IL to load the global value into a local.
+                LocalBuilder? dynamicOffsetLocal2 = null;
+                if (isDynamicOffset2)
+                {
+                    if (localFunctionTable == null)
+                    {
+                        localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                        instanceConstructorIL.EmitLoadArg(0);
+                        instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable!);
+                        instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
+                    }
+                    
+                    dynamicOffsetLocal2 = instanceConstructorIL.DeclareLocal(typeof(uint));
+                    var global2 = (context.Globals ?? throw new CompilerException("global.get requires a global section."))[globalIndex2];
+                    if (global2.RequiresInstance)
+                        instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Call, global2.Getter);
+                    instanceConstructorIL.Emit(OpCodes.Stloc, dynamicOffsetLocal2);
+                }
+
+                activeSegments.Add((tableIdx2, constOffset2, isDynamicOffset2, globalIndex2, funcIndicesArr2, dynamicOffsetLocal2));
+                continue;
+            }
+
+            // Kinds 3, 7: skip them (declarative).
             if (kind != 0)
             {
                 SkipElementSegment(reader, kind);
@@ -1625,15 +1705,37 @@ public static class Compile
                     funcIndicesArr[j] = reader.ReadVarUInt32();
             }
 
-            activeSegments.Add((constOffset, isDynamicOffset, globalIndex, funcIndicesArr, dynamicOffsetLocal));
+            activeSegments.Add((0, constOffset, isDynamicOffset, globalIndex, funcIndicesArr, dynamicOffsetLocal));
+        }
+
+        // Create locals for all tables referenced by active segments.
+        var tableLocals = new Dictionary<uint, LocalBuilder>();
+        foreach (var (tableIndex, _, _, _, _, _) in activeSegments)
+        {
+            if (!tableLocals.ContainsKey(tableIndex))
+            {
+                if (tableIndex >= (uint)context.Tables.Count)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} but only {context.Tables.Count} tables exist.", 0);
+                
+                var tableField = context.Tables[(int)tableIndex];
+                if (tableField == null)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} which is null.", 0);
+                    
+                var tableLocal = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, tableField);
+                instanceConstructorIL.Emit(OpCodes.Stloc, tableLocal);
+                tableLocals[tableIndex] = tableLocal;
+            }
         }
 
         // Pass 1: emit all bounds checks before any writes (atomicity guarantee).
-        foreach (var (constOffset, isDynamic, globalIndex, funcIndices, dynLocal) in activeSegments)
+        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, funcIndices, dynLocal) in activeSegments)
         {
             var elements = (uint)funcIndices.Length;
             var isBigEnough = instanceConstructorIL.DefineLabel();
-            instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable!);
+            var tableLocal = tableLocals[tableIndex];
+            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
             instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
             if (isDynamic)
             {
@@ -1662,16 +1764,18 @@ public static class Compile
         // no writes to a shared imported table have already occurred.
         var capturedSegments = activeSegments;
         var capturedPassiveSegments = passiveSegments;
-        var capturedFunctionTable = localFunctionTable;
+        var capturedTableLocals = tableLocals;
         var capturedSetter = setter;
         var capturedGetter = getter;
         return () =>
         {
-            foreach (var (constOffset, isDynamic, _, funcIndices, dynLocal) in capturedSegments)
+            foreach (var (tableIndex, constOffset, isDynamic, _, funcIndices, dynLocal) in capturedSegments)
             {
                 var elements = (uint)funcIndices.Length;
                 if (elements == 0)
                     continue;
+
+                var tableLocal = capturedTableLocals[tableIndex];
 
                 for (var j = 0u; j < elements; j++)
                 {
@@ -1696,7 +1800,7 @@ public static class Compile
                         delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                     }
 
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, capturedFunctionTable!);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
                     if (isDynamic)
                     {
                         instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
@@ -1713,7 +1817,7 @@ public static class Compile
 
                     if (!isDynamic && existingDelegates.TryGetValue(functionIndex, out var existing))
                     {
-                        instanceConstructorIL.Emit(OpCodes.Ldloc, capturedFunctionTable!);
+                        instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
                         instanceConstructorIL.EmitLoadConstant(existing);
                         instanceConstructorIL.Emit(OpCodes.Call, capturedGetter);
                     }
