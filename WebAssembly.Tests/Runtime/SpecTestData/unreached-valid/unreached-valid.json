@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/unreached-valid.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cunreached-valid.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "unreached-valid.0.wasm"}, 
   {"type": "assert_trap", "line": 42, "action": {"type": "invoke", "field": "select-trap-left", "args": [{"type": "i32", "value": "1"}]}, "text": "unreachable", "expected": [{"type": "i32"}]}, 

@@ -39,18 +39,27 @@ public class TableGet : Instruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (TableIndex != 0 || context.FunctionTable == null)
-            throw new NotSupportedException("table.get only supports table index 0.");
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
+
+        var elementType = context.GetTableElementType(TableIndex);
+        var table = context.GetTable(TableIndex);
+        var stackType = elementType == ElementType.FunctionReference ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef;
 
         context.PopStackNoReturn(OpCode, WebAssemblyValueType.Int32);
-        context.Stack.Push(WebAssemblyValueType.FuncRef);
+        context.Stack.Push(stackType);
 
         // IL stack on entry: [..., index:i32]  — store it, load table, reload index.
         var idx = context.DeclareLocal(typeof(int));
         context.Emit(OpCodes.Stloc, idx);
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldfld, table);
         context.Emit(OpCodes.Ldloc, idx);
-        context.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+        
+        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var indexGetter = tableType.GetProperty("Item")?.GetGetMethod() 
+            ?? throw new NotSupportedException($"Item property not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, indexGetter);
     }
 }

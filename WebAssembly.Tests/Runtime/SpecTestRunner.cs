@@ -145,7 +145,7 @@ static class SpecTestRunner
                         if (assert.expected?.Length > 0)
                         {
                             var rawExpected = assert.expected[0];
-                            if (rawExpected.BoxedValue.Equals(result))
+                            if (Equals(rawExpected.BoxedValue, result))
                                 continue;
 
                             switch (rawExpected)
@@ -912,26 +912,24 @@ static class SpecTestRunner
         public override string ToString() => $"v128({lane_type})[{string.Join(',', value ?? [])}]";
     }
 
-    // Reference-type stubs. Library doesn't implement reference types yet (WASM 2.0 feature),
-    // so BoxedValue throws — execution-time failures are caught per-line by Discover or skipped
-    // by per-category skip predicates. The class only exists so STJ can deserialize JSON files
-    // that mention `externref` / `funcref`.
+    // Reference-type support. externref is a nullable object, funcref is a nullable delegate.
+    // "null" string value means null reference, any other value is treated as an opaque external reference.
     class ExternRefValue() : TypedValue(RawValueType.externref)
     {
-        public string value;
+        public string? value;
 
-        public override object BoxedValue => throw new NotSupportedException("externref values not implemented (WASM 2.0)");
+        public override object BoxedValue => value == "null" ? (object)null! : value!;
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
     class FuncRefValue() : TypedValue(RawValueType.funcref)
     {
-        public string value;
+        public string? value;
 
-        public override object BoxedValue => throw new NotSupportedException("funcref values not implemented (WASM 2.0)");
+        public override object BoxedValue => value == "null" ? (object)null! : throw new NotSupportedException($"funcref value '{value}' cannot be boxed - only null funcref supported");
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<TestActionType>))]

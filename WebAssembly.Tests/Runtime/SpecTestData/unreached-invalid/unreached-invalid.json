@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/unreached-invalid.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cunreached-invalid.wast",
  "commands": [
   {"type": "assert_invalid", "line": 4, "filename": "unreached-invalid.0.wasm", "text": "unknown local", "module_type": "binary"}, 
   {"type": "assert_invalid", "line": 8, "filename": "unreached-invalid.1.wasm", "text": "unknown global", "module_type": "binary"}, 

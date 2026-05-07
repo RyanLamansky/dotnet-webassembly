@@ -40,22 +40,67 @@ public class TableGrow : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        // Stack: ref delta → old-size
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
+
+        var elementType = context.GetTableElementType(TableIndex);
+        var table = context.GetTable(TableIndex);
+        var stackType = elementType == ElementType.FunctionReference ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef;
+
+        // Stack: initValue delta → old-size
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // delta
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.FuncRef); // ref (any ref type)
+        context.PopStackNoReturn(this.OpCode, stackType); // initValue (any ref type)
         context.Stack.Push(WebAssemblyValueType.Int32);
 
-        if (TableIndex != 0 || context.FunctionTable == null)
-            throw new NotSupportedException("table.grow only supports table index 0.");
-
-        // Pop delta into local; discard ref; load table; call Grow; cast to int.
-        var delta = context.DeclareLocal(typeof(uint));
-        context.Emit(OpCodes.Stloc, delta); // store delta
-        context.Emit(OpCodes.Pop);          // discard ref
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
-        context.Emit(OpCodes.Ldloc, delta);
-        context.Emit(OpCodes.Call, FunctionTable.GrowMethod);
+        // IL stack: [..., initValue, delta]
+        // Need to call: table.Grow(initValue, delta)
+        // For FunctionTable: Grow(Delegate? initValue, uint delta)
+        // For ExternRefTable: Grow(uint delta, object? value) - signature is backwards!
+        
+        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        
+        if (elementType == ElementType.FunctionReference)
+        {
+            // FunctionTable.Grow(Delegate? initValue, uint delta)
+            // IL stack: [..., initValue:object, delta:i32]
+            // Swap them so delta is on top, then store both
+            var delta = context.DeclareLocal(typeof(uint));
+            var initValue = context.DeclareLocal(typeof(Delegate));
+            
+            context.Emit(OpCodes.Stloc, delta);      // store delta
+            context.Emit(OpCodes.Castclass, typeof(Delegate)); // cast initValue to Delegate
+            context.Emit(OpCodes.Stloc, initValue);  // store initValue
+            
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, table);
+            context.Emit(OpCodes.Ldloc, initValue);  // load initValue
+            context.Emit(OpCodes.Ldloc, delta);      // load delta
+            
+            var growMethod = typeof(FunctionTable).GetMethod("Grow") 
+                ?? throw new NotSupportedException($"Grow method not found on FunctionTable");
+            context.Emit(OpCodes.Call, growMethod);
+        }
+        else
+        {
+            // ExternRefTable.Grow(uint delta, object? value)
+            // IL stack: [..., value:object, delta:i32]
+            // Need: table, delta, value
+            var delta = context.DeclareLocal(typeof(uint));
+            var value = context.DeclareLocal(typeof(object));
+            
+            context.Emit(OpCodes.Stloc, delta);   // store delta
+            context.Emit(OpCodes.Stloc, value);   // store value
+            
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, table);
+            context.Emit(OpCodes.Ldloc, delta);   // load delta
+            context.Emit(OpCodes.Ldloc, value);   // load value
+            
+            var growMethod = typeof(ExternRefTable).GetMethod("Grow") 
+                ?? throw new NotSupportedException($"Grow method not found on ExternRefTable");
+            context.Emit(OpCodes.Call, growMethod);
+        }
+        
         context.Emit(OpCodes.Conv_I4);
     }
 }

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/memory_copy.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cmemory_copy.wast",
  "commands": [
   {"type": "module", "line": 6, "filename": "memory_copy.0.wasm"}, 
   {"type": "action", "line": 15, "action": {"type": "invoke", "field": "test", "args": []}, "expected": []}, 

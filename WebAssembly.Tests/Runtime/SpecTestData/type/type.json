@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/type.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ctype.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "type.0.wasm"}, 
   {"type": "assert_malformed", "line": 44, "filename": "type.1.wat", "text": "unexpected token", "module_type": "text"}, 

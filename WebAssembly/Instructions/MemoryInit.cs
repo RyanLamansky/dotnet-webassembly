@@ -51,7 +51,7 @@ public class MemoryInit : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
         if (!context.DataSegments.TryGetValue(SegmentIndex, out var segField))
-            throw new CompilerException($"memory.init: data segment {SegmentIndex} is not a passive segment or does not exist.");
+            throw new ModuleLoadException($"memory.init: data segment {SegmentIndex} is not a passive segment or does not exist.", 0);
 
         // IL stack on entry: [..., dst:i32, srcOffset:i32, len:i32]  (len on top)
         var len = context.DeclareLocal(typeof(uint));

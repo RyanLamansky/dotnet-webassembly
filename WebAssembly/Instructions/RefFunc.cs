@@ -1,5 +1,6 @@
 using System;
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -56,9 +57,20 @@ public class RefFunc : Instruction, IEquatable<RefFunc>
 
     internal sealed override void Compile(CompilationContext context)
     {
-        // Pushes a funcref (represented as object) — emit a delegate load from the function table.
-        // For now emit null as a placeholder; full implementation requires function-reference storage.
+        // ref.func returns a funcref (delegate) for the given function index
         context.Stack.Push(WebAssemblyValueType.FuncRef);
-        context.Emit(OpCodes.Ldnull); // TODO: load actual function reference
+        
+        if (context.FunctionReferences == null)
+            throw new CompilerException("ref.func: function references array not initialized.");
+            
+        var methods = context.Methods;
+        if (methods == null || Index >= methods.Length)
+            throw new CompilerException($"ref.func: function {Index} does not exist.");
+        
+        // Emit: this.functionRefs[Index]
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, context.FunctionReferences);
+        context.Emit(OpCodes.Ldc_I4, (int)Index);
+        context.Emit(OpCodes.Ldelem_Ref);
     }
 }

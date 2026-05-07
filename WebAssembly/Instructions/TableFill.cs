@@ -1,4 +1,6 @@
 using System;
+using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -38,6 +40,44 @@ public class TableFill : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        throw new NotSupportedException("table.fill is not yet supported.");
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
+
+        var elementType = context.GetTableElementType(TableIndex);
+        var table = context.GetTable(TableIndex);
+
+        // Stack: [i, val, n] -> []
+        // Pop count (n), value (val), start index (i)
+        context.Stack.Pop(); // count (n)
+        context.Stack.Pop(); // value (val)
+        context.Stack.Pop(); // start (i)
+
+        // Emit code to call FunctionTable.Fill(start, value, count)
+        // Stack at runtime: start, value, count
+        // We need to rearrange to: table, start, value, count
+        
+        var countLocal = context.DeclareLocal(typeof(int));
+        var valueLocal = context.DeclareLocal(typeof(Delegate));
+        var startLocal = context.DeclareLocal(typeof(int));
+        
+        // Pop in reverse order
+        context.Emit(OpCodes.Stloc, countLocal);
+        context.Emit(OpCodes.Stloc, valueLocal);
+        context.Emit(OpCodes.Stloc, startLocal);
+        
+        // Load table
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, table);
+        
+        // Push arguments
+        context.Emit(OpCodes.Ldloc, startLocal);
+        context.Emit(OpCodes.Ldloc, valueLocal);
+        context.Emit(OpCodes.Ldloc, countLocal);
+        
+        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var fillMethod = tableType.GetMethod(nameof(FunctionTable.Fill)) 
+            ?? throw new NotSupportedException($"Fill method not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, fillMethod);
     }
 }

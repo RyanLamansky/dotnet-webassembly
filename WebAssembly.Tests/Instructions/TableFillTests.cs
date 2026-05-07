@@ -17,10 +17,10 @@ public class TableFillTests
     }
 
     /// <summary>
-    /// Tests that table.fill throws NotSupportedException at runtime (stub).
+    /// Tests that table.fill works for funcref tables.
     /// </summary>
     [TestMethod]
-    public void TableFill_ThrowsNotSupported()
+    public void TableFill_FuncRef_Works()
     {
         var module = new Module();
         module.Tables.Add(new Table(4, 10));
@@ -39,6 +39,8 @@ public class TableFillTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
+        // Should not throw - table.fill is now implemented
+        var instance = module.ToInstance<VoidExport>();
+        instance.Exports.Test();
     }
 }

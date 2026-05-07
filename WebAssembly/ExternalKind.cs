@@ -24,4 +24,9 @@ public enum ExternalKind : byte
     /// A global import or definition.
     /// </summary>
     Global = 3,
+
+    /// <summary>
+    /// A tag import or definition (exception handling proposal).
+    /// </summary>
+    Tag = 4,
 }

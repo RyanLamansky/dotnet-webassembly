@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/stack.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cstack.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "stack.0.wasm"}, 
   {"type": "assert_return", "line": 146, "action": {"type": "invoke", "field": "fac-expr", "args": [{"type": "i64", "value": "25"}]}, "expected": [{"type": "i64", "value": "7034535277573963776"}]}, 

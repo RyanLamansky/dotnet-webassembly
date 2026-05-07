@@ -356,6 +356,13 @@ public static class Compile
         var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
         var delegateRemappersByType = context.DelegateRemappersByType;
         var emptyTypes = Type.EmptyTypes;
+        bool functionRefsInitialized = false;
+
+        // Create FunctionReferences field upfront (will be initialized in constructor if there are functions)
+        context.FunctionReferences = exportsBuilder.DefineField(
+            "☣ FunctionRefs",
+            typeof(Delegate[]),
+            FieldAttributes.Private | FieldAttributes.InitOnly);
 
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -452,56 +459,75 @@ public static class Compile
 
                             context.TableElementTypes.Add(elementType);
 
-                            if (functionTable == null && elementType == ElementType.FunctionReference)
+                            var limits = new ResizableLimits(reader);
+                            
+                            // Create table field based on element type
+                            FieldBuilder tableField;
+                            Type tableType;
+                            
+                            if (elementType == ElementType.FunctionReference)
                             {
-                                // Only the first funcref table is wired to call_indirect; additional tables and externref tables are parsed but unused.
-                                var limits = new ResizableLimits(reader);
-                                functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
-                                instanceConstructorIL.EmitLoadArg(0);
-                                instanceConstructorIL.EmitLoadConstant(limits.Minimum);
-                                if (limits.Maximum.HasValue)
-                                {
-                                    instanceConstructorIL.EmitLoadConstant(limits.Maximum);
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                        })
-                                        .Single());
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 2
-                                                && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
-                                                && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
-                                        })
-                                        .Single());
-                                }
-                                else
-                                {
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                        })
-                                        .Single());
-                                }
-                                instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                                tableType = configuration.NeutralizeType(typeof(FunctionTable));
+                                tableField = exportsBuilder.DefineField(
+                                    $"☣ Table{i}",
+                                    tableType,
+                                    FieldAttributes.Private | FieldAttributes.InitOnly);
+                            }
+                            else // ElementType.ExternRef
+                            {
+                                tableType = configuration.NeutralizeType(typeof(ExternRefTable));
+                                tableField = exportsBuilder.DefineField(
+                                    $"☣ Table{i}",
+                                    tableType,
+                                    FieldAttributes.Private | FieldAttributes.InitOnly);
+                            }
+                            
+                            context.Tables.Add(tableField);
+                            
+                            // Backward compatibility: first funcref table is also FunctionTable
+                            if (functionTable == null && elementType == ElementType.FunctionReference)
+                                functionTable = tableField;
+                            
+                            // Initialize table in constructor
+                            instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.EmitLoadConstant(limits.Minimum);
+                            if (limits.Maximum.HasValue)
+                            {
+                                instanceConstructorIL.EmitLoadConstant(limits.Maximum);
+                                instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                                    })
+                                    .Single());
+                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 2
+                                            && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
+                                            && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
+                                    })
+                                    .Single());
                             }
                             else
                             {
-                                // Additional tables (or externref tables): parse and discard limits.
-                                _ = new ResizableLimits(reader);
+                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                                    })
+                                    .Single());
                             }
+                            instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
                         }
                     }
                     break;
@@ -609,6 +635,23 @@ public static class Compile
 
                 case Section.Data:
                     SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, preSectionOffset);
+                    
+                    // Initialize FunctionReferences before element writes (if not already done)
+                    if (!functionRefsInitialized && context.FunctionReferences != null)
+                    {
+                        if (functionSignatures != null)
+                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+                        else
+                        {
+                            // No functions, but still initialize empty array
+                            instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.EmitLoadConstant(0);
+                            instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
+                            instanceConstructorIL.Emit(OpCodes.Stfld, context.FunctionReferences);
+                        }
+                        functionRefsInitialized = true;
+                    }
+                    
                     deferredElementWrites?.Invoke(); // Emit element writes AFTER data bounds checks
                     deferredElementWrites = null;
                     break;
@@ -636,6 +679,22 @@ public static class Compile
             preSectionOffset = reader.Offset;
             if ((Section)id != Section.DataCount)
                 previousSection = (Section)id;
+        }
+
+        // Initialize FunctionReferences before element writes (if not already done and no Data section)
+        if (!functionRefsInitialized && context.FunctionReferences != null)
+        {
+            if (functionSignatures != null)
+                EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+            else
+            {
+                // No functions, but still initialize empty array to avoid NullReferenceException
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.EmitLoadConstant(0);
+                instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
+                instanceConstructorIL.Emit(OpCodes.Stfld, context.FunctionReferences);
+            }
+            functionRefsInitialized = true;
         }
 
         // If there was no data section, element writes are still pending.
@@ -679,6 +738,15 @@ public static class Compile
         {
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
             instanceConstructorIL.Emit(OpCodes.Call, startFunction);
+        }
+
+        // Ensure FunctionReferences is initialized even if empty (to avoid NullReferenceException)
+        if (!functionRefsInitialized && context.FunctionReferences != null)
+        {
+            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+            instanceConstructorIL.Emit(OpCodes.Ldc_I4_0);
+            instanceConstructorIL.Emit(OpCodes.Newarr, typeof(System.Delegate));
+            instanceConstructorIL.Emit(OpCodes.Stfld, context.FunctionReferences);
         }
 
         instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
@@ -842,7 +910,8 @@ public static class Compile
                         if (functionTable != null)
                             throw new NotSupportedException("Unable to support multiple tables.");
 
-                        functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
+                        functionTable = CreateFunctionTableField(exportsBuilder, configuration);
+                        context.Tables.Add(functionTable);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
@@ -1314,6 +1383,10 @@ public static class Compile
         // This ensures atomicity: if any segment doesn't fit, no writes occur.
         // (constOffset, isDynamicOffset, globalIndex, funcIndices, dynamicOffsetLocal)
         var activeSegments = new System.Collections.Generic.List<(uint? ConstOffset, bool IsDynamic, uint GlobalIndex, uint[] FuncIndices, LocalBuilder? DynLocal)>();
+        
+        // Buffer passive segment data to defer IL emission until after Code section.
+        // (segmentIndex, segField, funcIndices (uint.MaxValue = null slot), elemType)
+        var passiveSegments = new System.Collections.Generic.List<(int Index, FieldBuilder SegField, uint[] FuncIndices, ElementType ElemType)>();
 
         for (var i = 0; i < count; i++)
         {
@@ -1342,43 +1415,8 @@ public static class Compile
                         funcIndices[j] = idx;
                     }
 
-                    if (functionSignatures == null || internalFunctions == null)
-                        continue;
-
-                    // Emit constructor IL: allocate Delegate[] and fill it with method delegates.
-                    var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
-                    instanceConstructorIL.EmitLoadConstant((int)elemCount);
-                    instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
-                    instanceConstructorIL.Emit(OpCodes.Stloc, arrLocal);
-
-                    for (var j = 0u; j < elemCount; j++)
-                    {
-                        var functionIndex = funcIndices[j];
-                        var signature = functionSignatures[functionIndex];
-                        var parms = signature.ParameterTypes;
-                        var returns = signature.ReturnTypes;
-
-                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
-                        {
-                            var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
-                            var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
-                                throw new CompilerException($"Failed to get a delegate for type {signature}.");
-                            if (del.IsGenericType)
-                                del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
-                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
-                        }
-
-                        instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
-                        instanceConstructorIL.EmitLoadConstant((int)j);
-                        instanceConstructorIL.EmitLoadArg(0);
-                        instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions[functionIndex]);
-                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
-                        instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
-                    }
-
-                    instanceConstructorIL.EmitLoadArg(0);
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
-                    instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+                    if (functionSignatures != null && internalFunctions != null)
+                        passiveSegments.Add((i, segField, funcIndices, ElementType.FunctionReference));
                 }
                 continue;
             }
@@ -1397,8 +1435,8 @@ public static class Compile
 
                 if (elemCount > 0 && functionSignatures != null && internalFunctions != null)
                 {
-                    // Parse all init-exprs first (null = ref.null slot).
-                    var funcIndices = new uint?[elemCount];
+                    // Parse all init-exprs first (uint.MaxValue = ref.null slot).
+                    var funcIndices = new uint[elemCount];
                     for (var j = 0u; j < elemCount; j++)
                     {
                         var expr = Instruction.ParseInitializerExpression(reader).ToArray();
@@ -1409,46 +1447,12 @@ public static class Compile
                             funcIndices[j] = rf.Index;
                         }
                         else if (expr.Length == 2 && expr[0] is Instructions.RefNull)
-                            funcIndices[j] = null; // null slot
+                            funcIndices[j] = uint.MaxValue; // null slot
                         else
                             throw new ModuleLoadException($"Kind-5 element segment {i}: unsupported init expression.", reader.Offset);
                     }
 
-                    var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
-                    instanceConstructorIL.EmitLoadConstant((int)elemCount);
-                    instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
-                    instanceConstructorIL.Emit(OpCodes.Stloc, arrLocal);
-
-                    for (var j = 0u; j < elemCount; j++)
-                    {
-                        if (funcIndices[j] is not uint functionIndex)
-                            continue; // null slot — leave array element as null
-
-                        var signature = functionSignatures[functionIndex];
-                        var parms = signature.ParameterTypes;
-                        var returns = signature.ReturnTypes;
-
-                        if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
-                        {
-                            var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
-                            var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
-                                throw new CompilerException($"Failed to get a delegate for type {signature}.");
-                            if (del.IsGenericType)
-                                del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
-                            delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
-                        }
-
-                        instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
-                        instanceConstructorIL.EmitLoadConstant((int)j);
-                        instanceConstructorIL.EmitLoadArg(0);
-                        instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions[functionIndex]);
-                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
-                        instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
-                    }
-
-                    instanceConstructorIL.EmitLoadArg(0);
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
-                    instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+                    passiveSegments.Add((i, segField, funcIndices, segRefType));
                 }
                 continue;
             }
@@ -1650,13 +1654,14 @@ public static class Compile
             instanceConstructorIL.MarkLabel(isBigEnough);
         }
 
-        if (activeSegments.Count == 0)
+        if (activeSegments.Count == 0 && passiveSegments.Count == 0)
             return null;
 
         // Return a deferred action that emits element writes. The caller must invoke this AFTER
         // emitting all other section checks (data segment bounds) so that if any check fails,
         // no writes to a shared imported table have already occurred.
         var capturedSegments = activeSegments;
+        var capturedPassiveSegments = passiveSegments;
         var capturedFunctionTable = localFunctionTable;
         var capturedSetter = setter;
         var capturedGetter = getter;
@@ -1738,6 +1743,47 @@ public static class Compile
 
                     instanceConstructorIL.Emit(OpCodes.Call, capturedSetter);
                 }
+            }
+            
+            // Emit passive element segments (deferred until after Code section so internalFunctions[] is populated).
+            foreach (var (segIndex, segField, funcIndices, elemType) in capturedPassiveSegments)
+            {
+                var arrLocal = instanceConstructorIL.DeclareLocal(typeof(Delegate[]));
+                instanceConstructorIL.EmitLoadConstant((int)funcIndices.Length);
+                instanceConstructorIL.Emit(OpCodes.Newarr, typeof(Delegate));
+                instanceConstructorIL.Emit(OpCodes.Stloc, arrLocal);
+
+                for (var j = 0u; j < funcIndices.Length; j++)
+                {
+                    var functionIndex = funcIndices[j];
+                    if (functionIndex == uint.MaxValue)
+                        continue; // null slot — leave array element as null
+
+                    var signature = functionSignatures![functionIndex];
+                    var parms = signature.ParameterTypes;
+                    var returns = signature.ReturnTypes;
+
+                    if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
+                    {
+                        var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                        var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
+                            throw new CompilerException($"Failed to get a delegate for type {signature}.");
+                        if (del.IsGenericType)
+                            del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
+                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
+                    }
+
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                    instanceConstructorIL.EmitLoadConstant((int)j);
+                    instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions![functionIndex]);
+                    instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                    instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
+                }
+
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
+                instanceConstructorIL.Emit(OpCodes.Stfld, segField);
             }
         };
     }
@@ -2015,6 +2061,75 @@ public static class Compile
             "☣ FunctionTable",
             configuration.NeutralizeType(typeof(FunctionTable)),
             FieldAttributes.Private | FieldAttributes.InitOnly);
+
+    static void EmitFunctionReferencesInitialization(
+        ILGenerator il,
+        FieldBuilder functionReferencesField,
+        MethodInfo[]? internalFunctions,
+        Signature[] functionSignatures,
+        int importedFunctions,
+        CompilerConfiguration configuration)
+    {
+        var totalFunctions = internalFunctions?.Length ?? 0;
+        
+        // Create the delegate array in a local variable
+        var arrLocal = il.DeclareLocal(typeof(Delegate[]));
+        il.EmitLoadConstant(totalFunctions);
+        il.Emit(OpCodes.Newarr, typeof(Delegate));
+        il.Emit(OpCodes.Stloc, arrLocal);
+        
+        // Populate function delegates
+        // internalFunctions contains ALL functions (imported + internal):
+        //   [0..importedFunctions-1]: MethodInfo for invoker wrappers of imported functions
+        //   [importedFunctions..total-1]: MethodInfo for internal functions (may be null if not yet compiled)
+        // We create delegates for ALL non-null entries.
+        if (internalFunctions != null && functionSignatures != null)
+        {
+            for (var i = 0; i < internalFunctions.Length && i < functionSignatures.Length; i++)
+            {
+                var method = internalFunctions[i];
+                if (method == null)
+                    continue; // Skip not-yet-compiled functions
+                    
+                var signature = functionSignatures[i];
+                
+                // Get the appropriate delegate type for this function's signature
+                var parms = signature.ParameterTypes;
+                var returns = signature.ReturnTypes;
+                var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
+                var delegateType = configuration.GetDelegateForType(parms.Length, clrRetCount);
+                
+                if (delegateType != null)
+                {
+                    if (delegateType.IsGenericType)
+                    {
+                        var typeArgs = Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns);
+                        delegateType = delegateType.MakeGenericType(typeArgs);
+                    }
+                    
+                    var delegateCtor = delegateType.GetTypeInfo().DeclaredConstructors.FirstOrDefault();
+                    if (delegateCtor == null)
+                    {
+                        // Skip this function if we can't find the delegate constructor
+                        continue;
+                    }
+                    
+                    // Store delegate in array: array[i] = new DelegateType(this, method)
+                    il.Emit(OpCodes.Ldloc, arrLocal);
+                    il.EmitLoadConstant(i);
+                    il.EmitLoadArg(0);  // 'this' for instance method
+                    il.Emit(OpCodes.Ldftn, method);
+                    il.Emit(OpCodes.Newobj, delegateCtor);
+                    il.Emit(OpCodes.Stelem_Ref);
+                }
+            }
+        }
+        
+        // Store array in field: this.functionRefs = array
+        il.EmitLoadArg(0);
+        il.Emit(OpCodes.Ldloc, arrLocal);
+        il.Emit(OpCodes.Stfld, functionReferencesField);
+    }
 
     static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder, CompilerConfiguration configuration)
         => exportsBuilder.DefineField(

@@ -86,7 +86,26 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
 
-    public FieldBuilder? FunctionTable;
+    /// <summary>
+    /// Table fields, indexed by table index. Each field is either a FunctionTable or ExternRefTable.
+    /// For backward compatibility, Tables[0] is also accessible via FunctionTable property.
+    /// </summary>
+    public readonly List<FieldBuilder> Tables = [];
+
+    /// <summary>
+    /// Legacy property for backward compatibility - returns the first table (index 0) if it exists.
+    /// For new code, use Tables[index] directly.
+    /// </summary>
+    public FieldBuilder? FunctionTable => Tables.Count > 0 ? Tables[0] : null;
+
+    /// <summary>
+    /// Array field holding function references (delegates) for ref.func instruction.
+    /// Initialized during module compilation with delegate instances for each function.
+    /// May be null if the module doesn't use ref.func.
+    /// </summary>
+#pragma warning disable CS0649 // Field is never assigned to
+    public FieldBuilder? FunctionReferences;
+#pragma warning restore CS0649
 
     /// <summary>Maps data segment index → FieldBuilder for passive segment byte[] fields.</summary>
     public readonly Dictionary<uint, FieldBuilder> DataSegments = [];
@@ -392,4 +411,24 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     }
 
     public bool IsUnreachable => this.CurrentBlockContext.IsUnreachable;
+
+    /// <summary>
+    /// Gets the table field for the specified table index.
+    /// </summary>
+    public FieldBuilder GetTable(uint tableIndex)
+    {
+        if (tableIndex >= (uint)Tables.Count)
+            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {Tables.Count} tables defined)");
+        return Tables[(int)tableIndex];
+    }
+
+    /// <summary>
+    /// Gets the element type for the specified table index.
+    /// </summary>
+    public ElementType GetTableElementType(uint tableIndex)
+    {
+        if (tableIndex >= (uint)TableElementTypes.Count)
+            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {TableElementTypes.Count} table types defined)");
+        return TableElementTypes[(int)tableIndex];
+    }
 }

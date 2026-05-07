@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/linking.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005clinking.wast",
  "commands": [
   {"type": "module", "line": 3, "name": "$Mf", "filename": "linking.0.wasm"}, 
   {"type": "register", "line": 7, "name": "$Mf", "as": "Mf"}, 

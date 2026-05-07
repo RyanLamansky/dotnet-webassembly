@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/memory_trap.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cmemory_trap.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "memory_trap.0.wasm"}, 
   {"type": "assert_return", "line": 21, "action": {"type": "invoke", "field": "store", "args": [{"type": "i32", "value": "4294967292"}, {"type": "i32", "value": "42"}]}, "expected": []}, 

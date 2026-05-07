@@ -50,8 +50,18 @@ public class TableCopy : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
-        if (context.FunctionTable == null)
-            throw new CompilerException("table.copy: no function table is defined.");
+        if (DstTableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"table.copy: dst table index {DstTableIndex} out of range.", 0);
+        if (SrcTableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"table.copy: src table index {SrcTableIndex} out of range.", 0);
+
+        var dstTable = context.GetTable(DstTableIndex);
+        var srcTable = context.GetTable(SrcTableIndex);
+        var dstElemType = context.GetTableElementType(DstTableIndex);
+        var srcElemType = context.GetTableElementType(SrcTableIndex);
+
+        if (dstElemType != srcElemType)
+            throw new ModuleLoadException($"table.copy: dst and src tables have different element types.", 0);
 
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
@@ -61,12 +71,19 @@ public class TableCopy : MiscellaneousInstruction
         context.Emit(OpCodes.Stloc, src);
         context.Emit(OpCodes.Stloc, dst);
 
-        // this.functionTable.Copy(dst, src, len)
+        // this.dstTable.Copy(this.srcTable, dst, src, len)
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldfld, dstTable);
+        context.EmitLoadThis();
+        context.Emit(OpCodes.Ldfld, srcTable);
         context.Emit(OpCodes.Ldloc, dst);
         context.Emit(OpCodes.Ldloc, src);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, FunctionTable.CopyMethod.Reference);
+        
+        var tableType = dstElemType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var copyMethod = tableType.GetMethod("Copy") 
+            ?? throw new CompilerException($"Copy method not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, copyMethod);
     }
 }

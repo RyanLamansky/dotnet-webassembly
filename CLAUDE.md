@@ -29,6 +29,26 @@ dotnet test --configuration Release
 
 This library reads, writes, modifies, and executes WebAssembly (WASM 2.0) files entirely in C#, using `System.Reflection.Emit` to JIT-compile WASM to .NET IL — no external interpreter.
 
+### WASM 2.0 Implementation Status
+
+**Fully Implemented:**
+- ✅ **Non-trapping conversions** (0xFC prefix)
+- ✅ **Bulk memory operations** (0xFC: `memory.copy`, `memory.fill`, `memory.init`, `data.drop`)
+- ✅ **SIMD** (0xFD prefix, 200+ sub-opcodes, all 45 spec test suites pass)
+- ✅ **Multi-table support** - Multiple funcref/externref tables
+- ✅ **Table operations** - `table.get`, `table.set`, `table.grow`, `table.size`, `table.copy`, `table.init`, `table.fill`
+- ✅ **Reference types basics** - `ref.null`, `ref.is_null`
+- ✅ **ref.func** - Returns actual function delegates (instruction-level complete)
+
+**Partially Implemented:**
+- ⚠️ **externref tables** - Runtime class exists, operations work, but element segment integration pending
+- ⚠️ **ref.func integration** - Core works, but element segment initialization needs fixes
+
+**Not Implemented:**
+- ❌ **ref.func advanced** - Cross-module function references
+- ❌ **externref advanced** - Host object passing beyond test scenarios
+- ❌ **Exception handling** (ExternalKind.Tag added but not implemented)
+
 ### Three layers
 
 **1. Module layer** (`WebAssembly` namespace)  
@@ -64,7 +84,7 @@ Enforced via `.editorconfig` and treated as build errors:
 
 ## Important constraints
 
-- **WASM 2.0.** All WASM 2.0 opcodes are implemented: non-trapping conversions (0xFC), bulk memory (0xFC), reference types (`ref.null`, `ref.is_null`, `ref.func`, `table.get/set`), typed select, and SIMD (0xFD, 200+ sub-opcodes).
+- **WASM 2.0 (Partial).** Fully implemented: non-trapping conversions (0xFC), bulk memory (0xFC: `memory.copy/fill/init`, `data.drop`), and SIMD (0xFD, 200+ sub-opcodes). Partially implemented: table operations work for `funcref` tables only; `ref.null` and `ref.is_null` compile but `ref.func` emits placeholder; `externref` tables not supported.
 - **Strong-named assembly.** The SNK file (`Properties/WebAssembly.snk`) must remain in place; do not remove it.
 - **Multi-framework targets.** The library targets `netstandard2.0`, `net8.0`, and `net9.0`. Tests target `net8.0`, `net9.0`, and `net10.0`. CI tests both Debug and Release.
 - **Flaky timeout tests:** `Loop_Compiled` and `Branch_LoopValue` occasionally time out when all three framework test runs execute concurrently (resource contention). Run frameworks sequentially to avoid this.

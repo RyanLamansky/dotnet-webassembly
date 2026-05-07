@@ -18,7 +18,7 @@ public class TableCopyTests
     }
 
     /// <summary>
-    /// Tests that table.copy throws CompilerException when no function table is defined.
+    /// Tests that table.copy throws ModuleLoadException when no function table is defined.
     /// </summary>
     [TestMethod]
     public void TableCopy_NoTable_ThrowsCompilerException()
@@ -39,6 +39,6 @@ public class TableCopyTests
             ],
         });
 
-        Assert.ThrowsException<CompilerException>(() => module.ToInstance<VoidExport>());
+        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
     }
 }

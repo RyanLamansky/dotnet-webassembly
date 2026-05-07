@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_i32x4_extadd_pairwise_i16x8.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_i32x4_extadd_pairwise_i16x8.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "simd_i32x4_extadd_pairwise_i16x8.0.wasm"}, 
   {"type": "assert_return", "line": 11, "action": {"type": "invoke", "field": "i32x4.extadd_pairwise_i16x8_s", "args": [{"type": "v128", "lane_type": "i16", "value": ["0", "0", "0", "0", "0", "0", "0", "0"]}]}, "expected": [{"type": "v128", "lane_type": "i32", "value": ["0", "0", "0", "0"]}]}, 

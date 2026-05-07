@@ -51,14 +51,16 @@ public class TableInit : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
         if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField))
-            throw new CompilerException($"table.init: element segment {SegmentIndex} is not a passive segment or does not exist.");
+            throw new ModuleLoadException($"table.init: element segment {SegmentIndex} is not a passive segment or does not exist.", 0);
 
-        if (context.FunctionTable == null)
-            throw new CompilerException("table.init: no function table is defined.");
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"table.init: table index {TableIndex} out of range.", 0);
 
-        var tableElemType = TableIndex < (uint)context.TableElementTypes.Count ? context.TableElementTypes[(int)TableIndex] : ElementType.FunctionReference;
+        var table = context.GetTable(TableIndex);
+        var tableElemType = context.GetTableElementType(TableIndex);
+        
         if (context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType) && segElemType != tableElemType)
-            throw new CompilerException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).");
+            throw new ModuleLoadException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).", 0);
 
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
@@ -68,14 +70,19 @@ public class TableInit : MiscellaneousInstruction
         context.Emit(OpCodes.Stloc, src);
         context.Emit(OpCodes.Stloc, dst);
 
-        // this.functionTable.InitFromSegment(dst, this.segField, src, len)
+        // this.table.InitFromSegment(dst, this.segField, src, len)
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldfld, table);
         context.Emit(OpCodes.Ldloc, dst);
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, segField);
         context.Emit(OpCodes.Ldloc, src);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, FunctionTable.InitFromSegmentMethod.Reference);
+        
+        var tableType = tableElemType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var initMethod = tableType.GetMethod("InitFromSegment") 
+            ?? throw new CompilerException($"InitFromSegment method not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, initMethod);
     }
 }

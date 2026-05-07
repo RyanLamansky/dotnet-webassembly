@@ -97,6 +97,17 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
         for (var i = 0; i < returnTypes.Length; i++)
             stack.Push(returnTypes[i]);
 
+        // Get the table to use (Reserved field is table index in WASM 2.0)
+        var tableIndex = this.Reserved;
+        if (tableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"call_indirect: table index {tableIndex} out of range.", 0);
+        
+        var table = context.GetTable(tableIndex);
+        var tableElemType = context.GetTableElementType(tableIndex);
+        
+        if (tableElemType != ElementType.FunctionReference)
+            throw new ModuleLoadException($"call_indirect: table {tableIndex} is not a funcref table.", 0);
+
         context.EmitLoadThis();
 
         if (!context.DelegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
@@ -123,7 +134,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             var il = remapper.GetILGenerator();
             il.EmitLoadArg(parms.Length + 1);
-            il.Emit(OpCodes.Ldfld, context.FunctionTable!);
+            il.Emit(OpCodes.Ldfld, table);
             il.EmitLoadArg(parms.Length);
             il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/elem.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005celem.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "elem.0.wasm"}, 
   {"type": "module", "line": 80, "filename": "elem.1.wasm"}, 

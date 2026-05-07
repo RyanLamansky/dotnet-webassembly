@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_store64_lane.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_store64_lane.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "simd_store64_lane.0.wasm"}, 
   {"type": "assert_return", "line": 79, "action": {"type": "invoke", "field": "v128.store64_lane_0", "args": [{"type": "i32", "value": "0"}, {"type": "v128", "lane_type": "i64", "value": ["506097522914230528", "0"]}]}, "expected": [{"type": "i64", "value": "506097522914230528"}]}, 

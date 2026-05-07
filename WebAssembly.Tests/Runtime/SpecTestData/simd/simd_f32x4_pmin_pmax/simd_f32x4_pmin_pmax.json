@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_f32x4_pmin_pmax.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_f32x4_pmin_pmax.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "simd_f32x4_pmin_pmax.0.wasm"}, 
   {"type": "assert_return", "line": 9, "action": {"type": "invoke", "field": "f32x4.pmin", "args": [{"type": "v128", "lane_type": "f32", "value": ["0", "0", "0", "0"]}, {"type": "v128", "lane_type": "f32", "value": ["0", "0", "0", "0"]}]}, "expected": [{"type": "v128", "lane_type": "f32", "value": ["0", "0", "0", "0"]}]}, 

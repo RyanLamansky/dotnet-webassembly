@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/bulk.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cbulk.wast",
  "commands": [
   {"type": "module", "line": 2, "filename": "bulk.0.wasm"}, 
   {"type": "module", "line": 6, "filename": "bulk.1.wasm"}, 

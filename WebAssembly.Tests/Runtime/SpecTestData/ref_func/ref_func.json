@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/ref_func.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cref_func.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "ref_func.0.wasm"}, 
   {"type": "register", "line": 4, "as": "M"}, 

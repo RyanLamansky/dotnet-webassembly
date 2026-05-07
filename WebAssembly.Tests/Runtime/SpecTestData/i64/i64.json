@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/i64.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ci64.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "i64.0.wasm"}, 
   {"type": "assert_return", "line": 38, "action": {"type": "invoke", "field": "add", "args": [{"type": "i64", "value": "1"}, {"type": "i64", "value": "1"}]}, "expected": [{"type": "i64", "value": "2"}]}, 

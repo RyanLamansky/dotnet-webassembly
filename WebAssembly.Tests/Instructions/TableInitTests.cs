@@ -18,7 +18,7 @@ public class TableInitTests
     }
 
     /// <summary>
-    /// Tests that table.init throws CompilerException when the referenced element segment is not passive.
+    /// Tests that table.init throws ModuleLoadException when the referenced element segment is not passive.
     /// </summary>
     [TestMethod]
     public void TableInit_NoPassiveSegment_ThrowsCompilerException()
@@ -39,6 +39,6 @@ public class TableInitTests
             ],
         });
 
-        Assert.ThrowsException<CompilerException>(() => module.ToInstance<VoidExport>());
+        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<VoidExport>());
     }
 }

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/utf8-invalid-encoding.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cutf8-invalid-encoding.wast",
  "commands": [
   {"type": "assert_malformed", "line": 1, "filename": "utf8-invalid-encoding.0.wat", "text": "malformed UTF-8 encoding", "module_type": "text"}, 
   {"type": "assert_malformed", "line": 2, "filename": "utf8-invalid-encoding.1.wat", "text": "malformed UTF-8 encoding", "module_type": "text"}, 

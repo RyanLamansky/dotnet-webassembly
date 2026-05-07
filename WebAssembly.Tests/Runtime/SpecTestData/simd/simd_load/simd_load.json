@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_load.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_load.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "simd_load.0.wasm"}, 
   {"type": "assert_return", "line": 11, "action": {"type": "invoke", "field": "v128.load", "args": []}, "expected": [{"type": "v128", "lane_type": "i8", "value": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"]}]}, 

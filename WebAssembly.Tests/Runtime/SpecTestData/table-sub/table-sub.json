@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/table-sub.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ctable-sub.wast",
  "commands": [
   {"type": "assert_invalid", "line": 2, "filename": "table-sub.0.wasm", "text": "type mismatch", "module_type": "binary"}, 
   {"type": "assert_invalid", "line": 13, "filename": "table-sub.1.wasm", "text": "type mismatch", "module_type": "binary"}]}

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/func.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cfunc.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "func.0.wasm"}, 
   {"type": "assert_return", "line": 241, "action": {"type": "invoke", "field": "type-use-1", "args": []}, "expected": []}, 

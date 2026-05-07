@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/int_exprs.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cint_exprs.wast",
  "commands": [
   {"type": "module", "line": 6, "filename": "int_exprs.0.wasm"}, 
   {"type": "assert_return", "line": 18, "action": {"type": "invoke", "field": "i32.no_fold_cmp_s_offset", "args": [{"type": "i32", "value": "2147483647"}, {"type": "i32", "value": "0"}]}, "expected": [{"type": "i32", "value": "1"}]}, 

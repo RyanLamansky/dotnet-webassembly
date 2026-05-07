@@ -39,25 +39,36 @@ public class TableSet : Instruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (TableIndex != 0 || context.FunctionTable == null)
-            throw new NotSupportedException("table.set only supports table index 0.");
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
+
+        var elementType = context.GetTableElementType(TableIndex);
+        var table = context.GetTable(TableIndex);
+        var stackType = elementType == ElementType.FunctionReference ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef;
 
         // Tracked stack: [..., index:i32, ref:object] — pop ref first (top), then index.
-        context.PopStackNoReturn(OpCode, WebAssemblyValueType.FuncRef);
+        context.PopStackNoReturn(OpCode, stackType);
         context.PopStackNoReturn(OpCode, WebAssemblyValueType.Int32);
 
         // IL eval stack at entry: [..., index:i32, ref:object]  (ref is on top)
-        // Target call: FunctionTable.set_Item(int index, Delegate? value)
+        // Target call: table.set_Item(int index, Delegate? value)
         var val = context.DeclareLocal(typeof(object));
         var idx = context.DeclareLocal(typeof(int));
 
         context.Emit(OpCodes.Stloc, val);  // pop ref → val
         context.Emit(OpCodes.Stloc, idx);  // pop index → idx
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
+        context.Emit(OpCodes.Ldfld, table);
         context.Emit(OpCodes.Ldloc, idx);
         context.Emit(OpCodes.Ldloc, val);
-        context.Emit(OpCodes.Castclass, typeof(System.Delegate));
-        context.Emit(OpCodes.Call, FunctionTable.IndexSetter);
+        
+        if (elementType == ElementType.FunctionReference)
+            context.Emit(OpCodes.Castclass, typeof(System.Delegate));
+        
+        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var indexSetter = tableType.GetProperty("Item")?.GetSetMethod() 
+            ?? throw new NotSupportedException($"Item property not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, indexSetter);
     }
 }

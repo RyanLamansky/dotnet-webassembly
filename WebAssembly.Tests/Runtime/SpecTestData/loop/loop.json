@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/loop.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cloop.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "loop.0.wasm"}, 
   {"type": "assert_return", "line": 430, "action": {"type": "invoke", "field": "empty", "args": []}, "expected": []}, 

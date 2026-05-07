@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/binary.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cbinary.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "binary.0.wasm"}, 
   {"type": "module", "line": 2, "filename": "binary.1.wasm"}, 

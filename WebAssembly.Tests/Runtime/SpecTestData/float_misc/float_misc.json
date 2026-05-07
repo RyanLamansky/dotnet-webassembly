@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/float_misc.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cfloat_misc.wast",
  "commands": [
   {"type": "module", "line": 17, "filename": "float_misc.0.wasm"}, 
   {"type": "assert_return", "line": 50, "action": {"type": "invoke", "field": "f32.add", "args": [{"type": "f32", "value": "1066388847"}, {"type": "f32", "value": "789036054"}]}, "expected": [{"type": "f32", "value": "1066388847"}]}, 

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_bit_shift.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_bit_shift.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "simd_bit_shift.0.wasm"}, 
   {"type": "assert_return", "line": 44, "action": {"type": "invoke", "field": "i8x16.shl", "args": [{"type": "v128", "lane_type": "i8", "value": ["128", "192", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]}, {"type": "i32", "value": "1"}]}, "expected": [{"type": "v128", "lane_type": "i8", "value": ["0", "128", "0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22", "24", "26"]}]}, 

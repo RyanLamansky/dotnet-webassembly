@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/comments.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ccomments.wast",
  "commands": [
   {"type": "module", "line": 10, "filename": "comments.0.wasm"}, 
   {"type": "module", "line": 57, "filename": "comments.1.wasm"}, 

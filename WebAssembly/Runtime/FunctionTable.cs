@@ -45,6 +45,9 @@ public class FunctionTable : TableImport
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyMethod = new(() =>
         typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Copy))!);
 
+    internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
+
     /// <summary>
     /// Always <see cref="ElementType.FunctionReference"/>.
     /// </summary>
@@ -107,22 +110,30 @@ public class FunctionTable : TableImport
     /// <summary>
     /// Increases the size of the instance by a specified number of elements.
     /// </summary>
+    /// <param name="initValue">The value to initialize new table slots with.</param>
     /// <param name="number">The number of elements you want to grow the table by.</param>
-    /// <returns>The previous length of the table.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="number"/>, when added to <see cref="Length"/>, would exceed the defined <see cref="Maximum"/>.
-    /// </exception>
-    /// <exception cref="OverflowException"><paramref name="number"/> added to the current size exceeds <see cref="int.MaxValue"/>.</exception>
-    public uint Grow(uint number)
+    /// <returns>The previous length of the table, or uint.MaxValue if growth fails.</returns>
+    public uint Grow(Delegate? initValue, uint number)
     {
-        var oldSize = this.Length;
-        var newSize = checked(oldSize + number);
+        var oldSize = (uint)this.Length;
+        
+        // Check for overflow
+        if (number > uint.MaxValue - oldSize)
+            return uint.MaxValue; // Overflow would occur
+            
+        var newSize = oldSize + number;
 
         if (newSize > this.Maximum.GetValueOrDefault(uint.MaxValue))
-            throw new ArgumentOutOfRangeException(nameof(number), $"{nameof(number)}, when added to {nameof(Length)}, would exceed the defined {nameof(Maximum)}.");
+            return uint.MaxValue; // WASM spec: return -1 (uint.MaxValue) on failure
+        
+        if (newSize > int.MaxValue)
+            return uint.MaxValue; // Can't allocate array larger than int.MaxValue
 
-        var checkedSize = checked((int)newSize);
-        Array.Resize(ref delegates, checkedSize);
+        Array.Resize(ref delegates, (int)newSize);
+        
+        // Initialize new slots with initValue
+        for (var i = oldSize; i < newSize; i++)
+            delegates[i] = initValue;
 
         return oldSize;
     }
@@ -134,10 +145,15 @@ public class FunctionTable : TableImport
     public void InitFromSegment(uint dst, Delegate?[]? src, uint srcOffset, uint length)
     {
         var srcLen = src != null ? (uint)src.Length : 0u;
-        var dstEnd = checked(dst + length);
-        var srcEnd = checked(srcOffset + length);
+        
+        // Check for overflow
+        if (length > uint.MaxValue - dst || length > uint.MaxValue - srcOffset)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
+            
+        var dstEnd = dst + length;
+        var srcEnd = srcOffset + length;
         // Trigger natural IndexOutOfRangeException on bounds violations (atomic pre-check).
-        if (dstEnd > this.Length || srcEnd > srcLen)
+        if (dstEnd > (uint)this.Length || srcEnd > srcLen)
             _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
         if (length == 0) return;
         for (var i = 0u; i < length; i++)
@@ -149,9 +165,13 @@ public class FunctionTable : TableImport
     /// </summary>
     public void Copy(uint dst, uint src, uint length)
     {
-        var dstEnd = checked(dst + length);
-        var srcEnd = checked(src + length);
-        if (dstEnd > this.Length || srcEnd > this.Length)
+        // Check for overflow
+        if (length > uint.MaxValue - dst || length > uint.MaxValue - src)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
+            
+        var dstEnd = dst + length;
+        var srcEnd = src + length;
+        if (dstEnd > (uint)this.Length || srcEnd > (uint)this.Length)
             _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
         if (length == 0) return;
         if (dst <= src)
@@ -160,5 +180,25 @@ public class FunctionTable : TableImport
         else
             for (var i = length; i > 0; i--)
                 this[(int)(dst + i - 1)] = this[(int)(src + i - 1)];
+    }
+
+    /// <summary>
+    /// Fills a range of the table with a delegate value.
+    /// </summary>
+    /// <param name="dst">Starting index to fill.</param>
+    /// <param name="value">Delegate to fill with (may be null).</param>
+    /// <param name="len">Number of elements to fill.</param>
+    public void Fill(uint dst, Delegate? value, uint len)
+    {
+        // Check for overflow
+        if (len > uint.MaxValue - dst)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException (out of bounds)
+            
+        var end = dst + len;
+        if (end > (uint)this.Length)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
+
+        for (uint i = 0; i < len; i++)
+            this[(int)(dst + i)] = value;
     }
 }

@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/obsolete-keywords.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cobsolete-keywords.wast",
  "commands": [
   {"type": "assert_malformed", "line": 3, "filename": "obsolete-keywords.0.wat", "text": "unknown operator current_memory", "module_type": "text"}, 
   {"type": "assert_malformed", "line": 11, "filename": "obsolete-keywords.1.wat", "text": "unknown operator grow_memory", "module_type": "text"}, 

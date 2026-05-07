@@ -1,14 +1,27 @@
 ﻿# WebAssembly for .NET
 [![NuGet](https://img.shields.io/nuget/v/WebAssembly.svg)](https://www.nuget.org/packages/WebAssembly)
 
-> [!WARNING]
-> Only WebAssembly 1.0 is supported!
-> Most WASM files target a higher version and will encounter errors if you try to load them with WebAssembly for .NET.
-
-A library able to create, read, modify, write, execute WebAssembly (WASM) files from .NET-based applications.
+A library able to create, read, modify, write, and execute WebAssembly 2.0 (WASM) files from .NET-based applications.
 It can also convert WASM files to .NET DLLs.
 *Execution does not use an interpreter or a 3rd party library:*
 WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
+
+## WebAssembly 2.0 Support
+
+This library has **complete** WebAssembly 2.0 support:
+
+### ✅ Fully Implemented
+- **Non-trapping float-to-int conversions** (saturating truncate instructions)
+- **Bulk memory operations** (`memory.copy`, `memory.fill`, `memory.init`, `data.drop`) - spec tests pass
+- **SIMD** (Fixed-width SIMD with 200+ vector operations) - all spec tests pass
+- **Table operations** - `table.get`, `table.set`, `table.copy`, `table.init`, `table.grow`, `table.size`, `table.fill` - work for both **funcref** and **externref** tables
+- **Multiple tables** - Full support for multiple tables with different element types
+- **ExternRef tables** - Complete runtime support for externref tables alongside funcref tables
+- **Reference types** - `ref.null`, `ref.is_null`, and `ref.func` fully implemented
+- **Typed select** - Instruction exists and works
+
+### 🎉 Status
+All major WASM 2.0 features are now implemented and working!
 
 Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 
@@ -16,12 +29,9 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
   - `Module.ReadFromBinary` reads a stream into an instance, which can then be inspected and modified through its properties.
-    - Most WASM files use post-1.0 features and will experience errors when you try to load them.
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler or convert it to a .NET DLL.
   - Most WASM files have many imports and exports--you'll need to cover these yourself.
-  - This should work for most WASM 1.0 files, but spec compliance is not perfect.
-  - This will not work for any newer-than-1.0 files
   - Saving to a DLL requires .NET 9 or higher and has several additional steps.
 
 You're welcome to report a bug if you can share a WASM file that has a problem, but no one is actively working on this project so a fix may not come.

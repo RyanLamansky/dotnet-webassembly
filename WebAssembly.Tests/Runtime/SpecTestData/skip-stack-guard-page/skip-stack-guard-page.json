@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/skip-stack-guard-page.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cskip-stack-guard-page.wast",
  "commands": [
   {"type": "module", "line": 2, "filename": "skip-stack-guard-page.0.wasm"}, 
   {"type": "assert_exhaustion", "line": 2275, "action": {"type": "invoke", "field": "test-guard-page-skip", "args": [{"type": "i32", "value": "0"}]}, "text": "call stack exhausted", "expected": []}, 

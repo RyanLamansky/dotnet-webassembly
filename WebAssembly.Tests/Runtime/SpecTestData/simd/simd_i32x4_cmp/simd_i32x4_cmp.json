@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_i32x4_cmp.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_i32x4_cmp.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "simd_i32x4_cmp.0.wasm"}, 
   {"type": "assert_return", "line": 23, "action": {"type": "invoke", "field": "eq", "args": [{"type": "v128", "lane_type": "i32", "value": ["4294967295", "4294967295", "4294967295", "4294967295"]}, {"type": "v128", "lane_type": "i32", "value": ["4294967295", "4294967295", "4294967295", "4294967295"]}]}, "expected": [{"type": "v128", "lane_type": "i32", "value": ["4294967295", "4294967295", "4294967295", "4294967295"]}]}, 

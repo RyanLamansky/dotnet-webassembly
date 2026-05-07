@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/table_fill.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ctable_fill.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "table_fill.0.wasm"}, 
   {"type": "assert_return", "line": 17, "action": {"type": "invoke", "field": "get", "args": [{"type": "i32", "value": "1"}]}, "expected": [{"type": "externref", "value": "null"}]}, 

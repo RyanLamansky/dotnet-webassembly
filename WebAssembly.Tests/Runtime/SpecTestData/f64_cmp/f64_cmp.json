@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/f64_cmp.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005cf64_cmp.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "f64_cmp.0.wasm"}, 
   {"type": "assert_return", "line": 13, "action": {"type": "invoke", "field": "eq", "args": [{"type": "f64", "value": "9223372036854775808"}, {"type": "f64", "value": "9223372036854775808"}]}, "expected": [{"type": "i32", "value": "1"}]}, 

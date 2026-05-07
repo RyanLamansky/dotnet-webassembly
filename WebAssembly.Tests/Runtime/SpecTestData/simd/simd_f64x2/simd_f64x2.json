@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_f64x2.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_f64x2.wast",
  "commands": [
   {"type": "module", "line": 4, "filename": "simd_f64x2.0.wasm"}, 
   {"type": "assert_return", "line": 50, "action": {"type": "invoke", "field": "f64x2.min_with_const_0", "args": []}, "expected": [{"type": "v128", "lane_type": "f64", "value": ["0", "4607182418800017408"]}]}, 

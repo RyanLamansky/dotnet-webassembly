@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/table_get.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005ctable_get.wast",
  "commands": [
   {"type": "module", "line": 1, "filename": "table_get.0.wasm"}, 
   {"type": "action", "line": 24, "action": {"type": "invoke", "field": "init", "args": [{"type": "externref", "value": "1"}]}, "expected": []}, 

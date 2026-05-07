@@ -41,12 +41,20 @@ public class TableSize : MiscellaneousInstruction
     {
         context.Stack.Push(WebAssemblyValueType.Int32);
 
-        if (TableIndex != 0 || context.FunctionTable == null)
-            throw new System.NotSupportedException("table.size only supports table index 0.");
+        if (TableIndex >= (uint)context.Tables.Count)
+            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
+
+        var elementType = context.GetTableElementType(TableIndex);
+        var table = context.GetTable(TableIndex);
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.FunctionTable);
-        context.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+        context.Emit(OpCodes.Ldfld, table);
+        
+        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+        var lengthGetter = tableType.GetProperty("Length")?.GetGetMethod() 
+            ?? throw new System.NotSupportedException($"Length property not found on {tableType.Name}");
+        
+        context.Emit(OpCodes.Call, lengthGetter);
         context.Emit(OpCodes.Conv_I4);
     }
 }

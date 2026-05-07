@@ -1,4 +1,4 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/simd/simd_align.wast",
+{"source_filename": "C:\u005cUsers\u005cmreed\u005cAppData\u005cLocal\u005cTemp\u005cwasm-spec-refresh\u005cspec\u005ctest\u005ccore\u005csimd\u005csimd_align.wast",
  "commands": [
   {"type": "module", "line": 3, "filename": "simd_align.0.wasm"}, 
   {"type": "module", "line": 4, "filename": "simd_align.1.wasm"}, 
