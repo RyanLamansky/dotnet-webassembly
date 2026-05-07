@@ -150,7 +150,7 @@ public class ExternRefTable : TableImport
     }
 
     /// <summary>
-    /// Copies elements within or between tables.
+    /// Copies elements within this table.
     /// </summary>
     /// <param name="dst">Destination start index.</param>
     /// <param name="src">Source start index.</param>
@@ -164,6 +164,24 @@ public class ExternRefTable : TableImport
             _ = this.values[int.MaxValue]; // throw IndexOutOfRangeException
 
         Array.Copy(this.values, (int)src, this.values, (int)dst, (int)len);
+    }
+
+    /// <summary>
+    /// Copies elements from <paramref name="srcTable"/> to this table.
+    /// </summary>
+    /// <param name="srcTable">Source table to copy from.</param>
+    /// <param name="dst">Destination start index in this table.</param>
+    /// <param name="src">Source start index in the source table.</param>
+    /// <param name="len">Number of elements to copy.</param>
+    public void Copy(ExternRefTable srcTable, uint dst, uint src, uint len)
+    {
+        if ((ulong)dst + (ulong)len > (ulong)this.values.Length)
+            _ = this.values[int.MaxValue]; // throw IndexOutOfRangeException
+
+        if ((ulong)src + (ulong)len > (ulong)srcTable.values.Length)
+            _ = srcTable.values[int.MaxValue]; // throw IndexOutOfRangeException
+
+        Array.Copy(srcTable.values, (int)src, this.values, (int)dst, (int)len);
     }
 
     /// <summary>

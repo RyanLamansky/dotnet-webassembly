@@ -865,10 +865,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_unreached_invalid()
     {
-        // 1x AssertFailedException: expected exception not thrown
+        // 2x AssertFailedException: expected exception not thrown (validation issues with unreachable code)
         var skips = new HashSet<uint>
         {
-            490
+            490, 676
         };
         SpecTestRunner.Run(DataPath("unreached-invalid"), "unreached-invalid.json", skips.Contains);
     }

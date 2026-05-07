@@ -183,6 +183,33 @@ public class FunctionTable : TableImport
     }
 
     /// <summary>
+    /// Copies <paramref name="length"/> entries from <paramref name="srcTable"/> at offset <paramref name="srcIndex"/> to this table at offset <paramref name="dstIndex"/>.
+    /// </summary>
+    public void Copy(FunctionTable srcTable, uint dstIndex, uint srcIndex, uint length)
+    {
+        // Check for overflow
+        if (length > uint.MaxValue - dstIndex || length > uint.MaxValue - srcIndex)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
+            
+        var dstEnd = dstIndex + length;
+        var srcEnd = srcIndex + length;
+        if (dstEnd > (uint)this.Length || srcEnd > (uint)srcTable.Length)
+            _ = this.delegates[int.MaxValue]; // throws IndexOutOfRangeException
+        if (length == 0) return;
+        
+        // If same table and overlapping, handle carefully
+        if (ReferenceEquals(this, srcTable))
+        {
+            Copy(dstIndex, srcIndex, length);
+            return;
+        }
+        
+        // Different tables: simple copy
+        for (var i = 0u; i < length; i++)
+            this[(int)(dstIndex + i)] = srcTable[(int)(srcIndex + i)];
+    }
+
+    /// <summary>
     /// Fills a range of the table with a delegate value.
     /// </summary>
     /// <param name="dst">Starting index to fill.</param>

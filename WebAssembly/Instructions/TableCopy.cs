@@ -81,7 +81,8 @@ public class TableCopy : MiscellaneousInstruction
         context.Emit(OpCodes.Ldloc, len);
         
         var tableType = dstElemType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
-        var copyMethod = tableType.GetMethod("Copy") 
+        // Get the Copy(srcTable, dst, src, len) overload
+        var copyMethod = tableType.GetMethod("Copy", new[] { tableType, typeof(uint), typeof(uint), typeof(uint) })
             ?? throw new CompilerException($"Copy method not found on {tableType.Name}");
         
         context.Emit(OpCodes.Call, copyMethod);
