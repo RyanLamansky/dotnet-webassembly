@@ -442,6 +442,14 @@ public static class Compile
                                 parms
                                 );
                         }
+
+                        // Initialize FunctionReferences immediately after Function section
+                        // so that Global section (which comes next) can use ref.func in initializers
+                        if (!functionRefsInitialized && context.FunctionReferences != null && functionSignatures != null && functionSignatures.Length > 0)
+                        {
+                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+                            functionRefsInitialized = true;
+                        }
                     }
                     break;
 

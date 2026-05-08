@@ -84,11 +84,12 @@ Enforced via `.editorconfig` and treated as build errors:
 
 ## Important constraints
 
-- **WASM 2.0 (Partial).** Fully implemented: non-trapping conversions (0xFC), bulk memory (0xFC: `memory.copy/fill/init`, `data.drop`), and SIMD (0xFD, 200+ sub-opcodes). Partially implemented: table operations work for `funcref` tables only; `ref.null` and `ref.is_null` compile but `ref.func` emits placeholder; `externref` tables not supported.
+- **WASM 2.0 (Partial).** Fully implemented: non-trapping conversions (0xFC), bulk memory (0xFC: `memory.copy/fill/init`, `data.drop`), and SIMD (0xFD, 200+ sub-opcodes). Partially implemented: table operations work for `funcref` tables only; `ref.null`, `ref.is_null`, and `ref.func` fully compile and work in global initializers and code; `externref` tables not supported.
 - **Strong-named assembly.** The SNK file (`Properties/WebAssembly.snk`) must remain in place; do not remove it.
 - **Multi-framework targets.** The library targets `netstandard2.0`, `net8.0`, and `net9.0`. Tests target `net8.0`, `net9.0`, and `net10.0`. CI tests both Debug and Release.
 - **Flaky timeout tests:** `Loop_Compiled` and `Branch_LoopValue` occasionally time out when all three framework test runs execute concurrently (resource contention). Run frameworks sequentially to avoid this.
 - **Tail-call optimization and stack exhaustion:** The CLR JIT tail-call-optimizes simple self-recursion into a true loop, so `EnsureSufficientExecutionStack()` never fires for those functions. The `assert_exhaustion` tests for `runaway`/`mutual-runaway` work around this by running the function on a background thread with a 100ms timeout — a function that hasn't returned within the timeout is treated as exhausted (infinite recursion = effectively exhausted per WASM spec). True stack exhaustion from deep non-tail-call recursion is caught via `InsufficientExecutionStackException`.
+- **FunctionReferences initialization timing:** The `FunctionReferences` array is initialized immediately after the Function section (before Global section) to support `ref.func` in global initializers. WASM section order: Type(1) → Import(2) → Function(3) → **[FunctionReferences init]** → Table(4) → Memory(5) → Global(6) → ... → Data(11). This ensures globals can use `ref.func` in their initializer expressions.
 
 ## CLR workarounds already in place
 
@@ -99,6 +100,7 @@ These issues were fixed and should not be regressed:
 - **Canonical NaN from arithmetic:** `ValueTwoToOneInstruction.Compile` calls `FloatHelper.CanonicalizeFloat32`/`CanonicalizeFloat64` after float32/float64 binary ops (add/sub/mul/div) to replace non-canonical NaN payloads from sNaN inputs with the WASM canonical qNaN. `Float32DemoteFloat64` and `Float64PromoteFloat32` do the same after conversion.
 - **`rem_s` INT_MIN % -1:** `Int32RemainderSigned`/`Int64RemainderSigned` emit a helper that returns 0 when divisor is −1 (CLR `Rem` would throw `OverflowException`; WASM spec requires 0).
 - **SIMD f32x4/f64x2 min/max on .NET 8:** `Vector128.Min`/`Max` maps to `MINPS`/`MAXPS` on .NET 8, which has wrong NaN-propagation and ±0 semantics. `V128Helper.Float32x4Min/Max` and `Float64x2Min/Max` use a scalar per-lane fallback on .NET < 9 that implements WASM spec precisely.
+- **`ref.func` in global initializers:** `FunctionReferences` array must be initialized before the Global section processes initializer expressions. Moved initialization from after Data section to immediately after Function section in `Compile.cs` to support WASM 2.0 funcref globals with `ref.func` initializers.
 
 ## Permanently skipped spec tests
 
