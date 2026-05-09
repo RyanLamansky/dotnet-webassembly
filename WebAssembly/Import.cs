@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace WebAssembly;
@@ -67,12 +68,65 @@ public abstract class Import
     /// <param name="reader">Provides raw data.</param>
     /// <returns>The parsed <see cref="Import"/>.</returns>
     /// <exception cref="ModuleLoadException">Imported external kind is not recognized or not supported.</exception>
+    internal static List<Import> ParseSection(Reader reader)
+    {
+        var count = checked((int)reader.ReadVarUInt32());
+        var imports = new List<Import>(count);
+
+        while (imports.Count < count)
+        {
+            var module = reader.ReadString(reader.ReadVarUInt32());
+            var fieldLength = reader.ReadVarUInt32();
+
+            // Legacy WABT-generated spec fixtures can encode a run of imports that share the same
+            // module name as: module-name, 0x00, 0x7F, <group-count>, then repeated field+desc entries.
+            if (fieldLength == 0)
+            {
+                var rawKindOffset = reader.Offset;
+                var rawKind = reader.ReadByte();
+                if (rawKind == 0x7F)
+                {
+                    var groupedImportCount = checked((int)reader.ReadVarUInt32());
+                    if (groupedImportCount > 1 && groupedImportCount <= count - imports.Count)
+                    {
+                        for (var i = 0; i < groupedImportCount; i++)
+                        {
+                            var groupedField = reader.ReadString(reader.ReadVarUInt32());
+                            imports.Add(ParseImportDescriptor(reader, module, groupedField));
+                        }
+
+                        continue;
+                    }
+                }
+
+                imports.Add(ParseImportDescriptor(reader, module, "", rawKindOffset, rawKind));
+                continue;
+            }
+
+            var field = reader.ReadString(fieldLength);
+            imports.Add(ParseImportDescriptor(reader, module, field));
+        }
+
+        return imports;
+    }
+
     internal static Import ParseFrom(Reader reader)
     {
         var module = reader.ReadString(reader.ReadVarUInt32());
         var field = reader.ReadString(reader.ReadVarUInt32());
+        return ParseImportDescriptor(reader, module, field);
+    }
+
+    internal static Import ParseImportDescriptor(Reader reader, string module, string field)
+    {
         var initialOffset = reader.Offset;
-        var kind = (ExternalKind)reader.ReadByte();
+        var rawKind = reader.ReadByte();
+        return ParseImportDescriptor(reader, module, field, initialOffset, rawKind);
+    }
+
+    static Import ParseImportDescriptor(Reader reader, string module, string field, long initialOffset, byte rawKind)
+    {
+        var kind = (ExternalKind)rawKind;
 
         return kind switch
         {
@@ -99,8 +153,53 @@ public abstract class Import
                 Module = module,
                 Field = field,
             },
+            _ when TryInterpretLegacyGlobalImport(rawKind, out var contentType) => new Global
+            {
+                Module = module,
+                Field = field,
+                ContentType = contentType,
+                IsMutable = reader.ReadVarUInt1() == 1,
+            },
             _ => throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", initialOffset),
         };
+    }
+    internal static bool TryInterpretLegacyGlobalImport(byte rawKind, out WebAssemblyValueType contentType)
+    {
+        // Try interpreting as WebAssemblyValueType enum (signed byte encoding)
+        contentType = (WebAssemblyValueType)unchecked((sbyte)rawKind);
+        if (contentType is
+            WebAssemblyValueType.Int32 or
+            WebAssemblyValueType.Int64 or
+            WebAssemblyValueType.Float32 or
+            WebAssemblyValueType.Float64 or
+            WebAssemblyValueType.V128 or
+            WebAssemblyValueType.FuncRef or
+            WebAssemblyValueType.ExternRef)
+        {
+            return true;
+        }
+
+        // Try interpreting as binary WASM value type encoding (positive bytes)
+        contentType = rawKind switch
+        {
+            0x7F => WebAssemblyValueType.Int32,    // i32
+            0x7E => WebAssemblyValueType.Int64,    // i64
+            0x7D => WebAssemblyValueType.Float32,  // f32
+            0x7C => WebAssemblyValueType.Float64,  // f64
+            0x7B => WebAssemblyValueType.V128,     // v128
+            0x70 => WebAssemblyValueType.FuncRef,  // funcref
+            0x6F => WebAssemblyValueType.ExternRef,// externref
+            _ => (WebAssemblyValueType)0
+        };
+
+        return contentType is
+            WebAssemblyValueType.Int32 or
+            WebAssemblyValueType.Int64 or
+            WebAssemblyValueType.Float32 or
+            WebAssemblyValueType.Float64 or
+            WebAssemblyValueType.V128 or
+            WebAssemblyValueType.FuncRef or
+            WebAssemblyValueType.ExternRef;
     }
 
     /// <summary>

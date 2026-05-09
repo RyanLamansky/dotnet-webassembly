@@ -63,6 +63,8 @@ public class Else : SimpleInstruction
 
         // Jump over the else block to the exit label (Labels[target] is already the exit label).
         var target = checked((uint)context.Depth.Count) - 1;
+        if (!context.IsUnreachable)
+            blockCtx.MarkEndLabelTargeted();
         context.Emit(OpCodes.Br, context.Labels[target]);
 
         // Mark where the false-branch (brfalse from If) lands.

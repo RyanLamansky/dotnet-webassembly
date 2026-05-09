@@ -401,7 +401,7 @@ public static class Compile
                         globals,
                         memory,
                         functionTable
-                    ) = SectionImport(reader, context, importedMemoryProvider, configuration, signatures, exportsBuilder, instanceConstructorIL, emptyTypes, memory, functionTable);
+                    ) = SectionImport(Import.ParseSection(reader), context, importedMemoryProvider, configuration, signatures, exportsBuilder, instanceConstructorIL, emptyTypes, memory, functionTable);
                     break;
 
                 case Section.Function:
@@ -447,7 +447,7 @@ public static class Compile
                         // so that Global section (which comes next) can use ref.func in initializers
                         if (!functionRefsInitialized && context.FunctionReferences != null && functionSignatures != null && functionSignatures.Length > 0)
                         {
-                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration, exportsBuilder);
                             functionRefsInitialized = true;
                         }
                     }
@@ -620,7 +620,7 @@ public static class Compile
                     break;
 
                 case Section.Export:
-                    exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals, configuration);
+                    exportedFunctions = SectionExport(reader, context, functionTable, exportsBuilder, emptyTypes, memory, globals, configuration);
                     break;
 
                 case Section.Start:
@@ -638,6 +638,7 @@ public static class Compile
                         throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
                     if (internalFunctions == null)
                         throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
+                    context.EnforceDeclaredFunctionReferences = true;
                     SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                     break;
 
@@ -648,7 +649,7 @@ public static class Compile
                     if (!functionRefsInitialized && context.FunctionReferences != null)
                     {
                         if (functionSignatures != null)
-                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+                            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration, exportsBuilder);
                         else
                         {
                             // No functions, but still initialize empty array
@@ -693,7 +694,7 @@ public static class Compile
         if (!functionRefsInitialized && context.FunctionReferences != null)
         {
             if (functionSignatures != null)
-                EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration);
+                EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration, exportsBuilder);
             else
             {
                 // No functions, but still initialize empty array to avoid NullReferenceException
@@ -824,33 +825,28 @@ public static class Compile
         GlobalInfo[] globals,
         FieldBuilder? memory,
         FieldBuilder? functionTable
-    ) SectionImport(Reader reader, CompilationContext context, MethodBuilder? importedMemoryProvider, CompilerConfiguration configuration, Signature[]? signatures, TypeBuilder exportsBuilder, ILGenerator instanceConstructorIL, Type[] emptyTypes, FieldBuilder? memory, FieldBuilder? functionTable)
+    ) SectionImport(List<Import> imports, CompilationContext context, MethodBuilder? importedMemoryProvider, CompilerConfiguration configuration, Signature[]? signatures, TypeBuilder exportsBuilder, ILGenerator instanceConstructorIL, Type[] emptyTypes, FieldBuilder? memory, FieldBuilder? functionTable)
     {
-        var count = checked((int)reader.ReadVarUInt32());
-        var functionImports = new List<MethodInfo>(count);
-        var functionImportTypes = new List<Signature>(count);
-        var globalImports = new List<GlobalInfo>(count);
+        var functionImports = new List<MethodInfo>(imports.Count);
+        var functionImportTypes = new List<Signature>(imports.Count);
+        var globalImports = new List<GlobalInfo>(imports.Count);
         var missingDelegates = new List<MissingDelegateType>();
         var importFinderInvoke = configuration.NeutralizeType(typeof(Func<string, string, RuntimeImport>)).GetMethod("Invoke")!;
 
-        for (var i = 0; i < count; i++)
+        foreach (var import in imports)
         {
-            var moduleName = reader.ReadString(reader.ReadVarUInt32());
-            var fieldName = reader.ReadString(reader.ReadVarUInt32());
+            var moduleName = import.Module;
+            var fieldName = import.Field;
 
-            var preKindOffset = reader.Offset;
-            var kind = (ExternalKind)reader.ReadByte();
-
-            switch (kind)
+            switch (import)
             {
-                case ExternalKind.Function:
+                case Import.Function functionImport:
                     {
-                        var preTypeIndexOffset = reader.Offset;
-                        var typeIndex = reader.ReadVarUInt32();
+                        var typeIndex = functionImport.TypeIndex;
                         if (signatures == null)
                             throw new InvalidOperationException();
                         if (typeIndex >= signatures.Length)
-                            throw new ModuleLoadException($"Requested type index {typeIndex} but only {signatures.Length} are available.", preTypeIndexOffset);
+                            throw new ModuleLoadException($"Requested type index {typeIndex} but only {signatures.Length} are available.", 0);
                         var signature = signatures[typeIndex];
                         var clrReturnCount = signature.ReturnTypes.Length > 1 ? 1 : signature.ReturnTypes.Length;
                         var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, clrReturnCount);
@@ -905,45 +901,49 @@ public static class Compile
                         functionImportTypes.Add(signature);
                     }
                     break;
-                case ExternalKind.Table:
+                case Import.Table tableImport:
                     {
-                        var preElementTypeoffset = reader.Offset;
-                        var elementType = (ElementType)reader.ReadVarInt7();
-                        if (elementType != ElementType.FunctionReference)
-                            throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", preElementTypeoffset);
+                        var definition = tableImport.Definition ?? throw new ModuleLoadException($"Imported table {moduleName}::{fieldName} is missing its definition.", 0);
+                        var elementType = definition.ElementType;
+                        if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
+                            throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", 0);
 
                         context.TableElementTypes.Add(elementType);
-                        var limits = new ResizableLimits(reader);
+                        var limits = definition.ResizableLimits;
+                        var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
+                        var tableField = exportsBuilder.DefineField(
+                            $"☣ Table{context.Tables.Count}",
+                            configuration.NeutralizeType(tableType),
+                            PrivateReadonlyField);
+                        context.Tables.Add(tableField);
+                        if (functionTable == null && elementType == ElementType.FunctionReference)
+                            functionTable = tableField;
 
-                        if (functionTable != null)
-                            throw new NotSupportedException("Unable to support multiple tables.");
-
-                        functionTable = CreateFunctionTableField(exportsBuilder, configuration);
-                        context.Tables.Add(functionTable);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(FunctionTable)), configuration);
+                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(tableType), configuration);
 
-                        instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                        instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
 
                         // Validate limits: provided table must have initial >= required min, and max <= required max.
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                        instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable);
+                        instanceConstructorIL.Emit(OpCodes.Ldfld, tableField);
                         instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.Minimum);
                         instanceConstructorIL.Emit(OpCodes.Ldc_I4, limits.Maximum.HasValue ? (int)limits.Maximum.Value : unchecked((int)uint.MaxValue));
-                        instanceConstructorIL.Emit(OpCodes.Call, typeof(ImportException).GetMethod(nameof(ImportException.ValidateTableLimits))!);
+                        instanceConstructorIL.Emit(OpCodes.Call, typeof(ImportException).GetMethod(nameof(ImportException.ValidateTableLimits), [tableType, typeof(uint), typeof(uint)])!);
                     }
                     break;
-                case ExternalKind.Memory:
+                case Import.Memory memoryImport:
                     {
-                        var limits = new ResizableLimits(reader);
+                        var type = memoryImport.Type ?? throw new ModuleLoadException($"Imported memory {moduleName}::{fieldName} is missing its definition.", 0);
+                        var limits = type.ResizableLimits;
 
                         if (memory != null)
-                            throw new ModuleLoadException($"Multiple memories are not supported; encountered second memory import {moduleName}::{fieldName}.", preKindOffset);
+                            throw new ModuleLoadException($"Multiple memories are not supported; encountered second memory import {moduleName}::{fieldName}.", 0);
 
                         var typedDelegate = typeof(Func<UnmanagedMemory>);
                         var delField = $"➡ {moduleName}::{fieldName}";
@@ -993,10 +993,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Call, typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemoryLimits))!);
                     }
                     break;
-                case ExternalKind.Global:
+                case Import.Global globalImport:
                     {
-                        var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
-                        var mutable = reader.ReadVarUInt1() == 1;
+                        var contentType = globalImport.ContentType;
+                        var mutable = globalImport.IsMutable;
 
                         var typedDelegate = configuration.NeutralizeType(typeof(Func<>).MakeGenericType([contentType.ToSystemType()]));
                         var delField = $"➡ Get {moduleName}::{fieldName}";
@@ -1084,7 +1084,7 @@ public static class Compile
                     }
                     break;
                 default:
-                    throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not recognized.", preKindOffset);
+                    throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {import.Kind} is not recognized.", 0);
             }
         }
 
@@ -1210,6 +1210,10 @@ public static class Compile
                         if (context.Globals != null && ggInit.Index < (uint)context.Globals.Length && context.Globals[ggInit.Index].Setter != null)
                             throw new ModuleLoadException("constant expression required", reader.Offset);
                     }
+                    else if (instruction is Instructions.RefFunc rfInit)
+                    {
+                        context.DeclaredFunctionReferences.Add(rfInit.Index);
+                    }
 
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
@@ -1224,6 +1228,7 @@ public static class Compile
 
     static KeyValuePair<string, uint>[] SectionExport(
         Reader reader,
+        CompilationContext context,
         FieldBuilder? functionTable,
         TypeBuilder exportsBuilder,
         Type[] emptyTypes,
@@ -1250,18 +1255,20 @@ public static class Compile
             {
                 case ExternalKind.Function:
                     xFunctions.Add(new KeyValuePair<string, uint>(name, index));
+                    context.DeclaredFunctionReferences.Add(index);
                     break;
                 case ExternalKind.Table:
-                    if (index != 0)
-                        throw new ModuleLoadException($"Exported table must be of index 0, found {index}.", preIndexOffset);
-                    if (functionTable == null)
+                    if (index >= (uint)context.Tables.Count)
                         throw new ModuleLoadException("Can't export a table without defining or importing one.", preKindOffset);
 
                     {
+                        var tableField = context.Tables[(int)index];
+                        var tableElementType = context.TableElementTypes[(int)index];
+                        var tableType = tableElementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
                         var tableGetter = exportsBuilder.DefineMethod("get_" + name,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            configuration.NeutralizeType(typeof(FunctionTable)),
+                            configuration.NeutralizeType(tableType),
                             emptyTypes
                             );
 #if NET9_0_OR_GREATER
@@ -1270,10 +1277,10 @@ public static class Compile
                         tableGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
                         var getterIL = tableGetter.GetILGenerator();
                         getterIL.Emit(OpCodes.Ldarg_0);
-                        getterIL.Emit(OpCodes.Ldfld, functionTable);
+                        getterIL.Emit(OpCodes.Ldfld, tableField);
                         getterIL.Emit(OpCodes.Ret);
 
-                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(FunctionTable)), emptyTypes)
+                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(tableType), emptyTypes)
                             .SetGetMethod(tableGetter);
                     }
                     break;
@@ -1374,9 +1381,6 @@ public static class Compile
     // failed instantiation does not partially modify a shared imported table.
     static Action? SectionElement(Reader reader, FieldBuilder? functionTable, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder, long sectionOffset = 0)
     {
-        // Holds the function table index of where an existing function index has been mapped, for re-use.
-        var existingDelegates = new Dictionary<uint, uint>();
-
         var count = reader.ReadVarUInt32();
 
         if (count == 0)
@@ -1384,13 +1388,14 @@ public static class Compile
 
         // Only load the function table local when there are active segments that need it.
         LocalBuilder? localFunctionTable = null;
-        var getter = FunctionTable.IndexGetter;
         var setter = FunctionTable.IndexSetter;
 
         // Buffer active segment data so all bounds checks can be emitted before any writes.
         // This ensures atomicity: if any segment doesn't fit, no writes occur.
         // (tableIndex, constOffset, isDynamicOffset, globalIndex, funcIndices, dynamicOffsetLocal)
         var activeSegments = new System.Collections.Generic.List<(uint TableIndex, uint? ConstOffset, bool IsDynamic, uint GlobalIndex, uint[] FuncIndices, LocalBuilder? DynLocal)>();
+        var activeGlobalRefSegments = new System.Collections.Generic.List<(uint TableIndex, uint? ConstOffset, bool IsDynamic, uint GlobalIndex, (byte Kind, uint Index)[] Entries, LocalBuilder? DynLocal)>();
+        var activeExternRefSegments = new System.Collections.Generic.List<(uint TableIndex, uint? ConstOffset, bool IsDynamic, uint GlobalIndex, uint Length, LocalBuilder? DynLocal)>();
         
         // Buffer passive segment data to defer IL emission until after Code section.
         // (segmentIndex, segField, funcIndices (uint.MaxValue = null slot), elemType)
@@ -1421,6 +1426,7 @@ public static class Compile
                         if (functionSignatures == null || idx >= (uint)functionSignatures.Length)
                             throw new ModuleLoadException($"Element segment {i}: function index {idx} is unknown.", reader.Offset);
                         funcIndices[j] = idx;
+                        context.DeclaredFunctionReferences.Add(idx);
                     }
 
                     if (functionSignatures != null && internalFunctions != null)
@@ -1453,6 +1459,7 @@ public static class Compile
                             if (rf.Index >= (uint)functionSignatures.Length)
                                 throw new ModuleLoadException($"Element segment {i}: function index {rf.Index} is unknown.", reader.Offset);
                             funcIndices[j] = rf.Index;
+                            context.DeclaredFunctionReferences.Add(rf.Index);
                         }
                         else if (expr.Length == 2 && expr[0] is Instructions.RefNull)
                             funcIndices[j] = uint.MaxValue; // null slot
@@ -1490,6 +1497,8 @@ public static class Compile
                 var tableElemType = context.TableElementTypes.Count > 0 ? context.TableElementTypes[0] : ElementType.FunctionReference;
                 var exprCount = reader.ReadVarUInt32();
                 var funcIndices4 = new uint[exprCount];
+                var globalRefEntries4 = new (byte Kind, uint Index)[exprCount];
+                var hasGlobalRefEntry4 = false;
                 for (var j = 0u; j < exprCount; j++)
                 {
                     var preExprOffset = reader.Offset;
@@ -1503,6 +1512,8 @@ public static class Compile
                         if (functionSignatures == null || rf4.Index >= (uint)functionSignatures.Length)
                             throw new ModuleLoadException($"Element segment {i}: function index {rf4.Index} is unknown.", preExprOffset);
                         funcIndices4[j] = rf4.Index;
+                        globalRefEntries4[j] = (1, rf4.Index);
+                        context.DeclaredFunctionReferences.Add(rf4.Index);
                     }
                     else if (expr[0] is Instructions.RefNull rn4)
                     {
@@ -1510,6 +1521,22 @@ public static class Compile
                         if (exprElemType != tableElemType)
                             throw new ModuleLoadException("type mismatch", preExprOffset);
                         funcIndices4[j] = uint.MaxValue; // null slot
+                        globalRefEntries4[j] = (0, 0);
+                    }
+                    else if (expr[0] is Instructions.GlobalGet gg4)
+                    {
+                        if (tableElemType != ElementType.FunctionReference)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (gg4.Index >= (uint)context.ImportedGlobalCount)
+                            throw new ModuleLoadException("unknown global", preExprOffset);
+                        var globals4 = context.Globals ?? throw new CompilerException("global.get requires a global section.");
+                        if (gg4.Index >= (uint)globals4.Length || globals4[gg4.Index].Setter != null)
+                            throw new ModuleLoadException("constant expression required", preExprOffset);
+                        if (globals4[gg4.Index].Type != WebAssemblyValueType.FuncRef)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        funcIndices4[j] = uint.MaxValue;
+                        globalRefEntries4[j] = (2, gg4.Index);
+                        hasGlobalRefEntry4 = true;
                     }
                     else
                         throw new ModuleLoadException("type mismatch", preExprOffset);
@@ -1540,22 +1567,121 @@ public static class Compile
                     }
 
                     context.ElementSegments[(uint)i] = exportsBuilder.DefineField($"☣ ActiveElem {i}", typeof(Delegate[]), FieldAttributes.Private);
-                    activeSegments.Add((0, constOffset4, isDynamic4, globalIndex4, funcIndices4, dynamicOffsetLocal4));
+                    context.ElementSegmentTypes[(uint)i] = ElementType.FunctionReference;
+                    if (hasGlobalRefEntry4)
+                        activeGlobalRefSegments.Add((0, constOffset4, isDynamic4, globalIndex4, globalRefEntries4, dynamicOffsetLocal4));
+                    else
+                        activeSegments.Add((0, constOffset4, isDynamic4, globalIndex4, funcIndices4, dynamicOffsetLocal4));
                 }
                 continue;
             }
 
-            // Kind 6: active, explicit table index, init-exprs. Validate reftype against table.
+            // Kind 6: active, explicit table index, init-exprs.
             if (kind == 6)
             {
                 var preKind6Offset = reader.Offset;
                 var tableIdx = reader.ReadVarUInt32();
-                SkipInitializerExpression(reader); // offset expr
+                var kind6Initializer = Instruction.ParseInitializerExpression(reader).ToArray();
                 var reftype = (ElementType)reader.ReadVarInt7();
                 var targetElemType = tableIdx < (uint)context.TableElementTypes.Count ? context.TableElementTypes[(int)tableIdx] : ElementType.FunctionReference;
                 if (reftype != targetElemType)
                     throw new ModuleLoadException("type mismatch", preKind6Offset);
-                SkipInitExprVector(reader);
+
+                uint? constOffset6 = null;
+                uint globalIndex6 = 0;
+                bool isDynamic6 = false;
+                if (kind6Initializer.Length == 2 && kind6Initializer[0] is Instructions.Int32Constant ic6 && kind6Initializer[1] is Instructions.End)
+                    constOffset6 = (uint)ic6.Value;
+                else if (kind6Initializer.Length == 2 && kind6Initializer[0] is Instructions.GlobalGet gg6 && kind6Initializer[1] is Instructions.End)
+                {
+                    if (gg6.Index >= (uint)context.ImportedGlobalCount)
+                        throw new ModuleLoadException("unknown global", preKind6Offset);
+                    if (context.Globals != null && gg6.Index < (uint)context.Globals.Length && context.Globals[gg6.Index].Setter != null)
+                        throw new ModuleLoadException("constant expression required", preKind6Offset);
+                    globalIndex6 = gg6.Index;
+                    isDynamic6 = true;
+                }
+                else
+                    throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant or global.get followed by end.", preKind6Offset);
+
+                var exprCount6 = reader.ReadVarUInt32();
+                var funcIndices6 = new uint[exprCount6];
+                var globalRefEntries6 = new (byte Kind, uint Index)[exprCount6];
+                uint externRefNullCount6 = 0;
+                var hasGlobalRefEntry6 = false;
+                for (var j = 0u; j < exprCount6; j++)
+                {
+                    var preExprOffset = reader.Offset;
+                    var expr = Instruction.ParseInitializerExpression(reader).ToArray();
+                    if (expr.Length != 2)
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                    if (expr[0] is Instructions.RefFunc rf6)
+                    {
+                        if (reftype != ElementType.FunctionReference)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (functionSignatures == null || rf6.Index >= (uint)functionSignatures.Length)
+                            throw new ModuleLoadException($"Element segment {i}: function index {rf6.Index} is unknown.", preExprOffset);
+                        funcIndices6[j] = rf6.Index;
+                        globalRefEntries6[j] = (1, rf6.Index);
+                        context.DeclaredFunctionReferences.Add(rf6.Index);
+                    }
+                    else if (expr[0] is Instructions.RefNull rn6)
+                    {
+                        var exprElemType = rn6.Type == WebAssemblyValueType.FuncRef ? ElementType.FunctionReference : ElementType.ExternRef;
+                        if (exprElemType != reftype)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (reftype == ElementType.FunctionReference)
+                        {
+                            funcIndices6[j] = uint.MaxValue;
+                            globalRefEntries6[j] = (0, 0);
+                        }
+                        else
+                            externRefNullCount6++;
+                    }
+                    else if (expr[0] is Instructions.GlobalGet gg6)
+                    {
+                        if (reftype != ElementType.FunctionReference)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (gg6.Index >= (uint)context.ImportedGlobalCount)
+                            throw new ModuleLoadException("unknown global", preExprOffset);
+                        var globals6 = context.Globals ?? throw new CompilerException("global.get requires a global section.");
+                        if (gg6.Index >= (uint)globals6.Length || globals6[gg6.Index].Setter != null)
+                            throw new ModuleLoadException("constant expression required", preExprOffset);
+                        if (globals6[gg6.Index].Type != WebAssemblyValueType.FuncRef)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        funcIndices6[j] = uint.MaxValue;
+                        globalRefEntries6[j] = (2, gg6.Index);
+                        hasGlobalRefEntry6 = true;
+                    }
+                    else
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                }
+
+                LocalBuilder? dynamicOffsetLocal6 = null;
+                if (isDynamic6)
+                {
+                    dynamicOffsetLocal6 = instanceConstructorIL.DeclareLocal(typeof(uint));
+                    var global6 = (context.Globals ?? throw new CompilerException("global.get requires a global section."))[globalIndex6];
+                    if (global6.RequiresInstance)
+                        instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Call, global6.Getter);
+                    instanceConstructorIL.Emit(OpCodes.Stloc, dynamicOffsetLocal6);
+                }
+
+                context.ElementSegments[(uint)i] = exportsBuilder.DefineField(
+                    $"☣ ActiveElem {i}",
+                    reftype == ElementType.FunctionReference ? typeof(Delegate[]) : typeof(object[]),
+                    FieldAttributes.Private);
+                context.ElementSegmentTypes[(uint)i] = reftype;
+                if (reftype == ElementType.FunctionReference)
+                {
+                    if (hasGlobalRefEntry6)
+                        activeGlobalRefSegments.Add((tableIdx, constOffset6, isDynamic6, globalIndex6, globalRefEntries6, dynamicOffsetLocal6));
+                    else
+                        activeSegments.Add((tableIdx, constOffset6, isDynamic6, globalIndex6, funcIndices6, dynamicOffsetLocal6));
+                }
+                else
+                    activeExternRefSegments.Add((tableIdx, constOffset6, isDynamic6, globalIndex6, externRefNullCount6, dynamicOffsetLocal6));
                 continue;
             }
 
@@ -1572,6 +1698,7 @@ public static class Compile
                     $"☣ ActiveElem {i}",
                     typeof(Delegate[]),
                     FieldAttributes.Private);
+                context.ElementSegmentTypes[(uint)i] = ElementType.FunctionReference;
 
                 uint? constOffset2 = null;
                 uint globalIndex2 = 0;
@@ -1612,6 +1739,7 @@ public static class Compile
                         if (funcIdx >= (uint)functionSignatures.Length)
                             throw new ModuleLoadException($"Element segment {i}: function index {funcIdx} is unknown.", reader.Offset);
                         funcIndicesArr2[j] = funcIdx;
+                        context.DeclaredFunctionReferences.Add(funcIdx);
                     }
                 }
 
@@ -1639,7 +1767,57 @@ public static class Compile
                 continue;
             }
 
-            // Kinds 3, 7: skip them (declarative).
+            // Kind 3: declarative, func indices.
+            if (kind == 3)
+            {
+                context.ElementSegments[(uint)i] = exportsBuilder.DefineField(
+                    $"☣ DeclarativeElem {i}",
+                    typeof(Delegate[]),
+                    FieldAttributes.Private);
+                context.ElementSegmentTypes[(uint)i] = ElementType.FunctionReference;
+                reader.ReadByte(); // elemkind (0x00 = funcref)
+                var elements3 = reader.ReadVarUInt32();
+                for (var j = 0u; j < elements3; j++)
+                    context.DeclaredFunctionReferences.Add(reader.ReadVarUInt32());
+                continue;
+            }
+
+            // Kind 7: declarative, init-exprs.
+            if (kind == 7)
+            {
+                var reftype7 = (ElementType)reader.ReadVarInt7();
+                context.ElementSegments[(uint)i] = exportsBuilder.DefineField(
+                    $"☣ DeclarativeElem {i}",
+                    typeof(Delegate[]),
+                    FieldAttributes.Private);
+                context.ElementSegmentTypes[(uint)i] = reftype7;
+                var elemCount7 = reader.ReadVarUInt32();
+                for (var j = 0u; j < elemCount7; j++)
+                {
+                    var preExprOffset = reader.Offset;
+                    var expr = Instruction.ParseInitializerExpression(reader).ToArray();
+                    if (expr.Length != 2)
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                    if (expr[0] is Instructions.RefFunc rf7)
+                    {
+                        if (reftype7 != ElementType.FunctionReference)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                        if (functionSignatures == null || rf7.Index >= (uint)functionSignatures.Length)
+                            throw new ModuleLoadException($"Element segment {i}: function index {rf7.Index} is unknown.", preExprOffset);
+                        context.DeclaredFunctionReferences.Add(rf7.Index);
+                    }
+                    else if (expr[0] is Instructions.RefNull rn7)
+                    {
+                        var exprElemType = rn7.Type == WebAssemblyValueType.FuncRef ? ElementType.FunctionReference : ElementType.ExternRef;
+                        if (exprElemType != reftype7)
+                            throw new ModuleLoadException("type mismatch", preExprOffset);
+                    }
+                    else
+                        throw new ModuleLoadException("type mismatch", preExprOffset);
+                }
+                continue;
+            }
+
             if (kind != 0)
             {
                 SkipElementSegment(reader, kind);
@@ -1652,6 +1830,7 @@ public static class Compile
                 $"☣ ActiveElem {i}",
                 typeof(Delegate[]),
                 FieldAttributes.Private);
+            context.ElementSegmentTypes[(uint)i] = ElementType.FunctionReference;
 
             uint? constOffset = null;
             uint globalIndex = 0;
@@ -1710,7 +1889,11 @@ public static class Compile
                 if (functionSignatures == null || internalFunctions == null)
                     throw new ModuleLoadException("Element section must be empty if there are no functions to reference.", preElementOffset);
                 for (var j = 0u; j < elements; j++)
-                    funcIndicesArr[j] = reader.ReadVarUInt32();
+                {
+                    var funcIdx = reader.ReadVarUInt32();
+                    funcIndicesArr[j] = funcIdx;
+                    context.DeclaredFunctionReferences.Add(funcIdx);
+                }
             }
 
             activeSegments.Add((0, constOffset, isDynamicOffset, globalIndex, funcIndicesArr, dynamicOffsetLocal));
@@ -1734,6 +1917,26 @@ public static class Compile
                 instanceConstructorIL.Emit(OpCodes.Ldfld, tableField);
                 instanceConstructorIL.Emit(OpCodes.Stloc, tableLocal);
                 tableLocals[tableIndex] = tableLocal;
+            }
+        }
+
+        var externRefTableLocals = new Dictionary<uint, LocalBuilder>();
+        foreach (var (tableIndex, _, _, _, _, _) in activeExternRefSegments)
+        {
+            if (!externRefTableLocals.ContainsKey(tableIndex))
+            {
+                if (tableIndex >= (uint)context.Tables.Count)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} but only {context.Tables.Count} tables exist.", 0);
+
+                var tableField = context.Tables[(int)tableIndex];
+                if (tableField == null)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} which is null.", 0);
+
+                var tableLocal = instanceConstructorIL.DeclareLocal(typeof(ExternRefTable));
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, tableField);
+                instanceConstructorIL.Emit(OpCodes.Stloc, tableLocal);
+                externRefTableLocals[tableIndex] = tableLocal;
             }
         }
 
@@ -1764,17 +1967,70 @@ public static class Compile
             instanceConstructorIL.MarkLabel(isBigEnough);
         }
 
-        if (activeSegments.Count == 0 && passiveSegments.Count == 0)
+        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, entries, dynLocal) in activeGlobalRefSegments)
+        {
+            var elements = (uint)entries.Length;
+            var isBigEnough = instanceConstructorIL.DefineLabel();
+            var tableLocal = tableLocals[tableIndex];
+            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+            if (isDynamic)
+            {
+                instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                if (elements > 0)
+                {
+                    instanceConstructorIL.EmitLoadConstant((int)elements);
+                    instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+                }
+            }
+            else
+            {
+                instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + elements));
+            }
+            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
+            instanceConstructorIL.Emit(OpCodes.Throw);
+            instanceConstructorIL.MarkLabel(isBigEnough);
+        }
+
+        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, length, dynLocal) in activeExternRefSegments)
+        {
+            var isBigEnough = instanceConstructorIL.DefineLabel();
+            var tableLocal = externRefTableLocals[tableIndex];
+            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+            instanceConstructorIL.Emit(OpCodes.Call, ExternRefTable.LengthGetter);
+            if (isDynamic)
+            {
+                instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                if (length > 0)
+                {
+                    instanceConstructorIL.EmitLoadConstant((int)length);
+                    instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+                }
+            }
+            else
+            {
+                instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + length));
+            }
+            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
+            instanceConstructorIL.Emit(OpCodes.Throw);
+            instanceConstructorIL.MarkLabel(isBigEnough);
+        }
+
+        if (activeSegments.Count == 0 && activeGlobalRefSegments.Count == 0 && activeExternRefSegments.Count == 0 && passiveSegments.Count == 0)
             return null;
 
         // Return a deferred action that emits element writes. The caller must invoke this AFTER
         // emitting all other section checks (data segment bounds) so that if any check fails,
         // no writes to a shared imported table have already occurred.
         var capturedSegments = activeSegments;
+        var capturedGlobalRefSegments = activeGlobalRefSegments;
+        var capturedExternRefSegments = activeExternRefSegments;
         var capturedPassiveSegments = passiveSegments;
         var capturedTableLocals = tableLocals;
+        var capturedExternRefTableLocals = externRefTableLocals;
         var capturedSetter = setter;
-        var capturedGetter = getter;
         return () =>
         {
             foreach (var (tableIndex, constOffset, isDynamic, _, funcIndices, dynLocal) in capturedSegments)
@@ -1793,21 +2049,6 @@ public static class Compile
                         // ref.null slot: store null delegate (skip writing — FunctionTable default is null).
                         continue;
                     }
-                    var signature = functionSignatures![functionIndex];
-                    var parms = signature.ParameterTypes;
-                    var returns = signature.ReturnTypes;
-
-                    if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
-                    {
-                        var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
-                        var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
-                            throw new CompilerException($"Failed to get a delegate for type {signature}.");
-                        if (del.IsGenericType)
-                            del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
-
-                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
-                    }
-
                     instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
                     if (isDynamic)
                     {
@@ -1823,37 +2064,91 @@ public static class Compile
                         instanceConstructorIL.EmitLoadConstant(constOffset!.Value + j);
                     }
 
-                    if (!isDynamic && existingDelegates.TryGetValue(functionIndex, out var existing))
+                    instanceConstructorIL.EmitLoadArg(0);
+                    instanceConstructorIL.Emit(OpCodes.Ldfld, context.FunctionReferences!);
+                    instanceConstructorIL.EmitLoadConstant((int)functionIndex);
+                    instanceConstructorIL.Emit(OpCodes.Ldelem_Ref);
+
+                    instanceConstructorIL.Emit(OpCodes.Call, capturedSetter);
+                }
+            }
+
+            foreach (var (tableIndex, constOffset, isDynamic, _, entries, dynLocal) in capturedGlobalRefSegments)
+            {
+                if (entries.Length == 0)
+                    continue;
+
+                var tableLocal = capturedTableLocals[tableIndex];
+
+                for (var j = 0u; j < entries.Length; j++)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+                    if (isDynamic)
                     {
-                        instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
-                        instanceConstructorIL.EmitLoadConstant(existing);
-                        instanceConstructorIL.Emit(OpCodes.Call, capturedGetter);
+                        instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                        if (j > 0)
+                        {
+                            instanceConstructorIL.EmitLoadConstant((int)j);
+                            instanceConstructorIL.Emit(OpCodes.Add);
+                        }
                     }
                     else
                     {
-                        if (!isDynamic)
-                            existingDelegates.Add(functionIndex, constOffset!.Value + j);
+                        instanceConstructorIL.EmitLoadConstant(constOffset!.Value + j);
+                    }
 
-                        var wrapper = exportsBuilder.DefineMethod(
-                            $"📦 {functionIndex}",
-                            MethodAttributes.Private | MethodAttributes.HideBySig,
-                            Compilation.MultiValueHelper.ClrReturnType(returns),
-                            parms
-                            );
-
-                        var il = wrapper.GetILGenerator();
-                        for (var k = 0; k < parms.Length; k++)
-                            il.EmitLoadArg(k + 1);
-                        il.EmitLoadArg(0);
-                        il.Emit(OpCodes.Call, internalFunctions![functionIndex]);
-                        il.Emit(OpCodes.Ret);
-
-                        instanceConstructorIL.EmitLoadArg(0);
-                        instanceConstructorIL.Emit(OpCodes.Ldftn, wrapper);
-                        instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                    var entry = entries[j];
+                    switch (entry.Kind)
+                    {
+                        case 0:
+                            instanceConstructorIL.Emit(OpCodes.Ldnull);
+                            break;
+                        case 1:
+                            instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.Emit(OpCodes.Ldfld, context.FunctionReferences!);
+                            instanceConstructorIL.EmitLoadConstant((int)entry.Index);
+                            instanceConstructorIL.Emit(OpCodes.Ldelem_Ref);
+                            break;
+                        case 2:
+                            var global = (context.Globals ?? throw new CompilerException("global.get requires a global section."))[entry.Index];
+                            if (global.RequiresInstance)
+                                instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.Emit(OpCodes.Call, global.Getter);
+                            break;
+                        default:
+                            throw new CompilerException($"Unknown active global-ref segment entry kind {entry.Kind}.");
                     }
 
                     instanceConstructorIL.Emit(OpCodes.Call, capturedSetter);
+                }
+            }
+
+            foreach (var (tableIndex, constOffset, isDynamic, _, length, dynLocal) in capturedExternRefSegments)
+            {
+                if (length == 0)
+                    continue;
+
+                var tableLocal = capturedExternRefTableLocals[tableIndex];
+
+                for (var j = 0u; j < length; j++)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+                    if (isDynamic)
+                    {
+                        instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                        if (j > 0)
+                        {
+                            instanceConstructorIL.EmitLoadConstant((int)j);
+                            instanceConstructorIL.Emit(OpCodes.Add);
+                        }
+                    }
+                    else
+                    {
+                        instanceConstructorIL.EmitLoadConstant(constOffset!.Value + j);
+                    }
+
+                    instanceConstructorIL.Emit(OpCodes.Ldnull);
+                    instanceConstructorIL.Emit(OpCodes.Call, ExternRefTable.IndexSetter);
                 }
             }
             
@@ -1871,25 +2166,12 @@ public static class Compile
                     if (functionIndex == uint.MaxValue)
                         continue; // null slot — leave array element as null
 
-                    var signature = functionSignatures![functionIndex];
-                    var parms = signature.ParameterTypes;
-                    var returns = signature.ReturnTypes;
-
-                    if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
-                    {
-                        var clrRetCount = returns.Length > 1 ? 1 : returns.Length;
-                        var del = configuration.GetDelegateForType(parms.Length, clrRetCount) ??
-                            throw new CompilerException($"Failed to get a delegate for type {signature}.");
-                        if (del.IsGenericType)
-                            del = del.MakeGenericType(Compilation.MultiValueHelper.DelegateTypeArgs(parms, returns));
-                        delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
-                    }
-
                     instanceConstructorIL.Emit(OpCodes.Ldloc, arrLocal);
                     instanceConstructorIL.EmitLoadConstant((int)j);
                     instanceConstructorIL.EmitLoadArg(0);
-                    instanceConstructorIL.Emit(OpCodes.Ldftn, internalFunctions![functionIndex]);
-                    instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                    instanceConstructorIL.Emit(OpCodes.Ldfld, context.FunctionReferences!);
+                    instanceConstructorIL.EmitLoadConstant((int)functionIndex);
+                    instanceConstructorIL.Emit(OpCodes.Ldelem_Ref);
                     instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
                 }
 
@@ -2180,7 +2462,8 @@ public static class Compile
         MethodInfo[]? internalFunctions,
         Signature[] functionSignatures,
         int importedFunctions,
-        CompilerConfiguration configuration)
+        CompilerConfiguration configuration,
+        TypeBuilder exportsBuilder)
     {
         var totalFunctions = internalFunctions?.Length ?? 0;
         
@@ -2225,12 +2508,24 @@ public static class Compile
                         // Skip this function if we can't find the delegate constructor
                         continue;
                     }
+
+                    var wrapper = exportsBuilder.DefineMethod(
+                        $"↪ {i}",
+                        MethodAttributes.Private | MethodAttributes.HideBySig,
+                        Compilation.MultiValueHelper.ClrReturnType(signature.ReturnTypes),
+                        signature.ParameterTypes);
+                    var wrapperIL = wrapper.GetILGenerator();
+                    for (var parameterIndex = 0; parameterIndex < signature.ParameterTypes.Length; parameterIndex++)
+                        wrapperIL.EmitLoadArg(parameterIndex + 1);
+                    wrapperIL.EmitLoadArg(0);
+                    wrapperIL.Emit(OpCodes.Call, method);
+                    wrapperIL.Emit(OpCodes.Ret);
                     
-                    // Store delegate in array: array[i] = new DelegateType(this, method)
+                    // Store delegate in array: array[i] = new DelegateType(this, wrapper)
                     il.Emit(OpCodes.Ldloc, arrLocal);
                     il.EmitLoadConstant(i);
-                    il.EmitLoadArg(0);  // 'this' for instance method
-                    il.Emit(OpCodes.Ldftn, method);
+                    il.EmitLoadArg(0);
+                    il.Emit(OpCodes.Ldftn, wrapper);
                     il.Emit(OpCodes.Newobj, delegateCtor);
                     il.Emit(OpCodes.Stelem_Ref);
                 }

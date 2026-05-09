@@ -1,25 +1,42 @@
-=== Spec Test Summary ===
-Total tests: 148
-Passed: ~140+ (after fixes)
-Skipped: ~8 (intentional - externref/invalid modules)
-Failed: 0 (after fixes)
+=== Spec Test Summary (Updated) ===
+Total test methods: 148
+- Passing completely (no skips): 104 ✅  
+- With skipped lines: 44 ⚠️
+- Ignored (crash CLR): 3 (labels, skip-stack-guard-page, unwind)
 
-=== Recent Fixes ===
-1. SpecTest_ref_func - Fixed NullReferenceException by initializing FunctionReferences array
-   immediately after Function section, so Global section can use ref.func in initializers
-2. SpecTest_table_copy - Extended skip range to 15-55 (externref table tests)
-3. SpecTest_table_fill - Added line 111 skip (invalid type mismatch test)
-4. SpecTest_memory_init - Added line 233 skip (unknown data segment test)
+Recent changes:
+- Removed skips from 7 tests that now pass 100%: block, br, br_if, br_table, call, if, loop
+- These were previously failing due to "Block not permitted in initializer expressions" but now pass
 
-=== Key Implementation Detail ===
-FunctionReferences initialization moved from Data section to immediately after Function section.
-This is required because:
-- Global section (6) comes before Data section (11) in WASM format
-- Globals can have ref.func initializers (WASM 2.0 reference types feature)
-- ref.func.Compile() requires FunctionReferences array to be initialized
-- Solution: Initialize FunctionReferences right after Function section (3), before Global section (6)
+=== Known Issues by Category ===
 
-=== Known Limitations ===
-- externref tables not fully supported (partial WASM 2.0 implementation)
-- skip-stack-guard-page permanently ignored (crashes CLR by design)
-- Some invalid module tests skipped where spec expects specific exception types
+**func** (90 skipped lines):
+- Line 3: "More than 7 return values are not yet supported"
+- Lines 241+: Cascaded failures
+
+**global** (59 skipped lines):
+- Line 3: "Imported external kind of 127 is not recognized"
+- Lines 196+: Cascaded failures
+
+=== Next Steps ===
+1. Implement multi-value returns (>7 return values) for func test
+2. Investigate "external kind 127" issue in global test
+3. Continue working through remaining skipped test categories
+
+=== WASM 2.0 Support Status ===
+Fully implemented:
+- Non-trapping conversions (0xFC prefix)
+- Bulk memory operations
+- SIMD (0xFD prefix, 200+ opcodes)
+- Multi-value returns (up to 7)
+- Reference types (partial: funcref tables, ref.null, ref.is_null)
+
+Partially implemented:
+- Table operations (funcref only, not externref)
+- ref.func (placeholder implementation)
+
+Not implemented:
+- externref tables
+- >7 return values
+- Undeclared function reference validation
+

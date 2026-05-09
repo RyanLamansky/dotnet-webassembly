@@ -65,6 +65,7 @@ public class BranchIf : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        var isReachable = !context.IsUnreachable;
 
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
         var targetDepthKey = context.Depth.Count - checked((int)this.Index);
@@ -73,8 +74,11 @@ public class BranchIf : Instruction
         var isLoop = blockType.OpCode == OpCode.Loop;
         var branchSig = targetBlockCtx.BlockSignature;
 
-        if (!context.IsUnreachable)
+        if (isReachable)
         {
+            if (!isLoop)
+                targetBlockCtx.MarkEndLabelTargeted();
+
             if (branchSig != null)
             {
                 // TypeIndex block: br_if with multi-value handling.
@@ -202,8 +206,9 @@ public class BranchIf : Instruction
             context.Emit(OpCodes.Brtrue, label);
         }
 
-        // Code following br_if is conditionally reachable even if we were in unreachable mode.
-        context.MarkReachable();
+        // Code following br_if is conditionally reachable only when the br_if itself was reachable.
+        if (isReachable)
+            context.MarkReachable();
     }
 
     /// <summary>

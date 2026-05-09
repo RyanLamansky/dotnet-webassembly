@@ -50,7 +50,8 @@ public class TableInit : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
-        if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField))
+        if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField)
+            || !context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType))
             throw new ModuleLoadException($"table.init: element segment {SegmentIndex} is not a passive segment or does not exist.", 0);
 
         if (TableIndex >= (uint)context.Tables.Count)
@@ -59,7 +60,7 @@ public class TableInit : MiscellaneousInstruction
         var table = context.GetTable(TableIndex);
         var tableElemType = context.GetTableElementType(TableIndex);
         
-        if (context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType) && segElemType != tableElemType)
+        if (segElemType != tableElemType)
             throw new ModuleLoadException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).", 0);
 
         var len = context.DeclareLocal(typeof(uint));

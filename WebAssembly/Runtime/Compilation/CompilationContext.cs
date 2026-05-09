@@ -84,7 +84,13 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 
-    public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
+    public readonly Dictionary<(uint TypeIndex, uint TableIndex), MethodBuilder> DelegateRemappersByType = [];
+
+    /// <summary>
+    /// Function indices that are valid ref.func targets for function bodies.
+    /// Populated from function exports and element segments as the module is read.
+    /// </summary>
+    public readonly HashSet<uint> DeclaredFunctionReferences = [];
 
     /// <summary>
     /// Table fields, indexed by table index. Each field is either a FunctionTable or ExternRefTable.
@@ -115,6 +121,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     /// <summary>Maps passive element segment index → its element type (funcref or externref).</summary>
     public readonly Dictionary<uint, ElementType> ElementSegmentTypes = [];
+
+    /// <summary>
+    /// Indicates whether ref.func declaration checks should be enforced during compilation.
+    /// This is enabled for function bodies after exports/element segments have been read.
+    /// </summary>
+    public bool EnforceDeclaredFunctionReferences;
 
     internal const MethodAttributes HelperMethodAttributes =
         MethodAttributes.Private |

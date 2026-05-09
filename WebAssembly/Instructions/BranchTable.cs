@@ -125,6 +125,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
         var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
         WebAssemblyValueType? typedResult = null;
+        var isReachable = !context.IsUnreachable;
         if (defaultLabelType.OpCode != OpCode.Loop && defaultLabelType.Type.TryToValueType(out var expectedType))
         {
             context.ValidateStack(this.OpCode, expectedType);
@@ -146,8 +147,19 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
         var blockDepth = checked((uint)context.Depth.Count);
 
-        if (!context.IsUnreachable)
+        if (isReachable)
         {
+            void MarkTarget(uint distance)
+            {
+                var target = context.Depth.ElementAt(checked((int)distance));
+                if (target.OpCode != OpCode.Loop)
+                    context.BlockContexts[context.Depth.Count - checked((int)distance)].MarkEndLabelTargeted();
+            }
+
+            foreach (var label in this.Labels)
+                MarkTarget(label);
+            MarkTarget(this.DefaultLabel);
+
             // Build per-target (labelIndex → distance) list including default.
             var allLabelDistances = this.Labels.Select(l => checked((int)l)).ToList();
             var defaultDist = checked((int)this.DefaultLabel);

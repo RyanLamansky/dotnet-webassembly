@@ -168,18 +168,33 @@ public class End : SimpleInstruction
 
             context.Labels.Remove(depth);
 
-            // A non-loop block exit label is a forward branch target — code is reachable from here.
+            // A non-loop block exit label is reachable from here only when control can fall through
+            // to it, or when a reachable branch targeted this block's end label.
             // When the block was unreachable, reset the tracking stack (unreachable code may have left
             // stale values) to represent the correct state: parent's initial items plus the block result.
             // Only applies when the parent block context still exists (SectionData removes it manually).
             if (!isLoopLabel && context.BlockContexts.TryGetValue(context.Depth.Count, out _))
             {
-                context.MarkReachable();
-                if (wasUnreachable)
+                if (!wasUnreachable || blockContext.IsEndLabelTargeted)
                 {
-                    while (context.Stack.Count > blockContext.InitialStackSize)
-                        context.Stack.Pop();
-                    // Push results onto the tracking stack.
+                    context.MarkReachable();
+                    if (wasUnreachable)
+                    {
+                        while (context.Stack.Count > blockContext.InitialStackSize)
+                            context.Stack.Pop();
+                        // Push results onto the tracking stack.
+                        if (blockContext.BlockSignature != null)
+                        {
+                            foreach (var t in blockContext.BlockSignature.RawReturnTypes)
+                                context.Stack.Push(t);
+                        }
+                        else if (blockType.TryToValueType(out var blockResultType))
+                            context.Stack.Push(blockResultType);
+                    }
+                }
+                else
+                {
+                    context.MarkUnreachable();
                     if (blockContext.BlockSignature != null)
                     {
                         foreach (var t in blockContext.BlockSignature.RawReturnTypes)

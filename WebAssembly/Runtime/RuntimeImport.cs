@@ -69,7 +69,7 @@ public abstract class RuntimeImport
                         if (getter == null)
                             continue;
 
-                        if (getter.Invoke(exports, []) is not FunctionTable table)
+                        if (getter.Invoke(exports, []) is not TableImport table)
                             continue;
 
                         yield return (native.Name, table);

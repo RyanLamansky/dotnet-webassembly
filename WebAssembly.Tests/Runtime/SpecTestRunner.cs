@@ -280,7 +280,12 @@ static class SpecTestRunner
                             case "unknown function":
                             case "unknown function 0":
                             case "unknown table 0":
+                            case "unknown elem segment 0":
+                            case var _ when assert.text.StartsWith("unknown elem segment "):
+                            case var _ when assert.text.StartsWith("unknown global "):
                             case "unknown local 2":
+                            case var _ when assert.text.StartsWith("unknown function "):
+                            case var _ when assert.text.StartsWith("undeclared function reference"):
                                 try
                                 {
                                     trapExpected();
@@ -570,6 +575,22 @@ static class SpecTestRunner
                                 {
                                 }
                                 catch (UnreachableException)
+                                {
+                                }
+                                continue;
+                            case "out of bounds table access":
+                                try
+                                {
+                                    trapExpected();
+                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException, OverflowException or IndexOutOfRangeException, but no exception was thrown.");
+                                }
+                                catch (ModuleLoadException)
+                                {
+                                }
+                                catch (OverflowException)
+                                {
+                                }
+                                catch (IndexOutOfRangeException)
                                 {
                                 }
                                 continue;

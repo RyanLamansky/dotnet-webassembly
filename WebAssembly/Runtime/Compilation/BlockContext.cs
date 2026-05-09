@@ -11,6 +11,11 @@ internal sealed class BlockContext
     public bool IsUnreachable { get; private set; }
 
     /// <summary>
+    /// True when reachable code branched to this block's end label.
+    /// </summary>
+    public bool IsEndLabelTargeted { get; private set; }
+
+    /// <summary>
     /// For typed blocks (non-void), holds the local that ferries the result value across branches.
     /// </summary>
     public LocalBuilder? ResultLocal;
@@ -50,5 +55,10 @@ internal sealed class BlockContext
     public void MarkReachable()
     {
         IsUnreachable = false;
+    }
+
+    public void MarkEndLabelTargeted()
+    {
+        IsEndLabelTargeted = true;
     }
 }

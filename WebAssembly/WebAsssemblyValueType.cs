@@ -25,7 +25,7 @@ public enum WebAssemblyValueType : sbyte
     Float64 = -0x04,
 
     /// <summary>
-    /// A nullable reference to a function, represented as <see cref="object"/> at runtime.
+    /// A nullable reference to a function, represented as <see cref="System.Delegate"/> at runtime.
     /// </summary>
     FuncRef = -0x10,
 
@@ -49,7 +49,7 @@ static class ValueTypeExtensions
         WebAssemblyValueType.Int64 => typeof(long),
         WebAssemblyValueType.Float32 => typeof(float),
         WebAssemblyValueType.Float64 => typeof(double),
-        WebAssemblyValueType.FuncRef => typeof(object),
+        WebAssemblyValueType.FuncRef => typeof(System.Delegate),
         WebAssemblyValueType.ExternRef => typeof(object),
         WebAssemblyValueType.V128 => WebAssembly.Runtime.V128Helper.V128Type,
         _ => throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized."),
@@ -62,6 +62,8 @@ static class ValueTypeExtensions
                 { typeof(long), WebAssemblyValueType.Int64 },
                 { typeof(float), WebAssemblyValueType.Float32 },
                 { typeof(double), WebAssemblyValueType.Float64 },
+                { typeof(System.Delegate), WebAssemblyValueType.FuncRef },
+                { typeof(object), WebAssemblyValueType.ExternRef },
         });
 
     public static bool TryConvertToValueType(this System.Type type, out WebAssemblyValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);

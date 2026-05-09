@@ -42,7 +42,7 @@ public class ElemDrop : MiscellaneousInstruction
     {
         // Active segments are implicitly dropped at instantiation; elem.drop on them is a no-op.
         if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField))
-            return;
+            throw new ModuleLoadException($"elem.drop: element segment {SegmentIndex} does not exist.", 0);
 
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldnull);

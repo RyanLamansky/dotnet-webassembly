@@ -47,6 +47,13 @@ public class ImportException : RuntimeException
             throw new ImportException("Incompatible import type: table limits do not match.");
     }
 
+    /// <summary>Validates that the provided externref table's limits satisfy the module's requirements.</summary>
+    public static void ValidateTableLimits(ExternRefTable table, uint requiredMin, uint requiredMax)
+    {
+        if (table.Initial < requiredMin || table.Maximum.GetValueOrDefault(uint.MaxValue) > requiredMax)
+            throw new ImportException("Incompatible import type: table limits do not match.");
+    }
+
     /// <summary>Validates that the provided memory's limits satisfy the module's requirements.</summary>
     public static void ValidateMemoryLimits(UnmanagedMemory memory, uint requiredMin, uint requiredMax)
     {

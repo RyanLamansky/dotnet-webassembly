@@ -259,11 +259,7 @@ public class Module
 
                     case Section.Import: //Import declarations
                         {
-                            var count = reader.ReadVarUInt32();
-                            var imports = module.imports = new List<Import>(checked((int)count));
-
-                            for (var i = 0; i < count; i++)
-                                imports.Add(Import.ParseFrom(reader));
+                            module.imports = Import.ParseSection(reader);
                         }
                         break;
 
@@ -362,6 +358,59 @@ public class Module
                 // Don't advance previousSection for DataCount so that Code can follow it.
                 if ((Section)id != Section.DataCount)
                     previousSection = (Section)id;
+            }
+
+            // Validate ref.func indices in global initializers (WASM 2.0 reference types)
+            if (module.globals != null)
+            {
+                var totalFunctions = (module.imports?.Count(i => i is Import.Function) ?? 0) + (module.functions?.Count ?? 0);
+                
+                foreach (var global in module.globals)
+                {
+                    foreach (var instr in global.InitializerExpression)
+                    {
+                        if (instr is Instructions.RefFunc refFunc)
+                        {
+                            if (refFunc.Index >= totalFunctions)
+                                throw new ModuleLoadException($"unknown function {refFunc.Index}", reader.Offset);
+                        }
+                    }
+                }
+            }
+
+            // Validate element segments (func indices and ref.func in init exprs)
+            if (module.elements != null)
+            {
+                var totalFunctions = (module.imports?.Count(i => i is Import.Function) ?? 0) + (module.functions?.Count ?? 0);
+                
+                foreach (var element in module.elements)
+                {
+                    // Validate direct function indices (kinds 0-3)
+                    if (element.Elements != null)
+                    {
+                        foreach (var funcIdx in element.Elements)
+                        {
+                            if (funcIdx >= totalFunctions)
+                                throw new ModuleLoadException($"unknown function {funcIdx}", reader.Offset);
+                        }
+                    }
+                    
+                    // Validate ref.func in init expressions (kinds 4-7)
+                    if (element.InitExprs != null)
+                    {
+                        foreach (var initExpr in element.InitExprs)
+                        {
+                            foreach (var instr in initExpr)
+                            {
+                                if (instr is Instructions.RefFunc refFunc)
+                                {
+                                    if (refFunc.Index >= totalFunctions)
+                                        throw new ModuleLoadException($"unknown function {refFunc.Index}", reader.Offset);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             return module;

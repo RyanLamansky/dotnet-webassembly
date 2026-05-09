@@ -110,7 +110,8 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
         context.EmitLoadThis();
 
-        if (!context.DelegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
+        var remapperKey = (signature.TypeIndex, tableIndex);
+        if (!context.DelegateRemappersByType.TryGetValue(remapperKey, out var remapper))
         {
             var parms = signature.ParameterTypes;
             var returns = signature.ReturnTypes;
@@ -125,8 +126,8 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
-            context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.CheckedExportsBuilder.DefineMethod(
-                $"🔁 {signature.TypeIndex}",
+            context.DelegateRemappersByType.Add(remapperKey, remapper = context.CheckedExportsBuilder.DefineMethod(
+                $"🔁 {signature.TypeIndex}@{tableIndex}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 MultiValueHelper.ClrReturnType(returns),
                 [.. parms, typeof(uint), context.CheckedExportsBuilder]

@@ -45,39 +45,49 @@ public class TableFill : MiscellaneousInstruction
 
         var elementType = context.GetTableElementType(TableIndex);
         var table = context.GetTable(TableIndex);
+        var stackType = elementType == ElementType.FunctionReference ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef;
 
         // Stack: [i, val, n] -> []
-        // Pop count (n), value (val), start index (i)
-        context.Stack.Pop(); // count (n)
-        context.Stack.Pop(); // value (val)
-        context.Stack.Pop(); // start (i)
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // count (n)
+        context.PopStackNoReturn(this.OpCode, stackType); // value (val)
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // start index (i)
 
         // Emit code to call FunctionTable.Fill(start, value, count)
         // Stack at runtime: start, value, count
         // We need to rearrange to: table, start, value, count
-        
-        var countLocal = context.DeclareLocal(typeof(int));
-        var valueLocal = context.DeclareLocal(typeof(Delegate));
-        var startLocal = context.DeclareLocal(typeof(int));
-        
-        // Pop in reverse order
+
+        var countLocal = context.DeclareLocal(typeof(uint));
+        var startLocal = context.DeclareLocal(typeof(uint));
+
+        LocalBuilder valueLocal;
+
         context.Emit(OpCodes.Stloc, countLocal);
+        if (elementType == ElementType.FunctionReference)
+        {
+            valueLocal = context.DeclareLocal(typeof(Delegate));
+            context.Emit(OpCodes.Castclass, typeof(Delegate));
+        }
+        else
+        {
+            valueLocal = context.DeclareLocal(typeof(object));
+        }
+
         context.Emit(OpCodes.Stloc, valueLocal);
         context.Emit(OpCodes.Stloc, startLocal);
-        
+
         // Load table
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, table);
-        
+
         // Push arguments
         context.Emit(OpCodes.Ldloc, startLocal);
         context.Emit(OpCodes.Ldloc, valueLocal);
         context.Emit(OpCodes.Ldloc, countLocal);
-        
+
         var tableType = elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable);
-        var fillMethod = tableType.GetMethod(nameof(FunctionTable.Fill)) 
+        var fillMethod = tableType.GetMethod(nameof(FunctionTable.Fill))
             ?? throw new NotSupportedException($"Fill method not found on {tableType.Name}");
-        
+
         context.Emit(OpCodes.Call, fillMethod);
     }
 }

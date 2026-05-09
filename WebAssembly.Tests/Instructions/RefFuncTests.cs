@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace WebAssembly.Instructions;
@@ -12,12 +13,11 @@ public class RefFuncTests
     public abstract class RefFuncExport
     {
         /// <summary>Returns a funcref.</summary>
-        public abstract object? Test();
+        public abstract Delegate? Test();
     }
 
     /// <summary>
-    /// Tests that ref.func compiles without error.
-    /// The current implementation returns null as a placeholder until full function-reference storage is implemented.
+    /// Tests that ref.func returns a callable function reference.
     /// </summary>
     [TestMethod]
     public void RefFunc_Compiled()
@@ -27,19 +27,36 @@ public class RefFuncTests
         {
             Returns = [WebAssemblyValueType.FuncRef],
         });
+        module.Types.Add(new WebAssemblyType
+        {
+            Parameters = [WebAssemblyValueType.Int32],
+            Returns = [WebAssemblyValueType.Int32],
+        });
         module.Functions.Add(new Function { Type = 0 });
+        module.Functions.Add(new Function { Type = 1 });
         module.Exports.Add(new Export { Name = nameof(RefFuncExport.Test) });
+        module.Exports.Add(new Export("target", 1));
         module.Codes.Add(new FunctionBody
         {
             Code =
             [
-                new RefFunc(0),
+                new RefFunc(1),
+                new End()
+            ]
+        });
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new LocalGet(0),
                 new End()
             ]
         });
 
         var instance = module.ToInstance<RefFuncExport>();
-        // Result is null until ref.func emits real function references.
-        _ = instance.Exports.Test();
+        var functionReference = instance.Exports.Test();
+
+        Assert.IsNotNull(functionReference);
+        Assert.AreEqual(7, functionReference.DynamicInvoke(7));
     }
 }

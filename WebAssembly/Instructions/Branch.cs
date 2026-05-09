@@ -80,6 +80,9 @@ public class Branch : Instruction
 
         if (!context.IsUnreachable)
         {
+            if (!isLoop)
+                targetBlockCtx.MarkEndLabelTargeted();
+
             if (branchSig != null)
             {
                 // TypeIndex block: multi-value branch handling.

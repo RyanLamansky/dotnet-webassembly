@@ -66,6 +66,9 @@ public class RefFunc : Instruction, IEquatable<RefFunc>
         var methods = context.Methods;
         if (methods == null || Index >= methods.Length)
             throw new CompilerException($"ref.func: function {Index} does not exist.");
+
+        if (context.EnforceDeclaredFunctionReferences && !context.DeclaredFunctionReferences.Contains(Index))
+            throw new ModuleLoadException("undeclared function reference", 0);
         
         // Emit: this.functionRefs[Index]
         context.EmitLoadThis();
