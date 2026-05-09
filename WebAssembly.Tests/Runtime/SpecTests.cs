@@ -205,7 +205,7 @@ public class SpecTests
         // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
         var skips = new HashSet<uint>
         {
-            4, 80, 120, 127, 153, 550, 561, 589, 598, 599, 602, 611, 612, 613, 673, 680, 682, 692
+            4, 80, 120, 127, 153, 550, 561, 589, 598, 599, 602, 611, 612, 613
         };
         SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);
     }

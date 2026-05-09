@@ -1920,6 +1920,25 @@ public static class Compile
             }
         }
 
+        foreach (var (tableIndex, _, _, _, _, _) in activeGlobalRefSegments)
+        {
+            if (!tableLocals.ContainsKey(tableIndex))
+            {
+                if (tableIndex >= (uint)context.Tables.Count)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} but only {context.Tables.Count} tables exist.", 0);
+
+                var tableField = context.Tables[(int)tableIndex];
+                if (tableField == null)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} which is null.", 0);
+
+                var tableLocal = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, tableField);
+                instanceConstructorIL.Emit(OpCodes.Stloc, tableLocal);
+                tableLocals[tableIndex] = tableLocal;
+            }
+        }
+
         var externRefTableLocals = new Dictionary<uint, LocalBuilder>();
         foreach (var (tableIndex, _, _, _, _, _) in activeExternRefSegments)
         {
