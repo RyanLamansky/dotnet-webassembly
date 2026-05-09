@@ -379,8 +379,9 @@ public static class Compile
                         var preNameOffset = reader.Offset;
                         reader.ReadString(reader.ReadVarUInt32()); //Name
                         reader.ReadBytes(payloadLength - checked((uint)(reader.Offset - preNameOffset))); //Content
+                        preSectionOffset = reader.Offset;
                     }
-                    break;
+                    continue;
 
                 case Section.Type:
                     {

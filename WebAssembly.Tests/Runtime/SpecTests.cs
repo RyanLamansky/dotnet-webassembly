@@ -17,15 +17,7 @@ public class SpecTests
 
     /// <summary>Runs the address tests.</summary>
     [TestMethod]
-    public void SpecTest_address()
-    {
-        // 1x AssertFailedException: offset out of range doesn't have a test procedure set up.
-        var skips = new HashSet<uint>
-        {
-            214
-        };
-        SpecTestRunner.Run(DataPath("address"), "address.json", skips.Contains);
-    }
+    public void SpecTest_address() => SpecTestRunner.Run(DataPath("address"), "address.json");
 
     /// <summary>Runs the align tests.</summary>
     [TestMethod]
@@ -155,15 +147,7 @@ public class SpecTests
 
     /// <summary>Runs the custom tests.</summary>
     [TestMethod]
-    public void SpecTest_custom()
-    {
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        var skips = new HashSet<uint>
-        {
-            14
-        };
-        SpecTestRunner.Run(DataPath("custom"), "custom.json", skips.Contains);
-    }
+    public void SpecTest_custom() => SpecTestRunner.Run(DataPath("custom"), "custom.json");
 
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
@@ -747,15 +731,7 @@ public class SpecTests
 
     /// <summary>Runs the type tests.</summary>
     [TestMethod]
-    public void SpecTest_type()
-    {
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        var skips = new HashSet<uint>
-        {
-            3
-        };
-        SpecTestRunner.Run(DataPath("type"), "type.json", skips.Contains);
-    }
+    public void SpecTest_type() => SpecTestRunner.Run(DataPath("type"), "type.json");
 
     /// <summary>Runs the unreachable tests.</summary>
     [TestMethod]
