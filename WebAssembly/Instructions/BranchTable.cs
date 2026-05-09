@@ -136,13 +136,16 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         static BlockType EffectiveLabelType(Instruction instr) =>
             instr.OpCode == OpCode.Loop ? BlockType.Empty : (instr as BlockTypeInstruction)?.Type ?? BlockType.Empty;
 
-        var defaultEffective = EffectiveLabelType(defaultLabelType);
-        foreach (var label in this.Labels)
+        if (isReachable)
         {
-            var labelInstr = context.Depth.ElementAt(checked((int)label));
-            var labelEffective = EffectiveLabelType(labelInstr);
-            if (labelEffective != defaultEffective)
-                throw new LabelTypeMismatchException(this.OpCode, defaultEffective, labelEffective);
+            var defaultEffective = EffectiveLabelType(defaultLabelType);
+            foreach (var label in this.Labels)
+            {
+                var labelInstr = context.Depth.ElementAt(checked((int)label));
+                var labelEffective = EffectiveLabelType(labelInstr);
+                if (labelEffective != defaultEffective)
+                    throw new LabelTypeMismatchException(this.OpCode, defaultEffective, labelEffective);
+            }
         }
 
         var blockDepth = checked((uint)context.Depth.Count);

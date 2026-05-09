@@ -66,6 +66,7 @@ static class SpecTestRunner
         // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
         var imports = new ImportDictionary
         {
+            { "spectest", "print", new FunctionImport((Action)(() => { })) },
             { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
             { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
             { "spectest", "print_f64_f64", new FunctionImport((Action<double, double>)((d1, d2) => { })) },
@@ -271,6 +272,7 @@ static class SpecTestRunner
                             case "multiple memories":
                             case "size minimum must not be greater than maximum":
                             case "memory size must be at most 65536 pages (4GiB)":
+                            case "start function":
                             case "unknown label":
                             case "unknown type":
                                 Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");

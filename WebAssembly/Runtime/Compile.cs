@@ -630,7 +630,9 @@ public static class Compile
                 case Section.Start:
                     if (internalFunctions == null)
                         throw new ModuleLoadException("Start section created without any functions.", preSectionOffset);
-                    startFunction = SectionStart(reader, internalFunctions);
+                    if (functionSignatures == null)
+                        throw new InvalidOperationException($"Start section found but {nameof(functionSignatures)} is null");
+                    startFunction = SectionStart(reader, internalFunctions, functionSignatures);
                     break;
 
                 case Section.Element:
@@ -1370,12 +1372,16 @@ public static class Compile
         return [.. xFunctions];
     }
 
-    static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions)
+    static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions, Signature[] functionSignatures)
     {
         var preReadOffset = reader.Offset;
         var startIndex = reader.ReadVarInt32();
         if (startIndex >= internalFunctions.Length)
             throw new ModuleLoadException($"Start function of index {startIndex} exceeds available functions of {internalFunctions.Length}", preReadOffset);
+
+        var startSignature = functionSignatures[startIndex];
+        if (startSignature.ParameterTypes.Length != 0 || startSignature.ReturnTypes.Length != 0)
+            throw new ModuleLoadException($"Start function of index {startIndex} must have type [] -> [].", preReadOffset);
 
         return internalFunctions[startIndex];
     }

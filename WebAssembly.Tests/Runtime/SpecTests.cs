@@ -36,13 +36,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_binary_leb128()
     {
-        // 4x ModuleLoadException: At offset N: At offset N: Opcode "Int64DivideUnsigned" is not permitted in intializer expressions.
         // 1x StackTypeInvalidException: Int32Load requires the top stack item to be Int32, found Int64.
-        // 1x ModuleLoadException: At offset N: At offset N: Don't know how to parse miscellaneous opcode "N".
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "Unreachable" is not permitted in intializer expressions.
         var skips = new HashSet<uint>
         {
-            32, 881, 998, 1044, 1053, 1072, 1081, 1090
+            881
         };
         SpecTestRunner.Run(DataPath("binary-leb128"), "binary-leb128.json", skips.Contains);
     }
@@ -624,17 +621,7 @@ public class SpecTests
 
     /// <summary>Runs the start tests.</summary>
     [TestMethod]
-    public void SpecTest_start()
-    {
-        // 2x AssertFailedException: start function doesn't have a test procedure set up.
-        // 1x ImportException: Missing import for spectest::print.
-        // 1x AssertFailedException: expected ModuleLoadException not thrown
-        var skips = new HashSet<uint>
-        {
-            7, 14, 92, 98
-        };
-        SpecTestRunner.Run(DataPath("start"), "start.json", skips.Contains);
-    }
+    public void SpecTest_start() => SpecTestRunner.Run(DataPath("start"), "start.json");
 
     /// <summary>Runs the store tests.</summary>
     [TestMethod]
@@ -642,15 +629,7 @@ public class SpecTests
 
     /// <summary>Runs the switch tests.</summary>
     [TestMethod]
-    public void SpecTest_switch()
-    {
-        // 9x AssertFailedException: Common Language Runtime detected an invalid program.
-        var skips = new HashSet<uint>
-        {
-            138, 139, 140, 141, 142, 143, 144, 145, 146
-        };
-        SpecTestRunner.Run(DataPath("switch"), "switch.json", skips.Contains);
-    }
+    public void SpecTest_switch() => SpecTestRunner.Run(DataPath("switch"), "switch.json");
 
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
@@ -658,22 +637,7 @@ public class SpecTests
 
     /// <summary>Runs the token tests.</summary>
     [TestMethod]
-    public void SpecTest_token()
-    {
-        // 1x ImportException: Missing import for spectest::print.
-        // 3x ModuleLoadException: At offset N: At offset N: Opcode "NoOperation" is not permitted in intializer expressions.
-        // 3x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
-        // 3x ModuleLoadException: At offset N: At offset N: Opcode "Loop" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "6" is not permitted in intializer expressions.
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "7" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Branch" is not permitted in intializer expressions.
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "BranchIf" is not permitted in intializer expressions.
-        var skips = new HashSet<uint>
-        {
-            47, 74, 122, 132, 142, 152, 162, 172, 182, 192, 202, 212, 222, 232, 242, 252
-        };
-        SpecTestRunner.Run(DataPath("token"), "token.json", skips.Contains);
-    }
+    public void SpecTest_token() => SpecTestRunner.Run(DataPath("token"), "token.json");
 
     /// <summary>Runs the traps tests.</summary>
     [TestMethod]
@@ -714,17 +678,7 @@ public class SpecTests
 
     /// <summary>Runs the unreached valid tests.</summary>
     [TestMethod]
-    public void SpecTest_unreached_valid()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Don't know how to parse opcode "N".
-        // 5x AssertFailedException: got AssertFailedException, expected UnreachableException
-        // 1x LabelTypeMismatchException: BranchTable requires all labels to have type Float64, but found Float32.
-        var skips = new HashSet<uint>
-        {
-            1, 42, 43, 44, 45, 49, 63
-        };
-        SpecTestRunner.Run(DataPath("unreached-valid"), "unreached-valid.json", skips.Contains);
-    }
+    public void SpecTest_unreached_valid() => SpecTestRunner.Run(DataPath("unreached-valid"), "unreached-valid.json");
 
     /// <summary>Runs the unwind tests.</summary>
     [TestMethod]

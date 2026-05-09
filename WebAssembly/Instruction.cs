@@ -326,7 +326,7 @@ public abstract class Instruction : IEquatable<Instruction>
 
                 case OpCode.MiscellaneousOperationPrefix:
                     var miscellaneousOpCodeOffset = reader.Offset;
-                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadByte();
+                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadVarUInt32();
                     switch (miscellaneousOpCode)
                     {
                         default: throw new ModuleLoadException($"Don't know how to parse miscellaneous opcode \"{miscellaneousOpCode}\".", miscellaneousOpCodeOffset);
