@@ -21,16 +21,7 @@ public class SpecTests
 
     /// <summary>Runs the align tests.</summary>
     [TestMethod]
-    public void SpecTest_align()
-    {
-        // 37x AssertFailedException: expected CompilerException not thrown
-        var skips = new HashSet<uint>
-        {
-            306, 310, 314, 318, 322, 326, 330, 334, 338, 342, 346, 350, 354, 358, 363, 367, 371, 375, 379,
-            383, 387, 391, 395, 399, 403, 407, 411, 415, 420, 424, 428, 432, 436, 440, 444, 448, 452
-        };
-        SpecTestRunner.Run(DataPath("align"), "align.json", skips.Contains);
-    }
+    public void SpecTest_align() => SpecTestRunner.Run(DataPath("align"), "align.json");
 
     /// <summary>Runs the binary leb128 tests.</summary>
     [TestMethod]
@@ -97,16 +88,7 @@ public class SpecTests
 
     /// <summary>Runs the conversions tests.</summary>
     [TestMethod]
-    public void SpecTest_conversions()
-    {
-        // 8x AssertFailedException: Arithmetic operation overflow
-        // 4x AssertFailedException: expected OverflowException not thrown
-        var skips = new HashSet<uint>
-        {
-            96, 97, 101, 143, 144, 149, 151, 195, 199, 241, 246, 248
-        };
-        SpecTestRunner.Run(DataPath("conversions"), "conversions.json", skips.Contains);
-    }
+    public void SpecTest_conversions() => SpecTestRunner.Run(DataPath("conversions"), "conversions.json");
 
     /// <summary>Runs the custom tests.</summary>
     [TestMethod]
@@ -200,17 +182,7 @@ public class SpecTests
 
     /// <summary>Runs the fac tests.</summary>
     [TestMethod]
-    public void SpecTest_fac()
-    {
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        // 6x AssertFailedException: no method source (cascaded module-load failure)
-        // 1x AssertFailedException: got AssertFailedException, expected StackOverflowException
-        var skips = new HashSet<uint>
-        {
-            1, 102, 103, 104, 105, 106, 107, 109
-        };
-        SpecTestRunner.Run(DataPath("fac"), "fac.json", skips.Contains);
-    }
+    public void SpecTest_fac() => SpecTestRunner.Run(DataPath("fac"), "fac.json");
 
     /// <summary>Runs the float_exprs tests.</summary>
     [TestMethod]

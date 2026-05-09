@@ -173,9 +173,14 @@ public class End : SimpleInstruction
             // When the block was unreachable, reset the tracking stack (unreachable code may have left
             // stale values) to represent the correct state: parent's initial items plus the block result.
             // Only applies when the parent block context still exists (SectionData removes it manually).
-            if (!isLoopLabel && context.BlockContexts.TryGetValue(context.Depth.Count, out _))
+            if (context.BlockContexts.TryGetValue(context.Depth.Count, out _))
             {
-                if (!wasUnreachable || blockContext.IsEndLabelTargeted)
+                if (isLoopLabel)
+                {
+                    if (wasUnreachable)
+                        context.MarkUnreachable();
+                }
+                else if (!wasUnreachable || blockContext.IsEndLabelTargeted)
                 {
                     context.MarkReachable();
                     if (wasUnreachable)
