@@ -408,7 +408,8 @@ public static class Compile
                 case Section.Function:
                     {
                         var importedFunctionCount = internalFunctions?.Length ?? 0;
-                        var functionIndexSize = checked((int)(importedFunctionCount + reader.ReadVarUInt32()));
+                        var declaredFunctions = reader.ReadVarUInt32();
+                        var functionIndexSize = checked((int)(importedFunctionCount + declaredFunctions));
                         if (functionSignatures != null)
                         {
                             Array.Resize(ref functionSignatures, functionIndexSize);
@@ -427,6 +428,9 @@ public static class Compile
                         {
                             internalFunctions = context.Methods = new MethodInfo[functionSignatures.Length];
                         }
+
+                        if (declaredFunctions == 0)
+                            break;
 
                         if (signatures == null)
                             throw new InvalidOperationException();
@@ -640,10 +644,6 @@ public static class Compile
                     break;
 
                 case Section.Code:
-                    if (functionSignatures == null)
-                        throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
-                    if (internalFunctions == null)
-                        throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
                     context.EnforceDeclaredFunctionReferences = true;
                     SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                     break;
@@ -2271,19 +2271,28 @@ public static class Compile
             SkipInitializerExpression(reader);
     }
 
-    static void SectionCode(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
+    static void SectionCode(Reader reader, CompilationContext context, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, int importedFunctions)
     {
         var preBodiesIndex = reader.Offset;
         var functionBodies = reader.ReadVarUInt32();
 
         if (functionBodies > 0 && (functionSignatures == null || functionSignatures.Length == importedFunctions))
             throw new ModuleLoadException("Code section is invalid when Function section is missing.", preBodiesIndex);
-        if (functionBodies != functionSignatures.Length - importedFunctions)
-            throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length - importedFunctions} were expected.", preBodiesIndex);
+        if (functionBodies == 0)
+        {
+            if ((functionSignatures?.Length ?? importedFunctions) != importedFunctions)
+                throw new ModuleLoadException($"Code section has {functionBodies} functions described but {(functionSignatures?.Length ?? importedFunctions) - importedFunctions} were expected.", preBodiesIndex);
+            return;
+        }
+        if (internalFunctions == null)
+            throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
+        var checkedFunctionSignatures = functionSignatures ?? throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
+        if (functionBodies != checkedFunctionSignatures.Length - importedFunctions)
+            throw new ModuleLoadException($"Code section has {functionBodies} functions described but {checkedFunctionSignatures.Length - importedFunctions} were expected.", preBodiesIndex);
 
         for (var functionBodyIndex = 0; functionBodyIndex < functionBodies; functionBodyIndex++)
         {
-            var signature = functionSignatures[importedFunctions + functionBodyIndex];
+            var signature = checkedFunctionSignatures[importedFunctions + functionBodyIndex];
             var byteLength = reader.ReadVarUInt32();
             var startingOffset = reader.Offset;
 

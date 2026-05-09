@@ -24,9 +24,9 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     public uint Type { get; set; }
 
     /// <summary>
-    /// Reserved for future use.
+    /// The table index to use for the indirect call.
     /// </summary>
-    public byte Reserved { get; set; }
+    public uint Reserved { get; set; }
 
     /// <summary>
     /// Creates a new  <see cref="CallIndirect"/> instance.
@@ -47,7 +47,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     internal CallIndirect(Reader reader)
     {
         Type = reader.ReadVarUInt32();
-        Reserved = reader.ReadVarUInt1();
+        Reserved = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
@@ -82,7 +82,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)OpCode.CallIndirect, (int)this.Type, this.Reserved);
+    public override int GetHashCode() => HashCode.Combine((int)OpCode.CallIndirect, (int)this.Type, (int)this.Reserved);
 
     internal sealed override void Compile(CompilationContext context)
     {

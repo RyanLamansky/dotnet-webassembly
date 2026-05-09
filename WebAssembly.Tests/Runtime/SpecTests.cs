@@ -46,20 +46,7 @@ public class SpecTests
 
     /// <summary>Runs the binary tests.</summary>
     [TestMethod]
-    public void SpecTest_binary()
-    {
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "Unreachable" is not permitted in intializer expressions.
-        // 3x ModuleLoadException: At offset N: At offset N: Opcode "Int64DivideUnsigned" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: Operation is not valid due to the current state of the object.
-        // 1x ModuleLoadException: At offset N: Code section found but functionSignatures is null
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "Int32RemainderUnsigned" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: Stream ended unexpectedly.
-        var skips = new HashSet<uint>
-        {
-            152, 161, 180, 189, 198, 1172, 1178, 1297, 1321, 1538
-        };
-        SpecTestRunner.Run(DataPath("binary"), "binary.json", skips.Contains);
-    }
+    public void SpecTest_binary() => SpecTestRunner.Run(DataPath("binary"), "binary.json");
 
     /// <summary>Runs the block tests.</summary>
     [TestMethod]
@@ -98,28 +85,7 @@ public class SpecTests
 
     /// <summary>Runs the call_indirect tests.</summary>
     [TestMethod]
-    public void SpecTest_call_indirect()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Unrecognized section type N.
-        // 114x AssertFailedException: no method source (cascaded module-load failure)
-        // 11x AssertFailedException: got AssertFailedException, expected InvalidCastException
-        // 6x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
-        // 2x AssertFailedException: got AssertFailedException, expected StackOverflowException
-        // 1x ModuleLoadException: At offset N: Stream ended unexpectedly.
-        // 1x AssertFailedException: Expected KeyNotFoundException or NullReferenceException, but received AssertFailedException.
-        var skips = new HashSet<uint>
-        {
-            3, 471, 472, 473, 474, 475, 477, 479, 480, 481, 482, 484, 485, 486, 487, 489, 490, 491, 493,
-            494, 495, 496, 497, 498, 499, 500, 501, 502, 504, 505, 506, 507, 508, 509, 511, 512, 513, 514,
-            515, 516, 518, 519, 520, 521, 522, 523, 525, 526, 527, 528, 529, 530, 532, 533, 534, 535, 537,
-            538, 539, 540, 542, 543, 544, 545, 547, 548, 549, 550, 552, 553, 554, 555, 556, 558, 559, 560,
-            561, 562, 564, 565, 566, 567, 568, 570, 571, 572, 573, 574, 576, 577, 578, 579, 580, 581, 582,
-            583, 585, 586, 588, 589, 590, 592, 594, 595, 597, 598, 600, 601, 603, 604, 605, 606, 607, 608,
-            609, 610, 612, 613, 614, 615, 616, 617, 618, 623, 650, 651, 652, 654, 655, 656, 657, 659, 660,
-            661, 662, 663
-        };
-        SpecTestRunner.Run(DataPath("call_indirect"), "call_indirect.json", skips.Contains);
-    }
+    public void SpecTest_call_indirect() => SpecTestRunner.Run(DataPath("call_indirect"), "call_indirect.json");
 
     /// <summary>Runs the comments tests.</summary>
     [TestMethod]
