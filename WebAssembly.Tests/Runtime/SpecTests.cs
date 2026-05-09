@@ -264,27 +264,11 @@ public class SpecTests
 
     /// <summary>Runs the float_literals tests.</summary>
     [TestMethod]
-    public void SpecTest_float_literals()
-    {
-        // 4x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
-        var skips = new HashSet<uint>
-        {
-            125, 127, 128, 129
-        };
-        SpecTestRunner.Run(DataPath("float_literals"), "float_literals.json", skips.Contains);
-    }
+    public void SpecTest_float_literals() => SpecTestRunner.Run(DataPath("float_literals"), "float_literals.json");
 
     /// <summary>Runs the float_memory tests.</summary>
     [TestMethod]
-    public void SpecTest_float_memory()
-    {
-        // 2x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
-        var skips = new HashSet<uint>
-        {
-            21, 73
-        };
-        SpecTestRunner.Run(DataPath("float_memory"), "float_memory.json", skips.Contains);
-    }
+    public void SpecTest_float_memory() => SpecTestRunner.Run(DataPath("float_memory"), "float_memory.json");
 
     /// <summary>Runs the float_misc tests.</summary>
     [TestMethod]
@@ -670,16 +654,7 @@ public class SpecTests
 
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
-    public void SpecTest_table()
-    {
-        // 2x ModuleLoadException: At offset N: Stream ended unexpectedly.
-        // 2x AssertFailedException: expected ModuleLoadException not thrown
-        var skips = new HashSet<uint>
-        {
-            11, 12, 19, 23
-        };
-        SpecTestRunner.Run(DataPath("table"), "table.json", skips.Contains);
-    }
+    public void SpecTest_table() => SpecTestRunner.Run(DataPath("table"), "table.json");
 
     /// <summary>Runs the token tests.</summary>
     [TestMethod]

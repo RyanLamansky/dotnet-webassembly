@@ -55,10 +55,15 @@ public class ResizableLimits
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal ResizableLimits(Reader reader)
     {
+        var initialOffset = reader.Offset;
         var setFlags = (Flags)reader.ReadVarUInt32();
         this.Minimum = reader.ReadVarUInt32();
         if ((setFlags & Flags.Maximum) != 0)
+        {
             this.Maximum = reader.ReadVarUInt32();
+            if (this.Minimum > this.Maximum)
+                throw new ModuleLoadException($"size minimum must not be greater than maximum ({Minimum} > {Maximum})", initialOffset);
+        }
     }
 
     /// <summary>
