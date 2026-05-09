@@ -548,6 +548,9 @@ public static class Compile
                         if (count > 1)
                             throw new ModuleLoadException("Multiple memory values are not supported.", preCountOffset);
 
+                        if (count == 0)
+                            break;
+
                         if (count != 0 && memory != null)
                             throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
 

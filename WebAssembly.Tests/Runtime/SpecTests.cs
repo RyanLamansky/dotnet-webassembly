@@ -351,27 +351,11 @@ public class SpecTests
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]
-    public void SpecTest_i32()
-    {
-        // 1x AssertFailedException: Arithmetic operation overflow
-        var skips = new HashSet<uint>
-        {
-            109
-        };
-        SpecTestRunner.Run(DataPath("i32"), "i32.json", skips.Contains);
-    }
+    public void SpecTest_i32() => SpecTestRunner.Run(DataPath("i32"), "i32.json");
 
     /// <summary>Runs the i64 tests.</summary>
     [TestMethod]
-    public void SpecTest_i64()
-    {
-        // 1x AssertFailedException: Arithmetic operation overflow
-        var skips = new HashSet<uint>
-        {
-            110
-        };
-        SpecTestRunner.Run(DataPath("i64"), "i64.json", skips.Contains);
-    }
+    public void SpecTest_i64() => SpecTestRunner.Run(DataPath("i64"), "i64.json");
 
     /// <summary>Runs the if tests.</summary>
     [TestMethod]
@@ -584,16 +568,7 @@ public class SpecTests
 
     /// <summary>Runs the names tests.</summary>
     [TestMethod]
-    public void SpecTest_names()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Imported external kind of N is not recognized.
-        // 1x AssertFailedException: method-lookup failure
-        var skips = new HashSet<uint>
-        {
-            1095, 1107
-        };
-        SpecTestRunner.Run(DataPath("names"), "names.json", skips.Contains);
-    }
+    public void SpecTest_names() => SpecTestRunner.Run(DataPath("names"), "names.json");
 
     /// <summary>Runs the nop tests.</summary>
     [TestMethod]
