@@ -353,35 +353,7 @@ public class SpecTests
 
     /// <summary>Runs the linking tests.</summary>
     [TestMethod]
-    public void SpecTest_linking()
-    {
-        // 1x ArgumentException: setter cannot have a return type. (Parameter 'setter')
-        // 5x ModuleLoadException: At offset N: At offset N: Imported external kind of N is not recognized.
-        // 35x KeyNotFoundException: The given key '$X' was not present in the dictionary.
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "208" is not permitted in intializer expressions.
-        // 2x KeyNotFoundException: The given key '$X_ex' was not present in the dictionary.
-        // 7x AssertFailedException: got ModuleLoadException, expected ImportException
-        // 4x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received KeyNotFoundException.
-        // 1x AssertFailedException: got KeyNotFoundException, expected InvalidCastException
-        // 6x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
-        // 4x AssertFailedException: Object reference not set to an instance of an object.
-        // 1x ImportException: Missing import for Mt::tab.
-        // 1x AssertFailedException: Common Language Runtime detected an invalid program.
-        // 3x AssertFailedException: out of bounds table access doesn't have a test procedure set up.
-        // 3x AssertFailedException: out of bounds memory access doesn't have a test procedure set up.
-        // 1x ModuleLoadException: At offset N: The only supported table element type is FunctionReference, found -17
-        // 3x ImportException: Missing import for Mm::mem.
-        // 1x AssertFailedException: MemoryAccessOutOfRange
-        var skips = new HashSet<uint>
-        {
-            48, 50, 68, 69, 71, 72, 75, 77, 81, 83, 96, 102, 104, 113, 117, 123, 127, 149, 169, 170, 171,
-            175, 180, 184, 185, 186, 188, 189, 191, 205, 206, 207, 209, 210, 211, 212, 213, 215, 216, 217,
-            218, 219, 223, 227, 229, 241, 244, 253, 267, 275, 279, 288, 291, 295, 297, 303, 340, 349, 350,
-            352, 354, 360, 367, 375, 376, 377, 378, 379, 380, 381, 382, 385, 398, 406, 407, 410, 419, 452,
-            453
-        };
-        SpecTestRunner.Run(DataPath("linking"), "linking.json", skips.Contains);
-    }
+    public void SpecTest_linking() => SpecTestRunner.Run(DataPath("linking"), "linking.json");
 
     /// <summary>Runs the load tests.</summary>
     [TestMethod]

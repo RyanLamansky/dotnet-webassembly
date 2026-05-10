@@ -596,6 +596,22 @@ static class SpecTestRunner
                                 {
                                 }
                                 continue;
+                            case "out of bounds memory access":
+                                try
+                                {
+                                    trapExpected();
+                                    throw new AssertFailedException($"{command.line}: Expected ModuleLoadException, MemoryAccessOutOfRangeException or OverflowException, but no exception was thrown.");
+                                }
+                                catch (ModuleLoadException)
+                                {
+                                }
+                                catch (MemoryAccessOutOfRangeException)
+                                {
+                                }
+                                catch (OverflowException)
+                                {
+                                }
+                                continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                         }

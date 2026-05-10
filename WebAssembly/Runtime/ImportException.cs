@@ -61,6 +61,13 @@ public class ImportException : RuntimeException
             throw new ImportException("Incompatible import type: memory limits do not match.");
     }
 
+    /// <summary>Validates that the provided global's value type matches what the module requires.</summary>
+    public static void ValidateGlobalType(GlobalImport global, WebAssemblyValueType requiredType)
+    {
+        if (global.GetterType != requiredType)
+            throw new ImportException($"Incompatible import type: global value type mismatch (required {requiredType}, got {global.GetterType}).");
+    }
+
     /// <summary>Validates that the provided global's mutability matches what the module requires.</summary>
     public static void ValidateGlobalMutability(GlobalImport global, bool requiredMutable)
     {

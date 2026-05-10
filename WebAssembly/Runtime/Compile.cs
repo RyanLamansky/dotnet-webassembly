@@ -649,10 +649,8 @@ public static class Compile
                     break;
 
                 case Section.Data:
-                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, preSectionOffset);
-                    
-                    // Initialize FunctionReferences before element writes (if not already done)
-                    if (!functionRefsInitialized && context.FunctionReferences != null)
+                    // Initialize FunctionReferences before active element instantiation if needed.
+                    if (deferredElementWrites != null && !functionRefsInitialized && context.FunctionReferences != null)
                     {
                         if (functionSignatures != null)
                             EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, importedFunctions, configuration, exportsBuilder);
@@ -666,9 +664,11 @@ public static class Compile
                         }
                         functionRefsInitialized = true;
                     }
-                    
-                    deferredElementWrites?.Invoke(); // Emit element writes AFTER data bounds checks
+
+                    deferredElementWrites?.Invoke();
                     deferredElementWrites = null;
+
+                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, preSectionOffset);
                     break;
 
                 case Section.DataCount:
@@ -1029,6 +1029,10 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
                         ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport), configuration);
+
+                        instanceConstructorIL.Emit(OpCodes.Dup);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)contentType);
+                        instanceConstructorIL.Emit(OpCodes.Call, typeof(ImportException).GetMethod(nameof(ImportException.ValidateGlobalType))!);
 
                         // Validate mutability: throw ImportException if the provided global's mutability doesn't match.
                         instanceConstructorIL.Emit(OpCodes.Dup);
@@ -1969,90 +1973,12 @@ public static class Compile
             }
         }
 
-        // Pass 1: emit all bounds checks before any writes (atomicity guarantee).
-        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, funcIndices, dynLocal) in activeSegments)
-        {
-            var elements = (uint)funcIndices.Length;
-            var isBigEnough = instanceConstructorIL.DefineLabel();
-            var tableLocal = tableLocals[tableIndex];
-            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
-            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-            if (isDynamic)
-            {
-                instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
-                if (elements > 0)
-                {
-                    instanceConstructorIL.EmitLoadConstant((int)elements);
-                    instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
-                }
-            }
-            else
-            {
-                instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + elements));
-            }
-            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
-            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
-            instanceConstructorIL.Emit(OpCodes.Throw);
-            instanceConstructorIL.MarkLabel(isBigEnough);
-        }
-
-        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, entries, dynLocal) in activeGlobalRefSegments)
-        {
-            var elements = (uint)entries.Length;
-            var isBigEnough = instanceConstructorIL.DefineLabel();
-            var tableLocal = tableLocals[tableIndex];
-            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
-            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-            if (isDynamic)
-            {
-                instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
-                if (elements > 0)
-                {
-                    instanceConstructorIL.EmitLoadConstant((int)elements);
-                    instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
-                }
-            }
-            else
-            {
-                instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + elements));
-            }
-            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
-            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
-            instanceConstructorIL.Emit(OpCodes.Throw);
-            instanceConstructorIL.MarkLabel(isBigEnough);
-        }
-
-        foreach (var (tableIndex, constOffset, isDynamic, globalIndex, length, dynLocal) in activeExternRefSegments)
-        {
-            var isBigEnough = instanceConstructorIL.DefineLabel();
-            var tableLocal = externRefTableLocals[tableIndex];
-            instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
-            instanceConstructorIL.Emit(OpCodes.Call, ExternRefTable.LengthGetter);
-            if (isDynamic)
-            {
-                instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
-                if (length > 0)
-                {
-                    instanceConstructorIL.EmitLoadConstant((int)length);
-                    instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
-                }
-            }
-            else
-            {
-                instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + length));
-            }
-            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
-            instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
-            instanceConstructorIL.Emit(OpCodes.Throw);
-            instanceConstructorIL.MarkLabel(isBigEnough);
-        }
-
         if (activeSegments.Count == 0 && activeGlobalRefSegments.Count == 0 && activeExternRefSegments.Count == 0 && passiveSegments.Count == 0)
             return null;
 
-        // Return a deferred action that emits element writes. The caller must invoke this AFTER
-        // emitting all other section checks (data segment bounds) so that if any check fails,
-        // no writes to a shared imported table have already occurred.
+        // Return a deferred action that emits active element instantiation once function references
+        // are available. Active segments are applied in-order and are not rolled back if a later
+        // active segment traps; the linking spec relies on those partial side effects.
         var capturedSegments = activeSegments;
         var capturedGlobalRefSegments = activeGlobalRefSegments;
         var capturedExternRefSegments = activeExternRefSegments;
@@ -2065,10 +1991,31 @@ public static class Compile
             foreach (var (tableIndex, constOffset, isDynamic, _, funcIndices, dynLocal) in capturedSegments)
             {
                 var elements = (uint)funcIndices.Length;
+                var tableLocal = capturedTableLocals[tableIndex];
+                var isBigEnough = instanceConstructorIL.DefineLabel();
+
+                instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+                instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                if (isDynamic)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                    if (elements > 0)
+                    {
+                        instanceConstructorIL.EmitLoadConstant((int)elements);
+                        instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+                    }
+                }
+                else
+                {
+                    instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + elements));
+                }
+                instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
+                instanceConstructorIL.Emit(OpCodes.Throw);
+                instanceConstructorIL.MarkLabel(isBigEnough);
+
                 if (elements == 0)
                     continue;
-
-                var tableLocal = capturedTableLocals[tableIndex];
 
                 for (var j = 0u; j < elements; j++)
                 {
@@ -2104,10 +2051,32 @@ public static class Compile
 
             foreach (var (tableIndex, constOffset, isDynamic, _, entries, dynLocal) in capturedGlobalRefSegments)
             {
+                var tableLocal = capturedTableLocals[tableIndex];
+                var isBigEnough = instanceConstructorIL.DefineLabel();
+                var elements = (uint)entries.Length;
+
+                instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+                instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                if (isDynamic)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                    if (elements > 0)
+                    {
+                        instanceConstructorIL.EmitLoadConstant((int)elements);
+                        instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+                    }
+                }
+                else
+                {
+                    instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + elements));
+                }
+                instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
+                instanceConstructorIL.Emit(OpCodes.Throw);
+                instanceConstructorIL.MarkLabel(isBigEnough);
+
                 if (entries.Length == 0)
                     continue;
-
-                var tableLocal = capturedTableLocals[tableIndex];
 
                 for (var j = 0u; j < entries.Length; j++)
                 {
@@ -2154,10 +2123,31 @@ public static class Compile
 
             foreach (var (tableIndex, constOffset, isDynamic, _, length, dynLocal) in capturedExternRefSegments)
             {
+                var tableLocal = capturedExternRefTableLocals[tableIndex];
+                var isBigEnough = instanceConstructorIL.DefineLabel();
+
+                instanceConstructorIL.Emit(OpCodes.Ldloc, tableLocal);
+                instanceConstructorIL.Emit(OpCodes.Call, ExternRefTable.LengthGetter);
+                if (isDynamic)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, dynLocal!);
+                    if (length > 0)
+                    {
+                        instanceConstructorIL.EmitLoadConstant((int)length);
+                        instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
+                    }
+                }
+                else
+                {
+                    instanceConstructorIL.EmitLoadConstant(checked(constOffset!.Value + length));
+                }
+                instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(OverflowException).GetConstructor(Type.EmptyTypes)!);
+                instanceConstructorIL.Emit(OpCodes.Throw);
+                instanceConstructorIL.MarkLabel(isBigEnough);
+
                 if (length == 0)
                     continue;
-
-                var tableLocal = capturedExternRefTableLocals[tableIndex];
 
                 for (var j = 0u; j < length; j++)
                 {
@@ -2341,10 +2331,6 @@ public static class Compile
             );
         var block = new Instructions.Block(BlockType.Int32);
 
-        // Buffer active segment write info: (address local, initialized-data field, data length).
-        // All bounds checks are emitted first; writes are deferred until all checks pass.
-        var pendingWrites = new System.Collections.Generic.List<(LocalBuilder AddrLocal, FieldBuilder DataField, int DataLen)>();
-
         for (var i = 0u; i < count; i++)
         {
             var startingOffset = reader.Offset;
@@ -2467,22 +2453,16 @@ public static class Compile
                 throw new NotSupportedException($"Data segment {i} is length {data.Length}, exceeding the current implementation limit of 4128768.");
 
             var dataField = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
-            pendingWrites.Add((segAddress, dataField, data.Length));
-        }
-
-        // Emit all writes after all bounds checks have passed (atomicity guarantee).
-        foreach (var (addrLocal, dataField, dataLen) in pendingWrites)
-        {
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
             instanceConstructorIL.Emit(OpCodes.Ldfld, memory!);
             instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-            instanceConstructorIL.Emit(OpCodes.Ldloc, addrLocal);
+            instanceConstructorIL.Emit(OpCodes.Ldloc, segAddress);
             instanceConstructorIL.Emit(OpCodes.Conv_I);
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
             instanceConstructorIL.Emit(OpCodes.Ldsflda, dataField);
 
-            instanceConstructorIL.Emit(OpCodes.Ldc_I4, dataLen);
+            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
 
             instanceConstructorIL.Emit(OpCodes.Cpblk);
         }
