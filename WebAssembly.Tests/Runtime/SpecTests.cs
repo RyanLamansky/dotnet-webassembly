@@ -115,29 +115,7 @@ public class SpecTests
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
-    public void SpecTest_elem()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Int32RemainderUnsigned" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "7" is not permitted in intializer expressions.
-        // 2x ModuleLoadException: At offset N: Initializer expression support for the Element section is limited to a single Int32 constant followed by end.
-        // 1x ModuleLoadException: At offset N: At offset N: Unrecognized section type N.
-        // 1x ModuleLoadException: At offset N: At offset N: Don't know how to parse miscellaneous opcode "N".
-        // 2x ModuleLoadException: At offset N: At offset N: Opcode "Unreachable" is not permitted in intializer expressions.
-        // 1x ArgumentException: The delegate at position 9 is expected to be of type System.Action, but the supplied delegate is System.Func`1[System.Int32]. (Parameter 'value')
-        // 2x AssertFailedException: method-lookup failure
-        // 2x ImportException: Missing import for module1::shared-table.
-        // 2x AssertFailedException: Object reference not set to an instance of an object.
-        // 3x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
-        // 1x ModuleLoadException: At offset N: At offset N: Don't know how to parse opcode "N".
-        // 10x KeyNotFoundException: The given key '$X' was not present in the dictionary.
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "210" is not permitted in intializer expressions.
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        var skips = new HashSet<uint>
-        {
-            4, 80, 120, 127, 153, 550, 561, 589, 598, 599, 602, 611, 612, 613
-        };
-        SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);
-    }
+    public void SpecTest_elem() => SpecTestRunner.Run(DataPath("elem"), "elem.json");
 
     /// <summary>Runs the endianness tests.</summary>
     [TestMethod]
@@ -145,16 +123,7 @@ public class SpecTests
 
     /// <summary>Runs the exports tests.</summary>
     [TestMethod]
-    public void SpecTest_exports()
-    {
-        // 18x AssertFailedException: expected ModuleLoadException not thrown
-        // 1x ModuleLoadException: At offset N: Overflow encountered.
-        var skips = new HashSet<uint>
-        {
-            51, 55, 59, 63, 67, 108, 112, 116, 120, 124, 133, 163, 171, 175, 179, 219, 228, 232, 236
-        };
-        SpecTestRunner.Run(DataPath("exports"), "exports.json", skips.Contains);
-    }
+    public void SpecTest_exports() => SpecTestRunner.Run(DataPath("exports"), "exports.json");
 
     /// <summary>Runs the f32 tests.</summary>
     [TestMethod]
@@ -186,16 +155,7 @@ public class SpecTests
 
     /// <summary>Runs the float_exprs tests.</summary>
     [TestMethod]
-    public void SpecTest_float_exprs()
-    {
-        // 2x AssertFailedException: Arithmetic operation overflow
-        // 7x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
-        var skips = new HashSet<uint>
-        {
-            511, 519, 2349, 2351, 2353, 2355, 2357, 2359, 2361
-        };
-        SpecTestRunner.Run(DataPath("float_exprs"), "float_exprs.json", skips.Contains);
-    }
+    public void SpecTest_float_exprs() => SpecTestRunner.Run(DataPath("float_exprs"), "float_exprs.json");
 
     /// <summary>Runs the float_literals tests.</summary>
     [TestMethod]
@@ -235,38 +195,11 @@ public class SpecTests
 
     /// <summary>Runs the func_ptrs tests.</summary>
     [TestMethod]
-    public void SpecTest_func_ptrs()
-    {
-        // 1x ModuleLoadException: At offset N: Stream ended unexpectedly.
-        // 16x AssertFailedException: method-lookup failure
-        // 6x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
-        // 1x ModuleLoadException: At offset N: At offset N: Unrecognized section type N.
-        var skips = new HashSet<uint>
-        {
-            51, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 93, 105,
-            106
-        };
-        SpecTestRunner.Run(DataPath("func_ptrs"), "func_ptrs.json", skips.Contains);
-    }
+    public void SpecTest_func_ptrs() => SpecTestRunner.Run(DataPath("func_ptrs"), "func_ptrs.json");
 
     /// <summary>Runs the global tests.</summary>
     [TestMethod]
-    public void SpecTest_global()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Imported external kind of N is not recognized.
-        // 57x AssertFailedException: no method source (cascaded module-load failure)
-        // 1x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
-        // 2x AssertFailedException: expected exception not thrown
-        // 1x AssertFailedException: expected ModuleLoadException not thrown
-        var skips = new HashSet<uint>
-        {
-            3, 196, 197, 198, 199, 200, 201, 202, 203, 205, 206, 207, 208, 210, 211, 213, 214, 216, 217,
-            218, 219, 221, 222, 223, 225, 226, 227, 228, 229, 231, 232, 233, 235, 236, 237, 239, 240, 241,
-            243, 244, 246, 247, 249, 250, 251, 253, 254, 255, 256, 258, 260, 261, 262, 264, 265, 266, 268,
-            269, 270, 352, 356, 371
-        };
-        SpecTestRunner.Run(DataPath("global"), "global.json", skips.Contains);
-    }
+    public void SpecTest_global() => SpecTestRunner.Run(DataPath("global"), "global.json");
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]
@@ -338,18 +271,7 @@ public class SpecTests
 
     /// <summary>Runs the left to right tests.</summary>
     [TestMethod]
-    public void SpecTest_left_to_right()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Unrecognized section type N.
-        // 95x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            1, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198,
-            199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 213, 214, 215, 216, 217, 218,
-            219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 232, 233
-        };
-        SpecTestRunner.Run(DataPath("left-to-right"), "left-to-right.json", skips.Contains);
-    }
+    public void SpecTest_left_to_right() => SpecTestRunner.Run(DataPath("left-to-right"), "left-to-right.json");
 
     /// <summary>Runs the linking tests.</summary>
     [TestMethod]
@@ -357,17 +279,7 @@ public class SpecTests
 
     /// <summary>Runs the load tests.</summary>
     [TestMethod]
-    public void SpecTest_load()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Branch" is not permitted in intializer expressions.
-        // 37x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            3, 161, 163, 164, 165, 167, 168, 169, 171, 173, 174, 175, 177, 178, 179, 181, 182, 183, 185,
-            186, 187, 188, 190, 191, 192, 194, 195, 196, 197, 198, 199, 201, 203, 204, 206, 208, 209, 211
-        };
-        SpecTestRunner.Run(DataPath("load"), "load.json", skips.Contains);
-    }
+    public void SpecTest_load() => SpecTestRunner.Run(DataPath("load"), "load.json");
 
     /// <summary>Runs the local_get tests.</summary>
     [TestMethod]
@@ -379,18 +291,7 @@ public class SpecTests
 
     /// <summary>Runs the local_tee tests.</summary>
     [TestMethod]
-    public void SpecTest_local_tee()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "8" is not permitted in intializer expressions.
-        // 55x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            3, 280, 281, 282, 283, 285, 286, 287, 288, 290, 291, 292, 294, 295, 296, 298, 300, 301, 302,
-            304, 305, 306, 308, 310, 311, 312, 314, 315, 316, 318, 319, 320, 322, 323, 324, 325, 327, 328,
-            329, 331, 332, 333, 334, 335, 336, 338, 339, 340, 341, 342, 343, 344, 345, 348, 354, 361
-        };
-        SpecTestRunner.Run(DataPath("local_tee"), "local_tee.json", skips.Contains);
-    }
+    public void SpecTest_local_tee() => SpecTestRunner.Run(DataPath("local_tee"), "local_tee.json");
 
     /// <summary>Runs the loop tests.</summary>
     [TestMethod]
@@ -401,31 +302,11 @@ public class SpecTests
 
     /// <summary>Runs the memory tests.</summary>
     [TestMethod]
-    public void SpecTest_memory()
-    {
-        // 7x AssertFailedException: expected ModuleLoadException not thrown
-        // 3x AssertFailedException: got FileNotFoundException, expected ModuleLoadException
-        var skips = new HashSet<uint>
-        {
-            51, 55, 59, 63, 67, 71, 75, 80, 84, 88
-        };
-        SpecTestRunner.Run(DataPath("memory"), "memory.json", skips.Contains);
-    }
+    public void SpecTest_memory() => SpecTestRunner.Run(DataPath("memory"), "memory.json");
 
     /// <summary>Runs the memory_grow tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_grow()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Int64DivideSigned" is not permitted in intializer expressions.
-        // 36x AssertFailedException: method-lookup failure
-        // 1x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
-        var skips = new HashSet<uint>
-        {
-            101, 259, 261, 262, 263, 265, 266, 267, 269, 271, 272, 273, 275, 276, 277, 279, 280, 281, 283,
-            284, 285, 286, 288, 289, 290, 292, 293, 294, 295, 296, 297, 299, 301, 302, 304, 306, 307, 309
-        };
-        SpecTestRunner.Run(DataPath("memory_grow"), "memory_grow.json", skips.Contains);
-    }
+    public void SpecTest_memory_grow() => SpecTestRunner.Run(DataPath("memory_grow"), "memory_grow.json");
 
     /// <summary>Runs the memory_redundancy tests.</summary>
     [TestMethod]
@@ -437,25 +318,7 @@ public class SpecTests
 
     /// <summary>Runs the memory_trap tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_trap()
-    {
-        // 1x MemoryAccessOutOfRangeException: MemoryAccessOutOfRange
-        // 160x AssertFailedException: unexpected AssertFailedException
-        // 7x AssertFailedException: method-lookup failure
-        var skips = new HashSet<uint>
-        {
-            35, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128,
-            129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147,
-            148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166,
-            167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185,
-            186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204,
-            205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
-            224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242,
-            243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261,
-            262, 263, 264, 265, 266, 269, 270, 274, 275, 276, 277, 278, 279, 280, 281, 282
-        };
-        SpecTestRunner.Run(DataPath("memory_trap"), "memory_trap.json", skips.Contains);
-    }
+    public void SpecTest_memory_trap() => SpecTestRunner.Run(DataPath("memory_trap"), "memory_trap.json");
 
     /// <summary>Runs the names tests.</summary>
     [TestMethod]
@@ -463,20 +326,7 @@ public class SpecTests
 
     /// <summary>Runs the nop tests.</summary>
     [TestMethod]
-    public void SpecTest_nop()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
-        // 83x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            3, 306, 307, 308, 309, 311, 312, 313, 315, 316, 317, 318, 319, 321, 322, 323, 324, 326, 327,
-            328, 329, 331, 332, 333, 334, 335, 336, 338, 339, 340, 342, 343, 344, 345, 347, 348, 349, 350,
-            352, 353, 354, 356, 357, 358, 359, 360, 362, 363, 364, 366, 367, 368, 369, 371, 372, 373, 375,
-            376, 377, 378, 380, 381, 382, 384, 385, 386, 387, 388, 390, 391, 392, 394, 395, 396, 398, 399,
-            400, 402, 403, 404, 406, 407, 408, 409
-        };
-        SpecTestRunner.Run(DataPath("nop"), "nop.json", skips.Contains);
-    }
+    public void SpecTest_nop() => SpecTestRunner.Run(DataPath("nop"), "nop.json");
 
     /// <summary>Runs the obsolete keywords tests.</summary>
     [TestMethod]
@@ -484,41 +334,11 @@ public class SpecTests
 
     /// <summary>Runs the return tests.</summary>
     [TestMethod]
-    public void SpecTest_return()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
-        // 63x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            3, 224, 225, 226, 227, 229, 230, 231, 232, 234, 235, 237, 238, 239, 240, 242, 243, 244, 245,
-            247, 248, 249, 251, 253, 254, 255, 257, 258, 259, 261, 263, 264, 265, 266, 267, 269, 270, 271,
-            272, 273, 275, 276, 277, 279, 280, 281, 282, 284, 285, 286, 288, 289, 291, 292, 293, 294, 296,
-            298, 299, 301, 303, 304, 306, 308
-        };
-        SpecTestRunner.Run(DataPath("return"), "return.json", skips.Contains);
-    }
+    public void SpecTest_return() => SpecTestRunner.Run(DataPath("return"), "return.json");
 
     /// <summary>Runs the select tests.</summary>
     [TestMethod]
-    public void SpecTest_select()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "6" is not permitted in intializer expressions.
-        // 116x AssertFailedException: no method source (cascaded module-load failure)
-        // 2x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, but received AssertFailedException.
-        // 1x AssertFailedException: got StackTooSmallException, expected ModuleLoadException
-        // 1x ModuleLoadException: At offset N: At offset N: Don't know how to parse opcode "N".
-        var skips = new HashSet<uint>
-        {
-            1, 183, 184, 185, 186, 188, 189, 190, 191, 193, 194, 195, 196, 197, 198, 199, 200, 202, 203,
-            204, 205, 206, 207, 208, 209, 211, 212, 213, 214, 215, 216, 218, 219, 220, 221, 222, 223, 225,
-            226, 227, 228, 229, 230, 231, 232, 234, 235, 236, 237, 238, 239, 240, 241, 243, 244, 245, 246,
-            247, 248, 250, 251, 252, 253, 254, 255, 257, 258, 259, 260, 261, 262, 264, 265, 266, 267, 269,
-            270, 271, 272, 274, 275, 276, 277, 278, 279, 281, 282, 283, 284, 286, 287, 289, 290, 291, 292,
-            293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 306, 307, 308, 309, 310, 311, 312,
-            313, 314, 315, 316, 317, 324, 340, 518
-        };
-        SpecTestRunner.Run(DataPath("select"), "select.json", skips.Contains);
-    }
+    public void SpecTest_select() => SpecTestRunner.Run(DataPath("select"), "select.json");
 
     /// <summary>Runs the skip stack guard page tests.</summary>
     [TestMethod]
@@ -559,20 +379,7 @@ public class SpecTests
 
     /// <summary>Runs the unreachable tests.</summary>
     [TestMethod]
-    public void SpecTest_unreachable()
-    {
-        // 1x ModuleLoadException: At offset N: At offset N: Opcode "Block" is not permitted in intializer expressions.
-        // 58x AssertFailedException: got AssertFailedException, expected UnreachableException
-        // 5x AssertFailedException: no method source (cascaded module-load failure)
-        var skips = new HashSet<uint>
-        {
-            3, 221, 222, 223, 224, 226, 227, 228, 229, 231, 232, 233, 234, 235, 237, 238, 239, 240, 242,
-            244, 245, 246, 248, 249, 250, 251, 252, 254, 256, 257, 258, 259, 260, 261, 262, 264, 265, 266,
-            267, 268, 270, 271, 272, 274, 275, 276, 277, 279, 280, 281, 283, 284, 286, 287, 288, 289, 291,
-            293, 294, 296, 298, 299, 301, 303
-        };
-        SpecTestRunner.Run(DataPath("unreachable"), "unreachable.json", skips.Contains);
-    }
+    public void SpecTest_unreachable() => SpecTestRunner.Run(DataPath("unreachable"), "unreachable.json");
 
     /// <summary>Runs the unreached invalid tests.</summary>
     [TestMethod]
@@ -629,12 +436,7 @@ public class SpecTests
 
     /// <summary>Runs the memory_init tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_init()
-    {
-        // 3x AssertFailedException: unknown data segment doesn't have a test procedure set up.
-        var skips = new HashSet<uint> { 190, 196, 233 };
-        SpecTestRunner.Run(DataPath("memory_init"), "memory_init.json", skips.Contains);
-    }
+    public void SpecTest_memory_init() => SpecTestRunner.Run(DataPath("memory_init"), "memory_init.json");
 
     /// <summary>Runs the table_copy tests.</summary>
     [TestMethod]

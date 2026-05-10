@@ -283,7 +283,9 @@ static class SpecTestRunner
                             case "unknown function 0":
                             case "unknown table 0":
                             case "unknown elem segment 0":
+                            case "unknown data segment":
                             case var _ when assert.text.StartsWith("unknown elem segment "):
+                            case var _ when assert.text.StartsWith("unknown data segment "):
                             case var _ when assert.text.StartsWith("unknown global "):
                             case "unknown local 2":
                             case var _ when assert.text.StartsWith("unknown function "):

@@ -34,6 +34,12 @@ public class Select : SimpleInstruction
         if (typeA != typeB && typeA.HasValue && typeB.HasValue)
             throw new StackTypeInvalidException(OpCode.Select, typeA.Value, typeB.Value);
 
+        if (typeA is WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef
+            || typeB is WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef)
+        {
+            throw new CompilerException("Untyped select does not support reference operands; use select t* instead.");
+        }
+
         if (!typeA.HasValue)
             stack.Push(typeB.GetValueOrDefault(WebAssemblyValueType.Int32));
         else

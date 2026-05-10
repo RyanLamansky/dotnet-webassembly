@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -114,5 +115,23 @@ public class SelectTests
         Assert.AreEqual(2, exports.Test(1, 2, 0));
         Assert.AreEqual(4, exports.Test(4, 5, 1));
         Assert.AreEqual(5, exports.Test(4, 5, 0));
+    }
+
+    /// <summary>
+    /// Tests that untyped <see cref="Select"/> rejects reference operands.
+    /// </summary>
+    [TestMethod]
+    public void Select_ExternRef_RequiresTypedSelect()
+    {
+        Assert.ThrowsException<CompilerException>(() => AssemblyBuilder.CreateInstance<object>(
+            "Test",
+            (WebAssemblyValueType?)null,
+            [WebAssemblyValueType.ExternRef, WebAssemblyValueType.ExternRef, WebAssemblyValueType.Int32],
+            new LocalGet(0),
+            new LocalGet(1),
+            new LocalGet(2),
+            new Select(),
+            new Drop(),
+            new End()));
     }
 }
