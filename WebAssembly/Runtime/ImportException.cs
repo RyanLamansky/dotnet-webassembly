@@ -57,7 +57,7 @@ public class ImportException : RuntimeException
     /// <summary>Validates that the provided memory's limits satisfy the module's requirements.</summary>
     public static void ValidateMemoryLimits(UnmanagedMemory memory, uint requiredMin, uint requiredMax)
     {
-        if (memory.Minimum < requiredMin || memory.Maximum > requiredMax)
+        if (memory.Current < requiredMin || memory.Maximum > requiredMax)
             throw new ImportException("Incompatible import type: memory limits do not match.");
     }
 

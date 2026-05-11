@@ -124,10 +124,26 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         context.PopStackNoReturn(OpCode.BranchTable, WebAssemblyValueType.Int32);
 
         var defaultLabelType = context.Depth.ElementAt(checked((int)this.DefaultLabel));
+        WebAssemblyValueType[] GetBranchTypes(int distance)
+        {
+            var target = context.Depth.ElementAt(distance);
+            var targetDepthKey = context.Depth.Count - distance;
+            var targetBlockCtx = context.BlockContexts[targetDepthKey];
+            if (targetBlockCtx.BlockSignature != null)
+                return target.OpCode == OpCode.Loop ? targetBlockCtx.BlockSignature.RawParameterTypes : targetBlockCtx.BlockSignature.RawReturnTypes;
+            if (target.OpCode != OpCode.Loop && targetDepthKey == 1 && context.CheckedSignature.RawReturnTypes.Length > 1)
+                return context.CheckedSignature.RawReturnTypes;
+            if (target.OpCode != OpCode.Loop && (target as BlockTypeInstruction)?.Type.TryToValueType(out var singleType) == true)
+                return [singleType];
+            return [];
+        }
+
+        var defaultBranchTypes = GetBranchTypes(checked((int)this.DefaultLabel));
         WebAssemblyValueType? typedResult = null;
         var isReachable = !context.IsUnreachable;
-        if (defaultLabelType.OpCode != OpCode.Loop && defaultLabelType.Type.TryToValueType(out var expectedType))
+        if (defaultLabelType.OpCode != OpCode.Loop && defaultBranchTypes.Length == 1)
         {
+            var expectedType = defaultBranchTypes[0];
             context.ValidateStack(this.OpCode, expectedType);
             typedResult = expectedType;
         }
@@ -136,22 +152,128 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         static BlockType EffectiveLabelType(Instruction instr) =>
             instr.OpCode == OpCode.Loop ? BlockType.Empty : (instr as BlockTypeInstruction)?.Type ?? BlockType.Empty;
 
-        if (isReachable)
+        foreach (var label in this.Labels)
         {
-            var defaultEffective = EffectiveLabelType(defaultLabelType);
-            foreach (var label in this.Labels)
+            var labelInstr = context.Depth.ElementAt(checked((int)label));
+            var labelBranchTypes = GetBranchTypes(checked((int)label));
+            if (defaultBranchTypes.Length > 1 || labelBranchTypes.Length > 1)
             {
-                var labelInstr = context.Depth.ElementAt(checked((int)label));
-                var labelEffective = EffectiveLabelType(labelInstr);
-                if (labelEffective != defaultEffective)
-                    throw new LabelTypeMismatchException(this.OpCode, defaultEffective, labelEffective);
+                if (!defaultBranchTypes.SequenceEqual(labelBranchTypes))
+                    throw new CompilerException("All labels in br_table must have matching branch signatures.");
+                continue;
             }
+
+            var defaultEffective = EffectiveLabelType(defaultLabelType);
+            var labelEffective = EffectiveLabelType(labelInstr);
+            if (labelEffective != defaultEffective)
+                throw new LabelTypeMismatchException(this.OpCode, defaultEffective, labelEffective);
         }
 
         var blockDepth = checked((uint)context.Depth.Count);
 
         if (isReachable)
         {
+            if (defaultBranchTypes.Length > 1)
+            {
+                void MarkMultiValueTarget(uint distance)
+                {
+                    var target = context.Depth.ElementAt(checked((int)distance));
+                    if (target.OpCode != OpCode.Loop)
+                        context.BlockContexts[context.Depth.Count - checked((int)distance)].MarkEndLabelTargeted();
+                }
+
+                foreach (var label in this.Labels)
+                    MarkMultiValueTarget(label);
+                MarkMultiValueTarget(this.DefaultLabel);
+
+                var multiValueDefaultDist = checked((int)this.DefaultLabel);
+                var multiValueLabelDistances = this.Labels.Select(l => checked((int)l)).ToArray();
+                var allTargets = multiValueLabelDistances.Concat([multiValueDefaultDist]).ToArray();
+
+                var defaultBlockCtx = context.BlockContexts[context.Depth.Count - multiValueDefaultDist];
+                var available = context.Stack.Count - defaultBlockCtx.InitialStackSize;
+                if (available < defaultBranchTypes.Length)
+                    throw new StackSizeIncorrectException(this.OpCode, defaultBranchTypes.Length, available);
+
+                var stackSnapshot = context.Stack.ToArray();
+                for (var k = 0; k < defaultBranchTypes.Length; k++)
+                {
+                    var actual = stackSnapshot[defaultBranchTypes.Length - 1 - k];
+                    if (actual != defaultBranchTypes[k])
+                        throw new StackTypeInvalidException(this.OpCode, defaultBranchTypes[k], actual);
+                }
+
+                var indexLocal = context.DeclareLocal(typeof(int));
+                context.Emit(OpCodes.Stloc, indexLocal);
+
+                var tempLocals = new LocalBuilder[defaultBranchTypes.Length];
+                for (var k = 0; k < defaultBranchTypes.Length; k++)
+                    tempLocals[k] = context.DeclareLocal(defaultBranchTypes[k].ToSystemType());
+                for (var k = defaultBranchTypes.Length - 1; k >= 0; k--)
+                    context.Emit(OpCodes.Stloc, tempLocals[k]);
+
+                foreach (var dist in allTargets.Distinct())
+                {
+                    var target = context.Depth.ElementAt(dist);
+                    if (target.OpCode == OpCode.Loop)
+                        continue;
+
+                    var targetBlockCtx = context.BlockContexts[context.Depth.Count - dist];
+                    if (targetBlockCtx.ResultLocals == null)
+                    {
+                        targetBlockCtx.ResultLocals = new LocalBuilder[defaultBranchTypes.Length];
+                        for (var i = 0; i < defaultBranchTypes.Length; i++)
+                            targetBlockCtx.ResultLocals[i] = context.DeclareLocal(defaultBranchTypes[i].ToSystemType());
+                    }
+
+                    for (var i = 0; i < defaultBranchTypes.Length; i++)
+                    {
+                        context.Emit(OpCodes.Ldloc, tempLocals[i]);
+                        context.Emit(OpCodes.Stloc, targetBlockCtx.ResultLocals[i]);
+                    }
+                }
+
+                int GetMultiValueIntermediateCount(int dist)
+                {
+                    var targetBlockCtx = context.BlockContexts[context.Depth.Count - dist];
+                    return context.Stack.Count - targetBlockCtx.InitialStackSize - defaultBranchTypes.Length;
+                }
+
+                var minIntermediate = allTargets.Select(GetMultiValueIntermediateCount).Min();
+                for (var i = 0; i < minIntermediate; i++)
+                    context.Emit(OpCodes.Pop);
+
+                context.Emit(OpCodes.Ldloc, indexLocal);
+                var trampLabels = multiValueLabelDistances.Select(_ => context.DefineLabel()).ToArray();
+                var defaultTramp = context.DefineLabel();
+                context.Emit(OpCodes.Switch, trampLabels);
+                context.Emit(OpCodes.Br, defaultTramp);
+
+                void EmitTrampoline(int dist, Label trampoline)
+                {
+                    context.MarkLabel(trampoline);
+                    var extraPops = GetMultiValueIntermediateCount(dist) - minIntermediate;
+                    for (var i = 0; i < extraPops; i++)
+                        context.Emit(OpCodes.Pop);
+
+                    var target = context.Depth.ElementAt(dist);
+                    if (target.OpCode == OpCode.Loop)
+                    {
+                        for (var i = 0; i < defaultBranchTypes.Length; i++)
+                            context.Emit(OpCodes.Ldloc, tempLocals[i]);
+                    }
+
+                    context.Emit(OpCodes.Br, context.Labels[blockDepth - (uint)dist - 1]);
+                }
+
+                for (var i = 0; i < multiValueLabelDistances.Length; i++)
+                    EmitTrampoline(multiValueLabelDistances[i], trampLabels[i]);
+                EmitTrampoline(multiValueDefaultDist, defaultTramp);
+
+                context.MarkUnreachable();
+                return;
+            }
+
             void MarkTarget(uint distance)
             {
                 var target = context.Depth.ElementAt(checked((int)distance));

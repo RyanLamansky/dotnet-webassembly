@@ -77,16 +77,20 @@ public class Branch : Instruction
         // Determine the branch arity: for loops it's their params; for blocks/ifs it's their results.
         var isLoop = blockType.OpCode == OpCode.Loop;
         var branchSig = targetBlockCtx.BlockSignature;
+        var functionReturns = !isLoop && targetDepthKey == 1 && branchSig == null
+            ? context.CheckedSignature.RawReturnTypes
+            : System.Array.Empty<WebAssemblyValueType>();
+        var branchTypes = branchSig != null
+            ? (isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes)
+            : functionReturns.Length > 1 ? functionReturns : System.Array.Empty<WebAssemblyValueType>();
 
         if (!context.IsUnreachable)
         {
             if (!isLoop)
                 targetBlockCtx.MarkEndLabelTargeted();
 
-            if (branchSig != null)
+            if (branchTypes.Length > 1)
             {
-                // TypeIndex block: multi-value branch handling.
-                var branchTypes = isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes;
                 var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
                 if (available < branchTypes.Length)
                     throw new StackSizeIncorrectException(this.OpCode, branchTypes.Length, available);
@@ -129,34 +133,10 @@ public class Branch : Instruction
             }
             else
             {
-                // Void-typed block: check whether it's really a multi-value function outer block.
-                var returns = (!isLoop && targetDepthKey == 1) ? context.CheckedSignature.RawReturnTypes : System.Array.Empty<WebAssemblyValueType>();
-                if (returns.Length > 0)
-                {
-                    // Multi-value br to function outer block: validate stack has exactly the right return types.
-                    var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
-                    if (available != returns.Length)
-                        throw new StackSizeIncorrectException(this.OpCode, returns.Length, available);
-                    // Validate types bottom-up.
-                    var stackSnapshot = context.Stack.ToArray(); // top at [0]
-                    for (var k = 0; k < returns.Length; k++)
-                    {
-                        var actual = stackSnapshot[returns.Length - 1 - k];
-                        if (actual != returns[k])
-                            throw new StackTypeInvalidException(this.OpCode, returns[k], actual);
-                    }
-                    // Pop intermediates (they get emitted as multi-value return in End).
-                    var discardCount2 = context.Stack.Count - targetBlockCtx.InitialStackSize;
-                    for (var i = 0; i < discardCount2; i++)
-                        context.Emit(OpCodes.Pop);
-                }
-                else
-                {
-                    // True void block: discard all values pushed inside this block before branching.
-                    var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
-                    for (var i = 0; i < discardCount; i++)
-                        context.Emit(OpCodes.Pop);
-                }
+                // True void block: discard all values pushed inside this block before branching.
+                var discardCount = context.Stack.Count - targetBlockCtx.InitialStackSize;
+                for (var i = 0; i < discardCount; i++)
+                    context.Emit(OpCodes.Pop);
             }
         }
         else if (!isLoop && branchSig == null && blockType.Type.TryToValueType(out var expectedType2))

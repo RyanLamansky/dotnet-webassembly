@@ -25,7 +25,16 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         this.ValidateAlignment();
-        context.PopStackNoReturn(this.OpCode, this.Type, WebAssemblyValueType.Int32);
+        var addressType = context.MemoryAddressType;
+        context.PopStackNoReturn(this.OpCode, this.Type, addressType);
+
+        if (addressType == WebAssemblyValueType.Int64)
+        {
+            var valueLocal = context.DeclareLocal(this.Type.ToSystemType());
+            context.Emit(OpCodes.Stloc, valueLocal);
+            context.Emit(OpCodes.Conv_Ovf_U4);
+            context.Emit(OpCodes.Ldloc, valueLocal);
+        }
 
         Int32Constant.Emit(context, (int)this.Offset);
         context.EmitLoadThis();

@@ -163,6 +163,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public FieldBuilder? Memory;
 
+    public WebAssemblyValueType MemoryAddressType = WebAssemblyValueType.Int32;
+
     public WebAssemblyValueType[]? Locals;
 
     public readonly BlockStack Depth = new();

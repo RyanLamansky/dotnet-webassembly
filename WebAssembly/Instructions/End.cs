@@ -68,8 +68,33 @@ public class End : SimpleInstruction
             else
             {
                 if (returnsLength > 1)
-                    Return.EmitMultiValueReturn(context, returns);
-                context.MarkLabel(context.Labels[0]);
+                {
+                    if (!context.IsUnreachable)
+                    {
+                        if (functionBlockCtx.ResultLocals == null)
+                        {
+                            functionBlockCtx.ResultLocals = new LocalBuilder[returnsLength];
+                            for (var i = 0; i < returnsLength; i++)
+                                functionBlockCtx.ResultLocals[i] = context.DeclareLocal(returns[i].ToSystemType());
+                        }
+
+                        for (var i = returnsLength - 1; i >= 0; i--)
+                            context.Emit(OpCodes.Stloc, functionBlockCtx.ResultLocals[i]);
+                    }
+
+                    context.MarkLabel(context.Labels[0]);
+                    if (functionBlockCtx.ResultLocals != null)
+                    {
+                        foreach (var local in functionBlockCtx.ResultLocals)
+                            context.Emit(OpCodes.Ldloc, local);
+
+                        Return.EmitMultiValueReturn(context, returns);
+                    }
+                }
+                else
+                {
+                    context.MarkLabel(context.Labels[0]);
+                }
             }
 
             context.Emit(OpCodes.Ret);
@@ -107,6 +132,10 @@ public class End : SimpleInstruction
             }
             else if (blockType.TryToValueType(out var expectedType))
             {
+                var expected = blockContext.InitialStackSize + 1;
+                if (stack.Count != expected && (!context.IsUnreachable || stack.Count > expected))
+                    throw new StackSizeIncorrectException(OpCode.End, expected, stack.Count);
+
                 context.ValidateStack(OpCode.End, expectedType);
 
                 // Stash fall-through value to result local (so the label target has an empty IL stack),
@@ -168,46 +197,23 @@ public class End : SimpleInstruction
 
             context.Labels.Remove(depth);
 
-            // A non-loop block exit label is reachable from here only when control can fall through
-            // to it, or when a reachable branch targeted this block's end label.
-            // When the block was unreachable, reset the tracking stack (unreachable code may have left
-            // stale values) to represent the correct state: parent's initial items plus the block result.
+            // Finishing a structured control construct always restores the parent stack to the values that
+            // were present when the construct was entered, plus the construct's result types.
             // Only applies when the parent block context still exists (SectionData removes it manually).
             if (context.BlockContexts.TryGetValue(context.Depth.Count, out _))
             {
-                if (isLoopLabel)
+                while (context.Stack.Count > blockContext.InitialStackSize)
+                    context.Stack.Pop();
+
+                if (blockContext.BlockSignature != null)
                 {
-                    if (wasUnreachable)
-                        context.MarkUnreachable();
+                    foreach (var t in blockContext.BlockSignature.RawReturnTypes)
+                        context.Stack.Push(t);
                 }
-                else if (!wasUnreachable || blockContext.IsEndLabelTargeted)
-                {
-                    context.MarkReachable();
-                    if (wasUnreachable)
-                    {
-                        while (context.Stack.Count > blockContext.InitialStackSize)
-                            context.Stack.Pop();
-                        // Push results onto the tracking stack.
-                        if (blockContext.BlockSignature != null)
-                        {
-                            foreach (var t in blockContext.BlockSignature.RawReturnTypes)
-                                context.Stack.Push(t);
-                        }
-                        else if (blockType.TryToValueType(out var blockResultType))
-                            context.Stack.Push(blockResultType);
-                    }
-                }
-                else
-                {
-                    context.MarkUnreachable();
-                    if (blockContext.BlockSignature != null)
-                    {
-                        foreach (var t in blockContext.BlockSignature.RawReturnTypes)
-                            context.Stack.Push(t);
-                    }
-                    else if (blockType.TryToValueType(out var blockResultType))
-                        context.Stack.Push(blockResultType);
-                }
+                else if (blockType.TryToValueType(out var blockResultType))
+                    context.Stack.Push(blockResultType);
+
+                context.MarkReachable();
             }
 
             // Reload result values after the label (both fall-through and branch paths arrive here).

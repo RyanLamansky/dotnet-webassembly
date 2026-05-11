@@ -18,6 +18,10 @@ public class ResizableLimits
         /// Indicates whether the <see cref="ResizableLimits.Maximum"/> field is present.
         /// </summary>
         Maximum = 0x1,
+        /// <summary>
+        /// Indicates that the associated memory uses 64-bit indices.
+        /// </summary>
+        Address64 = 0x4,
     }
 
     /// <summary>
@@ -29,6 +33,11 @@ public class ResizableLimits
     /// Maximum length (in units of table elements or 65,536-byte pages).
     /// </summary>
     public uint? Maximum { get; set; }
+
+    /// <summary>
+    /// Indicates that the associated memory uses 64-bit indices.
+    /// </summary>
+    public bool Is64Bit { get; set; }
 
     /// <summary>
     /// Creates a new <see cref="ResizableLimits"/> instance.
@@ -57,6 +66,7 @@ public class ResizableLimits
     {
         var initialOffset = reader.Offset;
         var setFlags = (Flags)reader.ReadVarUInt32();
+        this.Is64Bit = (setFlags & Flags.Address64) != 0;
         this.Minimum = reader.ReadVarUInt32();
         if ((setFlags & Flags.Maximum) != 0)
         {
@@ -76,6 +86,7 @@ public class ResizableLimits
     {
         var flags = Flags.None
             | (this.Maximum.HasValue ? Flags.Maximum : 0)
+            | (this.Is64Bit ? Flags.Address64 : 0)
             ;
         writer.WriteVar((uint)flags);
         writer.WriteVar(this.Minimum);

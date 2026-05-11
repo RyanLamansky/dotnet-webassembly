@@ -30,6 +30,13 @@ public class MultiValueTests
         public abstract (int, int) Test(int x);
     }
 
+    /// <summary>Export type returning eight i32 values.</summary>
+    public abstract class EightInt32Returns
+    {
+        /// <summary>Test method.</summary>
+        public abstract (int, int, int, int, int, int, int, int) Test();
+    }
+
     /// <summary>Export type returning a single i32 sum.</summary>
     public abstract class SumExport
     {
@@ -163,5 +170,32 @@ public class MultiValueTests
 
         var instance = module.ToInstance<SumExport>();
         Assert.AreEqual(15, instance.Exports.Sum());
+    }
+
+    /// <summary>
+    /// A multi-value function returning more than seven values uses nested ValueTuple packing.
+    /// </summary>
+    [TestMethod]
+    public void MultiValue_EightInt32Returns()
+    {
+        var exports = AssemblyBuilder.CreateInstance<EightInt32Returns>(
+            nameof(EightInt32Returns.Test),
+            [
+                WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32,
+                WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32
+            ],
+            [],
+            new Int32Constant(1),
+            new Int32Constant(2),
+            new Int32Constant(3),
+            new Int32Constant(4),
+            new Int32Constant(5),
+            new Int32Constant(6),
+            new Int32Constant(7),
+            new Int32Constant(8),
+            new End());
+
+        var result = exports.Test();
+        Assert.AreEqual((1, 2, 3, 4, 5, 6, 7, 8), result);
     }
 }

@@ -25,15 +25,22 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         var stack = context.Stack;
+        var addressType = context.MemoryAddressType;
 
         this.ValidateAlignment();
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        context.PopStackNoReturn(this.OpCode, addressType);
 
         if (this.Offset != 0)
         {
-            Int32Constant.Emit(context, (int)this.Offset);
+            if (addressType == WebAssemblyValueType.Int64)
+                context.Emit(OpCodes.Ldc_I8, (long)this.Offset);
+            else
+                Int32Constant.Emit(context, (int)this.Offset);
             context.Emit(OpCodes.Add_Ovf_Un);
         }
+
+        if (addressType == WebAssemblyValueType.Int64)
+            context.Emit(OpCodes.Conv_Ovf_U4);
 
         this.EmitRangeCheck(context);
 

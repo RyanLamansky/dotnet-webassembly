@@ -68,14 +68,15 @@ static class SpecTestRunner
         {
             { "spectest", "print", new FunctionImport((Action)(() => { })) },
             { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
+            { "spectest", "print_i64", new FunctionImport((Action<long>)(i => { })) },
             { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
             { "spectest", "print_f64_f64", new FunctionImport((Action<double, double>)((d1, d2) => { })) },
             { "spectest", "print_f32", new FunctionImport((Action<float>)(i => { })) },
             { "spectest", "print_f64", new FunctionImport((Action<double>)(i => { })) },
             { "spectest", "global_i32", new GlobalImport(() => 666) },
             { "spectest", "global_i64", new GlobalImport(() => 666L) },
-            { "spectest", "global_f32", new GlobalImport(() => 666.0F) },
-            { "spectest", "global_f64", new GlobalImport(() => 666.0) },
+            { "spectest", "global_f32", new GlobalImport(() => 666.6F) },
+            { "spectest", "global_f64", new GlobalImport(() => 666.6) },
             { "spectest", "table", new FunctionTable(10, 20) }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
             { "spectest", "memory", new MemoryImport(() => new UnmanagedMemory(1, 2)) }, // Memory.alloc (MemoryType {min = 1l; max = Some 2l})
         };
@@ -128,15 +129,12 @@ static class SpecTestRunner
                         }
                         if (assert.expected?.Length > 1)
                         {
-                            // Multi-value return: result is a ValueTuple; compare each field.
-                            var resultType = result?.GetType();
-                            var fields = resultType?.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
-                                ?? System.Array.Empty<System.Reflection.FieldInfo>();
-                            if (fields.Length != assert.expected.Length)
+                            var actualValues = FlattenTupleValues(result).ToArray();
+                            if (actualValues.Length != assert.expected.Length)
                                 throw new AssertFailedException($"{command.line}: Not equal Int32Value: ({string.Join(", ", assert.expected.Select(e => e.BoxedValue))}) and {result}");
                             for (var ei = 0; ei < assert.expected.Length; ei++)
                             {
-                                var actualVal = fields[ei].GetValue(result);
+                                var actualVal = actualValues[ei];
                                 var expectedVal = assert.expected[ei].BoxedValue;
                                 if (!expectedVal.Equals(actualVal))
                                     throw new AssertFailedException($"{command.line}: Not equal {assert.expected[ei].GetType().Name}[{ei}]: {expectedVal} and {actualVal} (full: {result})");
@@ -287,6 +285,7 @@ static class SpecTestRunner
                             case var _ when assert.text.StartsWith("unknown elem segment "):
                             case var _ when assert.text.StartsWith("unknown data segment "):
                             case var _ when assert.text.StartsWith("unknown global "):
+                            case var _ when assert.text.StartsWith("unknown memory "):
                             case "unknown local 2":
                             case var _ when assert.text.StartsWith("unknown function "):
                             case var _ when assert.text.StartsWith("undeclared function reference"):
@@ -657,6 +656,34 @@ static class SpecTestRunner
             {
                 TryAdd(NameCleaner.CleanName(method.Name), method.MethodInfo);
             }
+        }
+    }
+
+    static IEnumerable<object?> FlattenTupleValues(object? value)
+    {
+        if (value == null)
+            yield break;
+
+        var type = value.GetType();
+        if (!type.IsValueType || type.FullName is not string fullName || !fullName.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
+        {
+            yield return value;
+            yield break;
+        }
+
+        for (var i = 1; i <= 7; i++)
+        {
+            var field = type.GetField($"Item{i}");
+            if (field == null)
+                break;
+
+            yield return field.GetValue(value);
+        }
+
+        if (type.GetField("Rest") is { } restField)
+        {
+            foreach (var nested in FlattenTupleValues(restField.GetValue(value)))
+                yield return nested;
         }
     }
 

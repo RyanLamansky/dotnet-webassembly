@@ -80,12 +80,6 @@ public class Return : SimpleInstruction
             context.Emit(OpCodes.Stloc, locals[i]);
         }
 
-        // Reload in order (first return first) for the ValueTuple constructor.
-        for (var i = 0; i < returns.Length; i++)
-            context.Emit(OpCodes.Ldloc, locals[i]);
-
-        var tupleType = MultiValueHelper.ClrReturnType(clrTypes)!;
-        var ctor = tupleType.GetConstructor(clrTypes)!;
-        context.Emit(OpCodes.Newobj, ctor);
+        MultiValueHelper.EmitTuplePack(context, clrTypes, locals);
     }
 }

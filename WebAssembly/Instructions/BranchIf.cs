@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -73,18 +74,20 @@ public class BranchIf : Instruction
         var label = context.Labels[checked((uint)context.Depth.Count) - this.Index - 1];
         var isLoop = blockType.OpCode == OpCode.Loop;
         var branchSig = targetBlockCtx.BlockSignature;
+        var functionReturns = !isLoop && targetDepthKey == 1 && branchSig == null
+            ? context.CheckedSignature.RawReturnTypes
+            : System.Array.Empty<WebAssemblyValueType>();
+        var branchTypes = branchSig != null
+            ? (isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes)
+            : functionReturns.Length > 1 ? functionReturns : System.Array.Empty<WebAssemblyValueType>();
 
         if (isReachable)
         {
             if (!isLoop)
                 targetBlockCtx.MarkEndLabelTargeted();
 
-            if (branchSig != null)
+            if (branchTypes.Length > 1)
             {
-                // TypeIndex block: br_if with multi-value handling.
-                // IL stack at this point: [...baseline, intermediates, branchValues, cond]
-                // (tracking stack has cond already popped, so it shows [...baseline, intermediates, branchValues])
-                var branchTypes = isLoop ? branchSig.RawParameterTypes : branchSig.RawReturnTypes;
                 var available = context.Stack.Count - targetBlockCtx.InitialStackSize;
                 if (available < branchTypes.Length)
                     throw new StackSizeIncorrectException(this.OpCode, branchTypes.Length, available);
@@ -150,8 +153,11 @@ public class BranchIf : Instruction
                     // Taken path: discard intermediates and jump.
                     for (var k = 0; k < discardCount; k++)
                         context.Emit(OpCodes.Pop);
-                    for (var k = 0; k < branchTypes.Length; k++)
-                        context.Emit(OpCodes.Ldloc, tempLocals[k]);
+                    if (isLoop)
+                    {
+                        for (var k = 0; k < branchTypes.Length; k++)
+                            context.Emit(OpCodes.Ldloc, tempLocals[k]);
+                    }
                     context.Emit(OpCodes.Br, label);
 
                     context.MarkLabel(skipTaken);
@@ -203,6 +209,20 @@ public class BranchIf : Instruction
         }
         else
         {
+            if (branchTypes.Length > 1)
+            {
+                var actualTypes = context.PopStack(
+                    this.OpCode,
+                    branchTypes.Cast<WebAssemblyValueType?>().Reverse(),
+                    branchTypes.Length).ToArray();
+                foreach (var actualType in actualTypes.Reverse())
+                    context.Stack.Push(actualType!.Value);
+            }
+            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+            {
+                context.ValidateStack(this.OpCode, expectedType);
+            }
+
             context.Emit(OpCodes.Brtrue, label);
         }
 

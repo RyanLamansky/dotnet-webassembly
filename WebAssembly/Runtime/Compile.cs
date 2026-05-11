@@ -559,6 +559,9 @@ public static class Compile
                             throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
 
                         var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+                        context.MemoryAddressType = (setFlags & ResizableLimits.Flags.Address64) != 0
+                            ? WebAssemblyValueType.Int64
+                            : WebAssemblyValueType.Int32;
                         var preMinOffset = reader.Offset;
                         memoryPagesMinimum = reader.ReadVarUInt32();
                         if (memoryPagesMinimum > 65536)
@@ -947,6 +950,7 @@ public static class Compile
                     {
                         var type = memoryImport.Type ?? throw new ModuleLoadException($"Imported memory {moduleName}::{fieldName} is missing its definition.", 0);
                         var limits = type.ResizableLimits;
+                        context.MemoryAddressType = limits.Is64Bit ? WebAssemblyValueType.Int64 : WebAssemblyValueType.Int32;
 
                         if (memory != null)
                             throw new ModuleLoadException($"Multiple memories are not supported; encountered second memory import {moduleName}::{fieldName}.", 0);
@@ -2382,9 +2386,12 @@ public static class Compile
                 continue;
             }
 
-            // Kind 2: active with explicit memory index — read and ignore the memory index (treat same as kind 0).
+            // Kind 2: active with explicit memory index — only memory 0 is currently valid.
             if (kind == 2)
-                reader.ReadVarUInt32(); // memory index (must be 0 for now)
+            {
+                if (reader.ReadVarUInt32() != 0)
+                    throw new ModuleLoadException("unknown memory", startingOffset);
+            }
             else if (kind != 0)
                 throw new ModuleLoadException($"Data segment kind must be 0, 1, or 2, found {kind}.", startingOffset);
 

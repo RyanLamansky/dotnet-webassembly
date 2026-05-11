@@ -26,6 +26,11 @@ public class Memory
     }
 
     /// <summary>
+    /// Indicates that this memory uses 64-bit indices.
+    /// </summary>
+    public bool Is64Bit => this.ResizableLimits.Is64Bit;
+
+    /// <summary>
     /// Creates a new <see cref="Memory"/> instance.
     /// </summary>
     public Memory()

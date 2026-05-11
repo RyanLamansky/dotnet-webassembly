@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -139,5 +140,24 @@ public class BranchTableTests
             new BranchTable(0, 0),
             new End(),
             new End());
+    }
+
+    /// <summary>
+    /// Tests that unreachable <see cref="BranchTable"/> still enforces matching label types.
+    /// </summary>
+    [TestMethod]
+    public void BranchTable_UnreachableStillChecksLabelTypes()
+    {
+        Assert.ThrowsException<LabelTypeMismatchException>(() =>
+            AssemblyBuilder.CreateInstance<dynamic>("Test", null,
+                new Block(BlockType.Empty),
+                new Block(BlockType.Float32),
+                new Unreachable(),
+                new Int32Constant(0),
+                new BranchTable(0, 0, 1),
+                new End(),
+                new Drop(),
+                new End(),
+                new End()).Test());
     }
 }

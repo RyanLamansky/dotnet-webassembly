@@ -214,4 +214,24 @@ public class EndTests
         Assert.AreEqual(WebAssemblyValueType.Float64, exception.Expected);
         Assert.AreEqual(WebAssemblyValueType.Float32, exception.Actual);
     }
+
+    /// <summary>
+    /// Tests that ending an unreachable inner block preserves values already on the enclosing stack.
+    /// </summary>
+    [TestMethod]
+    public void End_Compiled_UnreachableInnerBlockPreservesOuterStack()
+    {
+        var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
+            AssemblyBuilder.CreateInstance<dynamic>("Test", null,
+                new Block(BlockType.Empty),
+                new Int32Constant(1),
+                new Block(BlockType.Empty),
+                new Unreachable(),
+                new End(),
+                new End(),
+                new End()).Test());
+
+        Assert.AreEqual(0, exception.Expected);
+        Assert.AreEqual(1, exception.Actual);
+    }
 }

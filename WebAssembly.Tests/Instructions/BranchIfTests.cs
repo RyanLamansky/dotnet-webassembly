@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -60,5 +61,23 @@ public class BranchIfTests
                 new End());
 
         Assert.AreEqual<int>(3, exports.Test());
+    }
+
+    /// <summary>
+    /// Tests that unreachable <see cref="BranchIf"/> still preserves the not-taken stack effect.
+    /// </summary>
+    [TestMethod]
+    public void BranchIf_UnreachablePreservesNotTakenStackEffect()
+    {
+        var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
+            AssemblyBuilder.CreateInstance<dynamic>("Test",
+                WebAssemblyValueType.Int64,
+                new Unreachable(),
+                new BranchIf(0),
+                new Int64ExtendInt32Unsigned(),
+                new End()).Test());
+
+        Assert.AreEqual(WebAssemblyValueType.Int32, exception.Expected);
+        Assert.AreEqual(WebAssemblyValueType.Int64, exception.Actual);
     }
 }

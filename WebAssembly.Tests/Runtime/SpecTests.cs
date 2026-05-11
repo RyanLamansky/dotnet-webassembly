@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
 using System.IO;
 
 namespace WebAssembly.Runtime;
@@ -25,15 +24,7 @@ public class SpecTests
 
     /// <summary>Runs the binary leb128 tests.</summary>
     [TestMethod]
-    public void SpecTest_binary_leb128()
-    {
-        // 1x StackTypeInvalidException: Int32Load requires the top stack item to be Int32, found Int64.
-        var skips = new HashSet<uint>
-        {
-            881
-        };
-        SpecTestRunner.Run(DataPath("binary-leb128"), "binary-leb128.json", skips.Contains);
-    }
+    public void SpecTest_binary_leb128() => SpecTestRunner.Run(DataPath("binary-leb128"), "binary-leb128.json");
 
     /// <summary>Runs the binary tests.</summary>
     [TestMethod]
@@ -96,22 +87,7 @@ public class SpecTests
 
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
-    public void SpecTest_data()
-    {
-        // 4x ModuleLoadException: At offset N: At offset N: Imported external kind of N is not recognized.
-        // 5x AssertFailedException: expected exception not thrown
-        // 3x MemoryAccessOutOfRangeException: MemoryAccessOutOfRange
-        // 14x AssertFailedException: out of bounds memory access doesn't have a test procedure set up.
-        // 4x AssertFailedException: unknown memory doesn't have a test procedure set up.
-        // 2x AssertFailedException: expected ModuleLoadException not thrown
-        // 2x AssertFailedException: unknown global doesn't have a test procedure set up.
-        var skips = new HashSet<uint>
-        {
-            67, 78, 85, 89, 96, 101, 107, 155, 161, 180, 188, 196, 203, 210, 227, 236, 243, 251, 259, 267,
-            274, 282, 289, 307, 331, 343, 365, 408, 416, 425, 466, 475, 483, 492
-        };
-        SpecTestRunner.Run(DataPath("data"), "data.json", skips.Contains);
-    }
+    public void SpecTest_data() => SpecTestRunner.Run(DataPath("data"), "data.json");
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
@@ -175,23 +151,7 @@ public class SpecTests
 
     /// <summary>Runs the func tests.</summary>
     [TestMethod]
-    public void SpecTest_func()
-    {
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        // 89x AssertFailedException: no method source (cascaded module-load failure)
-        // 1x ModuleLoadException: At offset N: Stream ended unexpectedly.
-        // 4x AssertFailedException: method-lookup failure
-        var skips = new HashSet<uint>
-        {
-            3, 241, 242, 243, 245, 248, 249, 251, 255, 256, 257, 258, 259, 260, 261, 262, 263, 266, 269,
-            272, 275, 278, 281, 284, 287, 291, 298, 299, 300, 301, 302, 303, 304, 305, 308, 309, 310, 312,
-            313, 314, 315, 316, 317, 318, 321, 322, 324, 325, 326, 327, 328, 329, 330, 333, 334, 336, 337,
-            338, 339, 340, 343, 347, 348, 349, 350, 351, 352, 353, 354, 355, 358, 361, 364, 367, 368, 369,
-            370, 372, 375, 378, 381, 384, 388, 392, 396, 401, 414, 415, 416, 417, 488, 551, 552, 553, 554,
-            828
-        };
-        SpecTestRunner.Run(DataPath("func"), "func.json", skips.Contains);
-    }
+    public void SpecTest_func() => SpecTestRunner.Run(DataPath("func"), "func.json");
 
     /// <summary>Runs the func_ptrs tests.</summary>
     [TestMethod]
@@ -218,39 +178,7 @@ public class SpecTests
 
     /// <summary>Runs the imports tests.</summary>
     [TestMethod]
-    public void SpecTest_imports()
-    {
-        // 1x ModuleLoadException: At offset N: Sections out of order; section Type encountered after Table.
-        // 1x AssertFailedException: Assert.IsNotNull failed. 21 tried to register null as a module method source.
-        // 3x ModuleLoadException: At offset N: At offset N: Imported external kind of N is not recognized.
-        // 2x AssertFailedException: no method source (cascaded module-load failure)
-        // 1x ImportException: Missing import for test::func.
-        // 1x ImportException: Missing import for test::func-i32.
-        // 1x ImportException: Missing import for test::func-f32.
-        // 1x ImportException: Missing import for test::func->i32.
-        // 1x ImportException: Missing import for test::func->f32.
-        // 1x ImportException: Missing import for test::func-i32->i32.
-        // 1x ImportException: Missing import for test::func-i64->i64.
-        // 7x AssertFailedException: method-lookup failure
-        // 1x ImportException: Missing import for test::global-i32.
-        // 1x ImportException: Missing import for test::global-f32.
-        // 1x ImportException: Missing import for test::global-mut-i64.
-        // 3x ImportException: Missing import for test::table-10-inf.
-        // 9x ImportException: Missing import for test::table-10-N.
-        // 6x AssertFailedException: expected ImportException not thrown
-        // 3x ImportException: Missing import for test::memory-2-inf.
-        // 1x ImportException: Missing import for grown-memory::memory.
-        // 3x KeyNotFoundException: The given key '$X' was not present in the dictionary.
-        // 1x ImportException: Missing import for grown-imported-memory::memory.
-        // 1x AssertFailedException: got ModuleLoadException, expected ImportException
-        var skips = new HashSet<uint>
-        {
-            3, 21, 26, 85, 86, 116, 117, 118, 119, 120, 121, 122, 226, 246, 247, 248, 249, 250, 251, 252,
-            254, 255, 256, 382, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 436, 440, 501,
-            502, 503, 529, 533, 563, 567, 587, 592, 593, 594, 599, 678
-        };
-        SpecTestRunner.Run(DataPath("imports"), "imports.json", skips.Contains);
-    }
+    public void SpecTest_imports() => SpecTestRunner.Run(DataPath("imports"), "imports.json");
 
     /// <summary>Runs the inline module tests.</summary>
     [TestMethod]
@@ -383,15 +311,7 @@ public class SpecTests
 
     /// <summary>Runs the unreached invalid tests.</summary>
     [TestMethod]
-    public void SpecTest_unreached_invalid()
-    {
-        // 2x AssertFailedException: expected exception not thrown (validation issues with unreachable code)
-        var skips = new HashSet<uint>
-        {
-            490, 676
-        };
-        SpecTestRunner.Run(DataPath("unreached-invalid"), "unreached-invalid.json", skips.Contains);
-    }
+    public void SpecTest_unreached_invalid() => SpecTestRunner.Run(DataPath("unreached-invalid"), "unreached-invalid.json");
 
     /// <summary>Runs the unreached valid tests.</summary>
     [TestMethod]

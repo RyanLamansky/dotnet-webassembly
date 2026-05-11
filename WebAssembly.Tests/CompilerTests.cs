@@ -695,4 +695,19 @@ public class CompilerTests
             }).Exports.fn();
         Assert.AreEqual(3, result);
     }
+
+    /// <summary>
+    /// Tests that binary compilation preserves the memory64 flag for memory instruction validation.
+    /// </summary>
+    [TestMethod]
+    public void Compile_FromBinary_Memory64LoadModule()
+    {
+        var path = Path.Combine("Runtime", "SpecTestData", "binary-leb128", "binary-leb128.73.wasm");
+
+        using var stream = File.OpenRead(path);
+        var parsed = Module.ReadFromBinary(stream);
+        Assert.IsTrue(parsed.Memories[0].Is64Bit);
+
+        _ = Compile.FromBinary<dynamic>(path)(new ImportDictionary());
+    }
 }
