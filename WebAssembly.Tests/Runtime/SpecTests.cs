@@ -194,7 +194,6 @@ public class SpecTests
 
     /// <summary>Runs the labels tests.</summary>
     [TestMethod]
-    [Ignore("StackTooSmallException")]
     public void SpecTest_labels() => SpecTestRunner.Run(DataPath("labels"), "labels.json");
 
     /// <summary>Runs the left to right tests.</summary>
@@ -319,7 +318,6 @@ public class SpecTests
 
     /// <summary>Runs the unwind tests.</summary>
     [TestMethod]
-    [Ignore("The JIT compiler encountered invalid IL code or an internal limitation.")]
     public void SpecTest_unwind() => SpecTestRunner.Run(DataPath("unwind"), "unwind.json");
 
     /// <summary>Runs the utf8 custom section id tests.</summary>
@@ -620,7 +618,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_linking tests.</summary>
     [TestMethod]
-    [Ignore("simd_linking data only in simd/ subdirectory")]
     public void SpecTest_simd_linking() => SpecTestRunner.Run(DataPath("simd", "simd_linking"), "simd_linking.json");
 
     /// <summary>Runs the simd_load tests.</summary>

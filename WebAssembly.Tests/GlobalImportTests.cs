@@ -1,4 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Runtime.Intrinsics;
+using WebAssembly.Instructions;
 using WebAssembly.Runtime;
 
 namespace WebAssembly;
@@ -92,5 +94,51 @@ public class GlobalImportTests
         const int passedThroughExport = 7;
         instance.Test = passedThroughExport;
         Assert.AreEqual(passedThroughExport, MutableGlobal);
+    }
+
+    /// <summary>
+    /// Verifies that exported SIMD globals can be re-imported through <see cref="ImportDictionaryExtensions.AddFromExports"/>.
+    /// </summary>
+    [TestMethod]
+    public void Compile_GlobalImmutableImportExport_V128()
+    {
+        var exporter = new Module();
+        exporter.Globals.Add(new Global
+        {
+            ContentType = WebAssemblyValueType.V128,
+            IsMutable = false,
+            InitializerExpression =
+            [
+                new V128Const { Value = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] },
+                new End(),
+            ],
+        });
+        exporter.Exports.Add(new Export
+        {
+            Name = "Test",
+            Kind = ExternalKind.Global,
+        });
+
+        var exported = exporter.ToInstance<CompilerTestBaseExportedImmutableGlobal<Vector128<byte>>>();
+
+        var imports = new ImportDictionary();
+        imports.AddFromExports("Imported", exported.Exports);
+
+        var importer = new Module();
+        importer.Imports.Add(new Import.Global
+        {
+            Module = "Imported",
+            Field = "Test",
+            ContentType = WebAssemblyValueType.V128,
+        });
+        importer.Exports.Add(new Export
+        {
+            Name = "Test",
+            Kind = ExternalKind.Global,
+        });
+
+        var roundTripped = importer.ToInstance<CompilerTestBaseExportedImmutableGlobal<Vector128<byte>>>(imports);
+
+        Assert.AreEqual(exported.Exports.Test, roundTripped.Exports.Test);
     }
 }

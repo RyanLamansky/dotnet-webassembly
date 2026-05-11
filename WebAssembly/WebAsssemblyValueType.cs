@@ -64,6 +64,7 @@ static class ValueTypeExtensions
                 { typeof(double), WebAssemblyValueType.Float64 },
                 { typeof(System.Delegate), WebAssemblyValueType.FuncRef },
                 { typeof(object), WebAssemblyValueType.ExternRef },
+                { Runtime.V128Helper.V128Type, WebAssemblyValueType.V128 },
         });
 
     public static bool TryConvertToValueType(this System.Type type, out WebAssemblyValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);
