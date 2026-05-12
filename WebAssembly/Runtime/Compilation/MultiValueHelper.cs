@@ -33,7 +33,7 @@ static class MultiValueHelper
 
     static Type ClrTupleType(Type[] returnTypes) => returnTypes.Length <= 7
         ? valueTupleTypes[returnTypes.Length - 1].MakeGenericType(returnTypes)
-        : valueTupleTypes[^1].MakeGenericType(
+        : valueTupleTypes[valueTupleTypes.Length - 1].MakeGenericType(
             [.. returnTypes.Take(7), ClrTupleType([.. returnTypes.Skip(7)])]);
 
     /// <summary>
@@ -105,7 +105,7 @@ static class MultiValueHelper
             EmitTuplePack(context, returnTypes, valueLocals, startIndex + 7);
             var restType = ClrTupleType([.. returnTypes.Skip(startIndex + 7)]);
             ctorArgs = [.. returnTypes.Skip(startIndex).Take(7), restType];
-            tupleType = valueTupleTypes[^1].MakeGenericType(ctorArgs);
+            tupleType = valueTupleTypes[valueTupleTypes.Length - 1].MakeGenericType(ctorArgs);
         }
 
         var ctor = tupleType.GetConstructor(ctorArgs)!;
