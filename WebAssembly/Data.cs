@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 
@@ -19,6 +20,18 @@ public class Data
     /// The linear memory index. Only meaningful for <see cref="Kind"/> 2; <see cref="Kind"/> 0 implicitly targets memory 0.
     /// </summary>
     public uint MemoryIndex { get; set; }
+
+    /// <summary>
+    /// Obsolete alias for <see cref="MemoryIndex"/>, retained for source compatibility with code written before
+    /// WebAssembly 2.0 data segment kinds were introduced (when this was simply the always-zero memory index).
+    /// </summary>
+    [Obsolete("Use MemoryIndex for the target memory index, and Kind for the segment kind (active/passive).")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public uint Index
+    {
+        get => this.MemoryIndex;
+        set => this.MemoryIndex = value;
+    }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private IList<Instruction>? initializerExpression;

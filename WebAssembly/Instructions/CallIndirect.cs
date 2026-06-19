@@ -98,7 +98,9 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
         context.EmitLoadThis();
 
-        if (!context.DelegateRemappersByType.TryGetValue(signature.TypeIndex, out var remapper))
+        // The second immediate is the table index (WASM 2.0); remappers are cached per (type, table) since
+        // they load from a specific table field.
+        if (!context.DelegateRemappersByType.TryGetValue((signature.TypeIndex, this.Reserved), out var remapper))
         {
             var parms = signature.ParameterTypes;
             var returns = signature.ReturnTypes;
@@ -112,8 +114,8 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
-            context.DelegateRemappersByType.Add(signature.TypeIndex, remapper = context.CheckedExportsBuilder.DefineMethod(
-                $"🔁 {signature.TypeIndex}",
+            context.DelegateRemappersByType.Add((signature.TypeIndex, this.Reserved), remapper = context.CheckedExportsBuilder.DefineMethod(
+                $"🔁 {signature.TypeIndex}_{this.Reserved}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 returns.Length == 0 ? typeof(void) : returns[0],
                 [.. parms, typeof(uint), context.CheckedExportsBuilder]
@@ -121,7 +123,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             var il = remapper.GetILGenerator();
             il.EmitLoadArg(parms.Length + 1);
-            il.Emit(OpCodes.Ldfld, context.FunctionTable!);
+            il.Emit(OpCodes.Ldfld, context.GetTable(this.Reserved));
             il.EmitLoadArg(parms.Length);
             il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);

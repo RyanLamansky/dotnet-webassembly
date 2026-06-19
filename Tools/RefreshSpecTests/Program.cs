@@ -119,12 +119,25 @@ foreach (var wast in wastFiles)
     Directory.CreateDirectory(outDir);
     var outJson = Path.Combine(outDir, $"{stem}.json");
 
-    // --enable-all rather than wast2json's defaults: many ratified-feature .wast files (br_if, exports,
-    // linking, elem, ...) embed individual proposal-syntax test cases alongside their core ones. Without
-    // --enable-all the entire file fails to parse over a single proposal assert; we'd lose the 95% that's
-    // ratified content. The proposal-syntax cases that come along for the ride are filtered later, per-line,
-    // in SpecTests.cs skip predicates.
-    var (exit, _, stderr) = TryRun(wast2json, ["--enable-all", wast, "-o", outJson]);
+    // We enable wabt's individual proposal features rather than wast2json's defaults: many ratified-feature
+    // .wast files (br_if, exports, linking, elem, ...) embed individual proposal-syntax test cases alongside
+    // their core ones, and without these the entire file fails to parse over a single proposal assert; we'd
+    // lose the 95% that's ratified content. The proposal-syntax cases that come along for the ride are
+    // filtered later, per-line, in SpecTests.cs skip predicates.
+    //
+    // This is the set enabled by --enable-all MINUS --enable-compact-imports: that experimental wabt feature
+    // emits a non-standard "compact" import section (a single module name shared across a run of imports)
+    // that is not part of any WebAssembly standard and that no conformant runtime reads. --enable-all turns
+    // it on, which made table_init/table_copy/bulk fixtures unreadable by the library. Omitting it keeps the
+    // import section in the standard, one-name-pair-per-import encoding.
+    string[] enableFlags =
+    [
+        "--enable-exceptions", "--enable-threads", "--enable-function-references", "--enable-tail-call",
+        "--enable-annotations", "--enable-code-metadata", "--enable-gc", "--enable-memory64",
+        "--enable-multi-memory", "--enable-extended-const", "--enable-relaxed-simd",
+        "--enable-custom-page-sizes", "--enable-wide-arithmetic",
+    ];
+    var (exit, _, stderr) = TryRun(wast2json, [.. enableFlags, wast, "-o", outJson]);
     if (exit == 0)
     {
         Console.WriteLine($"  ok  {rel}");

@@ -369,6 +369,7 @@ static class SpecTestRunner
                                 continue;
                             case "uninitialized element":
                             case "uninitialized":
+                            case var ue when ue.StartsWith("uninitialized element", StringComparison.Ordinal):
                                 try
                                 {
                                     trapExpected();

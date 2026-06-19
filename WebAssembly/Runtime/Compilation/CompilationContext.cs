@@ -70,7 +70,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 
-    public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
+    public readonly Dictionary<(uint TypeIndex, uint TableIndex), MethodBuilder> DelegateRemappersByType = [];
 
     /// <summary>
     /// Table backing fields, indexed by table index. Each field is either a <see cref="FunctionTable"/> or an

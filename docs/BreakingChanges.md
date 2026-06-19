@@ -28,8 +28,11 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
 
 ### Unreleased (WebAssembly 2.0 draft features)
 
-* `Data`: the `Index` property (the target linear memory index, previously always 0) has been replaced by `Kind` (0 = active/memory 0, 1 = passive, 2 = active/explicit memory index) and `MemoryIndex` (meaningful only for `Kind` 2).
-  This supports the bulk-memory proposal's passive data segments used by `memory.init` and `data.drop`.
+* `Data`: gained `Kind` (0 = active/memory 0, 1 = passive, 2 = active/explicit memory index) and `MemoryIndex` (meaningful only for `Kind` 2) to support the bulk-memory proposal's passive data segments used by `memory.init` and `data.drop`.
+  The previous `Index` property (the target linear memory index, previously always 0) is retained as an `[Obsolete]`, IntelliSense-hidden alias of `MemoryIndex`, so existing source continues to compile (with a deprecation warning) and behaves as before for active, memory-0 segments.
+* `FunctionTable`: the indexer (`this[int]`) no longer locks each slot to the type of the first delegate stored there, and the private per-slot delegate-type tracking has been removed.
+  Reference-type tables (WebAssembly 2.0) move function references between arbitrary slots via `table.copy`/`table.fill`/`table.init` and `table.set`, so per-slot type enforcement is no longer correct; `call_indirect` continues to verify the signature at call time.
+  Assigning a delegate of an unexpected type to a slot no longer throws `ArgumentException`.
 
 ### 1.0.0
 
