@@ -913,17 +913,14 @@ public class SpecTests
 
     /// <summary>Runs the memory_copy tests.</summary>
     [TestMethod]
-    [Ignore("Bulk memory operations not yet implemented")]
     public void SpecTest_memory_copy() => SpecTestRunner.Run(DataPath("memory_copy"), "memory_copy.json");
 
     /// <summary>Runs the memory_fill tests.</summary>
     [TestMethod]
-    [Ignore("Bulk memory operations not yet implemented")]
     public void SpecTest_memory_fill() => SpecTestRunner.Run(DataPath("memory_fill"), "memory_fill.json");
 
     /// <summary>Runs the memory_init tests.</summary>
     [TestMethod]
-    [Ignore("Bulk memory operations not yet implemented")]
     public void SpecTest_memory_init() => SpecTestRunner.Run(DataPath("memory_init"), "memory_init.json");
 
     /// <summary>Runs the table_copy tests.</summary>

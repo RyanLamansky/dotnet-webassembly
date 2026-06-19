@@ -56,6 +56,30 @@ public enum MiscellaneousOpCode : byte
     /// </summary>
     [OpCodeCharacteristics("i64.trunc_sat_f64_u")]
     Int64TruncateSaturateFloat64Unsigned = 0x07,
+
+    /// <summary>
+    /// Copy from a passive data segment into linear memory.
+    /// </summary>
+    [OpCodeCharacteristics("memory.init")]
+    MemoryInit = 0x08,
+
+    /// <summary>
+    /// Prevent further use of a passive data segment.
+    /// </summary>
+    [OpCodeCharacteristics("data.drop")]
+    DataDrop = 0x09,
+
+    /// <summary>
+    /// Copy from one region of linear memory to another.
+    /// </summary>
+    [OpCodeCharacteristics("memory.copy")]
+    MemoryCopy = 0x0A,
+
+    /// <summary>
+    /// Fill a region of linear memory with a given byte value.
+    /// </summary>
+    [OpCodeCharacteristics("memory.fill")]
+    MemoryFill = 0x0B,
 }
 
 static class MiscellaneousOpCodeExtensions

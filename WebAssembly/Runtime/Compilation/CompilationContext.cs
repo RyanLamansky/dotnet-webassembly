@@ -109,6 +109,13 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public FieldBuilder? Memory;
 
+    /// <summary>
+    /// Maps a data segment index to the <see cref="byte"/> array field that backs it, used by
+    /// <see cref="Instructions.MemoryInit"/> and <see cref="Instructions.DataDrop"/>. Populated when a
+    /// <see cref="Section.DataCount"/> section is encountered (or lazily during the data section when absent).
+    /// </summary>
+    public readonly Dictionary<uint, FieldBuilder> DataSegments = [];
+
     public WebAssemblyValueType[]? Locals;
 
     public readonly BlockStack Depth = new();
@@ -175,6 +182,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public void Emit(ILOpCode opcode, ConstructorInfo con) => CheckedGenerator.Emit(opcode, con);
 
     public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
+
+    public void Emit(ILOpCode opcode, LocalBuilder local) => CheckedGenerator.Emit(opcode, local);
 
     public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
     {

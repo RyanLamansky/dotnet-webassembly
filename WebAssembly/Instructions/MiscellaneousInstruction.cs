@@ -19,7 +19,7 @@ public abstract class MiscellaneousInstruction : Instruction
     /// </summary>
     public abstract MiscellaneousOpCode MiscellaneousOpCode { get; }
 
-    internal sealed override void WriteTo(Writer writer)
+    internal override void WriteTo(Writer writer)
     {
         writer.Write((byte)this.OpCode);
         writer.Write((byte)this.MiscellaneousOpCode);

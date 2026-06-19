@@ -321,6 +321,10 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat32Unsigned: yield return new Int64TruncateSaturateFloat32Unsigned(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Signed: yield return new Int64TruncateSaturateFloat64Signed(); break;
                         case MiscellaneousOpCode.Int64TruncateSaturateFloat64Unsigned: yield return new Int64TruncateSaturateFloat64Unsigned(); break;
+                        case MiscellaneousOpCode.MemoryInit: yield return new MemoryInit(reader); break;
+                        case MiscellaneousOpCode.DataDrop: yield return new DataDrop(reader); break;
+                        case MiscellaneousOpCode.MemoryCopy: yield return new MemoryCopy(reader); break;
+                        case MiscellaneousOpCode.MemoryFill: yield return new MemoryFill(reader); break;
                     }
                     break;
             }

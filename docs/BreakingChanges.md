@@ -26,6 +26,11 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
 
 ## Breaking Changes
 
+### Unreleased (WebAssembly 2.0 draft features)
+
+* `Data`: the `Index` property (the target linear memory index, previously always 0) has been replaced by `Kind` (0 = active/memory 0, 1 = passive, 2 = active/explicit memory index) and `MemoryIndex` (meaningful only for `Kind` 2).
+  This supports the bulk-memory proposal's passive data segments used by `memory.init` and `data.drop`.
+
 ### 1.0.0
 
 * Block-type instructions that returned their type in `.ToString` now more closely match the WAT format; "block (returns i32)" is now "block i32", for example.

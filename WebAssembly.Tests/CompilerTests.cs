@@ -611,7 +611,8 @@ public class CompilerTests
         });
 
         var x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => module.ToInstance<dynamic>());
-        Assert.AreEqual(1u, x.Offset);
+        // The active segment's single byte targets offset 0, which is out of range for a zero-page memory.
+        Assert.AreEqual(0u, x.Offset);
         Assert.AreEqual(1u, x.Length);
     }
 

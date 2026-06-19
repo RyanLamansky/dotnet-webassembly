@@ -16,6 +16,12 @@ public sealed class UnmanagedMemory : IDisposable
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.First(prop => prop.Name == nameof(Start)).GetMethod!);
     internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(()
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(prop => prop.Name == nameof(Grow)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(InitFromSegment)));
 
     private bool disposed;
 
@@ -130,6 +136,74 @@ public sealed class UnmanagedMemory : IDisposable
         }
 
         return failed;
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> bytes from <paramref name="src"/> to <paramref name="dst"/> within this memory,
+    /// handling overlapping regions correctly. Implements <c>memory.copy</c>.
+    /// </summary>
+    /// <param name="dst">The destination byte offset.</param>
+    /// <param name="src">The source byte offset.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of memory.</exception>
+    public unsafe void Copy(uint dst, uint src, uint length)
+    {
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(src + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        if (srcEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(srcEnd, this.Size);
+        if (length == 0)
+            return;
+        Buffer.MemoryCopy((void*)(this.Start + (int)src), (void*)(this.Start + (int)dst), length, length);
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> bytes from <paramref name="src"/> starting at <paramref name="srcOffset"/> into this
+    /// memory at <paramref name="dst"/>. Implements <c>memory.init</c>. A null <paramref name="src"/> is treated as a dropped
+    /// (length-0) segment.
+    /// </summary>
+    /// <param name="dst">The destination byte offset within memory.</param>
+    /// <param name="src">The source data segment, or null if it has been dropped.</param>
+    /// <param name="srcOffset">The byte offset within the source segment.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of its bounds.</exception>
+    public unsafe void InitFromSegment(uint dst, byte[]? src, uint srcOffset, uint length)
+    {
+        // A dropped (null) segment is treated as length-0 for bounds checking purposes (WASM spec).
+        var srcLength = src != null ? (uint)src.Length : 0u;
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(srcOffset + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        if (srcEnd > srcLength)
+            throw new MemoryAccessOutOfRangeException(srcEnd, srcLength);
+        if (length == 0)
+            return;
+        fixed (byte* pSrc = src)
+            Buffer.MemoryCopy(pSrc + srcOffset, (void*)(this.Start + (int)dst), length, length);
+    }
+
+    /// <summary>
+    /// Fills <paramref name="length"/> bytes starting at <paramref name="dst"/> with the low 8 bits of
+    /// <paramref name="value"/>. Implements <c>memory.fill</c>.
+    /// </summary>
+    /// <param name="dst">The destination byte offset.</param>
+    /// <param name="value">The fill value; only the low 8 bits are used.</param>
+    /// <param name="length">The number of bytes to fill.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The destination range falls outside of memory.</exception>
+    public unsafe void Fill(uint dst, uint value, uint length)
+    {
+        var dstEnd = checked(dst + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
+        if (length == 0)
+            return;
+        var p = (byte*)(this.Start + (int)dst);
+        var b = (byte)(value & 0xFF);
+        for (uint i = 0; i < length; i++)
+            p[i] = b;
     }
 
     /// <summary>

@@ -245,6 +245,8 @@ static class SpecTestRunner
                             case "unknown label":
                             case "invalid result arity":
                             case "unknown type":
+                            case "unknown data segment":
+                            case "unknown data segment 1":
                                 Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
                             case "unknown global":

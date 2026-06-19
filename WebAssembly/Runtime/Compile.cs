@@ -351,6 +351,7 @@ public static class Compile
         FieldBuilder? functionTable = null;
         GlobalInfo[]? globals = null;
         MethodInfo? startFunction = null;
+        uint? declaredDataCount = null;
         var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
         var delegateRemappersByType = context.DelegateRemappersByType;
         var emptyTypes = Type.EmptyTypes;
@@ -588,10 +589,23 @@ public static class Compile
                     SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                     break;
 
+                case Section.DataCount:
+                    {
+                        // Pre-allocate a backing field for every data segment so memory.init / data.drop can
+                        // reference passive segments during the Code section, which is compiled before the Data section.
+                        declaredDataCount = reader.ReadVarUInt32();
+                        for (var di = 0u; di < declaredDataCount; di++)
+                        {
+                            context.DataSegments[di] = exportsBuilder.DefineField(
+                                $"☣ PassiveData {di}",
+                                typeof(byte[]),
+                                FieldAttributes.Private);
+                        }
+                    }
+                    break;
+
                 case Section.Data:
-                    if (memory == null)
-                        throw new ModuleLoadException("Data section cannot be used unless a memory section is defined.", preSectionOffset);
-                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder);
+                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, declaredDataCount);
                     break;
 
                 default:
@@ -1384,9 +1398,13 @@ public static class Compile
         }
     }
 
-    static void SectionData(Reader reader, CompilationContext context, FieldBuilder memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder)
+    static void SectionData(Reader reader, CompilationContext context, FieldBuilder? memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder, uint? declaredDataCount)
     {
         var count = reader.ReadVarUInt32();
+
+        // When a DataCount section is present, its value must match the actual number of data segments.
+        if (declaredDataCount != null && declaredDataCount != count)
+            throw new ModuleLoadException($"data count and data section have inconsistent lengths: DataCount section declared {declaredDataCount} but the data section contains {count}.", reader.Offset);
 
         context.Reset(
             instanceConstructorIL,
@@ -1397,14 +1415,32 @@ public static class Compile
 
         var address = instanceConstructorIL.DeclareLocal(typeof(uint));
 
-        for (var i = 0; i < count; i++)
+        for (var i = 0u; i < count; i++)
         {
             var startingOffset = reader.Offset;
+            var kind = reader.ReadVarUInt32();
+
+            if (kind == 1)
             {
-                var index = reader.ReadVarUInt32();
-                if (index != 0)
-                    throw new ModuleLoadException($"Data index must be 0, found {index}.", startingOffset);
+                StorePassiveDataSegment(context, instanceConstructorIL, exportsBuilder, i, reader.ReadBytes(reader.ReadVarUInt32()));
+                continue;
             }
+
+            // Kind 2 is active with an explicit memory index; only memory 0 is currently valid.
+            if (kind == 2)
+            {
+                var memoryIndex = reader.ReadVarUInt32();
+                if (memoryIndex != 0)
+                    throw new ModuleLoadException($"Data memory index must be 0, found {memoryIndex}.", startingOffset);
+            }
+            else if (kind != 0)
+            {
+                throw new ModuleLoadException($"Data segment kind must be 0, 1, or 2, found {kind}.", startingOffset);
+            }
+
+            // Active data segments (kind 0 or 2) require a memory.
+            if (memory == null)
+                throw new ModuleLoadException("Active data segment cannot be used unless a memory section is defined.", startingOffset);
 
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))
@@ -1421,9 +1457,11 @@ public static class Compile
             if (data.Length == 0)
                 continue;
 
-            //Ensure sufficient memory is allocated, error if max is exceeded.
+            //Ensure sufficient memory is allocated, error if max is exceeded. RangeCheck8 validates that the
+            //last written byte (address + data.Length - 1) is accessible, which permits a segment that exactly
+            //fills memory to the page boundary.
             instanceConstructorIL.Emit(OpCodes.Ldloc, address);
-            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length);
+            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length - 1);
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -1450,6 +1488,38 @@ public static class Compile
             instanceConstructorIL.Emit(OpCodes.Cpblk);
         }
     }
+
+    // Initializes the byte[] field backing a passive data segment so memory.init can copy from it and data.drop can null it.
+    static void StorePassiveDataSegment(CompilationContext context, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder, uint i, byte[] rawData)
+    {
+        // The field is pre-allocated when a DataCount section is present; allocate lazily when it is absent.
+        if (!context.DataSegments.TryGetValue(i, out var segField))
+        {
+            segField = exportsBuilder.DefineField($"☣ PassiveData {i}", typeof(byte[]), FieldAttributes.Private);
+            context.DataSegments[i] = segField;
+        }
+
+        if (rawData.Length == 0)
+            return;
+
+        if (rawData.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
+            throw new NotSupportedException($"Passive data segment {i} is length {rawData.Length}, exceeding the current implementation limit of 4128768.");
+
+        // Use the same RVA-field + RuntimeHelpers.InitializeArray pattern that C# uses for array initializers:
+        // create a new byte[], then bulk-initialize it from the PE's data, and store it into the instance field.
+        var initField = exportsBuilder.DefineInitializedData($"☣ PassiveDataInit {i}", rawData, FieldAttributes.Assembly | FieldAttributes.InitOnly);
+
+        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+        instanceConstructorIL.Emit(OpCodes.Ldc_I4, rawData.Length);
+        instanceConstructorIL.Emit(OpCodes.Newarr, typeof(byte));
+        instanceConstructorIL.Emit(OpCodes.Dup);
+        instanceConstructorIL.Emit(OpCodes.Ldtoken, initField);
+        instanceConstructorIL.Emit(OpCodes.Call, RuntimeHelpersInitializeArray);
+        instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+    }
+
+    static readonly MethodInfo RuntimeHelpersInitializeArray = typeof(System.Runtime.CompilerServices.RuntimeHelpers)
+        .GetMethod(nameof(System.Runtime.CompilerServices.RuntimeHelpers.InitializeArray), [typeof(Array), typeof(RuntimeFieldHandle)])!;
 
     static FieldBuilder CreateFunctionTableField(TypeBuilder exportsBuilder, CompilerConfiguration configuration)
         => exportsBuilder.DefineField(

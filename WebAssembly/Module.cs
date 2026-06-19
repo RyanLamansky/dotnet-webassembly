@@ -433,7 +433,8 @@ public class Module
             var index = 0;
             foreach (var data in this.data)
             {
-                if (LastOpCodeIsNotEnd(data.InitializerExpression))
+                // Passive segments (kind 1) carry no initializer expression, so the End-terminator rule only applies to active segments.
+                if (data.Kind != 1 && LastOpCodeIsNotEnd(data.InitializerExpression))
                     throw new InvalidOperationException($"Data at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;
@@ -547,6 +548,16 @@ public class Module
             });
         }
         WriteCustomSection(buffer, writer, Section.Element, customSectionsByPrecedingSection);
+
+        // The DataCount section must precede the Code section when passive or explicitly-indexed data segments are present,
+        // so that the compiler can pre-allocate their backing fields before processing memory.init / data.drop.
+        if (this.data != null && this.data.Any(d => d.Kind != 0))
+        {
+            WriteSection(buffer, writer, Section.DataCount, sectionWriter =>
+            {
+                sectionWriter.WriteVar((uint)this.data.Count);
+            });
+        }
 
         if (this.codes != null)
         {
