@@ -978,12 +978,11 @@ public class SpecTests
 
     /// <summary>Runs the simd_address tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_address() => SpecTestRunner.Run(DataPath("simd", "simd_address"), "simd_address.json");
 
     /// <summary>Runs the simd_align tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
+    [Ignore("SIMD alignment tests use extended loads (v128.load8x8_s etc.) from a later increment.")]
     public void SpecTest_simd_align() => SpecTestRunner.Run(DataPath("simd", "simd_align"), "simd_align.json");
 
     /// <summary>Runs the simd_bit_shift tests.</summary>
@@ -1003,7 +1002,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_const tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
+    [Ignore("SIMD constant-folding tests require integer/float arithmetic instructions (later increment).")]
     public void SpecTest_simd_const() => SpecTestRunner.Run(DataPath("simd", "simd_const"), "simd_const.json");
 
     /// <summary>Runs the simd_conversions tests.</summary>

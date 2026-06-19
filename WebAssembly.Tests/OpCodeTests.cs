@@ -62,6 +62,7 @@ public class OpCodeTests
                 { "copysign", "CopySign" },
                 { "const", "Constant" },
                 { "misc", "MiscellaneousOperationPrefix" },
+                { "simd", "SimdOperationPrefix" },
             };
 
         foreach (var kv in opCodeCharacteristicsByOpCode)

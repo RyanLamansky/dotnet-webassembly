@@ -22,6 +22,10 @@ public enum BlockType : sbyte
     /// </summary>
     Float64 = -0x04,
     /// <summary>
+    /// 128-bit SIMD vector value-type (WASM 2.0).
+    /// </summary>
+    V128 = -0x05,
+    /// <summary>
     /// Pseudo type for representing an empty block type.
     /// </summary>
     Empty = -0x40,
@@ -49,6 +53,9 @@ static class BlockTypeExtensions
             case BlockType.Float64:
                 valueType = WebAssemblyValueType.Float64;
                 break;
+            case BlockType.V128:
+                valueType = WebAssemblyValueType.V128;
+                break;
         }
 
         return true;
@@ -60,6 +67,7 @@ static class BlockTypeExtensions
         BlockType.Int64 => "i64",
         BlockType.Float32 => "f32",
         BlockType.Float64 => "f64",
+        BlockType.V128 => "v128",
         BlockType.Empty => "",
         _ => "?",
     };

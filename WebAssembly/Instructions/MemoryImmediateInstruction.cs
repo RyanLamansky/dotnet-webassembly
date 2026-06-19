@@ -120,28 +120,15 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         if (context.Memory == null)
             throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
 
-        byte size;
-        System.Reflection.Emit.OpCode opCode;
-        switch (helper)
+        byte size = helper switch
         {
-            default: throw new InvalidOperationException(); // Shouldn't be possible.
-            case HelperMethod.RangeCheck8:
-                size = 1;
-                opCode = OpCodes.Ldc_I4_1;
-                break;
-            case HelperMethod.RangeCheck16:
-                size = 2;
-                opCode = OpCodes.Ldc_I4_2;
-                break;
-            case HelperMethod.RangeCheck32:
-                size = 4;
-                opCode = OpCodes.Ldc_I4_4;
-                break;
-            case HelperMethod.RangeCheck64:
-                size = 8;
-                opCode = OpCodes.Ldc_I4_8;
-                break;
-        }
+            HelperMethod.RangeCheck8 => 1,
+            HelperMethod.RangeCheck16 => 2,
+            HelperMethod.RangeCheck32 => 4,
+            HelperMethod.RangeCheck64 => 8,
+            HelperMethod.RangeCheck128 => 16,
+            _ => throw new InvalidOperationException(), // Shouldn't be possible.
+        };
 
         var builder = context.CheckedExportsBuilder.DefineMethod(
             $"☣ Range Check {size}",
@@ -150,11 +137,27 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
             [typeof(uint), context.CheckedExportsBuilder]
             );
         var il = builder.GetILGenerator();
+
+        // There's no short Ldc opcode for sizes above 8, so larger accesses (v128 = 16) use Ldc_I4_S.
+        void EmitSize()
+        {
+            if (size <= 8)
+                il.Emit(size switch
+                {
+                    1 => OpCodes.Ldc_I4_1,
+                    2 => OpCodes.Ldc_I4_2,
+                    4 => OpCodes.Ldc_I4_4,
+                    _ => OpCodes.Ldc_I4_8,
+                });
+            else
+                il.Emit(OpCodes.Ldc_I4_S, (sbyte)size);
+        }
+
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Ldfld, context.Memory);
         il.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
         il.Emit(OpCodes.Ldarg_0);
-        il.Emit(opCode);
+        EmitSize();
         il.Emit(OpCodes.Add_Ovf_Un);
         var outOfRange = il.DefineLabel();
         il.Emit(OpCodes.Blt_Un_S, outOfRange);
@@ -162,7 +165,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         il.Emit(OpCodes.Ret);
         il.MarkLabel(outOfRange);
         il.Emit(OpCodes.Ldarg_0);
-        il.Emit(opCode);
+        EmitSize();
         il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
             .GetTypeInfo()
             .DeclaredConstructors

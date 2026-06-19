@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.Intrinsics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -155,6 +156,11 @@ static class SpecTestRunner
                                         Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
                                     }
                                     continue;
+                                case RawValueType.v128:
+                                    // The structural-equality fast-path above handles bit-exact vectors;
+                                    // reaching here means a lane mismatch or a NaN pattern needing lane-wise comparison.
+                                    Assert.IsTrue(((V128Value)rawExpected).IsMatch((Vector128<byte>)result!), $"{command.line}: v128 compare, got {result}");
+                                    continue;
                             }
 
                             throw new AssertFailedException($"{command.line}: Not equal {rawExpected.type}: {rawExpected.BoxedValue} and {result}");
@@ -189,6 +195,8 @@ static class SpecTestRunner
                                 throw new AssertFailedException($"{assert.expected[0].type} doesn't support NaN checks.");
                         }
                     case AssertInvalid assert:
+                        if (assert.filename.EndsWith(".wat", StringComparison.Ordinal))
+                            continue; // Text-format module; not writing a WAT parser.
                         trapExpected = () =>
                         {
                             try
@@ -610,6 +618,7 @@ static class SpecTestRunner
         // will fail (caught per-line by Discover or by skip predicates).
         externref = -100,
         funcref = -101,
+        v128 = WebAssemblyValueType.V128,
     }
 
     // Custom converter that accepts both numeric-string values ("0", "4286578688", ...) and the
@@ -663,6 +672,7 @@ static class SpecTestRunner
     [JsonDerivedType(typeof(Float64Value), typeDiscriminator: nameof(RawValueType.f64))]
     [JsonDerivedType(typeof(ExternRefValue), typeDiscriminator: nameof(RawValueType.externref))]
     [JsonDerivedType(typeof(FuncRefValue), typeDiscriminator: nameof(RawValueType.funcref))]
+    [JsonDerivedType(typeof(V128Value), typeDiscriminator: nameof(RawValueType.v128))]
     abstract class TypedValue(RawValueType valueType)
     {
         // Not inheriting TypeOnly here: the inherited `type` field would conflict with the
@@ -741,6 +751,120 @@ static class SpecTestRunner
             : throw new NotSupportedException($"funcref value '{value}' cannot be boxed - only null funcref is supported.");
 
         public override string ToString() => $"{type}: {value ?? "null"}";
+    }
+
+    // SIMD v128 value (WASM 2.0). The spec data expresses a v128 as a lane_type plus an array of
+    // per-lane integer/NaN strings; we pack those into the 16 bytes of a Vector128<byte>, which is
+    // how the runtime represents v128 on the test target frameworks (net5+).
+    class V128Value() : TypedValue(RawValueType.v128)
+    {
+        public string? lane_type;
+        public string[]? value;
+
+        // True if any lane is a NaN pattern ("nan:canonical" / "nan:arithmetic"); those need
+        // lane-by-lane comparison because NaN payloads aren't bit-exact.
+        private bool HasNaN => value != null && value.Any(v => v.StartsWith("nan:", StringComparison.Ordinal));
+
+        // Parses a lane string to its raw bits; NaN patterns map to a canonical NaN for the lane type.
+        private ulong ParseLane(string s)
+        {
+            if (!s.StartsWith("nan:", StringComparison.Ordinal))
+                return ulong.Parse(s);
+            return lane_type == "f64" ? 0x7FF8000000000000UL : 0x7FC00000UL;
+        }
+
+        public Vector128<byte> ActualValue
+        {
+            get
+            {
+                var bytes = new byte[16];
+                if (value != null)
+                {
+                    switch (lane_type)
+                    {
+                        case "i8":
+                            for (var i = 0; i < 16 && i < value.Length; i++)
+                                bytes[i] = (byte)ParseLane(value[i]);
+                            break;
+                        case "i16":
+                            for (var i = 0; i < 8 && i < value.Length; i++)
+                            {
+                                var v = (ushort)ParseLane(value[i]);
+                                bytes[i * 2] = (byte)v;
+                                bytes[i * 2 + 1] = (byte)(v >> 8);
+                            }
+                            break;
+                        case "i32":
+                        case "f32":
+                            for (var i = 0; i < 4 && i < value.Length; i++)
+                            {
+                                var v = (uint)ParseLane(value[i]);
+                                bytes[i * 4] = (byte)v;
+                                bytes[i * 4 + 1] = (byte)(v >> 8);
+                                bytes[i * 4 + 2] = (byte)(v >> 16);
+                                bytes[i * 4 + 3] = (byte)(v >> 24);
+                            }
+                            break;
+                        case "i64":
+                        case "f64":
+                            for (var i = 0; i < 2 && i < value.Length; i++)
+                            {
+                                var v = ParseLane(value[i]);
+                                for (var b = 0; b < 8; b++)
+                                    bytes[i * 8 + b] = (byte)(v >> (b * 8));
+                            }
+                            break;
+                    }
+                }
+
+                return Vector128.Create(bytes);
+            }
+        }
+
+        public override object BoxedValue => ActualValue;
+
+        // NaN-aware lane-by-lane match: a "nan:*" pattern matches any NaN in that lane; other lanes
+        // must be bit-exact. Non-NaN vectors are handled by the caller's structural equality fast-path.
+        public bool IsMatch(Vector128<byte> actual)
+        {
+            if (!HasNaN)
+                return ActualValue.Equals(actual);
+            if (value == null)
+                return false;
+            switch (lane_type)
+            {
+                case "f32":
+                    var af = actual.AsSingle();
+                    for (var i = 0; i < 4 && i < value.Length; i++)
+                    {
+                        if (value[i].StartsWith("nan:", StringComparison.Ordinal))
+                        {
+                            if (!float.IsNaN(af[i]))
+                                return false;
+                        }
+                        else if ((uint)ParseLane(value[i]) != BitConverter.SingleToUInt32Bits(af[i]))
+                            return false;
+                    }
+                    return true;
+                case "f64":
+                    var ad = actual.AsDouble();
+                    for (var i = 0; i < 2 && i < value.Length; i++)
+                    {
+                        if (value[i].StartsWith("nan:", StringComparison.Ordinal))
+                        {
+                            if (!double.IsNaN(ad[i]))
+                                return false;
+                        }
+                        else if (ParseLane(value[i]) != BitConverter.DoubleToUInt64Bits(ad[i]))
+                            return false;
+                    }
+                    return true;
+                default:
+                    return ActualValue.Equals(actual);
+            }
+        }
+
+        public override string ToString() => $"v128({lane_type})[{string.Join(',', value ?? [])}]";
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<TestActionType>))]

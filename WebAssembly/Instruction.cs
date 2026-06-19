@@ -83,6 +83,12 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Float64Constant: yield return new Float64Constant(reader); break;
                 case OpCode.RefNull: yield return new RefNull(reader); break;
                 case OpCode.RefFunc: yield return new RefFunc(reader); break;
+                case OpCode.SimdOperationPrefix:
+                    var simdOpCode = (SimdOpCode)reader.ReadVarUInt32();
+                    if (simdOpCode != SimdOpCode.V128Const)
+                        throw new ModuleLoadException($"Opcode \"{simdOpCode}\" is not permitted in intializer expressions.", initialOffset);
+                    yield return new V128Const(reader);
+                    break;
                 case OpCode.End: yield return new End(); yield break;
             }
         }
@@ -338,6 +344,18 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.TableGrow: yield return new TableGrow(reader); break;
                         case MiscellaneousOpCode.TableSize: yield return new TableSize(reader); break;
                         case MiscellaneousOpCode.TableFill: yield return new TableFill(reader); break;
+                    }
+                    break;
+
+                case OpCode.SimdOperationPrefix:
+                    var simdOpCodeOffset = reader.Offset;
+                    var simdOpCode = (SimdOpCode)reader.ReadVarUInt32();
+                    switch (simdOpCode)
+                    {
+                        default: throw new ModuleLoadException($"Don't know how to parse SIMD opcode \"{simdOpCode}\".", simdOpCodeOffset);
+                        case SimdOpCode.V128Load: yield return new V128Load(reader); break;
+                        case SimdOpCode.V128Store: yield return new V128Store(reader); break;
+                        case SimdOpCode.V128Const: yield return new V128Const(reader); break;
                     }
                     break;
             }

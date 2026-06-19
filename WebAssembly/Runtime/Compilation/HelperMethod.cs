@@ -6,6 +6,7 @@ enum HelperMethod
     RangeCheck16,
     RangeCheck32,
     RangeCheck64,
+    RangeCheck128,
     SelectFloat32,
     SelectFloat64,
     SelectInt32,

@@ -31,6 +31,11 @@ public enum WebAssemblyValueType : sbyte
     /// A nullable reference to a host-provided external value (WASM 2.0 reference types), represented as <see cref="object"/> at runtime.
     /// </summary>
     ExternRef = -0x11,
+    /// <summary>
+    /// A 128-bit SIMD vector value (WASM 2.0), encoded as -0x05 / 0x7B.
+    /// Represented as <c>Vector128&lt;byte&gt;</c> at runtime on .NET 5+, or <c>V128Polyfill</c> on older runtimes.
+    /// </summary>
+    V128 = -0x05,
 }
 
 static class ValueTypeExtensions
@@ -43,6 +48,7 @@ static class ValueTypeExtensions
         WebAssemblyValueType.Float64 => typeof(double),
         WebAssemblyValueType.FuncRef => typeof(System.Delegate),
         WebAssemblyValueType.ExternRef => typeof(object),
+        WebAssemblyValueType.V128 => WebAssembly.Runtime.V128Helper.V128Type,
         _ => throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized."),
     };
 
@@ -55,6 +61,7 @@ static class ValueTypeExtensions
                 { typeof(double), WebAssemblyValueType.Float64 },
                 { typeof(System.Delegate), WebAssemblyValueType.FuncRef },
                 { typeof(object), WebAssemblyValueType.ExternRef },
+                { WebAssembly.Runtime.V128Helper.V128Type, WebAssemblyValueType.V128 },
         });
 
     public static bool TryConvertToValueType(this System.Type type, out WebAssemblyValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);
