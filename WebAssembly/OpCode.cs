@@ -131,6 +131,18 @@ public enum OpCode : byte
     GlobalSet = 0x24,
 
     /// <summary>
+    /// (i32 index){ref}; Read an element from a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.get")]
+    TableGet = 0x25,
+
+    /// <summary>
+    /// (i32 index, ref value){}; Write an element to a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.set")]
+    TableSet = 0x26,
+
+    /// <summary>
     /// Load 4 bytes as i32.
     /// </summary>
     [OpCodeCharacteristics("i32.load")]
@@ -1071,6 +1083,24 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("i64.extend32_s")]
     Int64Extend32Signed = 0xc4,
+
+    /// <summary>
+    /// (){ref}; Produce a null reference of a given reference type.
+    /// </summary>
+    [OpCodeCharacteristics("ref.null")]
+    RefNull = 0xd0,
+
+    /// <summary>
+    /// (ref){i32}; Test whether a reference value is null.
+    /// </summary>
+    [OpCodeCharacteristics("ref.is_null")]
+    RefIsNull = 0xd1,
+
+    /// <summary>
+    /// (){funcref}; Produce a non-null reference to a given function.
+    /// </summary>
+    [OpCodeCharacteristics("ref.func")]
+    RefFunc = 0xd2,
 
     /// <summary>
     /// Prefix byte for miscellaneous operations.

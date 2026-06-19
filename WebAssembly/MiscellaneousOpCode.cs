@@ -80,6 +80,42 @@ public enum MiscellaneousOpCode : byte
     /// </summary>
     [OpCodeCharacteristics("memory.fill")]
     MemoryFill = 0x0B,
+
+    /// <summary>
+    /// Copy from a passive element segment into a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.init")]
+    TableInit = 0x0C,
+
+    /// <summary>
+    /// Prevent further use of a passive element segment.
+    /// </summary>
+    [OpCodeCharacteristics("elem.drop")]
+    ElemDrop = 0x0D,
+
+    /// <summary>
+    /// Copy entries from one table region to another.
+    /// </summary>
+    [OpCodeCharacteristics("table.copy")]
+    TableCopy = 0x0E,
+
+    /// <summary>
+    /// Grow a table by a number of elements.
+    /// </summary>
+    [OpCodeCharacteristics("table.grow")]
+    TableGrow = 0x0F,
+
+    /// <summary>
+    /// Get the current size of a table.
+    /// </summary>
+    [OpCodeCharacteristics("table.size")]
+    TableSize = 0x10,
+
+    /// <summary>
+    /// Fill a region of a table with a given reference value.
+    /// </summary>
+    [OpCodeCharacteristics("table.fill")]
+    TableFill = 0x11,
 }
 
 static class MiscellaneousOpCodeExtensions

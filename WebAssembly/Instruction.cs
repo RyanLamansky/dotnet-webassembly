@@ -81,6 +81,8 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Int64Constant: yield return new Int64Constant(reader); break;
                 case OpCode.Float32Constant: yield return new Float32Constant(reader); break;
                 case OpCode.Float64Constant: yield return new Float64Constant(reader); break;
+                case OpCode.RefNull: yield return new RefNull(reader); break;
+                case OpCode.RefFunc: yield return new RefFunc(reader); break;
                 case OpCode.End: yield return new End(); yield break;
             }
         }
@@ -149,6 +151,11 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.LocalTee: yield return new LocalTee(reader); break;
                 case OpCode.GlobalGet: yield return new GlobalGet(reader); break;
                 case OpCode.GlobalSet: yield return new GlobalSet(reader); break;
+                case OpCode.TableGet: yield return new TableGet(reader); break;
+                case OpCode.TableSet: yield return new TableSet(reader); break;
+                case OpCode.RefNull: yield return new RefNull(reader); break;
+                case OpCode.RefIsNull: yield return new RefIsNull(); break;
+                case OpCode.RefFunc: yield return new RefFunc(reader); break;
                 case OpCode.Int32Load: yield return new Int32Load(reader); break;
                 case OpCode.Int64Load: yield return new Int64Load(reader); break;
                 case OpCode.Float32Load: yield return new Float32Load(reader); break;
@@ -325,6 +332,12 @@ public abstract class Instruction : IEquatable<Instruction>
                         case MiscellaneousOpCode.DataDrop: yield return new DataDrop(reader); break;
                         case MiscellaneousOpCode.MemoryCopy: yield return new MemoryCopy(reader); break;
                         case MiscellaneousOpCode.MemoryFill: yield return new MemoryFill(reader); break;
+                        case MiscellaneousOpCode.TableInit: yield return new TableInit(reader); break;
+                        case MiscellaneousOpCode.ElemDrop: yield return new ElemDrop(reader); break;
+                        case MiscellaneousOpCode.TableCopy: yield return new TableCopy(reader); break;
+                        case MiscellaneousOpCode.TableGrow: yield return new TableGrow(reader); break;
+                        case MiscellaneousOpCode.TableSize: yield return new TableSize(reader); break;
+                        case MiscellaneousOpCode.TableFill: yield return new TableFill(reader); break;
                     }
                     break;
             }

@@ -253,6 +253,10 @@ static class SpecTestRunner
                             case "unknown memory":
                             case "unknown function":
                             case "unknown table 0":
+                            case "undeclared function reference":
+                            case var tf when tf.StartsWith("unknown function ", StringComparison.Ordinal):
+                            case var tt when tt.StartsWith("unknown table ", StringComparison.Ordinal):
+                            case var te when te.StartsWith("unknown elem segment", StringComparison.Ordinal):
                                 try
                                 {
                                     trapExpected();
@@ -308,6 +312,24 @@ static class SpecTestRunner
                                     continue;
                                 }
                                 catch (OverflowException)
+                                {
+                                    continue;
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                }
+                                throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                            case "out of bounds table access":
+                                try
+                                {
+                                    trapExpected();
+                                }
+                                catch (IndexOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (MemoryAccessOutOfRangeException)
                                 {
                                     continue;
                                 }

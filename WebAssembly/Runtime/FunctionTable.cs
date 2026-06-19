@@ -36,8 +36,30 @@ public class FunctionTable : TableImport
     internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(() =>
         typeof(FunctionTable)
         .GetTypeInfo()
-        .GetDeclaredMethod(nameof(Grow))!
+        .GetDeclaredMethods(nameof(Grow))
+        .First(m => m.GetParameters().Length == 1)
         );
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> GrowWithValueMethod = new(() =>
+        typeof(FunctionTable)
+        .GetTypeInfo()
+        .GetDeclaredMethods(nameof(Grow))
+        .First(m => m.GetParameters().Length == 2)
+        );
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(InitFromSegment))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyWithinMethod = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
+        .First(m => m.GetParameters().Length == 3));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
+        .First(m => m.GetParameters().Length == 4));
 
     /// <summary>
     /// Always <see cref="ElementType.FunctionReference"/>.
@@ -77,43 +99,24 @@ public class FunctionTable : TableImport
         this.Initial = initial;
         this.Maximum = maximum;
         this.delegates = new Delegate[initial];
-        this.delegateTypes = new Type[initial];
     }
 
     private Delegate?[] delegates;
-    private Type?[] delegateTypes;
 
     /// <summary>
-    /// Gets or sets the delegate at the indicated index.  The first time a delegate is provided, it locks in the type for any future reassignments.
+    /// Gets or sets the delegate at the indicated index.
     /// </summary>
     /// <param name="index">The index within the table to target.</param>
     /// <returns>The delegate at that index, which may be null.</returns>
     /// <exception cref="IndexOutOfRangeException"><paramref name="index"/> does not fall within the range of the table.</exception>
-    /// <exception cref="ArgumentException">The delegate is expected to be of a different type than supplied.</exception>
-    /// <remarks>Delegate types set by the compiler come from the provided (or default) <see cref="CompilerConfiguration"/>.</remarks>
+    /// <remarks>
+    /// Reference-type tables (WASM 2.0) move function references between arbitrary slots via table.copy/fill/init and
+    /// <c>table.set</c>, so no per-slot delegate type is enforced; <c>call_indirect</c> verifies the type at call time.
+    /// </remarks>
     public Delegate? this[int index]
     {
         get => this.delegates[index];
-        set
-        {
-            if (value != null)
-            {
-                var expectedType = this.delegateTypes[index];
-                var actualType = value.GetType();
-
-                if (expectedType == null)
-                {
-                    this.delegateTypes[index] = actualType;
-                }
-                else if (actualType != expectedType)
-                {
-                    var message = $"The delegate at position {index} is expected to be of type {expectedType}, but the supplied delegate is {actualType}.";
-                    throw new ArgumentException(message, nameof(value));
-                }
-            }
-
-            this.delegates[index] = value;
-        }
+        set => this.delegates[index] = value;
     }
 
     /// <summary>
@@ -140,8 +143,100 @@ public class FunctionTable : TableImport
 
         var checkedSize = checked((int)newSize);
         Array.Resize(ref delegates, checkedSize);
-        Array.Resize(ref delegateTypes, checkedSize);
 
         return oldSize;
+    }
+
+    /// <summary>
+    /// Increases the size of the instance by a specified number of elements, initializing new slots with a value.
+    /// Implements <c>table.grow</c>.
+    /// </summary>
+    /// <param name="initValue">The value to initialize new table slots with (may be null).</param>
+    /// <param name="number">The number of elements to grow the table by.</param>
+    /// <returns>The previous length of the table, or <see cref="uint.MaxValue"/> (-1) if growth fails.</returns>
+    public uint Grow(Delegate? initValue, uint number)
+    {
+        var oldSize = this.Length;
+        if (number > uint.MaxValue - oldSize)
+            return uint.MaxValue;
+
+        var newSize = oldSize + number;
+        if (newSize > this.Maximum.GetValueOrDefault(uint.MaxValue) || newSize > int.MaxValue)
+            return uint.MaxValue;
+
+        Array.Resize(ref delegates, (int)newSize);
+        for (var i = oldSize; i < newSize; i++)
+            this.delegates[i] = initValue;
+
+        return oldSize;
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> entries from <paramref name="src"/> (starting at <paramref name="srcOffset"/>)
+    /// into this table at <paramref name="dst"/>. Implements <c>table.init</c>. A null <paramref name="src"/> is treated
+    /// as a dropped (length-0) segment.
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void InitFromSegment(uint dst, Delegate?[]? src, uint srcOffset, uint length)
+    {
+        var srcLength = src != null ? (uint)src.Length : 0u;
+        if ((ulong)dst + length > this.Length || (ulong)srcOffset + length > srcLength)
+            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if (length == 0)
+            return;
+        for (var i = 0u; i < length; i++)
+            this.delegates[dst + i] = src![srcOffset + i];
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> entries from offset <paramref name="src"/> to offset <paramref name="dst"/>
+    /// within this table, handling overlap. Implements <c>table.copy</c> with both indices targeting this table.
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void Copy(uint dst, uint src, uint length)
+    {
+        if ((ulong)dst + length > this.Length || (ulong)src + length > this.Length)
+            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if (length == 0)
+            return;
+        if (dst <= src)
+            for (var i = 0u; i < length; i++)
+                this.delegates[dst + i] = this.delegates[src + i];
+        else
+            for (var i = length; i > 0; i--)
+                this.delegates[dst + i - 1] = this.delegates[src + i - 1];
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> entries from <paramref name="srcTable"/> (offset <paramref name="srcIndex"/>)
+    /// into this table at <paramref name="dstIndex"/>. Implements <c>table.copy</c> across two tables.
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void Copy(FunctionTable srcTable, uint dstIndex, uint srcIndex, uint length)
+    {
+        if ((ulong)dstIndex + length > this.Length || (ulong)srcIndex + length > srcTable.Length)
+            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if (length == 0)
+            return;
+        if (ReferenceEquals(this, srcTable))
+        {
+            this.Copy(dstIndex, srcIndex, length);
+            return;
+        }
+        for (var i = 0u; i < length; i++)
+            this.delegates[dstIndex + i] = srcTable.delegates[srcIndex + i];
+    }
+
+    /// <summary>
+    /// Fills <paramref name="length"/> entries starting at <paramref name="dst"/> with <paramref name="value"/>.
+    /// Implements <c>table.fill</c>.
+    /// </summary>
+    /// <exception cref="IndexOutOfRangeException">The destination range falls out of bounds.</exception>
+    public void Fill(uint dst, Delegate? value, uint length)
+    {
+        if ((ulong)dst + length > this.Length)
+            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        for (var i = 0u; i < length; i++)
+            this.delegates[dst + i] = value;
     }
 }

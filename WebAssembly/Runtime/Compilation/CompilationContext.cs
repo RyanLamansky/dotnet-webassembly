@@ -72,7 +72,54 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public readonly Dictionary<uint, MethodBuilder> DelegateRemappersByType = [];
 
-    public FieldBuilder? FunctionTable;
+    /// <summary>
+    /// Table backing fields, indexed by table index. Each field is either a <see cref="FunctionTable"/> or an
+    /// <see cref="ExternRefTable"/> (WASM 2.0 reference types permit multiple tables of either element type).
+    /// </summary>
+    public readonly List<FieldBuilder> Tables = [];
+
+    /// <summary>Element type (funcref or externref) for each table, indexed by table index.</summary>
+    public readonly List<ElementType> TableElementTypes = [];
+
+    /// <summary>
+    /// The first table (index 0), or null if no table exists. Retained for the WASM 1.0 single-table paths
+    /// (e.g. <c>call_indirect</c>); new code should index <see cref="Tables"/> directly.
+    /// </summary>
+    public FieldBuilder? FunctionTable => this.Tables.Count > 0 ? this.Tables[0] : null;
+
+    /// <summary>Gets the backing field for the table at <paramref name="tableIndex"/>.</summary>
+    public FieldBuilder GetTable(uint tableIndex)
+    {
+        if (tableIndex >= (uint)this.Tables.Count)
+            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {this.Tables.Count} tables defined).");
+        return this.Tables[(int)tableIndex];
+    }
+
+    /// <summary>Gets the element type for the table at <paramref name="tableIndex"/>.</summary>
+    public ElementType GetTableElementType(uint tableIndex)
+    {
+        if (tableIndex >= (uint)this.TableElementTypes.Count)
+            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {this.TableElementTypes.Count} table types defined).");
+        return this.TableElementTypes[(int)tableIndex];
+    }
+
+    /// <summary>Per-function reference delegates, used by <c>ref.func</c>. Assigned during compilation.</summary>
+    public FieldBuilder? FunctionReferences;
+
+    /// <summary>Maps a passive/declarative element segment index to the field that backs it (for table.init / elem.drop).</summary>
+    public readonly Dictionary<uint, FieldBuilder> ElementSegments = [];
+
+    /// <summary>Maps an element segment index to its element type (funcref or externref).</summary>
+    public readonly Dictionary<uint, ElementType> ElementSegmentTypes = [];
+
+    /// <summary>Indices of passive element segments, the only segments valid for <c>table.init</c> and <c>elem.drop</c>.</summary>
+    public readonly HashSet<uint> PassiveElementSegments = [];
+
+    /// <summary>Function indices declared as referenceable (via exports, element segments, or global init), gating <c>ref.func</c>.</summary>
+    public readonly HashSet<uint> DeclaredFunctionReferences = [];
+
+    /// <summary>When true (set before the Code section), <c>ref.func</c> rejects undeclared function references.</summary>
+    public bool EnforceDeclaredFunctionReferences;
 
     internal const MethodAttributes HelperMethodAttributes =
         MethodAttributes.Private |
@@ -184,6 +231,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public LocalBuilder DeclareLocal(Type localType) => CheckedGenerator.DeclareLocal(localType);
 
     public void Emit(ILOpCode opcode, LocalBuilder local) => CheckedGenerator.Emit(opcode, local);
+
+    public void Emit(ILOpCode opcode, Type type) => CheckedGenerator.Emit(opcode, type);
 
     public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
     {

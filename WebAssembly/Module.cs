@@ -409,7 +409,8 @@ public class Module
             var index = 0;
             foreach (var element in this.elements)
             {
-                if (LastOpCodeIsNotEnd(element.InitializerExpression))
+                // Only active segments (even kinds 0/2/4/6) carry an offset initializer expression that must end with End.
+                if ((element.Kind & 1) == 0 && LastOpCodeIsNotEnd(element.InitializerExpression))
                     throw new InvalidOperationException($"Element at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;

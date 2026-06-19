@@ -23,6 +23,14 @@ public enum WebAssemblyValueType : sbyte
     /// 64-bit floating point value-type, equivalent to .NET's <see cref="double"/>.
     /// </summary>
     Float64 = -0x04,
+    /// <summary>
+    /// A nullable reference to a function (WASM 2.0 reference types), represented as <see cref="System.Delegate"/> at runtime.
+    /// </summary>
+    FuncRef = -0x10,
+    /// <summary>
+    /// A nullable reference to a host-provided external value (WASM 2.0 reference types), represented as <see cref="object"/> at runtime.
+    /// </summary>
+    ExternRef = -0x11,
 }
 
 static class ValueTypeExtensions
@@ -33,6 +41,8 @@ static class ValueTypeExtensions
         WebAssemblyValueType.Int64 => typeof(long),
         WebAssemblyValueType.Float32 => typeof(float),
         WebAssemblyValueType.Float64 => typeof(double),
+        WebAssemblyValueType.FuncRef => typeof(System.Delegate),
+        WebAssemblyValueType.ExternRef => typeof(object),
         _ => throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized."),
     };
 
@@ -43,6 +53,8 @@ static class ValueTypeExtensions
                 { typeof(long), WebAssemblyValueType.Int64 },
                 { typeof(float), WebAssemblyValueType.Float32 },
                 { typeof(double), WebAssemblyValueType.Float64 },
+                { typeof(System.Delegate), WebAssemblyValueType.FuncRef },
+                { typeof(object), WebAssemblyValueType.ExternRef },
         });
 
     public static bool TryConvertToValueType(this System.Type type, out WebAssemblyValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);

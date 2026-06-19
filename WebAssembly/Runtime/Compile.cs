@@ -355,6 +355,20 @@ public static class Compile
         var delegateInvokersByTypeIndex = context.DelegateInvokersByTypeIndex;
         var delegateRemappersByType = context.DelegateRemappersByType;
         var emptyTypes = Type.EmptyTypes;
+        var functionReferencesInitialized = false;
+
+        // Lazily emits (once) the FunctionReferences array initialization into the instance constructor, before any
+        // global/element population or function body that may consume it via ref.func or reference-typed segments.
+        void EnsureFunctionReferences()
+        {
+            if (functionReferencesInitialized)
+                return;
+            functionReferencesInitialized = true;
+            if (functionSignatures == null || functionSignatures.Length == 0)
+                return;
+            context.FunctionReferences = exportsBuilder.DefineField("☣ FunctionReferences", typeof(Delegate[]), PrivateReadonlyField);
+            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, delegateInvokersByTypeIndex, configuration, exportsBuilder);
+        }
 
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
@@ -445,54 +459,59 @@ public static class Compile
                         {
                             var preElementTypeOffset = reader.Offset;
                             var elementType = (ElementType)reader.ReadVarInt7();
-                            if (elementType != ElementType.FunctionReference)
-                                throw new ModuleLoadException($"The only supported table element type is {nameof(ElementType.FunctionReference)}, found {elementType}", preElementTypeOffset);
+                            if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
+                                throw new ModuleLoadException($"Unsupported table element type {elementType}.", preElementTypeOffset);
 
-                            if (functionTable == null)
+                            var limits = new ResizableLimits(reader);
+                            var tableType = configuration.NeutralizeType(elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
+                            var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
+
+                            context.Tables.Add(tableField);
+                            context.TableElementTypes.Add(elementType);
+
+                            // Retain the first funcref table for the WASM 1.0 single-table paths (call_indirect, active elements).
+                            if (functionTable == null && elementType == ElementType.FunctionReference)
+                                functionTable = tableField;
+
+                            instanceConstructorIL.EmitLoadArg(0);
+                            instanceConstructorIL.EmitLoadConstant(limits.Minimum);
+                            if (limits.Maximum.HasValue)
                             {
-                                // It's legal to have multiple tables, but the extra tables are inaccessible to the initial version of WebAssembly.
-                                var limits = new ResizableLimits(reader);
-                                functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
-                                instanceConstructorIL.EmitLoadArg(0);
-                                instanceConstructorIL.EmitLoadConstant(limits.Minimum);
-                                if (limits.Maximum.HasValue)
-                                {
-                                    instanceConstructorIL.EmitLoadConstant(limits.Maximum);
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                        })
-                                        .Single());
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 2
-                                                && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
-                                                && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
-                                        })
-                                        .Single());
-                                }
-                                else
-                                {
-                                    instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(FunctionTable))
-                                        .GetTypeInfo()
-                                        .DeclaredConstructors
-                                        .Where(constructor =>
-                                        {
-                                            var parms = constructor.GetParameters();
-                                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                        })
-                                        .Single());
-                                }
-                                instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                                instanceConstructorIL.EmitLoadConstant(limits.Maximum);
+                                instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                                    })
+                                    .Single());
+                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 2
+                                            && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
+                                            && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
+                                    })
+                                    .Single());
                             }
+                            else
+                            {
+                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
+                                    .GetTypeInfo()
+                                    .DeclaredConstructors
+                                    .Where(constructor =>
+                                    {
+                                        var parms = constructor.GetParameters();
+                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                                    })
+                                    .Single());
+                            }
+                            instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
                         }
                     }
                     break;
@@ -562,6 +581,7 @@ public static class Compile
                     break;
 
                 case Section.Global:
+                    EnsureFunctionReferences(); // Global initializers may use ref.func.
                     globals = SectionGlobal(reader, context, globals, exportsBuilder, instanceConstructorIL, importedGlobals, configuration);
                     break;
 
@@ -576,9 +596,8 @@ public static class Compile
                     break;
 
                 case Section.Element:
-                    if (functionTable == null)
-                        throw new ModuleLoadException("Element section found without an associated table section or import.", preSectionOffset);
-                    SectionElement(reader, functionTable, instanceConstructorIL, functionSignatures, internalFunctions, delegateInvokersByTypeIndex, configuration, exportsBuilder);
+                    EnsureFunctionReferences(); // Element initializers reference functions via FunctionReferences.
+                    SectionElement(reader, context, instanceConstructorIL, functionSignatures, internalFunctions, configuration, exportsBuilder);
                     break;
 
                 case Section.Code:
@@ -586,6 +605,8 @@ public static class Compile
                         throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
                     if (internalFunctions == null)
                         throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
+                    EnsureFunctionReferences(); // Function bodies may use ref.func.
+                    context.EnforceDeclaredFunctionReferences = true;
                     SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                     break;
 
@@ -806,24 +827,28 @@ public static class Compile
                     {
                         var preElementTypeoffset = reader.Offset;
                         var elementType = (ElementType)reader.ReadVarInt7();
-                        if (elementType != ElementType.FunctionReference)
-                            throw new ModuleLoadException($"{moduleName}::{fieldName} imported table type of  kind of {elementType} is not recognized.", preElementTypeoffset);
+                        if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
+                            throw new ModuleLoadException($"{moduleName}::{fieldName} imported table element type {elementType} is not recognized.", preElementTypeoffset);
 
                         var limits = new ResizableLimits(reader);
 
-                        if (functionTable != null)
-                            throw new NotSupportedException("Unable to support multiple tables.");
+                        var tableType = configuration.NeutralizeType(elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
+                        var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
-                        functionTable = context.FunctionTable = CreateFunctionTableField(exportsBuilder, configuration);
+                        context.Tables.Add(tableField);
+                        context.TableElementTypes.Add(elementType);
+                        if (functionTable == null && elementType == ElementType.FunctionReference)
+                            functionTable = tableField;
+
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_1);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
-                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(FunctionTable)), configuration);
+                        ImportException.EmitTryCast(instanceConstructorIL, tableType, configuration);
 
-                        instanceConstructorIL.Emit(OpCodes.Stfld, functionTable);
+                        instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
                     }
                     break;
                 case ExternalKind.Memory:
@@ -1236,70 +1261,26 @@ public static class Compile
         return internalFunctions[startIndex];
     }
 
-    static void SectionElement(Reader reader, FieldBuilder functionTable, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+    // Builds the per-function delegate array used by ref.func and reference-typed element segments, indexed by the
+    // global function index (imported functions first, then internally-defined). Emitted into the instance constructor
+    // before any element/global population that may reference it.
+    static void EmitFunctionReferencesInitialization(ILGenerator il, FieldBuilder functionReferencesField, MethodInfo[]? internalFunctions, Signature[] functionSignatures, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
     {
-        // Holds the function table index of where an exsting function index has been mapped, for re-use.
-        var existingDelegates = new Dictionary<uint, uint>();
+        var total = functionSignatures.Length;
+        var arrLocal = il.DeclareLocal(typeof(Delegate[]));
+        il.EmitLoadConstant(total);
+        il.Emit(OpCodes.Newarr, typeof(Delegate));
+        il.Emit(OpCodes.Stloc, arrLocal);
 
-        var count = reader.ReadVarUInt32();
-
-        if (count == 0)
-            return;
-
-        var localFunctionTable = instanceConstructorIL.DeclareLocal(typeof(FunctionTable));
-        instanceConstructorIL.EmitLoadArg(0);
-        instanceConstructorIL.Emit(OpCodes.Ldfld, functionTable);
-        instanceConstructorIL.Emit(OpCodes.Stloc, localFunctionTable);
-
-        var getter = FunctionTable.IndexGetter;
-        var setter = FunctionTable.IndexSetter;
-
-        for (var i = 0; i < count; i++)
+        if (internalFunctions != null)
         {
-            var preIndexOffset = reader.Offset;
-            var index = reader.ReadVarUInt32();
-            if (index != 0)
-                throw new ModuleLoadException($"Index value of anything other than 0 is not supported, {index} found.", preIndexOffset);
-
-            uint offset;
+            for (var i = 0; i < total && i < internalFunctions.Length; i++)
             {
-                var preInitializerOffset = reader.Offset;
-                var initializer = Instruction.ParseInitializerExpression(reader).ToArray();
-                if (initializer.Length != 2 || initializer[0] is not Instructions.Int32Constant c || initializer[1] is not Instructions.End)
-                    throw new ModuleLoadException("Initializer expression support for the Element section is limited to a single Int32 constant followed by end.", preInitializerOffset);
+                var method = internalFunctions[i];
+                if (method == null)
+                    continue;
 
-                offset = (uint)c.Value;
-            }
-
-            var preElementOffset = reader.Offset;
-            var elements = reader.ReadVarUInt32();
-
-            if (elements == 0)
-                continue;
-
-            if (functionSignatures == null || internalFunctions == null)
-                throw new ModuleLoadException("Element section must be empty if there are no functions to reference.", preElementOffset);
-
-            var isBigEnough = instanceConstructorIL.DefineLabel();
-            instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-            instanceConstructorIL.EmitLoadConstant(checked(offset + elements));
-            instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
-
-            instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-            instanceConstructorIL.EmitLoadConstant(checked(offset + elements));
-            instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-            instanceConstructorIL.Emit(OpCodes.Sub);
-            instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.GrowMethod);
-            instanceConstructorIL.Emit(OpCodes.Pop);
-
-            instanceConstructorIL.MarkLabel(isBigEnough);
-
-            for (var j = 0u; j < elements; j++)
-            {
-                var functionIndex = reader.ReadVarUInt32();
-                var signature = functionSignatures[functionIndex];
+                var signature = functionSignatures[i];
                 var parms = signature.ParameterTypes;
                 var returns = signature.ReturnTypes;
 
@@ -1313,41 +1294,183 @@ public static class Compile
                     delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                 }
 
-                instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-                instanceConstructorIL.EmitLoadConstant(offset + j);
+                var wrapper = exportsBuilder.DefineMethod(
+                    $"↪ {i}",
+                    MethodAttributes.Private | MethodAttributes.HideBySig,
+                    returns.Length == 0 ? typeof(void) : returns[0],
+                    parms);
+                var wil = wrapper.GetILGenerator();
+                for (var k = 0; k < parms.Length; k++)
+                    wil.EmitLoadArg(k + 1);
+                wil.EmitLoadArg(0);
+                wil.Emit(OpCodes.Call, method);
+                wil.Emit(OpCodes.Ret);
 
-                if (existingDelegates.TryGetValue(functionIndex, out var existing))
-                {
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, localFunctionTable);
-                    instanceConstructorIL.EmitLoadConstant(existing);
-                    instanceConstructorIL.Emit(OpCodes.Call, getter);
-                }
-                else
-                {
-                    existingDelegates.Add(functionIndex, offset + j);
-
-                    var wrapper = exportsBuilder.DefineMethod(
-                        $"📦 {functionIndex}",
-                        MethodAttributes.Private | MethodAttributes.HideBySig,
-                        returns.Length == 0 ? typeof(void) : returns[0],
-                        parms
-                        );
-
-                    var il = wrapper.GetILGenerator();
-                    for (var k = 0; k < parms.Length; k++)
-                        il.EmitLoadArg(k + 1);
-                    il.EmitLoadArg(0);
-                    il.Emit(OpCodes.Call, internalFunctions[functionIndex]);
-                    il.Emit(OpCodes.Ret);
-
-                    instanceConstructorIL.EmitLoadArg(0);
-                    instanceConstructorIL.Emit(OpCodes.Ldftn, wrapper);
-                    instanceConstructorIL.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
-                }
-
-                instanceConstructorIL.Emit(OpCodes.Call, setter);
+                il.Emit(OpCodes.Ldloc, arrLocal);
+                il.EmitLoadConstant(i);
+                il.EmitLoadArg(0);
+                il.Emit(OpCodes.Ldftn, wrapper);
+                il.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
+                il.Emit(OpCodes.Stelem_Ref);
             }
         }
+
+        il.EmitLoadArg(0);
+        il.Emit(OpCodes.Ldloc, arrLocal);
+        il.Emit(OpCodes.Stfld, functionReferencesField);
+    }
+
+    // Emits IL that pushes a reference value onto the stack for an element entry: either a funcref delegate loaded from
+    // FunctionReferences (and the function index registered as declared), or a null reference for ref.null.
+    static void EmitElementRefValue(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
+    {
+        // Each per-element initializer is a constant expression of the form [ref.func N, end] or [ref.null t, end].
+        if (initExpr.Count >= 1 && initExpr[0] is Instructions.RefFunc refFunc)
+        {
+            context.DeclaredFunctionReferences.Add(refFunc.Index);
+            il.EmitLoadArg(0);
+            il.Emit(OpCodes.Ldfld, context.FunctionReferences!);
+            il.EmitLoadConstant(refFunc.Index);
+            il.Emit(OpCodes.Ldelem_Ref);
+        }
+        else
+        {
+            il.Emit(OpCodes.Ldnull);
+        }
+    }
+
+    static void SectionElement(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+    {
+        var count = reader.ReadVarUInt32();
+
+        for (var i = 0u; i < count; i++)
+        {
+            var element = new Element(reader);
+            var isActive = (element.Kind & 1) == 0;
+            var isDeclarative = element.Kind is 3 or 7;
+            var usesInitExprs = element.Kind >= 4;
+            var elemType = element.Kind switch
+            {
+                0 or 1 or 2 or 3 => ElementType.FunctionReference,
+                _ => element.ElemType,
+            };
+            var entryCount = usesInitExprs ? element.InitExprs.Count : element.Elements.Count;
+
+            // Register declared function references (func-index forms); init-expr forms register in EmitElementRefValue.
+            if (!usesInitExprs)
+                foreach (var fi in element.Elements)
+                    context.DeclaredFunctionReferences.Add(fi);
+
+            // Register a backing field for every segment so elem.drop / table.init can resolve any valid index.
+            // Passive segments are populated below; active and declarative segments leave the field null (= empty/dropped).
+            var segField = exportsBuilder.DefineField(
+                $"☣ ElementSegment {i}",
+                elemType == ElementType.FunctionReference ? typeof(Delegate[]) : typeof(object[]),
+                FieldAttributes.Private);
+            context.ElementSegments[i] = segField;
+            context.ElementSegmentTypes[i] = elemType;
+
+            if (isActive)
+            {
+                var tableIndex = element.Index;
+                if (tableIndex >= (uint)context.Tables.Count)
+                    throw new ModuleLoadException($"Element segment references table {tableIndex} but only {context.Tables.Count} tables exist.", 0);
+
+                var tableElemType = context.GetTableElementType(tableIndex);
+                if (tableElemType != elemType)
+                    throw new ModuleLoadException($"Element segment type {elemType} does not match table {tableIndex} type {tableElemType}.", 0);
+
+                // Offset from the initializer expression (single Int32 constant followed by end).
+                var initializer = element.InitializerExpression;
+                if (initializer.Count != 2 || initializer[0] is not Instructions.Int32Constant c || initializer[1] is not Instructions.End)
+                    throw new ModuleLoadException("Element segment offset must be a single Int32 constant followed by end.", 0);
+                var offset = (uint)c.Value;
+
+                if (entryCount == 0)
+                    continue;
+
+                var isFunc = tableElemType == ElementType.FunctionReference;
+                var tableType = isFunc ? typeof(FunctionTable) : typeof(ExternRefTable);
+                var localTable = instanceConstructorIL.DeclareLocal(tableType);
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, context.GetTable(tableIndex));
+                instanceConstructorIL.Emit(OpCodes.Stloc, localTable);
+
+                var setter = isFunc ? FunctionTable.IndexSetter : ExternRefTable.IndexSetter;
+
+                // Grow a funcref table that is too small to hold the segment (preserves the historical behavior of
+                // sizing the table up to fit active elements rather than trapping).
+                if (isFunc)
+                {
+                    var isBigEnough = instanceConstructorIL.DefineLabel();
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                    instanceConstructorIL.EmitLoadConstant(checked(offset + (uint)entryCount));
+                    instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
+
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                    instanceConstructorIL.EmitLoadConstant(checked(offset + (uint)entryCount));
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
+                    instanceConstructorIL.Emit(OpCodes.Sub);
+                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.GrowMethod);
+                    instanceConstructorIL.Emit(OpCodes.Pop);
+
+                    instanceConstructorIL.MarkLabel(isBigEnough);
+                }
+
+                for (var j = 0; j < entryCount; j++)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                    instanceConstructorIL.EmitLoadConstant(offset + (uint)j);
+                    if (usesInitExprs)
+                        EmitElementRefValue(instanceConstructorIL, context, element.InitExprs[j]);
+                    else
+                        EmitFuncIndexRef(instanceConstructorIL, context, element.Elements[j]);
+                    instanceConstructorIL.Emit(OpCodes.Call, setter);
+                }
+            }
+            else if (isDeclarative)
+            {
+                // Declarative segments only declare references (handled above for func-index form; below for init-expr form);
+                // they hold no runtime data and are considered already dropped.
+                if (usesInitExprs)
+                    foreach (var expr in element.InitExprs)
+                        if (expr.Count >= 1 && expr[0] is Instructions.RefFunc rf)
+                            context.DeclaredFunctionReferences.Add(rf.Index);
+            }
+            else
+            {
+                // Passive segment: populate the backing array field that table.init copies from and elem.drop nulls.
+                var elementClrType = elemType == ElementType.FunctionReference ? typeof(Delegate) : typeof(object);
+                context.PassiveElementSegments.Add(i);
+
+                instanceConstructorIL.EmitLoadArg(0);
+                instanceConstructorIL.EmitLoadConstant(entryCount);
+                instanceConstructorIL.Emit(OpCodes.Newarr, elementClrType);
+                for (var j = 0; j < entryCount; j++)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Dup);
+                    instanceConstructorIL.EmitLoadConstant(j);
+                    if (usesInitExprs)
+                        EmitElementRefValue(instanceConstructorIL, context, element.InitExprs[j]);
+                    else
+                        EmitFuncIndexRef(instanceConstructorIL, context, element.Elements[j]);
+                    instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
+                }
+                instanceConstructorIL.Emit(OpCodes.Stfld, segField);
+            }
+        }
+    }
+
+    // Emits IL that pushes the funcref delegate for a function index (from FunctionReferences) onto the stack.
+    static void EmitFuncIndexRef(ILGenerator il, CompilationContext context, uint functionIndex)
+    {
+        context.DeclaredFunctionReferences.Add(functionIndex);
+        il.EmitLoadArg(0);
+        il.Emit(OpCodes.Ldfld, context.FunctionReferences!);
+        il.EmitLoadConstant(functionIndex);
+        il.Emit(OpCodes.Ldelem_Ref);
     }
 
     static void SectionCode(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
