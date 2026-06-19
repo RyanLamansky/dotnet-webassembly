@@ -21,10 +21,10 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler or convert it to a .NET DLL.
   - Most WASM files have many imports and exports--you'll need to cover these yourself.
   - This should work for most WASM 1.0 files, but spec compliance is not perfect.
-  - This will not work for any newer-than-1.0 files
+  - Newer-than-1.0 files aren't currently supported.
   - Saving to a DLL requires .NET 9 or higher and has several additional steps.
 
-You're welcome to report a bug if you can share a WASM file that has a problem, but no one is actively working on this project so a fix may not come.
+If you hit a problem, write a bug report with the repro steps and links to any files needed.
 
 ## Sample: Create and execute a WebAssembly file in memory
 

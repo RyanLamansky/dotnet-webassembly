@@ -265,7 +265,7 @@ __pycache__/
 
 # The simplicity of this project structure enables AI tools to figure it out instantly.
 .claude/
-CLAUDE.md
+CLAUDE.local.md
 .codex/
 AGENTS.md
 .github/copilot-instructions.md
