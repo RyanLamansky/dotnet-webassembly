@@ -358,7 +358,7 @@ public static class Compile
         var preSectionOffset = reader.Offset;
         while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
         {
-            if (id != 0 && (Section)id < previousSection)
+            if (id != 0 && ((Section)id).BinaryOrder < previousSection.BinaryOrder)
                 throw new ModuleLoadException($"Sections out of order; section {(Section)id} encountered after {previousSection}.", preSectionOffset);
             var payloadLength = reader.ReadVarUInt32();
 

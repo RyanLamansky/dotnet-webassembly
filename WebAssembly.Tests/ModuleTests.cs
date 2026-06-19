@@ -283,4 +283,63 @@ public class ModuleTests
         Assert.ThrowsException<InvalidOperationException>(() => new Module { Codes = [new FunctionBody()] }.WriteToBinaryNoOutput());
         Assert.ThrowsException<InvalidOperationException>(() => new Module { Data = [new Data()] }.WriteToBinaryNoOutput());
     }
+
+    // Hand-assembled section bytes (id, payload length, payload) for a minimal module:
+    // one type () -> (), one function, one memory, one empty function body, and one empty data segment.
+    // Declared as ReadOnlySpan<byte> so the constant data is read directly from the assembly rather than allocated as an array.
+    private static ReadOnlySpan<byte> TypeSection => [0x01, 0x04, 0x01, 0x60, 0x00, 0x00];
+    private static ReadOnlySpan<byte> FunctionSection => [0x03, 0x02, 0x01, 0x00];
+    private static ReadOnlySpan<byte> MemorySection => [0x05, 0x03, 0x01, 0x00, 0x01];
+    private static ReadOnlySpan<byte> DataCountSection => [0x0C, 0x01, 0x01]; // DataCount (id 12), payload is a single LEB128 count of 1.
+    private static ReadOnlySpan<byte> CodeSection => [0x0A, 0x04, 0x01, 0x02, 0x00, 0x0B];
+    private static ReadOnlySpan<byte> DataSection => [0x0B, 0x06, 0x01, 0x00, 0x41, 0x00, 0x0B, 0x00];
+
+    private static MemoryStream BeginModule()
+    {
+        var stream = new MemoryStream();
+        stream.Write([0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00]); // Magic and version.
+        return stream;
+    }
+
+    /// <summary>
+    /// Verifies that a <see cref="Section.DataCount"/> section in its required binary position (between the element and code sections) is accepted.
+    /// Its section ID (12) is numerically higher than the code (10) and data (11) sections that legally follow it.
+    /// </summary>
+    [TestMethod]
+    public void Module_ReadDataCountSectionInValidPosition()
+    {
+        using var stream = BeginModule();
+        stream.Write(TypeSection);
+        stream.Write(FunctionSection);
+        stream.Write(MemorySection);
+        stream.Write(DataCountSection);
+        stream.Write(CodeSection);
+        stream.Write(DataSection);
+        stream.Position = 0;
+
+        var module = Module.ReadFromBinary(stream);
+
+        Assert.AreEqual(1, module.Functions.Count);
+        Assert.AreEqual(1, module.Codes.Count);
+        Assert.AreEqual(1, module.Data.Count);
+    }
+
+    /// <summary>
+    /// Verifies that the section ordering check still rejects a <see cref="Section.DataCount"/> section that appears after the data section, which is not its legal position.
+    /// </summary>
+    [TestMethod]
+    public void Module_ReadDataCountSectionOutOfOrderThrows()
+    {
+        using var stream = BeginModule();
+        stream.Write(TypeSection);
+        stream.Write(FunctionSection);
+        stream.Write(MemorySection);
+        stream.Write(CodeSection);
+        stream.Write(DataSection);
+        stream.Write(DataCountSection);
+        stream.Position = 0;
+
+        var x = Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(stream));
+        Assert.IsTrue(x.Message.Contains("out of order"), x.Message);
+    }
 }

@@ -224,7 +224,7 @@ public class Module
             var preSectionOffset = reader.Offset;
             while (reader.TryReadVarUInt7(out var id)) //At points where TryRead is used, the stream can safely end.
             {
-                if (id != 0 && (Section)id < previousSection)
+                if (id != 0 && ((Section)id).BinaryOrder < previousSection.BinaryOrder)
                     throw new ModuleLoadException($"Sections out of order; section {(Section)id} encounterd after {previousSection}.", preSectionOffset);
                 var payloadLength = reader.ReadVarUInt32();
 
@@ -350,7 +350,7 @@ public class Module
 
                     case Section.DataCount: //Optional section, indicates the expected length of the data segment vector
                         {
-                            reader.ReadUInt32();
+                            reader.ReadVarUInt32();
                         }
                         break;
 
