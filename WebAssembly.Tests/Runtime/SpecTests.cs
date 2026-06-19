@@ -910,7 +910,7 @@ public class SpecTests
 
     /// <summary>Runs the bulk tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
+    [Ignore("Reference types implemented; this category's WABT fixtures use a non-standard grouped-import encoding (module-name, 0x00, 0x7F, count, repeated fields) that the import parser does not yet decode.")]
     public void SpecTest_bulk() => SpecTestRunner.Run(DataPath("bulk"), "bulk.json");
 
     /// <summary>Runs the memory_copy tests.</summary>
@@ -927,17 +927,16 @@ public class SpecTests
 
     /// <summary>Runs the table_copy tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
+    [Ignore("Reference types implemented; this category's WABT fixtures use a non-standard grouped-import encoding (module-name, 0x00, 0x7F, count, repeated fields) that the import parser does not yet decode.")]
     public void SpecTest_table_copy() => SpecTestRunner.Run(DataPath("table_copy"), "table_copy.json");
 
     /// <summary>Runs the table_fill tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_table_fill() => SpecTestRunner.Run(DataPath("table_fill"), "table_fill.json");
 
     /// <summary>Runs the table_init tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
+    [Ignore("Reference types implemented; this category's WABT fixtures use a non-standard grouped-import encoding (module-name, 0x00, 0x7F, count, repeated fields) that the import parser does not yet decode.")]
     public void SpecTest_table_init() => SpecTestRunner.Run(DataPath("table_init"), "table_init.json");
 
 
@@ -945,17 +944,14 @@ public class SpecTests
 
     /// <summary>Runs the ref_func tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_ref_func() => SpecTestRunner.Run(DataPath("ref_func"), "ref_func.json");
 
     /// <summary>Runs the ref_is_null tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_ref_is_null() => SpecTestRunner.Run(DataPath("ref_is_null"), "ref_is_null.json");
 
     /// <summary>Runs the ref_null tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_ref_null() => SpecTestRunner.Run(DataPath("ref_null"), "ref_null.json");
 
     /// <summary>Runs the table sub tests.</summary>
@@ -964,17 +960,14 @@ public class SpecTests
 
     /// <summary>Runs the table_get tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_table_get() => SpecTestRunner.Run(DataPath("table_get"), "table_get.json");
 
     /// <summary>Runs the table_grow tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_table_grow() => SpecTestRunner.Run(DataPath("table_grow"), "table_grow.json");
 
     /// <summary>Runs the table_set tests.</summary>
     [TestMethod]
-    [Ignore("WASM 2.0 reference types implemented; spec pass pending legacy global-import parsing and runner reference-value comparison.")]
     public void SpecTest_table_set() => SpecTestRunner.Run(DataPath("table_set"), "table_set.json");
 
     /// <summary>Runs the table_size tests.</summary>

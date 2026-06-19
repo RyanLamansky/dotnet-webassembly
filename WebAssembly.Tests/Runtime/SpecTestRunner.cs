@@ -127,7 +127,7 @@ static class SpecTestRunner
                         if (assert.expected?.Length > 0)
                         {
                             var rawExpected = assert.expected[0];
-                            if (rawExpected.BoxedValue.Equals(result))
+                            if (Equals(rawExpected.BoxedValue, result))
                                 continue;
 
                             switch (rawExpected.type)
@@ -139,6 +139,8 @@ static class SpecTestRunner
 
                                 case RawValueType.i32:
                                 case RawValueType.i64:
+                                case RawValueType.externref:
+                                case RawValueType.funcref:
                                     break;
 
                                 case RawValueType.f32:
@@ -668,7 +670,7 @@ static class SpecTestRunner
         // in regular asserts and invoke args — so keeping them separate is safe.
         [JsonIgnore]
         public readonly RawValueType type = valueType;
-        public abstract object BoxedValue { get; }
+        public abstract object? BoxedValue { get; }
     }
 
     // Same two-ctor pattern as AssertReturn (see comment there): the parameterized primary lets
@@ -717,26 +719,27 @@ static class SpecTestRunner
         public override string ToString() => $"{type}: {BoxedValue}";
     }
 
-    // Reference-type stubs. Library doesn't implement reference types yet (WASM 2.0 feature),
-    // so BoxedValue throws — execution-time failures are caught per-line by Discover or skipped
-    // by per-category skip predicates. The class only exists so STJ can deserialize JSON files
-    // that mention `externref` / `funcref`.
+    // Reference-type values (WASM 2.0). externref is a nullable object: the harness represents a host
+    // reference by its opaque string payload (e.g. "1" for (ref.extern 1)), which is passed through the
+    // module as an argument and compared by value. funcref values only appear as null in the spec data.
     class ExternRefValue() : TypedValue(RawValueType.externref)
     {
-        public string value;
+        public string? value;
 
-        public override object BoxedValue => throw new NotSupportedException("externref values not implemented (WASM 2.0)");
+        public override object? BoxedValue => value == "null" ? null : value;
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
     class FuncRefValue() : TypedValue(RawValueType.funcref)
     {
-        public string value;
+        public string? value;
 
-        public override object BoxedValue => throw new NotSupportedException("funcref values not implemented (WASM 2.0)");
+        public override object? BoxedValue => value == "null"
+            ? null
+            : throw new NotSupportedException($"funcref value '{value}' cannot be boxed - only null funcref is supported.");
 
-        public override string ToString() => $"{type}: {value}";
+        public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<TestActionType>))]

@@ -587,6 +587,9 @@ public static class Compile
 
                 case Section.Export:
                     exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals, configuration);
+                    // Exported functions are implicitly declared as referenceable by ref.func.
+                    foreach (var exported in exportedFunctions)
+                        context.DeclaredFunctionReferences.Add(exported.Value);
                     break;
 
                 case Section.Start:
@@ -1054,6 +1057,8 @@ public static class Compile
 
                 foreach (var instruction in Instruction.ParseInitializerExpression(reader))
                 {
+                    if (instruction is Instructions.RefFunc rfGlobal)
+                        context.DeclaredFunctionReferences.Add(rfGlobal.Index); // A ref.func in a global initializer declares that function.
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
                 }
@@ -1099,6 +1104,9 @@ public static class Compile
                 {
                     if (ended)
                         throw new CompilerException("Only a single End is allowed within an initializer expression.");
+
+                    if (instruction is Instructions.RefFunc rfGlobalMutable)
+                        context.DeclaredFunctionReferences.Add(rfGlobalMutable.Index); // A ref.func in a global initializer declares that function.
 
                     if (instruction.OpCode == OpCode.End)
                     {
