@@ -356,6 +356,13 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.V128Load: yield return new V128Load(reader); break;
                         case SimdOpCode.V128Store: yield return new V128Store(reader); break;
                         case SimdOpCode.V128Const: yield return new V128Const(reader); break;
+                        case SimdOpCode.V128Not: yield return new V128Not(); break;
+                        case SimdOpCode.V128And: yield return new V128And(); break;
+                        case SimdOpCode.V128AndNot: yield return new V128AndNot(); break;
+                        case SimdOpCode.V128Or: yield return new V128Or(); break;
+                        case SimdOpCode.V128Xor: yield return new V128Xor(); break;
+                        case SimdOpCode.V128Bitselect: yield return new V128Bitselect(); break;
+                        case SimdOpCode.V128AnyTrue: yield return new V128AnyTrue(); break;
                     }
                     break;
             }

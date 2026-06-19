@@ -992,7 +992,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_bitwise tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_bitwise() => SpecTestRunner.Run(DataPath("simd", "simd_bitwise"), "simd_bitwise.json");
 
     /// <summary>Runs the simd_boolean tests.</summary>
