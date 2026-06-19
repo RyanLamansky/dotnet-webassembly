@@ -363,6 +363,28 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.V128Xor: yield return new V128Xor(); break;
                         case SimdOpCode.V128Bitselect: yield return new V128Bitselect(); break;
                         case SimdOpCode.V128AnyTrue: yield return new V128AnyTrue(); break;
+                        case SimdOpCode.Int8x16Shuffle: yield return new Int8x16Shuffle(reader); break;
+                        case SimdOpCode.Int8x16Swizzle: yield return new Int8x16Swizzle(); break;
+                        case SimdOpCode.Int8x16Splat: yield return new Int8x16Splat(); break;
+                        case SimdOpCode.Int16x8Splat: yield return new Int16x8Splat(); break;
+                        case SimdOpCode.Int32x4Splat: yield return new Int32x4Splat(); break;
+                        case SimdOpCode.Int64x2Splat: yield return new Int64x2Splat(); break;
+                        case SimdOpCode.Float32x4Splat: yield return new Float32x4Splat(); break;
+                        case SimdOpCode.Float64x2Splat: yield return new Float64x2Splat(); break;
+                        case SimdOpCode.Int8x16ExtractLaneSigned: yield return new Int8x16ExtractLaneSigned(reader); break;
+                        case SimdOpCode.Int8x16ExtractLaneUnsigned: yield return new Int8x16ExtractLaneUnsigned(reader); break;
+                        case SimdOpCode.Int16x8ExtractLaneSigned: yield return new Int16x8ExtractLaneSigned(reader); break;
+                        case SimdOpCode.Int16x8ExtractLaneUnsigned: yield return new Int16x8ExtractLaneUnsigned(reader); break;
+                        case SimdOpCode.Int32x4ExtractLane: yield return new Int32x4ExtractLane(reader); break;
+                        case SimdOpCode.Int64x2ExtractLane: yield return new Int64x2ExtractLane(reader); break;
+                        case SimdOpCode.Float32x4ExtractLane: yield return new Float32x4ExtractLane(reader); break;
+                        case SimdOpCode.Float64x2ExtractLane: yield return new Float64x2ExtractLane(reader); break;
+                        case SimdOpCode.Int8x16ReplaceLane: yield return new Int8x16ReplaceLane(reader); break;
+                        case SimdOpCode.Int16x8ReplaceLane: yield return new Int16x8ReplaceLane(reader); break;
+                        case SimdOpCode.Int32x4ReplaceLane: yield return new Int32x4ReplaceLane(reader); break;
+                        case SimdOpCode.Int64x2ReplaceLane: yield return new Int64x2ReplaceLane(reader); break;
+                        case SimdOpCode.Float32x4ReplaceLane: yield return new Float32x4ReplaceLane(reader); break;
+                        case SimdOpCode.Float64x2ReplaceLane: yield return new Float64x2ReplaceLane(reader); break;
                     }
                     break;
             }

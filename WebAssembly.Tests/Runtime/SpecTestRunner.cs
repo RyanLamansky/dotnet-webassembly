@@ -264,6 +264,7 @@ static class SpecTestRunner
                             case "unknown function":
                             case "unknown table 0":
                             case "undeclared function reference":
+                            case "invalid lane index":
                             case var tf when tf.StartsWith("unknown function ", StringComparison.Ordinal):
                             case var tt when tt.StartsWith("unknown table ", StringComparison.Ordinal):
                             case var te when te.StartsWith("unknown elem segment", StringComparison.Ordinal):

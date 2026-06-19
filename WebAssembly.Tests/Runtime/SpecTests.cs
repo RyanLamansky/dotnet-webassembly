@@ -1181,7 +1181,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
+    [Ignore("SIMD lane tests combine extract/replace/shuffle with integer arithmetic (later increment).")]
     public void SpecTest_simd_lane() => SpecTestRunner.Run(DataPath("simd", "simd_lane"), "simd_lane.json");
 
     /// <summary>Runs the simd_linking tests.</summary>
@@ -1231,7 +1231,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_splat tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
+    [Ignore("SIMD splat tests combine splats with integer arithmetic (later increment).")]
     public void SpecTest_simd_splat() => SpecTestRunner.Run(DataPath("simd", "simd_splat"), "simd_splat.json");
 
     /// <summary>Runs the simd_store tests.</summary>
