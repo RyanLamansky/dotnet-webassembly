@@ -569,6 +569,26 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.Float64x2PromoteLowFloat32x4: yield return new Float64x2PromoteLowFloat32x4(); break;
                         case SimdOpCode.Int32x4DotInt16x8Signed: yield return new Int32x4DotInt16x8Signed(); break;
                         case SimdOpCode.Int16x8Q15MulrSatSigned: yield return new Int16x8Q15MulrSatSigned(); break;
+                        case SimdOpCode.V128Load8X8Signed: yield return new V128Load8X8Signed(reader); break;
+                        case SimdOpCode.V128Load8X8Unsigned: yield return new V128Load8X8Unsigned(reader); break;
+                        case SimdOpCode.V128Load16X4Signed: yield return new V128Load16X4Signed(reader); break;
+                        case SimdOpCode.V128Load16X4Unsigned: yield return new V128Load16X4Unsigned(reader); break;
+                        case SimdOpCode.V128Load32X2Signed: yield return new V128Load32X2Signed(reader); break;
+                        case SimdOpCode.V128Load32X2Unsigned: yield return new V128Load32X2Unsigned(reader); break;
+                        case SimdOpCode.V128Load8Splat: yield return new V128Load8Splat(reader); break;
+                        case SimdOpCode.V128Load16Splat: yield return new V128Load16Splat(reader); break;
+                        case SimdOpCode.V128Load32Splat: yield return new V128Load32Splat(reader); break;
+                        case SimdOpCode.V128Load64Splat: yield return new V128Load64Splat(reader); break;
+                        case SimdOpCode.V128Load32Zero: yield return new V128Load32Zero(reader); break;
+                        case SimdOpCode.V128Load64Zero: yield return new V128Load64Zero(reader); break;
+                        case SimdOpCode.V128Load8Lane: yield return new V128Load8Lane(reader); break;
+                        case SimdOpCode.V128Load16Lane: yield return new V128Load16Lane(reader); break;
+                        case SimdOpCode.V128Load32Lane: yield return new V128Load32Lane(reader); break;
+                        case SimdOpCode.V128Load64Lane: yield return new V128Load64Lane(reader); break;
+                        case SimdOpCode.V128Store8Lane: yield return new V128Store8Lane(reader); break;
+                        case SimdOpCode.V128Store16Lane: yield return new V128Store16Lane(reader); break;
+                        case SimdOpCode.V128Store32Lane: yield return new V128Store32Lane(reader); break;
+                        case SimdOpCode.V128Store64Lane: yield return new V128Store64Lane(reader); break;
                     }
                     break;
             }

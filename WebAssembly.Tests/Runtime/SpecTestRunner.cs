@@ -268,6 +268,7 @@ static class SpecTestRunner
                             case var tf when tf.StartsWith("unknown function ", StringComparison.Ordinal):
                             case var tt when tt.StartsWith("unknown table ", StringComparison.Ordinal):
                             case var te when te.StartsWith("unknown elem segment", StringComparison.Ordinal):
+                            case var tl when tl.StartsWith("unknown local", StringComparison.Ordinal):
                                 try
                                 {
                                     trapExpected();

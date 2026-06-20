@@ -982,7 +982,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_align tests.</summary>
     [TestMethod]
-    [Ignore("SIMD alignment tests use extended loads (v128.load8x8_s etc.) from a later increment.")]
     public void SpecTest_simd_align() => SpecTestRunner.Run(DataPath("simd", "simd_align"), "simd_align.json");
 
     /// <summary>Runs the simd_bit_shift tests.</summary>
@@ -1147,47 +1146,38 @@ public class SpecTests
 
     /// <summary>Runs the simd_linking tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_linking() => SpecTestRunner.Run(DataPath("simd", "simd_linking"), "simd_linking.json");
 
     /// <summary>Runs the simd_load tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load() => SpecTestRunner.Run(DataPath("simd", "simd_load"), "simd_load.json");
 
     /// <summary>Runs the simd_load16_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load16_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load16_lane"), "simd_load16_lane.json");
 
     /// <summary>Runs the simd_load32_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load32_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load32_lane"), "simd_load32_lane.json");
 
     /// <summary>Runs the simd_load64_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load64_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load64_lane"), "simd_load64_lane.json");
 
     /// <summary>Runs the simd_load8_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load8_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load8_lane"), "simd_load8_lane.json");
 
     /// <summary>Runs the simd_load_extend tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load_extend() => SpecTestRunner.Run(DataPath("simd", "simd_load_extend"), "simd_load_extend.json");
 
     /// <summary>Runs the simd_load_splat tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load_splat() => SpecTestRunner.Run(DataPath("simd", "simd_load_splat"), "simd_load_splat.json");
 
     /// <summary>Runs the simd_load_zero tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_load_zero() => SpecTestRunner.Run(DataPath("simd", "simd_load_zero"), "simd_load_zero.json");
 
     /// <summary>Runs the simd_splat tests.</summary>
@@ -1196,26 +1186,21 @@ public class SpecTests
 
     /// <summary>Runs the simd_store tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_store() => SpecTestRunner.Run(DataPath("simd", "simd_store"), "simd_store.json");
 
     /// <summary>Runs the simd_store16_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_store16_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store16_lane"), "simd_store16_lane.json");
 
     /// <summary>Runs the simd_store32_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_store32_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store32_lane"), "simd_store32_lane.json");
 
     /// <summary>Runs the simd_store64_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_store64_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store64_lane"), "simd_store64_lane.json");
 
     /// <summary>Runs the simd_store8_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_store8_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store8_lane"), "simd_store8_lane.json");
 }
