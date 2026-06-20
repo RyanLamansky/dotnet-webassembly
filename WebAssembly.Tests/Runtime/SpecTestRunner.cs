@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 
 namespace WebAssembly.Runtime;
 
-static class SpecTestRunner
+static partial class SpecTestRunner
 {
     public static void Run(string pathBase, string json) => Run<object>(pathBase, json);
 
@@ -39,11 +39,11 @@ static class SpecTestRunner
         return failures;
     }
 
-    private static readonly RegeneratingWeakReference<JsonSerializerOptions> serializerOptions =
-        new(() => new JsonSerializerOptions
-        {
-            IncludeFields = true,
-        });
+    [JsonSourceGenerationOptions(IncludeFields = true)]
+    [JsonSerializable(typeof(TestInfo))]
+    private sealed partial class SpecTestSerializerContext : JsonSerializerContext
+    {
+    }
 
     public static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip)
         where TExports : class
@@ -57,7 +57,7 @@ static class SpecTestRunner
         TestInfo testInfo;
         using (var reader = File.OpenRead(Path.Combine(pathBase, json)))
         {
-            testInfo = JsonSerializer.Deserialize<TestInfo>(reader, serializerOptions)!;
+            testInfo = JsonSerializer.Deserialize(reader, SpecTestSerializerContext.Default.TestInfo)!;
         }
 
         ObjectMethods? methodsByName = null;
