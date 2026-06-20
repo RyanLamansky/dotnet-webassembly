@@ -1010,52 +1010,42 @@ public class SpecTests
 
     /// <summary>Runs the simd_f32x4 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f32x4() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4"), "simd_f32x4.json");
 
     /// <summary>Runs the simd_f32x4_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f32x4_arith() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_arith"), "simd_f32x4_arith.json");
 
     /// <summary>Runs the simd_f32x4_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f32x4_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_cmp"), "simd_f32x4_cmp.json");
 
     /// <summary>Runs the simd_f32x4_pmin_pmax tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f32x4_pmin_pmax() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_pmin_pmax"), "simd_f32x4_pmin_pmax.json");
 
     /// <summary>Runs the simd_f32x4_rounding tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f32x4_rounding() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_rounding"), "simd_f32x4_rounding.json");
 
     /// <summary>Runs the simd_f64x2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f64x2() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2"), "simd_f64x2.json");
 
     /// <summary>Runs the simd_f64x2_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f64x2_arith() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_arith"), "simd_f64x2_arith.json");
 
     /// <summary>Runs the simd_f64x2_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f64x2_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_cmp"), "simd_f64x2_cmp.json");
 
     /// <summary>Runs the simd_f64x2_pmin_pmax tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f64x2_pmin_pmax() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_pmin_pmax"), "simd_f64x2_pmin_pmax.json");
 
     /// <summary>Runs the simd_f64x2_rounding tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_f64x2_rounding() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_rounding"), "simd_f64x2_rounding.json");
 
     /// <summary>Runs the simd_i16x8_arith tests.</summary>
@@ -1215,7 +1205,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_splat tests.</summary>
     [TestMethod]
-    [Ignore("SIMD splat tests combine splats with float arithmetic (later increment).")]
+    [Ignore("SIMD splat tests also use bit shifts (later increment).")]
     public void SpecTest_simd_splat() => SpecTestRunner.Run(DataPath("simd", "simd_splat"), "simd_splat.json");
 
     /// <summary>Runs the simd_store tests.</summary>
