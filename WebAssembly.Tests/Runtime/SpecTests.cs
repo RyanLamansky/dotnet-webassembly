@@ -1061,12 +1061,10 @@ public class SpecTests
 
     /// <summary>Runs the simd_i16x8_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_arith"), "simd_i16x8_arith.json");
 
     /// <summary>Runs the simd_i16x8_arith2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_arith2"), "simd_i16x8_arith2.json");
 
     /// <summary>Runs the simd_i16x8_cmp tests.</summary>
@@ -1091,17 +1089,14 @@ public class SpecTests
 
     /// <summary>Runs the simd_i16x8_sat_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_sat_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_sat_arith"), "simd_i16x8_sat_arith.json");
 
     /// <summary>Runs the simd_i32x4_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_arith"), "simd_i32x4_arith.json");
 
     /// <summary>Runs the simd_i32x4_arith2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_arith2"), "simd_i32x4_arith2.json");
 
     /// <summary>Runs the simd_i32x4_cmp tests.</summary>
@@ -1136,12 +1131,10 @@ public class SpecTests
 
     /// <summary>Runs the simd_i64x2_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i64x2_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_arith"), "simd_i64x2_arith.json");
 
     /// <summary>Runs the simd_i64x2_arith2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i64x2_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_arith2"), "simd_i64x2_arith2.json");
 
     /// <summary>Runs the simd_i64x2_cmp tests.</summary>
@@ -1156,12 +1149,10 @@ public class SpecTests
 
     /// <summary>Runs the simd_i8x16_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i8x16_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_arith"), "simd_i8x16_arith.json");
 
     /// <summary>Runs the simd_i8x16_arith2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i8x16_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_arith2"), "simd_i8x16_arith2.json");
 
     /// <summary>Runs the simd_i8x16_cmp tests.</summary>
@@ -1171,7 +1162,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i8x16_sat_arith tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i8x16_sat_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_sat_arith"), "simd_i8x16_sat_arith.json");
 
     /// <summary>Runs the simd_int_to_int_extend tests.</summary>
@@ -1181,7 +1171,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD lane tests combine extract/replace/shuffle with integer arithmetic (later increment).")]
+    [Ignore("SIMD lane tests also use i8x16.all_true (boolean group, later increment).")]
     public void SpecTest_simd_lane() => SpecTestRunner.Run(DataPath("simd", "simd_lane"), "simd_lane.json");
 
     /// <summary>Runs the simd_linking tests.</summary>
@@ -1231,7 +1221,7 @@ public class SpecTests
 
     /// <summary>Runs the simd_splat tests.</summary>
     [TestMethod]
-    [Ignore("SIMD splat tests combine splats with integer arithmetic (later increment).")]
+    [Ignore("SIMD splat tests combine splats with float arithmetic (later increment).")]
     public void SpecTest_simd_splat() => SpecTestRunner.Run(DataPath("simd", "simd_splat"), "simd_splat.json");
 
     /// <summary>Runs the simd_store tests.</summary>
