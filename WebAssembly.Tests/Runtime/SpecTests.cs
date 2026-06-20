@@ -987,7 +987,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_bit_shift tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_bit_shift() => SpecTestRunner.Run(DataPath("simd", "simd_bit_shift"), "simd_bit_shift.json");
 
     /// <summary>Runs the simd_bitwise tests.</summary>
@@ -1000,12 +999,10 @@ public class SpecTests
 
     /// <summary>Runs the simd_const tests.</summary>
     [TestMethod]
-    [Ignore("SIMD constant-folding tests require integer/float arithmetic instructions (later increment).")]
     public void SpecTest_simd_const() => SpecTestRunner.Run(DataPath("simd", "simd_const"), "simd_const.json");
 
     /// <summary>Runs the simd_conversions tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_conversions() => SpecTestRunner.Run(DataPath("simd", "simd_conversions"), "simd_conversions.json");
 
     /// <summary>Runs the simd_f32x4 tests.</summary>
@@ -1062,17 +1059,14 @@ public class SpecTests
 
     /// <summary>Runs the simd_i16x8_extadd_pairwise_i8x16 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_extadd_pairwise_i8x16() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_extadd_pairwise_i8x16"), "simd_i16x8_extadd_pairwise_i8x16.json");
 
     /// <summary>Runs the simd_i16x8_extmul_i8x16 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_extmul_i8x16() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_extmul_i8x16"), "simd_i16x8_extmul_i8x16.json");
 
     /// <summary>Runs the simd_i16x8_q15mulr_sat_s tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_q15mulr_sat_s() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_q15mulr_sat_s"), "simd_i16x8_q15mulr_sat_s.json");
 
     /// <summary>Runs the simd_i16x8_sat_arith tests.</summary>
@@ -1093,27 +1087,22 @@ public class SpecTests
 
     /// <summary>Runs the simd_i32x4_dot_i16x8 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_dot_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_dot_i16x8"), "simd_i32x4_dot_i16x8.json");
 
     /// <summary>Runs the simd_i32x4_extadd_pairwise_i16x8 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_extadd_pairwise_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_extadd_pairwise_i16x8"), "simd_i32x4_extadd_pairwise_i16x8.json");
 
     /// <summary>Runs the simd_i32x4_extmul_i16x8 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_extmul_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_extmul_i16x8"), "simd_i32x4_extmul_i16x8.json");
 
     /// <summary>Runs the simd_i32x4_trunc_sat_f32x4 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_trunc_sat_f32x4() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_trunc_sat_f32x4"), "simd_i32x4_trunc_sat_f32x4.json");
 
     /// <summary>Runs the simd_i32x4_trunc_sat_f64x2 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_trunc_sat_f64x2() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_trunc_sat_f64x2"), "simd_i32x4_trunc_sat_f64x2.json");
 
     /// <summary>Runs the simd_i64x2_arith tests.</summary>
@@ -1130,7 +1119,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i64x2_extmul_i32x4 tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i64x2_extmul_i32x4() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_extmul_i32x4"), "simd_i64x2_extmul_i32x4.json");
 
     /// <summary>Runs the simd_i8x16_arith tests.</summary>
@@ -1151,7 +1139,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_int_to_int_extend tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_int_to_int_extend() => SpecTestRunner.Run(DataPath("simd", "simd_int_to_int_extend"), "simd_int_to_int_extend.json");
 
     /// <summary>Runs the simd_lane tests.</summary>
@@ -1205,7 +1192,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_splat tests.</summary>
     [TestMethod]
-    [Ignore("SIMD splat tests also use bit shifts (later increment).")]
     public void SpecTest_simd_splat() => SpecTestRunner.Run(DataPath("simd", "simd_splat"), "simd_splat.json");
 
     /// <summary>Runs the simd_store tests.</summary>
