@@ -443,7 +443,7 @@ public static class Compile
                                 $"👻 {i}",
                                 InternalFunctionAttributes,
                                 CallingConventions.Standard,
-                                signature.ReturnTypes.FirstOrDefault(),
+                                MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                                 parms
                                 );
                         }
@@ -656,7 +656,7 @@ public static class Compile
                     NameCleaner.CleanName(exported.Key),
                     ExportedFunctionAttributes,
                     CallingConventions.HasThis,
-                    signature.ReturnTypes.FirstOrDefault(),
+                    MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                     signature.ParameterTypes
                     );
 #if NET9_0_OR_GREATER
@@ -775,14 +775,15 @@ public static class Compile
                         if (typeIndex >= signatures.Length)
                             throw new ModuleLoadException($"Requested type index {typeIndex} but only {signatures.Length} are available.", preTypeIndexOffset);
                         var signature = signatures[typeIndex];
-                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length);
+                        // Two-or-more results map onto a delegate with a single (ValueTuple) return.
+                        var del = configuration.GetDelegateForType(signature.ParameterTypes.Length, signature.ReturnTypes.Length > 1 ? 1 : signature.ReturnTypes.Length);
                         if (del == null)
                         {
                             missingDelegates.Add(new MissingDelegateType(moduleName, fieldName, signature));
                             continue;
                         }
 
-                        var typedDelegate = configuration.NeutralizeType(del.IsGenericTypeDefinition ? del.MakeGenericType([.. signature.ParameterTypes, .. signature.ReturnTypes]) : del);
+                        var typedDelegate = configuration.NeutralizeType(del.IsGenericTypeDefinition ? del.MakeGenericType(MultiValueHelper.DelegateTypeArgs(signature.ParameterTypes, signature.ReturnTypes)) : del);
                         var delField = $"➡ {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -790,7 +791,7 @@ public static class Compile
                             $"Invoke {delField}",
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
-                            signature.ReturnTypes.Length != 0 ? signature.ReturnTypes[0] : null,
+                            MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                             [.. signature.ParameterTypes, exportsBuilder]
                             );
 
@@ -1294,10 +1295,14 @@ public static class Compile
 
                 if (!delegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
                 {
-                    var del = configuration.GetDelegateForType(parms.Length, returns.Length) ??
-                        throw new CompilerException($"Failed to get a delegate for type {signature}.");
+                    // Two-or-more results map onto a delegate with a single (ValueTuple) return.
+                    var del = configuration.GetDelegateForType(parms.Length, returns.Length > 1 ? 1 : returns.Length);
+                    if (del == null)
+                        continue; // No standard delegate exists for this arity (e.g. more than 16 parameters), so the
+                                  // function cannot be used as a reference; the array slot stays null. This is only
+                                  // observable if such a function is actually referenced, which is itself unsupported.
                     if (del.IsGenericType)
-                        del = del.MakeGenericType([.. parms, .. returns]);
+                        del = del.MakeGenericType(MultiValueHelper.DelegateTypeArgs(parms, returns));
 
                     delegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
                 }
@@ -1305,7 +1310,7 @@ public static class Compile
                 var wrapper = exportsBuilder.DefineMethod(
                     $"↪ {i}",
                     MethodAttributes.Private | MethodAttributes.HideBySig,
-                    returns.Length == 0 ? typeof(void) : returns[0],
+                    MultiValueHelper.ClrReturnType(returns),
                     parms);
                 var wil = wrapper.GetILGenerator();
                 for (var k = 0; k < parms.Length; k++)

@@ -377,6 +377,27 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         this.Stack.Push(expectedType);
     }
 
+    /// <summary>
+    /// Returns the single-result ferry local for the block at the given ancestor distance (0 is the immediate
+    /// parent), allocating it on first access. See <see cref="BlockContext.ResultLocal"/>.
+    /// </summary>
+    public LocalBuilder GetOrCreateResultLocal(int depthIndex, WebAssemblyValueType valueType)
+    {
+        var blockContext = this.BlockContexts[this.Depth.Count - depthIndex];
+        return blockContext.ResultLocal ??= this.DeclareLocal(valueType.ToSystemType());
+    }
+
+    /// <summary>
+    /// Declares one fresh local per provided value type, used to ferry multi-value block results across branches.
+    /// </summary>
+    public LocalBuilder[] DeclareResultLocals(WebAssemblyValueType[] types)
+    {
+        var locals = new LocalBuilder[types.Length];
+        for (var i = 0; i < types.Length; i++)
+            locals[i] = this.DeclareLocal(types[i].ToSystemType());
+        return locals;
+    }
+
     private BlockContext CurrentBlockContext => this.BlockContexts[this.Depth.Count];
 
     /// <summary>

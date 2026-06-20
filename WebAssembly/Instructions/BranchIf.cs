@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -64,12 +65,119 @@ public class BranchIf : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        var isReachable = !context.IsUnreachable;
 
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
-        if (blockType.Type.TryToValueType(out var expectedType))
-            context.ValidateStack(this.OpCode, expectedType);
+        var targetDepthKey = context.Depth.Count - checked((int)this.Index);
+        var targetBlockContext = context.BlockContexts[targetDepthKey];
+        var label = context.Labels[checked((uint)context.Depth.Count) - this.Index - 1];
+        var isLoop = blockType.OpCode == OpCode.Loop;
+        var branchTypes = BranchHelper.BranchTypes(context, targetDepthKey, targetBlockContext, isLoop);
 
-        context.Emit(OpCodes.Brtrue, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
+        if (isReachable)
+        {
+            if (!isLoop)
+                targetBlockContext.MarkEndLabelTargeted();
+
+            if (branchTypes.Length > 0)
+            {
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes, targetBlockContext);
+
+                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize - branchTypes.Length;
+
+                if (isLoop && discardCount == 0)
+                {
+                    // Loop back-edge with the parameters already in place: branch directly on the condition.
+                    context.Emit(OpCodes.Brtrue, label);
+                }
+                else
+                {
+                    // Stack: [..baseline, intermediates, branchValues, condition]. Save the condition, stash the
+                    // carried values, then on the taken path discard intermediates and (for a loop) reload the
+                    // values; on the not-taken path restore the values above the intermediates.
+                    var conditionLocal = context.DeclareLocal(typeof(int));
+                    context.Emit(OpCodes.Stloc, conditionLocal);
+
+                    LocalBuilder[] carriedLocals;
+                    if (!isLoop)
+                        carriedLocals = targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);
+                    else
+                        carriedLocals = context.DeclareResultLocals(branchTypes);
+
+                    for (var k = branchTypes.Length - 1; k >= 0; k--)
+                        context.Emit(OpCodes.Stloc, carriedLocals[k]);
+
+                    var skipTaken = context.DefineLabel();
+                    context.Emit(OpCodes.Ldloc, conditionLocal);
+                    context.Emit(OpCodes.Brfalse, skipTaken);
+
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                    if (isLoop)
+                    {
+                        for (var k = 0; k < branchTypes.Length; k++)
+                            context.Emit(OpCodes.Ldloc, carriedLocals[k]);
+                    }
+                    context.Emit(OpCodes.Br, label);
+
+                    context.MarkLabel(skipTaken);
+                    for (var k = 0; k < branchTypes.Length; k++)
+                        context.Emit(OpCodes.Ldloc, carriedLocals[k]);
+                }
+            }
+            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+            {
+                context.ValidateStack(this.OpCode, expectedType);
+
+                // Stack: [..baseline, intermediates, value, condition]. Duplicate the value into the result local
+                // (so the taken path's reload at the end label has it), then either take the branch (discarding the
+                // value and intermediates) or fall through with the value intact.
+                var resultLocal = context.GetOrCreateResultLocal(checked((int)this.Index), expectedType);
+                var conditionLocal = context.DeclareLocal(typeof(int));
+                var skipTaken = context.DefineLabel();
+                var intermediateCount = context.Stack.Count - targetBlockContext.InitialStackSize - 1;
+                context.Emit(OpCodes.Stloc, conditionLocal);
+                context.Emit(OpCodes.Dup);
+                context.Emit(OpCodes.Stloc, resultLocal);
+                context.Emit(OpCodes.Ldloc, conditionLocal);
+                context.Emit(OpCodes.Brfalse, skipTaken);
+                context.Emit(OpCodes.Pop); // Discard the duplicate left when taking the branch.
+                for (var i = 0; i < intermediateCount; i++)
+                    context.Emit(OpCodes.Pop);
+                context.Emit(OpCodes.Br, label);
+                context.MarkLabel(skipTaken);
+            }
+            else
+            {
+                // Void target: on the taken path discard everything pushed inside the block before branching.
+                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize;
+                if (discardCount > 0)
+                {
+                    var skipTaken = context.DefineLabel();
+                    var conditionLocal = context.DeclareLocal(typeof(int));
+                    context.Emit(OpCodes.Stloc, conditionLocal);
+                    context.Emit(OpCodes.Ldloc, conditionLocal);
+                    context.Emit(OpCodes.Brfalse, skipTaken);
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                    context.Emit(OpCodes.Br, label);
+                    context.MarkLabel(skipTaken);
+                }
+                else
+                {
+                    context.Emit(OpCodes.Brtrue, label);
+                }
+            }
+        }
+        else
+        {
+            BranchHelper.ValidateUnreachable(context, this.OpCode, blockType, branchTypes, isLoop, targetBlockContext);
+            context.Emit(OpCodes.Brtrue, label);
+        }
+
+        // Code after a conditional branch is reachable only when the branch itself was reachable.
+        if (isReachable)
+            context.MarkReachable();
     }
 
     /// <summary>

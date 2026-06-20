@@ -127,43 +127,21 @@ static class SpecTestRunner
                         }
                         if (assert.expected?.Length > 0)
                         {
-                            var rawExpected = assert.expected[0];
-                            if (Equals(rawExpected.BoxedValue, result))
-                                continue;
-
-                            switch (rawExpected.type)
+                            if (assert.expected.Length == 1)
                             {
-                                default:
-                                    // This happens in conversion.json starting at "line": 317 when run via GitHub Action but never locally (for me).
-                                    Assert.Inconclusive($"{command.line}: Failed to parse expected value type.");
-                                    return;
-
-                                case RawValueType.i32:
-                                case RawValueType.i64:
-                                case RawValueType.externref:
-                                case RawValueType.funcref:
-                                    break;
-
-                                case RawValueType.f32:
-                                    {
-                                        var expected = ((Float32Value)rawExpected).ActualValue;
-                                        Assert.AreEqual(expected, (float)result!, Math.Abs(expected * 0.000001f), $"{command.line}: f32 compare");
-                                    }
-                                    continue;
-                                case RawValueType.f64:
-                                    {
-                                        var expected = ((Float64Value)rawExpected).ActualValue;
-                                        Assert.AreEqual(expected, (double)result!, Math.Abs(expected * 0.000001), $"{command.line}: f64 compare");
-                                    }
-                                    continue;
-                                case RawValueType.v128:
-                                    // The structural-equality fast-path above handles bit-exact vectors;
-                                    // reaching here means a lane mismatch or a NaN pattern needing lane-wise comparison.
-                                    Assert.IsTrue(((V128Value)rawExpected).IsMatch((Vector128<byte>)result!), $"{command.line}: v128 compare, got {result}");
-                                    continue;
+                                if (!CompareReturnValue(assert.expected[0], result, command.line))
+                                    return; // Inconclusive (expected value type could not be parsed).
                             }
-
-                            throw new AssertFailedException($"{command.line}: Not equal {rawExpected.type}: {rawExpected.BoxedValue} and {result}");
+                            else
+                            {
+                                // Multi-value (WASM 2.0): the export returns a ValueTuple; compare it field-by-field.
+                                var actualValues = DecomposeResult(result, assert.expected.Length);
+                                for (var i = 0; i < assert.expected.Length; i++)
+                                {
+                                    if (!CompareReturnValue(assert.expected[i], actualValues[i], command.line))
+                                        return;
+                                }
+                            }
                         }
                         continue;
                     case AssertReturnCanonicalNan assert:
@@ -525,6 +503,71 @@ static class SpecTestRunner
 
         if (onFailure == null && skip != null)
             Assert.Inconclusive("Some scenarios were skipped.");
+    }
+
+    // Compares a single actual return value against its expected raw value, mirroring the structural-equality
+    // fast-path, the approximate float compares, and the lane-wise v128 compare. Returns false only when the
+    // expected value type could not be parsed (an inconclusive result the caller propagates).
+    static bool CompareReturnValue(TypedValue rawExpected, object? actual, uint line)
+    {
+        if (Equals(rawExpected.BoxedValue, actual))
+            return true;
+
+        switch (rawExpected.type)
+        {
+            default:
+                // This happens in conversion.json starting at "line": 317 when run via GitHub Action but never locally (for me).
+                Assert.Inconclusive($"{line}: Failed to parse expected value type.");
+                return false;
+
+            case RawValueType.i32:
+            case RawValueType.i64:
+            case RawValueType.externref:
+            case RawValueType.funcref:
+                break;
+
+            case RawValueType.f32:
+                {
+                    var expected = ((Float32Value)rawExpected).ActualValue;
+                    Assert.AreEqual(expected, (float)actual!, Math.Abs(expected * 0.000001f), $"{line}: f32 compare");
+                }
+                return true;
+            case RawValueType.f64:
+                {
+                    var expected = ((Float64Value)rawExpected).ActualValue;
+                    Assert.AreEqual(expected, (double)actual!, Math.Abs(expected * 0.000001), $"{line}: f64 compare");
+                }
+                return true;
+            case RawValueType.v128:
+                Assert.IsTrue(((V128Value)rawExpected).IsMatch((Vector128<byte>)actual!), $"{line}: v128 compare, got {actual}");
+                return true;
+        }
+
+        throw new AssertFailedException($"{line}: Not equal {rawExpected.type}: {rawExpected.BoxedValue} and {actual}");
+    }
+
+    // Spreads a multi-value result (a possibly-nested ValueTuple) into its individual values, in result order.
+    static object?[] DecomposeResult(object? result, int count)
+    {
+        var values = new object?[count];
+        var current = result!;
+        var type = current.GetType();
+        var index = 0;
+        while (true)
+        {
+            var direct = Math.Min(count - index, 7);
+            for (var i = 0; i < direct; i++)
+                values[index++] = type.GetField($"Item{i + 1}")!.GetValue(current);
+
+            if (index >= count)
+                break;
+
+            var restField = type.GetField("Rest")!;
+            current = restField.GetValue(current)!;
+            type = restField.FieldType;
+        }
+
+        return values;
     }
 
     class ObjectMethods : Dictionary<string, MethodInfo>

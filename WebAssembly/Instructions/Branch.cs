@@ -1,4 +1,7 @@
+using System;
+using System.Linq;
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -70,10 +73,71 @@ public class Branch : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         var blockType = context.Depth.ElementAt(checked((int)this.Index));
-        if (blockType.OpCode != OpCode.Loop && blockType.Type.TryToValueType(out var expectedType))
-            context.ValidateStack(this.OpCode, expectedType);
+        var targetDepthKey = context.Depth.Count - checked((int)this.Index);
+        var targetBlockContext = context.BlockContexts[targetDepthKey];
+        var label = context.Labels[checked((uint)context.Depth.Count) - this.Index - 1];
 
-        context.Emit(OpCodes.Br, context.Labels[checked((uint)context.Depth.Count) - this.Index - 1]);
+        var isLoop = blockType.OpCode == OpCode.Loop;
+        var branchTypes = BranchHelper.BranchTypes(context, targetDepthKey, targetBlockContext, isLoop);
+
+        if (!context.IsUnreachable)
+        {
+            if (!isLoop)
+                targetBlockContext.MarkEndLabelTargeted();
+
+            if (branchTypes.Length > 0)
+            {
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes, targetBlockContext);
+
+                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize - branchTypes.Length;
+
+                if (!isLoop)
+                {
+                    // Stash the results into the target's result locals (reloaded at its end label), then discard any
+                    // intermediates left beneath them.
+                    targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);
+                    for (var i = branchTypes.Length - 1; i >= 0; i--)
+                        context.Emit(OpCodes.Stloc, targetBlockContext.ResultLocals[i]);
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                }
+                else if (discardCount > 0)
+                {
+                    // Loop back-edge with intermediates beneath the parameters: temporarily stash the parameters so
+                    // the intermediates can be discarded, then restore the parameters as the back-edge values.
+                    var temporaries = context.DeclareResultLocals(branchTypes);
+                    for (var i = branchTypes.Length - 1; i >= 0; i--)
+                        context.Emit(OpCodes.Stloc, temporaries[i]);
+                    for (var i = 0; i < discardCount; i++)
+                        context.Emit(OpCodes.Pop);
+                    for (var i = 0; i < branchTypes.Length; i++)
+                        context.Emit(OpCodes.Ldloc, temporaries[i]);
+                }
+                // else: loop back-edge with the parameters already in place — branch directly.
+            }
+            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+            {
+                context.ValidateStack(this.OpCode, expectedType);
+                context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(checked((int)this.Index), expectedType));
+
+                var intermediateCount = context.Stack.Count - targetBlockContext.InitialStackSize - 1;
+                for (var i = 0; i < intermediateCount; i++)
+                    context.Emit(OpCodes.Pop);
+            }
+            else
+            {
+                // Void target: discard every value pushed inside this block before branching.
+                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize;
+                for (var i = 0; i < discardCount; i++)
+                    context.Emit(OpCodes.Pop);
+            }
+        }
+        else
+        {
+            BranchHelper.ValidateUnreachable(context, this.OpCode, blockType, branchTypes, isLoop, targetBlockContext);
+        }
+
+        context.Emit(OpCodes.Br, label);
 
         //Mark the subsequent code within this block is unreachable
         context.MarkUnreachable();

@@ -26,6 +26,14 @@ public enum BlockType : sbyte
     /// </summary>
     V128 = -0x05,
     /// <summary>
+    /// A nullable reference to a function (WASM 2.0).
+    /// </summary>
+    FuncRef = -0x10,
+    /// <summary>
+    /// A nullable external reference (WASM 2.0).
+    /// </summary>
+    ExternRef = -0x11,
+    /// <summary>
     /// Pseudo type for representing an empty block type.
     /// </summary>
     Empty = -0x40,
@@ -56,6 +64,12 @@ static class BlockTypeExtensions
             case BlockType.V128:
                 valueType = WebAssemblyValueType.V128;
                 break;
+            case BlockType.FuncRef:
+                valueType = WebAssemblyValueType.FuncRef;
+                break;
+            case BlockType.ExternRef:
+                valueType = WebAssemblyValueType.ExternRef;
+                break;
         }
 
         return true;
@@ -68,6 +82,8 @@ static class BlockTypeExtensions
         BlockType.Float32 => "f32",
         BlockType.Float64 => "f64",
         BlockType.V128 => "v128",
+        BlockType.FuncRef => "funcref",
+        BlockType.ExternRef => "externref",
         BlockType.Empty => "",
         _ => "?",
     };

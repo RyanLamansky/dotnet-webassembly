@@ -37,8 +37,9 @@ public class Loop : BlockTypeInstruction
     {
         var loopStart = context.DefineLabel();
         context.Labels.Add(checked((uint)context.Depth.Count), loopStart);
+        var blockContext = BlockTypeInstruction.MakeBlockContext(this, context);
         context.Depth.Push(this);
-        context.BlockContexts.Add(context.Depth.Count, new BlockContext(context.Stack.Count));
+        context.BlockContexts.Add(context.Depth.Count, blockContext);
         context.MarkLabel(loopStart);
         context.LoopLabels.Add(loopStart);
     }

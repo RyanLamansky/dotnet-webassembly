@@ -107,17 +107,18 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             if (!context.DelegateInvokersByTypeIndex.TryGetValue(signature.TypeIndex, out var invoker))
             {
-                var del = context.Configuration.GetDelegateForType(parms.Length, returns.Length) ??
+                // Two-or-more results map onto a delegate with a single (ValueTuple) return.
+                var del = context.Configuration.GetDelegateForType(parms.Length, returns.Length > 1 ? 1 : returns.Length) ??
                     throw new CompilerException($"Failed to get a delegate for type {signature}.");
                 if (del.IsGenericType)
-                    del = del.MakeGenericType([.. parms, .. returns]);
+                    del = del.MakeGenericType(MultiValueHelper.DelegateTypeArgs(parms, returns));
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
             context.DelegateRemappersByType.Add((signature.TypeIndex, this.Reserved), remapper = context.CheckedExportsBuilder.DefineMethod(
                 $"🔁 {signature.TypeIndex}_{this.Reserved}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
-                returns.Length == 0 ? typeof(void) : returns[0],
+                MultiValueHelper.ClrReturnType(returns),
                 [.. parms, typeof(uint), context.CheckedExportsBuilder]
                 ));
 
@@ -136,5 +137,9 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
         }
 
         context.Emit(OpCodes.Call, remapper);
+
+        // Multi-value results arrive packed in a ValueTuple; spread them back onto the stack.
+        if (returnTypes.Length > 1)
+            MultiValueHelper.EmitTupleUnpack(context, signature.ReturnTypes);
     }
 }

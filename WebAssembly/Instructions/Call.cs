@@ -94,5 +94,9 @@ public class Call : Instruction, IEquatable<Call>
         if (target is MethodBuilder) //Indicates a dynamically generated method.
             context.EmitLoadThis();
         context.Emit(OpCodes.Call, target);
+
+        // Multi-value results arrive packed in a ValueTuple; spread them back onto the stack.
+        if (returnTypes.Length > 1)
+            MultiValueHelper.EmitTupleUnpack(context, signature.ReturnTypes);
     }
 }
