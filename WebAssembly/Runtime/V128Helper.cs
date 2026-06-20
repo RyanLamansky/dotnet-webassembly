@@ -25,13 +25,6 @@ public static class V128Helper
     internal static readonly RegeneratingWeakReference<MethodInfo> CreateMethod = new(()
         => typeof(V128Helper).GetMethod(nameof(Create), BindingFlags.Public | BindingFlags.Static)!);
 
-    // --- v128 bitwise ---
-    internal static readonly RegeneratingWeakReference<MethodInfo> V128NotMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Not), BindingFlags.Public | BindingFlags.Static)!);
-    internal static readonly RegeneratingWeakReference<MethodInfo> V128AndMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128And), BindingFlags.Public | BindingFlags.Static)!);
-    internal static readonly RegeneratingWeakReference<MethodInfo> V128AndNotMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128AndNot), BindingFlags.Public | BindingFlags.Static)!);
-    internal static readonly RegeneratingWeakReference<MethodInfo> V128OrMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Or), BindingFlags.Public | BindingFlags.Static)!);
-    internal static readonly RegeneratingWeakReference<MethodInfo> V128XorMethod = new(() => typeof(V128Helper).GetMethod(nameof(V128Xor), BindingFlags.Public | BindingFlags.Static)!);
-
     // --- i8x16 ---
     internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16AbsMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Abs), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16NegMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Neg), BindingFlags.Public | BindingFlags.Static)!);
@@ -327,16 +320,6 @@ public static class V128Helper
         byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
         => Vector128.Create(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15);
 
-    /// <summary>v128 bitwise NOT.</summary>
-    public static Vector128<byte> V128Not(Vector128<byte> a) => ~a;
-    /// <summary>v128 bitwise AND.</summary>
-    public static Vector128<byte> V128And(Vector128<byte> a, Vector128<byte> b) => a & b;
-    /// <summary>v128 bitwise ANDNOT (a &amp; ~b).</summary>
-    public static Vector128<byte> V128AndNot(Vector128<byte> a, Vector128<byte> b) => Vector128.AndNot(a, b);
-    /// <summary>v128 bitwise OR.</summary>
-    public static Vector128<byte> V128Or(Vector128<byte> a, Vector128<byte> b) => a | b;
-    /// <summary>v128 bitwise XOR.</summary>
-    public static Vector128<byte> V128Xor(Vector128<byte> a, Vector128<byte> b) => a ^ b;
 
     /// <summary>i8x16 shuffle with precomputed source masks, avoiding per-call index array allocation.</summary>
     public static Vector128<byte> Int8x16ShuffleImmediate(
@@ -1304,12 +1287,6 @@ public static class V128Helper
     public static V128Polyfill Int64x2ReplaceLane(V128Polyfill v, int lane, long x) { var b = lane*8; for(var i=0;i<8;i++) v = SetByte(v,b+i,(byte)(x>>(i*8))); return v; }
     public static V128Polyfill Float32x4ReplaceLane(V128Polyfill v, int lane, float x) => SetF32(v, lane*4, x);
     public static V128Polyfill Float64x2ReplaceLane(V128Polyfill v, int lane, double x) => SetF64(v, lane != 0, x);
-    // v128 bitwise
-    public static V128Polyfill V128Not(V128Polyfill a) => ApplyUnary(a, b => (byte)~b);
-    public static V128Polyfill V128And(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x & y));
-    public static V128Polyfill V128AndNot(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x & ~y));
-    public static V128Polyfill V128Or(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x | y));
-    public static V128Polyfill V128Xor(V128Polyfill a, V128Polyfill b) => ApplyBinary(a, b, (x, y) => (byte)(x ^ y));
 
     // i8x16
     public static V128Polyfill Int8x16Abs(V128Polyfill a) => ApplyUnary(a, b => (byte)Math.Abs((sbyte)b));
@@ -1686,7 +1663,7 @@ public static class V128Helper
     public static V128Polyfill Int32x4DotI16x8S(V128Polyfill a, V128Polyfill b) { var r=new byte[16]; for(var i=0;i<4;i++){var v=Int16x8ExtractLaneS(a,i*2)*Int16x8ExtractLaneS(b,i*2)+Int16x8ExtractLaneS(a,i*2+1)*Int16x8ExtractLaneS(b,i*2+1);r[i*4]=(byte)v;r[i*4+1]=(byte)(v>>8);r[i*4+2]=(byte)(v>>16);r[i*4+3]=(byte)(v>>24);} return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]); }
 
     // bitselect (polyfill)
-    public static V128Polyfill V128Bitselect(V128Polyfill v1, V128Polyfill v2, V128Polyfill mask) => ApplyBinary(V128And(v1, mask), V128AndNot(v2, mask), (a, b) => (byte)(a | b));
+    public static V128Polyfill V128Bitselect(V128Polyfill v1, V128Polyfill v2, V128Polyfill mask) => (v1 & mask) | V128Polyfill.AndNot(v2, mask);
 
     // trunc sat / convert / demote / promote (polyfill)
     public static V128Polyfill Int32x4TruncSatF32x4S(V128Polyfill a) { var r=new byte[16]; for(var i=0;i<4;i++){var f=GetF32(a,i*4);int v=float.IsNaN(f)?0:f>=2147483647f?int.MaxValue:f<=-2147483648f?int.MinValue:(int)f;r[i*4]=(byte)v;r[i*4+1]=(byte)(v>>8);r[i*4+2]=(byte)(v>>16);r[i*4+3]=(byte)(v>>24);} return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]); }
