@@ -1,11 +1,10 @@
-using System;
 using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>Int32x4Sub instruction.</summary>
-public class Int32x4Sub : SimdBinaryV128Instruction, IEquatable<Int32x4Sub>
+public class Int32x4Sub : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4Sub"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4Sub;
@@ -14,13 +13,4 @@ public class Int32x4Sub : SimdBinaryV128Instruction, IEquatable<Int32x4Sub>
 
     /// <summary>Creates a new <see cref="Int32x4Sub"/> instance.</summary>
     public Int32x4Sub() { }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is Int32x4Sub;
-    /// <inheritdoc/>
-    public bool Equals(Int32x4Sub? other) => other != null;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is Int32x4Sub;
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)SimdOpCode.Int32x4Sub;
 }

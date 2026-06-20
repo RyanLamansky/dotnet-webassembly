@@ -139,7 +139,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         var il = builder.GetILGenerator();
 
         // There's no short Ldc opcode for sizes above 8, so larger accesses (v128 = 16) use Ldc_I4_S.
-        void EmitSize()
+        static void EmitSize(ILGenerator il, byte size)
         {
             if (size <= 8)
                 il.Emit(size switch
@@ -157,7 +157,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         il.Emit(OpCodes.Ldfld, context.Memory);
         il.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
         il.Emit(OpCodes.Ldarg_0);
-        EmitSize();
+        EmitSize(il, size);
         il.Emit(OpCodes.Add_Ovf_Un);
         var outOfRange = il.DefineLabel();
         il.Emit(OpCodes.Blt_Un_S, outOfRange);
@@ -165,7 +165,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         il.Emit(OpCodes.Ret);
         il.MarkLabel(outOfRange);
         il.Emit(OpCodes.Ldarg_0);
-        EmitSize();
+        EmitSize(il, size);
         il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
             .GetTypeInfo()
             .DeclaredConstructors

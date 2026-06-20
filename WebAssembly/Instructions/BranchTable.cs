@@ -281,10 +281,10 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
     static void EmitTrampolineSwitch(
         CompilationContext context,
         LocalBuilder indexLocal,
-        System.Collections.Generic.List<int> labelDistances,
+        List<int> labelDistances,
         int defaultDistance,
         uint blockDepth,
-        System.Func<int, int> intermediateCount,
+        Func<int, int> intermediateCount,
         LocalBuilder[]? loopTempLocals,
         int branchTypeCount)
     {

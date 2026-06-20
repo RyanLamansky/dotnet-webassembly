@@ -1,11 +1,10 @@
-using System;
 using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>Float32x4Min instruction.</summary>
-public class Float32x4Min : SimdBinaryV128Instruction, IEquatable<Float32x4Min>
+public class Float32x4Min : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Min"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Float32x4Min;
@@ -14,13 +13,4 @@ public class Float32x4Min : SimdBinaryV128Instruction, IEquatable<Float32x4Min>
 
     /// <summary>Creates a new <see cref="Float32x4Min"/> instance.</summary>
     public Float32x4Min() { }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is Float32x4Min;
-    /// <inheritdoc/>
-    public bool Equals(Float32x4Min? other) => other != null;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is Float32x4Min;
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)SimdOpCode.Float32x4Min;
 }

@@ -35,18 +35,18 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
                 throw new Runtime.CompilerException($"Lane index {Indices[i]} at position {i} is out of range for i8x16.shuffle (max 31).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.V128);
 
-        EmitMaskVector(context, selectFirstVector: true);
-        EmitMaskVector(context, selectFirstVector: false);
+        EmitMaskVector(context, Indices, selectFirstVector: true);
+        EmitMaskVector(context, Indices, selectFirstVector: false);
 
         context.Emit(OpCodes.Call, V128Helper.Int8x16ShuffleImmediateMethod.Reference);
         context.Stack.Push(WebAssemblyValueType.V128);
     }
 
-    void EmitMaskVector(CompilationContext context, bool selectFirstVector)
+    private static void EmitMaskVector(CompilationContext context, byte[] indices, bool selectFirstVector)
     {
         for (var i = 0; i < 16; i++)
         {
-            byte lane = Indices[i];
+            byte lane = indices[i];
             byte mask = selectFirstVector
                 ? lane < 16 ? lane : (byte)0x80
                 : lane >= 16 ? (byte)(lane - 16) : (byte)0x80;

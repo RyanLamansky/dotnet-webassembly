@@ -1,11 +1,10 @@
-using System;
 using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>Int32x4MaxUnsigned instruction.</summary>
-public class Int32x4MaxUnsigned : SimdBinaryV128Instruction, IEquatable<Int32x4MaxUnsigned>
+public class Int32x4MaxUnsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4MaxUnsigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4MaxUnsigned;
@@ -14,13 +13,4 @@ public class Int32x4MaxUnsigned : SimdBinaryV128Instruction, IEquatable<Int32x4M
 
     /// <summary>Creates a new <see cref="Int32x4MaxUnsigned"/> instance.</summary>
     public Int32x4MaxUnsigned() { }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is Int32x4MaxUnsigned;
-    /// <inheritdoc/>
-    public bool Equals(Int32x4MaxUnsigned? other) => other != null;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is Int32x4MaxUnsigned;
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)SimdOpCode.Int32x4MaxUnsigned;
 }

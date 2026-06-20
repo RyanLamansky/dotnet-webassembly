@@ -1,11 +1,10 @@
-using System;
 using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>Int64x2ExtendHighInt32x4Signed instruction.</summary>
-public class Int64x2ExtendHighInt32x4Signed : SimdUnaryV128Instruction, IEquatable<Int64x2ExtendHighInt32x4Signed>
+public class Int64x2ExtendHighInt32x4Signed : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int64x2ExtendHighInt32x4Signed"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int64x2ExtendHighInt32x4Signed;
@@ -14,13 +13,4 @@ public class Int64x2ExtendHighInt32x4Signed : SimdUnaryV128Instruction, IEquatab
 
     /// <summary>Creates a new <see cref="Int64x2ExtendHighInt32x4Signed"/> instance.</summary>
     public Int64x2ExtendHighInt32x4Signed() { }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is Int64x2ExtendHighInt32x4Signed;
-    /// <inheritdoc/>
-    public bool Equals(Int64x2ExtendHighInt32x4Signed? other) => other != null;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is Int64x2ExtendHighInt32x4Signed;
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)SimdOpCode.Int64x2ExtendHighInt32x4Signed;
 }

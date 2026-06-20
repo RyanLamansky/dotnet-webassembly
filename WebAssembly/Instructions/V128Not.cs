@@ -1,11 +1,10 @@
-using System;
 using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>Bitwise NOT of a v128 value.</summary>
-public class V128Not : SimdUnaryV128Instruction, IEquatable<V128Not>
+public class V128Not : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128Not"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Not;
@@ -14,13 +13,4 @@ public class V128Not : SimdUnaryV128Instruction, IEquatable<V128Not>
 
     /// <summary>Creates a new <see cref="V128Not"/> instance.</summary>
     public V128Not() { }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is V128Not;
-    /// <inheritdoc/>
-    public bool Equals(V128Not? other) => other != null;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is V128Not;
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)SimdOpCode.V128Not;
 }
