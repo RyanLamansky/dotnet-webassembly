@@ -996,7 +996,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_boolean tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_boolean() => SpecTestRunner.Run(DataPath("simd", "simd_boolean"), "simd_boolean.json");
 
     /// <summary>Runs the simd_const tests.</summary>
@@ -1069,7 +1068,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i16x8_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i16x8_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_cmp"), "simd_i16x8_cmp.json");
 
     /// <summary>Runs the simd_i16x8_extadd_pairwise_i8x16 tests.</summary>
@@ -1101,7 +1099,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i32x4_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i32x4_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_cmp"), "simd_i32x4_cmp.json");
 
     /// <summary>Runs the simd_i32x4_dot_i16x8 tests.</summary>
@@ -1139,7 +1136,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i64x2_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i64x2_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_cmp"), "simd_i64x2_cmp.json");
 
     /// <summary>Runs the simd_i64x2_extmul_i32x4 tests.</summary>
@@ -1157,7 +1153,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_i8x16_cmp tests.</summary>
     [TestMethod]
-    [Ignore("SIMD not yet implemented")]
     public void SpecTest_simd_i8x16_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_cmp"), "simd_i8x16_cmp.json");
 
     /// <summary>Runs the simd_i8x16_sat_arith tests.</summary>
@@ -1171,7 +1166,6 @@ public class SpecTests
 
     /// <summary>Runs the simd_lane tests.</summary>
     [TestMethod]
-    [Ignore("SIMD lane tests also use i8x16.all_true (boolean group, later increment).")]
     public void SpecTest_simd_lane() => SpecTestRunner.Run(DataPath("simd", "simd_lane"), "simd_lane.json");
 
     /// <summary>Runs the simd_linking tests.</summary>
