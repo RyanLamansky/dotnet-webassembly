@@ -52,7 +52,7 @@ CI (`.github/workflows/dotnetcore.yml`) builds **and** tests in **both Debug and
 If you change anything platform- or `#if`-conditional, validate both configurations locally before assuming green.
 
 Target frameworks:
-- Library `WebAssembly.csproj`: `netstandard2.0;net8.0;net9.0` (netstandard2.0 is the published baseline).
+- Library `WebAssembly.csproj`: `net8.0;net9.0` (net8.0 is the LTS baseline; .NET Standard 2.0 was dropped in 2.0.0).
 - Tests: `net8.0;net9.0;net10.0`.
 
 ## Conventions
@@ -67,8 +67,8 @@ Target frameworks:
 - Code style (`.editorconfig`): file-scoped namespaces, `var` preferred, expression-bodied members preferred, explicit accessibility modifiers, pattern matching preferred.
   C# 14 / `LangVersion=14.0`.
 - The assembly is strong-name signed (`WebAssembly.snk`); `InternalsVisibleTo` exposes internals to the test project, so tests can and do reach `internal` members.
-- Multi-targeting matters: guard newer-runtime APIs with `#if NETCOREAPP3_0_OR_GREATER` (etc.) and provide a netstandard2.0 fallback.
-  See `Instructions/Int32CountOneBits.cs` for the pattern (intrinsic on modern runtimes, hand-emitted IL helper on the baseline).
+- Multi-targeting is now just net8 vs net9: guard net9-only APIs with `#if NET9_0_OR_GREATER` and provide a net8 fallback.
+  The only remaining conditional symbols are `NET9_0_OR_GREATER` and `DEBUG`; the old netstandard2.0/netcoreapp3.0 fallbacks were removed when .NET Standard 2.0 was dropped.
 
 ## How instructions work (the core pattern)
 
@@ -105,4 +105,4 @@ After a refresh you must re-curate `SpecTests.cs` by hand (line numbers and cate
 ## Gotchas
 
 - Don't edit anything under `bin/`, `obj/`, `TestResults/`, or `SpecTestData/` — all generated.
-- The library has no runtime third-party dependencies (only `System.Reflection.Emit` on the netstandard2.0 leg and SourceLink for packaging).
+- The library has no runtime third-party dependencies at all (only SourceLink, for packaging). The former netstandard2.0-only `System.Reflection.Emit` package reference was removed with the .NET Standard 2.0 target.

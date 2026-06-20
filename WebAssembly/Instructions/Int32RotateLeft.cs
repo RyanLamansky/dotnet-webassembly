@@ -1,7 +1,5 @@
-﻿#if NETCOREAPP3_0_OR_GREATER
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
-#endif
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -24,9 +22,7 @@ public class Int32RotateLeft : SimpleInstruction
     {
     }
 
-#if NETCOREAPP3_0_OR_GREATER
     private static readonly MethodInfo rotateLeft = typeof(BitOperations).GetMethod(nameof(BitOperations.RotateLeft), [typeof(uint), typeof(int)])!;
-#endif
 
     internal sealed override void Compile(CompilationContext context)
     {
@@ -35,41 +31,6 @@ public class Int32RotateLeft : SimpleInstruction
         context.PopStackNoReturn(OpCode.Int32RotateLeft, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32);
         stack.Push(WebAssemblyValueType.Int32);
 
-#if NETCOREAPP3_0_OR_GREATER
         context.Emit(OpCodes.Call, rotateLeft);
-#else
-        context.Emit(OpCodes.Call, context[HelperMethod.Int32RotateLeft, (helper, c) =>
-        {
-            var builder = c.CheckedExportsBuilder.DefineMethod(
-                "☣ Int32RotateLeft",
-                CompilationContext.HelperMethodAttributes,
-                typeof(uint),
-                [
-                            typeof(uint),
-                            typeof(int),
-                ]
-                );
-
-            var il = builder.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Ldc_I4_S, 31);
-            il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Shl);
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldc_I4_S, 32);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Sub);
-            il.Emit(OpCodes.Ldc_I4_S, 31);
-            il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Shr_Un);
-            il.Emit(OpCodes.Or);
-
-            il.Emit(OpCodes.Ret);
-            return builder;
-        }
-        ]);
-#endif
     }
 }

@@ -28,12 +28,7 @@ public class FunctionImport : RuntimeImport
     /// <exception cref="ArgumentException">A parameter or return type is not compatible with WebAssembly.</exception>
     public FunctionImport(Delegate del)
     {
-#if NETSTANDARD
-        if (del == null)
-            throw new ArgumentNullException(nameof(del));
-#else
         ArgumentNullException.ThrowIfNull(del, nameof(del));
-#endif
 
         var method = (this.Method = del).GetMethodInfo() ??
             throw new ArgumentException("Provided delegate isn't associated with a method.", nameof(del));

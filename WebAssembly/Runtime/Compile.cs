@@ -149,15 +149,8 @@ public static class Compile
             {
                 Func<string, string, RuntimeImport> findImport = (module, field) =>
                 {
-#if NETSTANDARD
-                    if (module == null)
-                        throw new ArgumentNullException(nameof(module));
-                    if (field == null)
-                        throw new ArgumentNullException(nameof(field));
-#else
                     ArgumentNullException.ThrowIfNull(module, nameof(module));
                     ArgumentNullException.ThrowIfNull(field, nameof(field));
-#endif
 
                     return !imports.TryGetValue(module, out var fields) || !fields.TryGetValue(field, out var import)
                         ? throw new ImportException($"Missing import for {module}::{field}.")
@@ -288,12 +281,7 @@ public static class Compile
         TypeBuilder? importBuilder = null
         )
     {
-#if NETSTANDARD
-        if (configuration == null)
-            throw new ArgumentNullException(nameof(configuration));
-#else
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
-#endif
 
         switch (reader.ReadUInt32())
         {

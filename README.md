@@ -111,14 +111,14 @@ public abstract class Sample
 > This feature is experimental.
 
 The saving process uses the [PersistedAssemblyBuilder](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit.persistedassemblybuilder.-ctor) feature introduced in .NET 9.
-Aided by [MetadataLoadContext](https://www.nuget.org/packages/System.Reflection.MetadataLoadContext), this example produces a DLL for .NET Standard 2.0.
+Aided by [MetadataLoadContext](https://www.nuget.org/packages/System.Reflection.MetadataLoadContext), this example produces a DLL for .NET 8.
 
 ```C#
 var resolver = new PathAssemblyResolver([
-    // A core DLL containing System.String and other basic features:
-    "C:\\Program Files\\dotnet\\sdk\\9.0.300-preview.0.25177.5\\ref\\netstandard.dll",
+    // A core DLL containing System.String and other basic features (add sibling ref assemblies from this folder if resolution fails):
+    "C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\8.0.0\\ref\\net8.0\\System.Runtime.dll",
     // One way or another you'll need a reference to the matching WebAssembly.dll built against the core DLL.
-    "C:\\dotnet-webassembly\\WebAssembly\\bin\\Release\\netstandard2.0\\WebAssembly.dll"
+    "C:\\dotnet-webassembly\\WebAssembly\\bin\\Release\\net8.0\\WebAssembly.dll"
     ]);
 using var context = new MetadataLoadContext(resolver);
 

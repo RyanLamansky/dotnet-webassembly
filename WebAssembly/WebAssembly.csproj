@@ -1,15 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- .NET Standard 2.0 is very old but (so far) can still be built by the newest .NET SDK, so it makes a great baseline. -->
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <Title>WebAssembly for .NET</Title>
     <AssemblyTitle>WebAssembly for .NET</AssemblyTitle>
     <Authors>Ryan Lamansky</Authors>
     <Description>Create, read, modify, write and execute WebAssembly (WASM) files using pure 100% .NET.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Full support for creation and modification of WASM 1.0 files; .NET CLR JIT-based execution works well but may not support every WASM.</PackageReleaseNotes>
+    <PackageReleaseNotes>Full support for creation, modification, execution, and conversion of WASM 2.0 files.</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
@@ -36,10 +35,6 @@
     <None Include="../LICENSE" Pack="true" PackagePath="LICENSE" />
     <None Include="../README.md" Pack="true" PackagePath="/"/>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

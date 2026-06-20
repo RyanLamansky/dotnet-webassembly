@@ -8,12 +8,10 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
   * Changes to functionality associated with *draft* versions of WebAssembly can occur in minor releases.
 * CLR JIT-based compilation and execution can change in any version to achieve closer compliance to officially specified behavior, with the current release of Google Chrome used as the reference.
   * To minimize risk to your project, test your WASM files in Google Chrome and file bugs for deviance in WebAssembly for .NET's behavior.
-* .NET Core 3.1 will be supported *at least* as long as Microsoft supports it.
-  * .NET 5 and beyond is capable of loading .NET Core 3.1 libraries without complaint.
-  * Microsoft will transition long-term support to newer .NET releases over time, eventually leading to hardship with developing against older versions, which will trigger an update to the next oldest "LTS" release in a major version.
+* The oldest supported "LTS" release of .NET is the baseline target; .NET 8 holds that role as of 2.0.0.
+  * Microsoft transitions long-term support to newer .NET releases over time, eventually leading to hardship developing against older versions, which triggers an update to the next oldest "LTS" release in a major version.
   Specifically, if enabling an unsupported version of .NET causes compatibility problems with the Ubuntu-based build agent or Visual Studio Community-based Windows users, it's time to upgrade.
-  * Multi-targeted releases (for example, .NET Core 3.1 and .NET 6) may be created if the extra targets add useful features.
-  * Automated testing will cover .NET Core 3.1 and any newer compatible versions that are supported by Microsoft.
+  * Automated testing will cover the baseline LTS and any newer compatible versions that are supported by Microsoft.
 * WebAssembly for .NET releases will *never* take a dependency on anything other than .NET itself.
   * This minimizes the chance of "dependency hell".
   * Extension points may be made available so that middleware can be created to combine WebAssembly for .NET with other tools. Extension point requests are tracked via GitHub issues.
@@ -26,8 +24,9 @@ Breaking changes are avoided whenever possible, but are sometimes needed to achi
 
 ## Breaking Changes
 
-### Unreleased (WebAssembly 2.0 draft features)
+### 2.0.0
 
+* The .NET Standard 2.0 target was dropped; the library now targets `net8.0;net9.0` with .NET 8 as the minimum.
 * `Data`: gained `Kind` (0 = active/memory 0, 1 = passive, 2 = active/explicit memory index) and `MemoryIndex` (meaningful only for `Kind` 2) to support the bulk-memory proposal's passive data segments used by `memory.init` and `data.drop`.
   The previous `Index` property (the target linear memory index, previously always 0) is retained as an `[Obsolete]`, IntelliSense-hidden alias of `MemoryIndex`, so existing source continues to compile (with a deprecation warning) and behaves as before for active, memory-0 segments.
 * `FunctionTable`: the indexer (`this[int]`) no longer locks each slot to the type of the first delegate stored there, and the private per-slot delegate-type tracking has been removed.

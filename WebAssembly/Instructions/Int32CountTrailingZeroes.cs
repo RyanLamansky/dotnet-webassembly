@@ -1,7 +1,5 @@
-﻿#if NETCOREAPP3_0_OR_GREATER
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
-#endif
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -24,42 +22,13 @@ public class Int32CountTrailingZeroes : SimpleInstruction
     {
     }
 
-#if NETCOREAPP3_0_OR_GREATER
     private static readonly MethodInfo trailingZeroCount = typeof(BitOperations).GetMethod(nameof(BitOperations.TrailingZeroCount), [typeof(uint)])!;
-#endif
 
     internal sealed override void Compile(CompilationContext context)
     {
         //Assuming validation passes, the remaining type will be this.
         context.ValidateStack(OpCode.Int32CountTrailingZeroes, WebAssemblyValueType.Int32);
 
-#if NETCOREAPP3_0_OR_GREATER
         context.Emit(OpCodes.Call, trailingZeroCount);
-#else
-        context.Emit(OpCodes.Call, context[HelperMethod.Int32CountTrailingZeroes, (helper, c) =>
-        {
-            var result = context.CheckedExportsBuilder.DefineMethod(
-                "☣ Int32CountTrailingZeroes",
-                CompilationContext.HelperMethodAttributes,
-                typeof(int),
-                [ typeof(uint)
-                ]);
-
-            //All modern CPUs have a fast instruction specifically for this process, but there's no way to use it from .NET.
-            //Based on the algorithm found here: http://aggregate.org/MAGIC/#Trailing%20Zero%20Count
-            var il = result.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Neg);
-            il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Ldc_I4_1);
-            il.Emit(OpCodes.Sub);
-            il.Emit(OpCodes.Call, c[HelperMethod.Int32CountOneBits, Int32CountOneBits.CreateHelper]);
-            il.Emit(OpCodes.Ret);
-
-            return result;
-        }
-        ]);
-#endif
     }
 }

@@ -41,9 +41,7 @@ public class CustomSection
     /// <summary>
     /// The name of the custom section; nulls are converted to <see cref="string.Empty"/>.
     /// </summary>
-#if NET5_0_OR_GREATER
     [AllowNull]
-#endif
     public string Name
     {
         get => this.name ??= string.Empty;
@@ -56,9 +54,7 @@ public class CustomSection
     /// <summary>
     /// The content of the custom section; nulls are converted to an empty modifiable collection.
     /// </summary>
-#if NET5_0_OR_GREATER
     [AllowNull]
-#endif
     public IList<byte> Content
     {
         get => this.content ??= [];

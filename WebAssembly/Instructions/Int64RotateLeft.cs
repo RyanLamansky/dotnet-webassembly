@@ -1,7 +1,5 @@
-﻿#if NETCOREAPP3_0_OR_GREATER
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
-#endif
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -24,9 +22,7 @@ public class Int64RotateLeft : SimpleInstruction
     {
     }
 
-#if NETCOREAPP3_0_OR_GREATER
     private static readonly MethodInfo rotateLeft = typeof(BitOperations).GetMethod(nameof(BitOperations.RotateLeft), [typeof(ulong), typeof(int)])!;
-#endif
 
     internal sealed override void Compile(CompilationContext context)
     {
@@ -35,44 +31,7 @@ public class Int64RotateLeft : SimpleInstruction
         context.PopStackNoReturn(OpCode.Int64RotateLeft, WebAssemblyValueType.Int64, WebAssemblyValueType.Int64);
         stack.Push(WebAssemblyValueType.Int64);
 
-#if NETCOREAPP3_0_OR_GREATER
         context.Emit(OpCodes.Conv_I4);
         context.Emit(OpCodes.Call, rotateLeft);
-#else
-        context.Emit(OpCodes.Call, context[HelperMethod.Int64RotateLeft, (helper, c) =>
-        {
-            var builder = c.CheckedExportsBuilder.DefineMethod(
-                "☣ Int64RotateLeft",
-                CompilationContext.HelperMethodAttributes,
-                typeof(ulong),
-                [
-                            typeof(ulong),
-                            typeof(long),
-                ]
-                );
-
-            var il = builder.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Conv_I4);
-            il.Emit(OpCodes.Ldc_I4_S, 63);
-            il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Shl);
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldc_I4_S, 64);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Conv_I4);
-            il.Emit(OpCodes.Sub);
-            il.Emit(OpCodes.Ldc_I4_S, 63);
-            il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Shr_Un);
-            il.Emit(OpCodes.Or);
-
-            il.Emit(OpCodes.Ret);
-            return builder;
-        }
-        ]);
-#endif
     }
 }
