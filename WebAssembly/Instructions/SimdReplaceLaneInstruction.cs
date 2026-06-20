@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -15,7 +14,6 @@ public abstract class SimdReplaceLaneInstruction : SimdInstruction
     public byte LaneIndex { get; set; }
 
     internal abstract WebAssemblyValueType ScalarType { get; }
-    internal abstract RegeneratingWeakReference<MethodInfo> Method { get; }
     internal abstract byte MaxLaneCount { get; }
 
     private protected SimdReplaceLaneInstruction(Reader reader)
@@ -41,7 +39,7 @@ public abstract class SimdReplaceLaneInstruction : SimdInstruction
         // v128 is now on top
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);
         context.Emit(OpCodes.Ldloc, tmp);
-        context.Emit(OpCodes.Call, Method.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
         context.Stack.Push(WebAssemblyValueType.V128);
     }
 

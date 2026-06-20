@@ -1,4 +1,8 @@
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
@@ -11,6 +15,10 @@ public class V128Store : SimdMemoryImmediateInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128Store"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Store;
+
+    private static readonly MethodInfo writeUnaligned = typeof(Unsafe).GetMethods()
+        .Single(m => m.Name == nameof(Unsafe.WriteUnaligned) && m.GetParameters()[0].ParameterType.IsPointer)
+        .MakeGenericMethod(typeof(Vector128<byte>));
 
     /// <summary>Creates a new <see cref="V128Store"/> instance.</summary>
     public V128Store() { }
@@ -26,7 +34,7 @@ public class V128Store : SimdMemoryImmediateInstruction
             throw new Runtime.CompilerException("alignment must not be larger than natural");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
 
-        var valueLocal = context.DeclareLocal(V128Helper.V128Type);
+        var valueLocal = context.DeclareLocal(typeof(Vector128<byte>));
         context.Emit(OpCodes.Stloc, valueLocal);
 
         if (this.Offset != 0)
@@ -44,6 +52,6 @@ public class V128Store : SimdMemoryImmediateInstruction
         context.Emit(OpCodes.Add);
 
         context.Emit(OpCodes.Ldloc, valueLocal);
-        context.Emit(OpCodes.Call, V128Helper.WriteUnalignedMethod.Reference);
+        context.Emit(OpCodes.Call, writeUnaligned);
     }
 }

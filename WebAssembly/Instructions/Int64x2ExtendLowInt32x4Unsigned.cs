@@ -1,5 +1,6 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +10,17 @@ public class Int64x2ExtendLowInt32x4Unsigned : SimdUnaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int64x2ExtendLowInt32x4Unsigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int64x2ExtendLowInt32x4Unsigned;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int64x2ExtLowI32x4UMethod;
-
     /// <summary>Creates a new <see cref="Int64x2ExtendLowInt32x4Unsigned"/> instance.</summary>
     public Int64x2ExtendLowInt32x4Unsigned() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a)
+    {
+        if (Sse2.IsSupported)
+            return Sse2.UnpackLow(a.AsUInt32(), Vector128<uint>.Zero).AsByte();
+
+        Span<ulong> r = stackalloc ulong[2];
+        for (var i = 0; i < 2; i++) r[i] = a.AsUInt32().GetElement(i);
+        return Vector128.Create(r[0], r[1]).AsByte();
+    }
 }

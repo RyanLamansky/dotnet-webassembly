@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Float64x2ConvertLowInt32x4Unsigned : SimdUnaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Float64x2ConvertLowInt32x4Unsigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Float64x2ConvertLowInt32x4Unsigned;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Float64x2ConvertLowI32x4UMethod;
-
     /// <summary>Creates a new <see cref="Float64x2ConvertLowInt32x4Unsigned"/> instance.</summary>
     public Float64x2ConvertLowInt32x4Unsigned() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new double[2]; for (var i = 0; i < 2; i++) r[i] = a.AsUInt32().GetElement(i); return Vector128.Create(r).AsByte(); }
 }

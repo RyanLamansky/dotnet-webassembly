@@ -1,6 +1,5 @@
 using System;
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -10,7 +9,6 @@ public class Int32x4ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Int32x4
     /// <summary>Always <see cref="SimdOpCode.Int32x4ReplaceLane"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4ReplaceLane;
     internal override WebAssemblyValueType ScalarType => WebAssemblyValueType.Int32;
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int32x4ReplaceLaneMethod;
     internal override byte MaxLaneCount => 4;
 
     /// <summary>Creates a new <see cref="Int32x4ReplaceLane"/> instance.</summary>
@@ -25,4 +23,7 @@ public class Int32x4ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Int32x4
     public override bool Equals(Instruction? other) => this.Equals(other as Int32x4ReplaceLane);
     /// <inheritdoc/>
     public override int GetHashCode() => base.GetHashCode();
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> v, int lane, int x) => v.AsInt32().WithElement(lane, x).AsByte();
 }

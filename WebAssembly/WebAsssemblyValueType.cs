@@ -48,7 +48,7 @@ static class ValueTypeExtensions
         WebAssemblyValueType.Float64 => typeof(double),
         WebAssemblyValueType.FuncRef => typeof(System.Delegate),
         WebAssemblyValueType.ExternRef => typeof(object),
-        WebAssemblyValueType.V128 => WebAssembly.Runtime.V128Helper.V128Type,
+        WebAssemblyValueType.V128 => typeof(System.Runtime.Intrinsics.Vector128<byte>),
         _ => throw new System.ArgumentOutOfRangeException(nameof(valueType), $"{nameof(WebAssemblyValueType)} {valueType} not recognized."),
     };
 
@@ -61,7 +61,7 @@ static class ValueTypeExtensions
                 { typeof(double), WebAssemblyValueType.Float64 },
                 { typeof(System.Delegate), WebAssemblyValueType.FuncRef },
                 { typeof(object), WebAssemblyValueType.ExternRef },
-                { WebAssembly.Runtime.V128Helper.V128Type, WebAssemblyValueType.V128 },
+                { typeof(System.Runtime.Intrinsics.Vector128<byte>), WebAssemblyValueType.V128 },
         });
 
     public static bool TryConvertToValueType(this System.Type type, out WebAssemblyValueType value) => systemTypeToValueType.Reference.TryGetValue(type, out value);

@@ -1,6 +1,8 @@
 using System;
+using System.Reflection;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -10,6 +12,10 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16Shuffle"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int8x16Shuffle;
+
+    private static readonly MethodInfo create = typeof(Vector128).GetMethod(nameof(Vector128.Create),
+        [typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte),
+         typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte)])!;
 
     /// <summary>The 16 lane indices (0–31); indices 0–15 select from the first vector, 16–31 from the second.</summary>
     public byte[] Indices { get; set; } = new byte[16];
@@ -38,8 +44,40 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
         EmitMaskVector(context, Indices, selectFirstVector: true);
         EmitMaskVector(context, Indices, selectFirstVector: false);
 
-        context.Emit(OpCodes.Call, V128Helper.Int8x16ShuffleImmediateMethod.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
         context.Stack.Push(WebAssemblyValueType.V128);
+    }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(
+        Vector128<byte> a,
+        Vector128<byte> b,
+        Vector128<byte> maskA,
+        Vector128<byte> maskB)
+    {
+        if (Ssse3.IsSupported)
+            return Sse2.Or(Ssse3.Shuffle(a, maskA), Ssse3.Shuffle(b, maskB));
+
+        Span<byte> result = stackalloc byte[16];
+        for (var i = 0; i < 16; i++)
+        {
+            byte lane = 0;
+            var selectA = maskA.GetElement(i);
+            if ((selectA & 0x80) == 0)
+                lane = a.GetElement(selectA);
+
+            var selectB = maskB.GetElement(i);
+            if ((selectB & 0x80) == 0)
+                lane = b.GetElement(selectB);
+
+            result[i] = lane;
+        }
+
+        return Vector128.Create(
+            result[0], result[1], result[2], result[3],
+            result[4], result[5], result[6], result[7],
+            result[8], result[9], result[10], result[11],
+            result[12], result[13], result[14], result[15]);
     }
 
     private static void EmitMaskVector(CompilationContext context, byte[] indices, bool selectFirstVector)
@@ -53,7 +91,7 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
             Int32Constant.Emit(context, mask);
         }
 
-        context.Emit(OpCodes.Call, V128Helper.CreateMethod.Reference);
+        context.Emit(OpCodes.Call, create);
     }
 
     /// <inheritdoc/>

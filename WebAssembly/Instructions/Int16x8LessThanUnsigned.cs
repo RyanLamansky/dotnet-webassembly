@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int16x8LessThanUnsigned : SimdBinaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int16x8LessThanUnsigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8LessThanUnsigned;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8LtUMethod;
-
     /// <summary>Creates a new <see cref="Int16x8LessThanUnsigned"/> instance.</summary>
     public Int16x8LessThanUnsigned() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) => Vector128.LessThan(a.AsUInt16(), b.AsUInt16()).AsByte();
 }

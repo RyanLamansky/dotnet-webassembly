@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int32x4ShiftLeft : SimdShiftInstruction
     /// <summary>Always <see cref="SimdOpCode.Int32x4ShiftLeft"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4ShiftLeft;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int32x4ShlMethod;
-
     /// <summary>Creates a new <see cref="Int32x4ShiftLeft"/> instance.</summary>
     public Int32x4ShiftLeft() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a, int shift) => Vector128.ShiftLeft(a.AsInt32(), shift & 31).AsByte();
 }

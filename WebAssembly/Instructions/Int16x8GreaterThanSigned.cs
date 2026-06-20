@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int16x8GreaterThanSigned : SimdBinaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int16x8GreaterThanSigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8GreaterThanSigned;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8GtSMethod;
-
     /// <summary>Creates a new <see cref="Int16x8GreaterThanSigned"/> instance.</summary>
     public Int16x8GreaterThanSigned() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) => Vector128.GreaterThan(a.AsInt16(), b.AsInt16()).AsByte();
 }

@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int32x4Neg : SimdUnaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int32x4Neg"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int32x4Neg;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int32x4NegMethod;
-
     /// <summary>Creates a new <see cref="Int32x4Neg"/> instance.</summary>
     public Int32x4Neg() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a) => (-a.AsInt32()).AsByte();
 }

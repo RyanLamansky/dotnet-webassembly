@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -38,8 +40,11 @@ public class V128Load16Splat : SimdMemoryImmediateInstruction
         context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         context.Emit(OpCodes.Add);
 
-        context.Emit(OpCodes.Call, V128Helper.V128Load16SplatMethod.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
 
         context.Stack.Push(WebAssemblyValueType.V128);
     }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static unsafe Vector128<byte> Execute(IntPtr ptr) { var p = (byte*)ptr; return Vector128.Create((short)(p[0]|(p[1]<<8))).AsByte(); }
 }

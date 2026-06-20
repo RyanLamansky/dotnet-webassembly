@@ -1,6 +1,5 @@
 using System;
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -10,7 +9,6 @@ public class Int8x16ExtractLaneSigned : SimdExtractLaneInstruction, IEquatable<I
     /// <summary>Always <see cref="SimdOpCode.Int8x16ExtractLaneSigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int8x16ExtractLaneSigned;
     internal override WebAssemblyValueType ResultType => WebAssemblyValueType.Int32;
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int8x16ExtractLaneSMethod;
     internal override byte MaxLaneCount => 16;
 
     /// <summary>Creates a new <see cref="Int8x16ExtractLaneSigned"/> instance.</summary>
@@ -25,4 +23,7 @@ public class Int8x16ExtractLaneSigned : SimdExtractLaneInstruction, IEquatable<I
     public override bool Equals(Instruction? other) => this.Equals(other as Int8x16ExtractLaneSigned);
     /// <inheritdoc/>
     public override int GetHashCode() => base.GetHashCode();
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static int Execute(Vector128<byte> v, int lane) => (sbyte)v.GetElement(lane);
 }

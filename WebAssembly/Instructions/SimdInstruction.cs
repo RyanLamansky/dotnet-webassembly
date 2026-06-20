@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Concurrent;
+using System.Reflection;
+
 namespace WebAssembly.Instructions;
 
 /// <summary>
@@ -8,6 +12,17 @@ public abstract class SimdInstruction : Instruction
     private protected SimdInstruction()
     {
     }
+
+    private static readonly ConcurrentDictionary<Type, MethodInfo> executeMethods = new();
+
+    /// <summary>
+    /// Resolves the <c>public static Execute</c> method that a compiled SIMD instruction calls.
+    /// The method must be public so the emitted assembly (which is neither a subclass nor a friend) can call it.
+    /// </summary>
+    internal static MethodInfo ExecuteMethod(Type instructionType) =>
+        executeMethods.GetOrAdd(instructionType, static type =>
+            type.GetMethod("Execute", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException($"{type} is missing a public static Execute method."));
 
     /// <summary>
     /// Always <see cref="OpCode.SimdOperationPrefix"/>.

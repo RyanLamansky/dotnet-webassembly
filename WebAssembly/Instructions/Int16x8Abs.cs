@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int16x8Abs : SimdUnaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int16x8Abs"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8Abs;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8AbsMethod;
-
     /// <summary>Creates a new <see cref="Int16x8Abs"/> instance.</summary>
     public Int16x8Abs() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a) => Vector128.Abs(a.AsInt16()).AsByte();
 }

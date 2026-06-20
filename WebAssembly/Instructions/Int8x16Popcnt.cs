@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int8x16Popcnt : SimdUnaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int8x16Popcnt"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int8x16Popcnt;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int8x16PopcntMethod;
-
     /// <summary>Creates a new <see cref="Int8x16Popcnt"/> instance.</summary>
     public Int8x16Popcnt() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)System.Numerics.BitOperations.PopCount(a.GetElement(i)); return Vector128.Create(r); }
 }

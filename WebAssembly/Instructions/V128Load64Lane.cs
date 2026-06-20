@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -26,7 +28,7 @@ public class V128Load64Lane : SimdMemoryLaneInstruction
             throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for V128Load64Lane (max 1).");
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
 
-        var vecLocal = context.DeclareLocal(V128Helper.V128Type);
+        var vecLocal = context.DeclareLocal(typeof(Vector128<byte>));
         context.Emit(OpCodes.Stloc, vecLocal);
 
         if (this.Offset != 0)
@@ -45,8 +47,11 @@ public class V128Load64Lane : SimdMemoryLaneInstruction
 
         context.Emit(OpCodes.Ldloc, vecLocal);
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);
-        context.Emit(OpCodes.Call, V128Helper.V128Load64LaneMethod.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
 
         context.Stack.Push(WebAssemblyValueType.V128);
     }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static unsafe Vector128<byte> Execute(IntPtr ptr, Vector128<byte> vec, int lane) { var p=(byte*)ptr; return vec.AsInt64().WithElement(lane,(long)((ulong)p[0]|((ulong)p[1]<<8)|((ulong)p[2]<<16)|((ulong)p[3]<<24)|((ulong)p[4]<<32)|((ulong)p[5]<<40)|((ulong)p[6]<<48)|((ulong)p[7]<<56))).AsByte(); }
 }

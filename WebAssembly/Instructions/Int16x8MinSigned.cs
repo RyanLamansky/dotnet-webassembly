@@ -1,5 +1,4 @@
-using System.Reflection;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
@@ -9,8 +8,9 @@ public class Int16x8MinSigned : SimdBinaryV128Instruction
     /// <summary>Always <see cref="SimdOpCode.Int16x8MinSigned"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.Int16x8MinSigned;
 
-    internal override RegeneratingWeakReference<MethodInfo> Method => V128Helper.Int16x8MinSMethod;
-
     /// <summary>Creates a new <see cref="Int16x8MinSigned"/> instance.</summary>
     public Int16x8MinSigned() { }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) => Vector128.Min(a.AsInt16(), b.AsInt16()).AsByte();
 }

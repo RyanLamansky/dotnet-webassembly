@@ -1,3 +1,7 @@
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -38,8 +42,24 @@ public class V128Load32X2Signed : SimdMemoryImmediateInstruction
         context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         context.Emit(OpCodes.Add);
 
-        context.Emit(OpCodes.Call, V128Helper.V128Load32x2SMethod.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
 
         context.Stack.Push(WebAssemblyValueType.V128);
+    }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static unsafe Vector128<byte> Execute(IntPtr ptr)
+    {
+        if (Sse2.IsSupported)
+        {
+            var lanes = Vector128.CreateScalar(Unsafe.ReadUnaligned<ulong>((void*)ptr)).AsInt32();
+            var sign = Sse2.CompareGreaterThan(Vector128<int>.Zero, lanes);
+            return Sse2.UnpackLow(lanes, sign).AsByte();
+        }
+
+        var p = (byte*)ptr;
+        Span<long> r = stackalloc long[2];
+        for (var i = 0; i < 2; i++) r[i] = (int)(p[i * 4] | (p[i * 4 + 1] << 8) | (p[i * 4 + 2] << 16) | (p[i * 4 + 3] << 24));
+        return Vector128.Create(r[0], r[1]).AsByte();
     }
 }

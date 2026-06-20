@@ -1,6 +1,7 @@
 using System;
+using System.Reflection;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
+using System.Runtime.Intrinsics;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -12,6 +13,10 @@ public class V128Const : SimdInstruction, IEquatable<V128Const>
 {
     /// <summary>Always <see cref="SimdOpCode.V128Const"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Const;
+
+    private static readonly MethodInfo create = typeof(Vector128).GetMethod(nameof(Vector128.Create),
+        [typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte),
+         typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte), typeof(byte)])!;
 
     /// <summary>The 16 constant bytes (little-endian byte order per the WASM spec).</summary>
     public byte[] Value { get; set; } = new byte[16];
@@ -35,7 +40,7 @@ public class V128Const : SimdInstruction, IEquatable<V128Const>
         var v = Value;
         for (var i = 0; i < 16; i++)
             context.Emit(OpCodes.Ldc_I4, (int)(uint)v[i]);
-        context.Emit(OpCodes.Call, V128Helper.CreateMethod.Reference);
+        context.Emit(OpCodes.Call, create);
         context.Stack.Push(WebAssemblyValueType.V128);
     }
 

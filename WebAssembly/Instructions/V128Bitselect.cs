@@ -1,5 +1,5 @@
+using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -18,7 +18,10 @@ public class V128Bitselect : SimdInstruction
         // Stack: [..., v1, v2, mask] (mask on top) — pop mask, v2, v1
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.V128);
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128);  // pop v1
-        context.Emit(OpCodes.Call, V128Helper.V128BitselectMethod.Reference);
+        context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
         context.Stack.Push(WebAssemblyValueType.V128);
     }
+
+    /// <summary>The runtime implementation invoked by compiled code.</summary>
+    public static Vector128<byte> Execute(Vector128<byte> v1, Vector128<byte> v2, Vector128<byte> mask) => Vector128.ConditionalSelect(mask, v1, v2);
 }
