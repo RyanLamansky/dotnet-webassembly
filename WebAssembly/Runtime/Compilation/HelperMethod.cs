@@ -11,6 +11,7 @@ enum HelperMethod
     SelectFloat64,
     SelectInt32,
     SelectInt64,
+    SelectObject,
     Float32ReinterpretInt32,
     Float64ReinterpretInt64,
     Int32ReinterpretFloat32,

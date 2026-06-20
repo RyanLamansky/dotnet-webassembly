@@ -152,6 +152,7 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.CallIndirect: yield return new CallIndirect(reader); break;
                 case OpCode.Drop: yield return new Drop(); break;
                 case OpCode.Select: yield return new Select(); break;
+                case OpCode.SelectWithType: yield return new SelectWithType(reader); break;
                 case OpCode.LocalGet: yield return new LocalGet(reader); break;
                 case OpCode.LocalSet: yield return new LocalSet(reader); break;
                 case OpCode.LocalTee: yield return new LocalTee(reader); break;

@@ -55,7 +55,7 @@ public class Select : SimpleInstruction
         context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
     }
 
-    static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
+    internal static MethodBuilder CreateSelectHelper(HelperMethod helper, CompilationContext context)
     {
         var builder = helper switch
         {
@@ -96,6 +96,16 @@ public class Select : SimpleInstruction
           [
                                 typeof(double),
                                 typeof(double),
+                                typeof(int),
+          ]
+          ),
+            HelperMethod.SelectObject => context.CheckedExportsBuilder.DefineMethod(
+          "☣ Select Object",
+          CompilationContext.HelperMethodAttributes,
+          typeof(object),
+          [
+                                typeof(object),
+                                typeof(object),
                                 typeof(int),
           ]
           ),

@@ -101,6 +101,12 @@ public enum OpCode : byte
     Select = 0x1b,
 
     /// <summary>
+    /// A typed ternary operator; like <see cref="Select"/> but carries an explicit value-type annotation (WASM 2.0).
+    /// </summary>
+    [OpCodeCharacteristics("select_with_type")]
+    SelectWithType = 0x1c,
+
+    /// <summary>
     /// Read the current value of a local variable.
     /// </summary>
     [OpCodeCharacteristics("local.get")]

@@ -253,7 +253,6 @@ static class SpecTestRunner
                             case "size minimum must not be greater than maximum":
                             case "memory size must be at most 65536 pages (4GiB)":
                             case "unknown label":
-                            case "invalid result arity":
                             case "unknown type":
                             case "unknown data segment":
                             case "unknown data segment 1":
@@ -265,6 +264,8 @@ static class SpecTestRunner
                             case "unknown table 0":
                             case "undeclared function reference":
                             case "invalid lane index":
+                            // Result-arity validation can surface as a stack-size compilation error rather than a parse error.
+                            case "invalid result arity":
                             case var tf when tf.StartsWith("unknown function ", StringComparison.Ordinal):
                             case var tt when tt.StartsWith("unknown table ", StringComparison.Ordinal):
                             case var te when te.StartsWith("unknown elem segment", StringComparison.Ordinal):
