@@ -39,10 +39,6 @@ public class ExternRefTable : TableImport
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
         typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
 
-    internal static readonly RegeneratingWeakReference<MethodInfo> CopyWithinMethod = new(() =>
-        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
-        .First(m => m.GetParameters().Length == 3));
-
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(() =>
         typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
         .First(m => m.GetParameters().Length == 4));

@@ -53,10 +53,6 @@ public class FunctionTable : TableImport
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
         typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
 
-    internal static readonly RegeneratingWeakReference<MethodInfo> CopyWithinMethod = new(() =>
-        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
-        .First(m => m.GetParameters().Length == 3));
-
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(() =>
         typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
         .First(m => m.GetParameters().Length == 4));

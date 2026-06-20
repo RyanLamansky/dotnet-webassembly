@@ -76,9 +76,6 @@ public class BranchIf : Instruction
 
         if (isReachable)
         {
-            if (!isLoop)
-                targetBlockContext.MarkEndLabelTargeted();
-
             if (branchTypes.Length > 0)
             {
                 BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes, targetBlockContext);

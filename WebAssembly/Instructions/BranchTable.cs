@@ -201,16 +201,6 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         var defaultDistance = checked((int)this.DefaultLabel);
         var allDistances = labelDistances.Append(defaultDistance).ToArray();
 
-        void MarkTarget(int distance)
-        {
-            var target = context.Depth.ElementAt(distance);
-            if (target.OpCode != OpCode.Loop)
-                context.BlockContexts[context.Depth.Count - distance].MarkEndLabelTargeted();
-        }
-
-        foreach (var distance in allDistances)
-            MarkTarget(distance);
-
         if (defaultBranchTypes.Length > 1)
         {
             // Multi-value: validate the results, spill them to temporaries, copy into every (non-loop) target's

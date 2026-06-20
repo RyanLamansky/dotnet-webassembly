@@ -279,7 +279,6 @@ public static class V128Helper
     internal static readonly RegeneratingWeakReference<MethodInfo> Float64x2PromoteLowF32x4Method = new(() => typeof(V128Helper).GetMethod(nameof(Float64x2PromoteLowF32x4), BindingFlags.Public | BindingFlags.Static)!);
 
     // --- shuffle / swizzle ---
-    internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ShuffleMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Shuffle), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16ShuffleImmediateMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16ShuffleImmediate), BindingFlags.Public | BindingFlags.Static)!);
     internal static readonly RegeneratingWeakReference<MethodInfo> Int8x16SwizzleMethod = new(() => typeof(V128Helper).GetMethod(nameof(Int8x16Swizzle), BindingFlags.Public | BindingFlags.Static)!);
 
@@ -338,16 +337,6 @@ public static class V128Helper
     public static Vector128<byte> V128Or(Vector128<byte> a, Vector128<byte> b) => a | b;
     /// <summary>v128 bitwise XOR.</summary>
     public static Vector128<byte> V128Xor(Vector128<byte> a, Vector128<byte> b) => a ^ b;
-
-    /// <summary>i8x16 shuffle (two vectors, 16 byte lane indices 0-31).</summary>
-    public static Vector128<byte> Int8x16Shuffle(Vector128<byte> a, Vector128<byte> b, byte[] indices)
-    {
-        var src = new byte[32];
-        for (var i = 0; i < 16; i++) { src[i] = a.GetElement(i); src[16+i] = b.GetElement(i); }
-        var r = new byte[16];
-        for (var i = 0; i < 16; i++) r[i] = indices[i] < 32 ? src[indices[i]] : (byte)0;
-        return Vector128.Create(r);
-    }
 
     /// <summary>i8x16 shuffle with precomputed source masks, avoiding per-call index array allocation.</summary>
     public static Vector128<byte> Int8x16ShuffleImmediate(
@@ -1256,22 +1245,8 @@ public static class V128Helper
             B12 = op(a.B12), B13 = op(a.B13), B14 = op(a.B14), B15 = op(a.B15),
         };
 
-    private static unsafe (byte b0, byte b1, byte b2, byte b3, byte b4, byte b5, byte b6, byte b7,
-                            byte b8, byte b9, byte b10, byte b11, byte b12, byte b13, byte b14, byte b15)
-        GetBytes(V128Polyfill v) => (v.B0, v.B1, v.B2, v.B3, v.B4, v.B5, v.B6, v.B7,
-                                     v.B8, v.B9, v.B10, v.B11, v.B12, v.B13, v.B14, v.B15);
-
 #pragma warning disable CS1591
     // shuffle / swizzle
-    public static V128Polyfill Int8x16Shuffle(V128Polyfill a, V128Polyfill b, byte[] indices)
-    {
-        var src = new byte[] { a.B0,a.B1,a.B2,a.B3,a.B4,a.B5,a.B6,a.B7,a.B8,a.B9,a.B10,a.B11,a.B12,a.B13,a.B14,a.B15,
-                               b.B0,b.B1,b.B2,b.B3,b.B4,b.B5,b.B6,b.B7,b.B8,b.B9,b.B10,b.B11,b.B12,b.B13,b.B14,b.B15 };
-        var r = new byte[16];
-        for (var i = 0; i < 16; i++) r[i] = indices[i] < 32 ? src[indices[i]] : (byte)0;
-        return Create(r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12],r[13],r[14],r[15]);
-    }
-
     public static V128Polyfill Int8x16Swizzle(V128Polyfill a, V128Polyfill b)
     {
         var src = new byte[] { a.B0,a.B1,a.B2,a.B3,a.B4,a.B5,a.B6,a.B7,a.B8,a.B9,a.B10,a.B11,a.B12,a.B13,a.B14,a.B15 };

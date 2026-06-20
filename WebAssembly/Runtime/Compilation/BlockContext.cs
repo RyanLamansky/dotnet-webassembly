@@ -11,12 +11,6 @@ internal sealed class BlockContext
     public bool IsUnreachable { get; private set; }
 
     /// <summary>
-    /// True once reachable code has branched to this block's end label, meaning the end label is a real merge
-    /// point that must be reached with a clean stack (results ferried through <see cref="ResultLocal"/>/<see cref="ResultLocals"/>).
-    /// </summary>
-    public bool IsEndLabelTargeted { get; private set; }
-
-    /// <summary>
     /// For single-result blocks, the local that ferries the result value from each exit path (fall-through and
     /// branches) to the block's end label, keeping the IL evaluation stack balanced at the merge.
     /// </summary>
@@ -56,10 +50,5 @@ internal sealed class BlockContext
     public void MarkReachable()
     {
         IsUnreachable = false;
-    }
-
-    public void MarkEndLabelTargeted()
-    {
-        IsEndLabelTargeted = true;
     }
 }
