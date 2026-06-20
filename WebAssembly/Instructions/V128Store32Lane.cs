@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -6,34 +5,17 @@ using WebAssembly.Runtime.Compilation;
 namespace WebAssembly.Instructions;
 
 /// <summary>Store the specified i32x4 lane to memory.</summary>
-public class V128Store32Lane : SimdInstruction, IEquatable<V128Store32Lane>
+public class V128Store32Lane : SimdMemoryLaneInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128Store32Lane"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Store32Lane;
-
-    /// <summary>Alignment flags.</summary>
-    public uint Flags { get; set; }
-    /// <summary>Byte offset added to the address operand.</summary>
-    public uint Offset { get; set; }
-    /// <summary>Lane index (0-3).</summary>
-    public byte LaneIndex { get; set; }
 
     /// <summary>Creates a new <see cref="V128Store32Lane"/> instance.</summary>
     public V128Store32Lane() { }
 
     internal V128Store32Lane(Reader reader)
+        : base(reader)
     {
-        Flags = reader.ReadVarUInt32();
-        Offset = reader.ReadVarUInt32();
-        LaneIndex = reader.ReadByte();
-    }
-
-    internal override void WriteTo(Writer writer)
-    {
-        base.WriteTo(writer);
-        writer.WriteVar(Flags);
-        writer.WriteVar(Offset);
-        writer.Write(LaneIndex);
     }
 
     internal override void Compile(CompilationContext context)
@@ -65,13 +47,4 @@ public class V128Store32Lane : SimdInstruction, IEquatable<V128Store32Lane>
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);
         context.Emit(OpCodes.Call, V128Helper.V128Store32LaneMethod.Reference);
     }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => this.Equals(obj as V128Store32Lane);
-    /// <inheritdoc/>
-    public bool Equals(V128Store32Lane? other) => other != null && other.Flags == Flags && other.Offset == Offset && other.LaneIndex == LaneIndex;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => this.Equals(other as V128Store32Lane);
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(HashCode.Combine((int)SimdOpCode, (int)Flags, (int)Offset), (int)LaneIndex);
 }

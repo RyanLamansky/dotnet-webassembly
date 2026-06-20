@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -6,31 +5,17 @@ using WebAssembly.Runtime.Compilation;
 namespace WebAssembly.Instructions;
 
 /// <summary>Load a 32-bit value and splat to all 4 lanes of a v128.</summary>
-public class V128Load32Splat : SimdInstruction, IEquatable<V128Load32Splat>
+public class V128Load32Splat : SimdMemoryImmediateInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128Load32Splat"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Load32Splat;
-
-    /// <summary>Alignment flags (log2 of byte alignment).</summary>
-    public uint Flags { get; set; }
-
-    /// <summary>Byte offset added to the address operand.</summary>
-    public uint Offset { get; set; }
 
     /// <summary>Creates a new <see cref="V128Load32Splat"/> instance.</summary>
     public V128Load32Splat() { }
 
     internal V128Load32Splat(Reader reader)
+        : base(reader)
     {
-        Flags = reader.ReadVarUInt32();
-        Offset = reader.ReadVarUInt32();
-    }
-
-    internal override void WriteTo(Writer writer)
-    {
-        base.WriteTo(writer);
-        writer.WriteVar(Flags);
-        writer.WriteVar(Offset);
     }
 
     internal override void Compile(CompilationContext context)
@@ -57,13 +42,4 @@ public class V128Load32Splat : SimdInstruction, IEquatable<V128Load32Splat>
 
         context.Stack.Push(WebAssemblyValueType.V128);
     }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => this.Equals(obj as V128Load32Splat);
-    /// <inheritdoc/>
-    public bool Equals(V128Load32Splat? other) => other != null && other.Flags == this.Flags && other.Offset == this.Offset;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => this.Equals(other as V128Load32Splat);
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)SimdOpCode, (int)Flags, (int)Offset);
 }

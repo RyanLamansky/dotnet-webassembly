@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -6,34 +5,17 @@ using WebAssembly.Runtime.Compilation;
 namespace WebAssembly.Instructions;
 
 /// <summary>Load eight bytes from memory into the specified lane of a v128.</summary>
-public class V128Load64Lane : SimdInstruction, IEquatable<V128Load64Lane>
+public class V128Load64Lane : SimdMemoryLaneInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128Load64Lane"/>.</summary>
     public sealed override SimdOpCode SimdOpCode => SimdOpCode.V128Load64Lane;
-
-    /// <summary>Alignment flags.</summary>
-    public uint Flags { get; set; }
-    /// <summary>Byte offset added to the address operand.</summary>
-    public uint Offset { get; set; }
-    /// <summary>Lane index (0-1).</summary>
-    public byte LaneIndex { get; set; }
 
     /// <summary>Creates a new <see cref="V128Load64Lane"/> instance.</summary>
     public V128Load64Lane() { }
 
     internal V128Load64Lane(Reader reader)
+        : base(reader)
     {
-        Flags = reader.ReadVarUInt32();
-        Offset = reader.ReadVarUInt32();
-        LaneIndex = reader.ReadByte();
-    }
-
-    internal override void WriteTo(Writer writer)
-    {
-        base.WriteTo(writer);
-        writer.WriteVar(Flags);
-        writer.WriteVar(Offset);
-        writer.Write(LaneIndex);
     }
 
     internal override void Compile(CompilationContext context)
@@ -67,13 +49,4 @@ public class V128Load64Lane : SimdInstruction, IEquatable<V128Load64Lane>
 
         context.Stack.Push(WebAssemblyValueType.V128);
     }
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => this.Equals(obj as V128Load64Lane);
-    /// <inheritdoc/>
-    public bool Equals(V128Load64Lane? other) => other != null && other.Flags == Flags && other.Offset == Offset && other.LaneIndex == LaneIndex;
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => this.Equals(other as V128Load64Lane);
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine(HashCode.Combine((int)SimdOpCode, (int)Flags, (int)Offset), (int)LaneIndex);
 }
