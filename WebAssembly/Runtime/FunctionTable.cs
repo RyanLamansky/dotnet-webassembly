@@ -172,12 +172,14 @@ public class FunctionTable : TableImport
     /// into this table at <paramref name="dst"/>. Implements <c>table.init</c>. A null <paramref name="src"/> is treated
     /// as a dropped (length-0) segment.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void InitFromSegment(uint dst, Delegate?[]? src, uint srcOffset, uint length)
     {
         var srcLength = src != null ? (uint)src.Length : 0u;
-        if ((ulong)dst + length > this.Length || (ulong)srcOffset + length > srcLength)
-            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dst + length > this.Length)
+            throw new TableAccessOutOfRangeException(dst, length);
+        if ((ulong)srcOffset + length > srcLength)
+            throw new TableAccessOutOfRangeException(srcOffset, length);
         if (length == 0)
             return;
         for (var i = 0u; i < length; i++)
@@ -188,11 +190,13 @@ public class FunctionTable : TableImport
     /// Copies <paramref name="length"/> entries from offset <paramref name="src"/> to offset <paramref name="dst"/>
     /// within this table, handling overlap. Implements <c>table.copy</c> with both indices targeting this table.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void Copy(uint dst, uint src, uint length)
     {
-        if ((ulong)dst + length > this.Length || (ulong)src + length > this.Length)
-            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dst + length > this.Length)
+            throw new TableAccessOutOfRangeException(dst, length);
+        if ((ulong)src + length > this.Length)
+            throw new TableAccessOutOfRangeException(src, length);
         if (length == 0)
             return;
         if (dst <= src)
@@ -207,11 +211,13 @@ public class FunctionTable : TableImport
     /// Copies <paramref name="length"/> entries from <paramref name="srcTable"/> (offset <paramref name="srcIndex"/>)
     /// into this table at <paramref name="dstIndex"/>. Implements <c>table.copy</c> across two tables.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void Copy(FunctionTable srcTable, uint dstIndex, uint srcIndex, uint length)
     {
-        if ((ulong)dstIndex + length > this.Length || (ulong)srcIndex + length > srcTable.Length)
-            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dstIndex + length > this.Length)
+            throw new TableAccessOutOfRangeException(dstIndex, length);
+        if ((ulong)srcIndex + length > srcTable.Length)
+            throw new TableAccessOutOfRangeException(srcIndex, length);
         if (length == 0)
             return;
         if (ReferenceEquals(this, srcTable))
@@ -227,11 +233,11 @@ public class FunctionTable : TableImport
     /// Fills <paramref name="length"/> entries starting at <paramref name="dst"/> with <paramref name="value"/>.
     /// Implements <c>table.fill</c>.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The destination range falls out of bounds.</exception>
     public void Fill(uint dst, Delegate? value, uint length)
     {
         if ((ulong)dst + length > this.Length)
-            _ = this.delegates[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+            throw new TableAccessOutOfRangeException(dst, length);
         for (var i = 0u; i < length; i++)
             this.delegates[dst + i] = value;
     }

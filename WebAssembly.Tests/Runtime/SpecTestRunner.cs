@@ -316,6 +316,10 @@ static partial class SpecTestRunner
                                 {
                                     trapExpected();
                                 }
+                                catch (TableAccessOutOfRangeException)
+                                {
+                                    continue;
+                                }
                                 catch (IndexOutOfRangeException)
                                 {
                                     continue;

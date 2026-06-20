@@ -134,11 +134,11 @@ public class ExternRefTable : TableImport
     /// Fills <paramref name="len"/> entries starting at <paramref name="dst"/> with <paramref name="value"/>.
     /// Implements <c>table.fill</c>.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The destination range falls out of bounds.</exception>
     public void Fill(uint dst, object? value, uint len)
     {
         if ((ulong)dst + len > (ulong)this.values.Length)
-            _ = this.values[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+            throw new TableAccessOutOfRangeException(dst, len);
         for (uint i = 0; i < len; i++)
             this.values[dst + i] = value;
     }
@@ -147,11 +147,13 @@ public class ExternRefTable : TableImport
     /// Copies <paramref name="len"/> entries from offset <paramref name="src"/> to offset <paramref name="dst"/>
     /// within this table. Implements <c>table.copy</c> with both indices targeting this table.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void Copy(uint dst, uint src, uint len)
     {
-        if ((ulong)dst + len > (ulong)this.values.Length || (ulong)src + len > (ulong)this.values.Length)
-            _ = this.values[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dst + len > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, len);
+        if ((ulong)src + len > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(src, len);
         // Array.Copy handles overlapping ranges correctly.
         Array.Copy(this.values, (int)src, this.values, (int)dst, (int)len);
     }
@@ -160,11 +162,13 @@ public class ExternRefTable : TableImport
     /// Copies <paramref name="len"/> entries from <paramref name="srcTable"/> (offset <paramref name="src"/>)
     /// into this table at <paramref name="dst"/>. Implements <c>table.copy</c> across two tables.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void Copy(ExternRefTable srcTable, uint dst, uint src, uint len)
     {
-        if ((ulong)dst + len > (ulong)this.values.Length || (ulong)src + len > (ulong)srcTable.values.Length)
-            _ = this.values[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dst + len > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, len);
+        if ((ulong)src + len > (ulong)srcTable.values.Length)
+            throw new TableAccessOutOfRangeException(src, len);
         Array.Copy(srcTable.values, (int)src, this.values, (int)dst, (int)len);
     }
 
@@ -172,12 +176,14 @@ public class ExternRefTable : TableImport
     /// Copies <paramref name="length"/> entries from a passive element segment into this table.
     /// Implements <c>table.init</c>. A null <paramref name="src"/> is treated as a dropped (length-0) segment.
     /// </summary>
-    /// <exception cref="IndexOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
     public void InitFromSegment(uint dst, object?[]? src, uint srcOffset, uint length)
     {
         var srcLength = src != null ? (uint)src.Length : 0u;
-        if ((ulong)dst + length > (ulong)this.values.Length || (ulong)srcOffset + length > srcLength)
-            _ = this.values[int.MaxValue]; // out of bounds: triggers IndexOutOfRangeException without CA2201
+        if ((ulong)dst + length > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, length);
+        if ((ulong)srcOffset + length > srcLength)
+            throw new TableAccessOutOfRangeException(srcOffset, length);
         if (length == 0)
             return;
         for (var i = 0u; i < length; i++)
