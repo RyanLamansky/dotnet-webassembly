@@ -22,7 +22,7 @@ public class MemoryInitTests
         module.Memories.Add(new Memory(1, 1));
 
         // Passive data segment (kind 1) containing bytes [10, 20, 30, 40].
-        var seg = new Data { Kind = 1 };
+        var seg = new Data { Kind = DataKind.Passive };
         seg.RawData.Add(10);
         seg.RawData.Add(20);
         seg.RawData.Add(30);

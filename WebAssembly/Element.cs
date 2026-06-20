@@ -13,12 +13,31 @@ namespace WebAssembly;
 public class Element
 {
     /// <summary>
-    /// The segment kind (0–7), encoding active/passive/declarative and init-expression vs function-index forms.
+    /// The segment kind, encoding active/passive/declarative and init-expression vs function-index forms.
     /// </summary>
-    public uint Kind { get; set; }
+    public ElementKind Kind { get; set; }
 
     /// <summary>
-    /// The table index. Only meaningful for active segments (kind 0, 2, 4, 6); kind 0/4 implicitly target table 0.
+    /// True for active segments (those that initialize a table at an offset). Passive and declarative segments are not.
+    /// </summary>
+    public bool IsActive => ((uint)this.Kind & 1) == 0;
+
+    /// <summary>
+    /// True for declarative segments.
+    /// </summary>
+    public bool IsDeclarative =>
+        this.Kind is ElementKind.DeclarativeFunctionIndices or ElementKind.DeclarativeExpressions;
+
+    /// <summary>
+    /// True when the segment carries per-element initializer expressions (<see cref="InitExprs"/>) rather than plain
+    /// function indices (<see cref="Elements"/>).
+    /// </summary>
+    public bool UsesExpressions => ((uint)this.Kind & 4) != 0;
+
+    /// <summary>
+    /// The table index. Only meaningful for active segments with an explicit table index
+    /// (<see cref="ElementKind.ActiveExplicitTableFunctionIndices"/>, <see cref="ElementKind.ActiveExplicitTableExpressions"/>);
+    /// other active segments implicitly target table 0.
     /// </summary>
     public uint Index { get; set; }
 
@@ -40,7 +59,7 @@ public class Element
     private IList<uint>? elements;
 
     /// <summary>
-    /// A sequence of function indices. Used by the function-index forms (kinds 0–3).
+    /// A sequence of function indices. Used by the function-index forms (where !UsesExpressions).
     /// </summary>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<uint> Elements
@@ -50,7 +69,7 @@ public class Element
     }
 
     /// <summary>
-    /// The element type for the reference-typed forms (kinds 5–7).
+    /// The element type for the reference-typed forms (where UsesExpressions).
     /// </summary>
     public ElementType ElemType { get; set; } = ElementType.FunctionReference;
 
@@ -58,7 +77,7 @@ public class Element
     private IList<IList<Instruction>>? initExprs;
 
     /// <summary>
-    /// Per-element initializer expressions. Used by the init-expression forms (kinds 4–7).
+    /// Per-element initializer expressions. Used by the init-expression forms (where UsesExpressions).
     /// </summary>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<IList<Instruction>> InitExprs
@@ -75,7 +94,7 @@ public class Element
     }
 
     /// <summary>
-    /// Creates a new active (kind 0) <see cref="Element"/> instance with the provided elements.
+    /// Creates a new active <see cref="Element"/> instance with the provided elements.
     /// </summary>
     /// <param name="offset">The zero-based offset from the start of the table where <paramref name="elements"/> are placed, retained as the <see cref="InitializerExpression"/>.</param>
     /// <param name="elements">The table entries.</param>
@@ -85,7 +104,7 @@ public class Element
     }
 
     /// <summary>
-    /// Creates a new active (kind 0) <see cref="Element"/> instance with the provided elements.
+    /// Creates a new active <see cref="Element"/> instance with the provided elements.
     /// </summary>
     /// <param name="offset">The zero-based offset from the start of the table where <paramref name="elements"/> are placed, retained as the <see cref="InitializerExpression"/>.</param>
     /// <param name="elements">The table entries.</param>
@@ -101,50 +120,50 @@ public class Element
 
     internal Element(Reader reader)
     {
-        this.Kind = reader.ReadVarUInt32();
+        this.Kind = (ElementKind)reader.ReadVarUInt32();
 
         switch (this.Kind)
         {
-            case 0: //Active, table 0, i32 offset expression, function indices.
+            case ElementKind.ActiveFunctionIndices:
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 this.ReadFuncIndices(reader);
                 break;
 
-            case 1: //Passive, function indices, prefixed with a 0x00 elemkind byte.
+            case ElementKind.PassiveFunctionIndices:
                 _ = reader.ReadByte(); //elemkind = 0x00 (funcref)
                 this.ReadFuncIndices(reader);
                 break;
 
-            case 2: //Active, explicit table index, i32 offset expression, function indices, prefixed with 0x00 elemkind.
+            case ElementKind.ActiveExplicitTableFunctionIndices:
                 this.Index = reader.ReadVarUInt32();
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 _ = reader.ReadByte(); //elemkind = 0x00 (funcref)
                 this.ReadFuncIndices(reader);
                 break;
 
-            case 3: //Declarative, function indices, prefixed with 0x00 elemkind.
+            case ElementKind.DeclarativeFunctionIndices:
                 _ = reader.ReadByte(); //elemkind = 0x00 (funcref)
                 this.ReadFuncIndices(reader);
                 break;
 
-            case 4: //Active, table 0, i32 offset expression, init expressions.
+            case ElementKind.ActiveExpressions:
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 this.ReadInitExprs(reader);
                 break;
 
-            case 5: //Passive, init expressions, prefixed with reftype.
+            case ElementKind.PassiveExpressions:
                 this.ElemType = (ElementType)reader.ReadVarInt7();
                 this.ReadInitExprs(reader);
                 break;
 
-            case 6: //Active, explicit table index, i32 offset expression, init expressions, prefixed with reftype.
+            case ElementKind.ActiveExplicitTableExpressions:
                 this.Index = reader.ReadVarUInt32();
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 this.ElemType = (ElementType)reader.ReadVarInt7();
                 this.ReadInitExprs(reader);
                 break;
 
-            case 7: //Declarative, init expressions, prefixed with reftype.
+            case ElementKind.DeclarativeExpressions:
                 this.ElemType = (ElementType)reader.ReadVarInt7();
                 this.ReadInitExprs(reader);
                 break;
@@ -178,22 +197,22 @@ public class Element
 
     internal void WriteTo(Writer writer)
     {
-        writer.WriteVar(this.Kind);
+        writer.WriteVar((uint)this.Kind);
 
         switch (this.Kind)
         {
-            case 0:
+            case ElementKind.ActiveFunctionIndices:
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
                 this.WriteFuncIndices(writer);
                 break;
 
-            case 1:
+            case ElementKind.PassiveFunctionIndices:
                 writer.Write((byte)0x00);
                 this.WriteFuncIndices(writer);
                 break;
 
-            case 2:
+            case ElementKind.ActiveExplicitTableFunctionIndices:
                 writer.WriteVar(this.Index);
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
@@ -201,23 +220,23 @@ public class Element
                 this.WriteFuncIndices(writer);
                 break;
 
-            case 3:
+            case ElementKind.DeclarativeFunctionIndices:
                 writer.Write((byte)0x00);
                 this.WriteFuncIndices(writer);
                 break;
 
-            case 4:
+            case ElementKind.ActiveExpressions:
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
                 this.WriteInitExprs(writer);
                 break;
 
-            case 5:
+            case ElementKind.PassiveExpressions:
                 writer.WriteVar((sbyte)this.ElemType);
                 this.WriteInitExprs(writer);
                 break;
 
-            case 6:
+            case ElementKind.ActiveExplicitTableExpressions:
                 writer.WriteVar(this.Index);
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
@@ -225,7 +244,7 @@ public class Element
                 this.WriteInitExprs(writer);
                 break;
 
-            case 7:
+            case ElementKind.DeclarativeExpressions:
                 writer.WriteVar((sbyte)this.ElemType);
                 this.WriteInitExprs(writer);
                 break;

@@ -1379,14 +1379,10 @@ public static class Compile
         for (var i = 0u; i < count; i++)
         {
             var element = new Element(reader);
-            var isActive = (element.Kind & 1) == 0;
-            var isDeclarative = element.Kind is 3 or 7;
-            var usesInitExprs = element.Kind >= 4;
-            var elemType = element.Kind switch
-            {
-                0 or 1 or 2 or 3 => ElementType.FunctionReference,
-                _ => element.ElemType,
-            };
+            var isActive = element.IsActive;
+            var isDeclarative = element.IsDeclarative;
+            var usesInitExprs = element.UsesExpressions;
+            var elemType = usesInitExprs ? element.ElemType : ElementType.FunctionReference;
             var entryCount = usesInitExprs ? element.InitExprs.Count : element.Elements.Count;
 
             // Register declared function references (func-index forms); init-expr forms register in EmitElementRefValue.

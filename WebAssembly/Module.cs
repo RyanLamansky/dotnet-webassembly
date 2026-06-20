@@ -409,8 +409,8 @@ public class Module
             var index = 0;
             foreach (var element in this.elements)
             {
-                // Only active segments (even kinds 0/2/4/6) carry an offset initializer expression that must end with End.
-                if ((element.Kind & 1) == 0 && LastOpCodeIsNotEnd(element.InitializerExpression))
+                // Only active segments carry an offset initializer expression that must end with End.
+                if (element.IsActive && LastOpCodeIsNotEnd(element.InitializerExpression))
                     throw new InvalidOperationException($"Element at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;
@@ -434,8 +434,8 @@ public class Module
             var index = 0;
             foreach (var data in this.data)
             {
-                // Passive segments (kind 1) carry no initializer expression, so the End-terminator rule only applies to active segments.
-                if (data.Kind != 1 && LastOpCodeIsNotEnd(data.InitializerExpression))
+                // Passive segments carry no initializer expression, so the End-terminator rule only applies to active segments.
+                if (data.IsActive && LastOpCodeIsNotEnd(data.InitializerExpression))
                     throw new InvalidOperationException($"Data at index {index} has an initializer expression not terminated with OpCode.End.");
 
                 index++;
@@ -552,7 +552,7 @@ public class Module
 
         // The DataCount section must precede the Code section when passive or explicitly-indexed data segments are present,
         // so that the compiler can pre-allocate their backing fields before processing memory.init / data.drop.
-        if (this.data != null && this.data.Any(d => d.Kind != 0))
+        if (this.data != null && this.data.Any(d => d.Kind != DataKind.Active))
         {
             WriteSection(buffer, writer, Section.DataCount, sectionWriter =>
             {

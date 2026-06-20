@@ -24,7 +24,7 @@ public class DataDropTests
         var module = new Module();
         module.Memories.Add(new Memory(1, 1));
 
-        var seg = new Data { Kind = 1 };
+        var seg = new Data { Kind = DataKind.Passive };
         seg.RawData.Add(42);
         module.Data.Add(seg);
 

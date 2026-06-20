@@ -12,12 +12,18 @@ namespace WebAssembly;
 public class Data
 {
     /// <summary>
-    /// The segment kind: 0 = active (memory 0, offset expression), 1 = passive, 2 = active (explicit memory index + offset expression).
+    /// The segment kind (active, passive, or active with an explicit memory index).
     /// </summary>
-    public uint Kind { get; set; }
+    public DataKind Kind { get; set; }
 
     /// <summary>
-    /// The linear memory index. Only meaningful for <see cref="Kind"/> 2; <see cref="Kind"/> 0 implicitly targets memory 0.
+    /// True for active segments (those that load their bytes into memory at an offset). Passive segments are not.
+    /// </summary>
+    public bool IsActive => this.Kind != DataKind.Passive;
+
+    /// <summary>
+    /// The linear memory index. Only meaningful for <see cref="DataKind.ActiveExplicitMemory"/>; the other active form
+    /// implicitly targets memory 0.
     /// </summary>
     public uint MemoryIndex { get; set; }
 
@@ -38,7 +44,7 @@ public class Data
 
     /// <summary>
     /// An <see cref="WebAssemblyValueType.Int32"/> initializer expression that computes the offset at which to place the data.
-    /// Only meaningful for active segments (<see cref="Kind"/> 0 and 2).
+    /// Only meaningful for active segments.
     /// </summary>
     /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
     public IList<Instruction> InitializerExpression
@@ -69,20 +75,20 @@ public class Data
 
     internal Data(Reader reader)
     {
-        this.Kind = reader.ReadVarUInt32();
+        this.Kind = (DataKind)reader.ReadVarUInt32();
 
         switch (this.Kind)
         {
-            case 0: //Active, memory 0, offset initializer, bytes.
+            case DataKind.Active:
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 this.rawData = reader.ReadBytes(reader.ReadVarUInt32());
                 break;
 
-            case 1: //Passive — no memory, no offset; just bytes.
+            case DataKind.Passive:
                 this.rawData = reader.ReadBytes(reader.ReadVarUInt32());
                 break;
 
-            case 2: //Active, explicit memory index, offset initializer, bytes.
+            case DataKind.ActiveExplicitMemory:
                 this.MemoryIndex = reader.ReadVarUInt32();
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
                 this.rawData = reader.ReadBytes(reader.ReadVarUInt32());
@@ -101,21 +107,21 @@ public class Data
 
     internal void WriteTo(Writer writer)
     {
-        writer.WriteVar(this.Kind);
+        writer.WriteVar((uint)this.Kind);
 
         switch (this.Kind)
         {
-            case 0:
+            case DataKind.Active:
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
                 this.WriteRawData(writer);
                 break;
 
-            case 1:
+            case DataKind.Passive:
                 this.WriteRawData(writer);
                 break;
 
-            case 2:
+            case DataKind.ActiveExplicitMemory:
                 writer.WriteVar(this.MemoryIndex);
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
