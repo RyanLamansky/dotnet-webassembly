@@ -39,12 +39,7 @@ public class TableGet : Instruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (TableIndex >= (uint)context.Tables.Count)
-            throw new ModuleLoadException($"Table index {TableIndex} out of range (only {context.Tables.Count} tables defined).", 0);
-
-        var elementType = context.GetTableElementType(TableIndex);
-        var table = context.GetTable(TableIndex);
-        var isFunc = elementType == ElementType.FunctionReference;
+        var (table, isFunc) = context.ResolveTable(TableIndex);
 
         context.PopStackNoReturn(OpCode, WebAssemblyValueType.Int32);
         context.Stack.Push(isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef);

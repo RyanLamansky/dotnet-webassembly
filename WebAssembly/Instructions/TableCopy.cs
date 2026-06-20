@@ -50,17 +50,12 @@ public class TableCopy : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
-        if (DestinationTableIndex >= (uint)context.Tables.Count)
-            throw new ModuleLoadException($"table.copy: destination table index {DestinationTableIndex} out of range.", 0);
-        if (SourceTableIndex >= (uint)context.Tables.Count)
-            throw new ModuleLoadException($"table.copy: source table index {SourceTableIndex} out of range.", 0);
-
-        var dstElemType = context.GetTableElementType(DestinationTableIndex);
-        var srcElemType = context.GetTableElementType(SourceTableIndex);
-        if (dstElemType != srcElemType)
+        var (dstTable, dstIsFunc) = context.ResolveTable(DestinationTableIndex);
+        var (srcTable, srcIsFunc) = context.ResolveTable(SourceTableIndex);
+        if (dstIsFunc != srcIsFunc)
             throw new ModuleLoadException("table.copy: source and destination tables have different element types.", 0);
 
-        var isFunc = dstElemType == ElementType.FunctionReference;
+        var isFunc = dstIsFunc;
 
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
@@ -72,9 +67,9 @@ public class TableCopy : MiscellaneousInstruction
 
         // this.dstTable.Copy(this.srcTable, dst, src, len)
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.GetTable(DestinationTableIndex));
+        context.Emit(OpCodes.Ldfld, dstTable);
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.GetTable(SourceTableIndex));
+        context.Emit(OpCodes.Ldfld, srcTable);
         context.Emit(OpCodes.Ldloc, dst);
         context.Emit(OpCodes.Ldloc, src);
         context.Emit(OpCodes.Ldloc, len);

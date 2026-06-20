@@ -103,6 +103,17 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         return this.TableElementTypes[(int)tableIndex];
     }
 
+    /// <summary>
+    /// Validates a table index for a table instruction and resolves its backing field and whether it holds function
+    /// references (vs. external references), throwing <see cref="ModuleLoadException"/> when the index is out of range.
+    /// </summary>
+    public (FieldBuilder table, bool isFunc) ResolveTable(uint tableIndex)
+    {
+        if (tableIndex >= (uint)this.Tables.Count)
+            throw new ModuleLoadException($"Table index {tableIndex} out of range (only {this.Tables.Count} tables defined).", 0);
+        return (this.Tables[(int)tableIndex], this.TableElementTypes[(int)tableIndex] == ElementType.FunctionReference);
+    }
+
     /// <summary>Per-function reference delegates, used by <c>ref.func</c>. Assigned during compilation.</summary>
     public FieldBuilder? FunctionReferences;
 

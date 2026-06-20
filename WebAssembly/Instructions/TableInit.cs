@@ -54,12 +54,8 @@ public class TableInit : MiscellaneousInstruction
             || !context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType))
             throw new ModuleLoadException($"table.init: element segment {SegmentIndex} does not exist.", 0);
 
-        if (TableIndex >= (uint)context.Tables.Count)
-            throw new ModuleLoadException($"table.init: table index {TableIndex} out of range.", 0);
-
-        var table = context.GetTable(TableIndex);
-        var tableElemType = context.GetTableElementType(TableIndex);
-        var isFunc = tableElemType == ElementType.FunctionReference;
+        var (table, isFunc) = context.ResolveTable(TableIndex);
+        var tableElemType = isFunc ? ElementType.FunctionReference : ElementType.ExternRef;
 
         if (segElemType != tableElemType)
             throw new ModuleLoadException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).", 0);
