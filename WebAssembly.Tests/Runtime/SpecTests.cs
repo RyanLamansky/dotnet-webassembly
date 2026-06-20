@@ -260,12 +260,10 @@ public class SpecTests
         // 10x KeyNotFoundException: The given key '$X' was not present in the dictionary.
         // 1x ModuleLoadException: At offset N: At offset N: Opcode "210" is not permitted in intializer expressions.
         // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        // 495, 503, 511, 519, 618, 623, 628, 637: reference-typed element segment type-mismatch validation
-        // (e.g. ref.null of the wrong reftype in a typed segment) is not yet implemented.
         var skips = new HashSet<uint>
         {
             4, 80, 120, 127, 153, 239, 248, 257, 266, 273, 281, 290, 298, 307, 315, 324, 332, 342, 350,
-            352, 360, 467, 475, 495, 503, 511, 519, 550, 561, 589, 598, 599, 602, 611, 612, 613, 618, 623, 628, 637,
+            352, 360, 467, 475, 550, 561, 589, 598, 599, 602, 611, 612, 613,
             646, 653, 655, 656, 658, 659, 661, 662, 664, 668, 669, 673, 680, 682, 692
         };
         SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);

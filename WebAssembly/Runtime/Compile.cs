@@ -1330,6 +1330,26 @@ public static class Compile
 
     // Emits IL that pushes a reference value onto the stack for an element entry: either a funcref delegate loaded from
     // FunctionReferences (and the function index registered as declared), or a null reference for ref.null.
+    static void ValidateElementInitExpr(IList<Instruction> initExpr, ElementType elemType)
+    {
+        // A reference-type element initializer is a constant expression yielding exactly one reference value, then end.
+        if (initExpr.Count != 2 || initExpr[1] is not Instructions.End)
+            throw new ModuleLoadException("An element initializer expression must be a single reference-producing constant expression followed by end.", 0);
+
+        switch (initExpr[0])
+        {
+            case Instructions.RefFunc when elemType == ElementType.FunctionReference:
+                break;
+            case Instructions.RefNull refNull when (ElementType)refNull.Type == elemType:
+                break;
+            // global.get's reference type isn't validated here; any other instruction yields a non-matching value.
+            case Instructions.GlobalGet:
+                break;
+            default:
+                throw new ModuleLoadException($"Element initializer expression ({initExpr[0].OpCode}) does not produce a value matching the segment element type {elemType}.", 0);
+        }
+    }
+
     static void EmitElementRefValue(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
     {
         // Each per-element initializer is a constant expression of the form [ref.func N, end] or [ref.null t, end].
@@ -1377,6 +1397,11 @@ public static class Compile
                 FieldAttributes.Private);
             context.ElementSegments[i] = segField;
             context.ElementSegmentTypes[i] = elemType;
+
+            // Each reference-producing initializer expression must yield a value matching the segment's element type.
+            if (usesInitExprs)
+                foreach (var initExpr in element.InitExprs)
+                    ValidateElementInitExpr(initExpr, elemType);
 
             if (isActive)
             {
