@@ -93,22 +93,17 @@ public class Branch : Instruction
                     // Stash the results into the target's result locals (reloaded at its end label), then discard any
                     // intermediates left beneath them.
                     targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);
-                    for (var i = branchTypes.Length - 1; i >= 0; i--)
-                        context.Emit(OpCodes.Stloc, targetBlockContext.ResultLocals[i]);
-                    for (var i = 0; i < discardCount; i++)
-                        context.Emit(OpCodes.Pop);
+                    BranchHelper.StashResults(context, targetBlockContext.ResultLocals);
+                    BranchHelper.DiscardIntermediates(context, discardCount);
                 }
                 else if (discardCount > 0)
                 {
                     // Loop back-edge with intermediates beneath the parameters: temporarily stash the parameters so
                     // the intermediates can be discarded, then restore the parameters as the back-edge values.
                     var temporaries = context.DeclareResultLocals(branchTypes);
-                    for (var i = branchTypes.Length - 1; i >= 0; i--)
-                        context.Emit(OpCodes.Stloc, temporaries[i]);
-                    for (var i = 0; i < discardCount; i++)
-                        context.Emit(OpCodes.Pop);
-                    for (var i = 0; i < branchTypes.Length; i++)
-                        context.Emit(OpCodes.Ldloc, temporaries[i]);
+                    BranchHelper.StashResults(context, temporaries);
+                    BranchHelper.DiscardIntermediates(context, discardCount);
+                    BranchHelper.ReloadResults(context, temporaries);
                 }
                 // else: loop back-edge with the parameters already in place — branch directly.
             }
@@ -118,15 +113,13 @@ public class Branch : Instruction
                 context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(checked((int)this.Index), expectedType));
 
                 var intermediateCount = context.Stack.Count - targetBlockContext.InitialStackSize - 1;
-                for (var i = 0; i < intermediateCount; i++)
-                    context.Emit(OpCodes.Pop);
+                BranchHelper.DiscardIntermediates(context, intermediateCount);
             }
             else
             {
                 // Void target: discard every value pushed inside this block before branching.
                 var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize;
-                for (var i = 0; i < discardCount; i++)
-                    context.Emit(OpCodes.Pop);
+                BranchHelper.DiscardIntermediates(context, discardCount);
             }
         }
         else

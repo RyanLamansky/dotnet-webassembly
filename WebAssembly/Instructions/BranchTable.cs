@@ -212,8 +212,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             context.Emit(OpCodes.Stloc, indexLocal);
 
             var tempLocals = context.DeclareResultLocals(defaultBranchTypes);
-            for (var k = defaultBranchTypes.Length - 1; k >= 0; k--)
-                context.Emit(OpCodes.Stloc, tempLocals[k]);
+            BranchHelper.StashResults(context, tempLocals);
 
             foreach (var distance in allDistances.Distinct())
             {
@@ -296,8 +295,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
         if (uniform && loopTempLocals == null)
         {
-            for (var i = 0; i < minIntermediate; i++)
-                context.Emit(OpCodes.Pop);
+            BranchHelper.DiscardIntermediates(context, minIntermediate);
 
             context.Emit(OpCodes.Ldloc, indexLocal);
             context.Emit(OpCodes.Switch, labelDistances.Select(RealLabel).ToArray());
@@ -305,8 +303,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             return;
         }
 
-        for (var i = 0; i < minIntermediate; i++)
-            context.Emit(OpCodes.Pop);
+        BranchHelper.DiscardIntermediates(context, minIntermediate);
 
         context.Emit(OpCodes.Ldloc, indexLocal);
         var trampolines = labelDistances.Select(_ => context.DefineLabel()).ToArray();
@@ -318,14 +315,10 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         {
             context.MarkLabel(trampoline);
             var extraPops = intermediateCount(distance) - minIntermediate;
-            for (var i = 0; i < extraPops; i++)
-                context.Emit(OpCodes.Pop);
+            BranchHelper.DiscardIntermediates(context, extraPops);
 
             if (loopTempLocals != null && context.Depth.ElementAt(distance).OpCode == OpCode.Loop)
-            {
-                for (var i = 0; i < branchTypeCount; i++)
-                    context.Emit(OpCodes.Ldloc, loopTempLocals[i]);
-            }
+                BranchHelper.ReloadResults(context, loopTempLocals);
 
             context.Emit(OpCodes.Br, RealLabel(distance));
         }

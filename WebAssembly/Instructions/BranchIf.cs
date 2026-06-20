@@ -101,25 +101,19 @@ public class BranchIf : Instruction
                     else
                         carriedLocals = context.DeclareResultLocals(branchTypes);
 
-                    for (var k = branchTypes.Length - 1; k >= 0; k--)
-                        context.Emit(OpCodes.Stloc, carriedLocals[k]);
+                    BranchHelper.StashResults(context, carriedLocals);
 
                     var skipTaken = context.DefineLabel();
                     context.Emit(OpCodes.Ldloc, conditionLocal);
                     context.Emit(OpCodes.Brfalse, skipTaken);
 
-                    for (var i = 0; i < discardCount; i++)
-                        context.Emit(OpCodes.Pop);
+                    BranchHelper.DiscardIntermediates(context, discardCount);
                     if (isLoop)
-                    {
-                        for (var k = 0; k < branchTypes.Length; k++)
-                            context.Emit(OpCodes.Ldloc, carriedLocals[k]);
-                    }
+                        BranchHelper.ReloadResults(context, carriedLocals);
                     context.Emit(OpCodes.Br, label);
 
                     context.MarkLabel(skipTaken);
-                    for (var k = 0; k < branchTypes.Length; k++)
-                        context.Emit(OpCodes.Ldloc, carriedLocals[k]);
+                    BranchHelper.ReloadResults(context, carriedLocals);
                 }
             }
             else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
@@ -139,8 +133,7 @@ public class BranchIf : Instruction
                 context.Emit(OpCodes.Ldloc, conditionLocal);
                 context.Emit(OpCodes.Brfalse, skipTaken);
                 context.Emit(OpCodes.Pop); // Discard the duplicate left when taking the branch.
-                for (var i = 0; i < intermediateCount; i++)
-                    context.Emit(OpCodes.Pop);
+                BranchHelper.DiscardIntermediates(context, intermediateCount);
                 context.Emit(OpCodes.Br, label);
                 context.MarkLabel(skipTaken);
             }
@@ -155,8 +148,7 @@ public class BranchIf : Instruction
                     context.Emit(OpCodes.Stloc, conditionLocal);
                     context.Emit(OpCodes.Ldloc, conditionLocal);
                     context.Emit(OpCodes.Brfalse, skipTaken);
-                    for (var i = 0; i < discardCount; i++)
-                        context.Emit(OpCodes.Pop);
+                    BranchHelper.DiscardIntermediates(context, discardCount);
                     context.Emit(OpCodes.Br, label);
                     context.MarkLabel(skipTaken);
                 }

@@ -10,9 +10,13 @@ internal sealed class BlockContext
     public readonly int InitialStackSize;
     public bool IsUnreachable { get; private set; }
 
+    // Result ferrying uses exactly one of the fields below per block: ResultLocal for an inline single-value block,
+    // ResultLocals for a multi-value (type-index) block, and neither for a void block. They are never both set.
+
     /// <summary>
     /// For single-result blocks, the local that ferries the result value from each exit path (fall-through and
-    /// branches) to the block's end label, keeping the IL evaluation stack balanced at the merge.
+    /// branches) to the block's end label, keeping the IL evaluation stack balanced at the merge. Mutually exclusive
+    /// with <see cref="ResultLocals"/>.
     /// </summary>
     public LocalBuilder? ResultLocal;
 
@@ -29,7 +33,7 @@ internal sealed class BlockContext
 
     /// <summary>
     /// For multi-result blocks, the locals (one per result, first result at index 0) that ferry result values
-    /// from each exit path to the block's end label.
+    /// from each exit path to the block's end label. Mutually exclusive with <see cref="ResultLocal"/>.
     /// </summary>
     public LocalBuilder[]? ResultLocals;
 

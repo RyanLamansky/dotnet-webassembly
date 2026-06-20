@@ -165,6 +165,10 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public WebAssemblyValueType[]? Locals;
 
+    // Three coordinate systems address the enclosing blocks; a branch instruction's immediate is a "distance":
+    //   distance      - branch immediate: 0 = innermost enclosing block, counting outward. Indexes Depth directly.
+    //   depth key     - Depth.Count - distance: the absolute nesting level, used to key BlockContexts.
+    //   label key     - Depth.Count - distance - 1: keys Labels (the function body is level 0).
     public readonly BlockStack Depth = new();
 
     public OpCode Previous;

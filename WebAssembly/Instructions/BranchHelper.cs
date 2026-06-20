@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
@@ -11,6 +12,37 @@ namespace WebAssembly.Instructions;
 /// </summary>
 static class BranchHelper
 {
+    /// <summary>
+    /// Pops the carried values off the top of the evaluation stack into <paramref name="locals"/>, leaving the stack
+    /// at the target block's baseline. The first result (index 0, deepest on the stack) lands in the first local, so
+    /// <see cref="ReloadResults"/> restores the original order.
+    /// </summary>
+    public static void StashResults(CompilationContext context, LocalBuilder[] locals)
+    {
+        for (var i = locals.Length - 1; i >= 0; i--)
+            context.Emit(OpCodes.Stloc, locals[i]);
+    }
+
+    /// <summary>
+    /// Pushes the values previously saved by <see cref="StashResults"/> back onto the evaluation stack in their
+    /// original order (first result deepest, last result on top).
+    /// </summary>
+    public static void ReloadResults(CompilationContext context, LocalBuilder[] locals)
+    {
+        foreach (var local in locals)
+            context.Emit(OpCodes.Ldloc, local);
+    }
+
+    /// <summary>
+    /// Pops <paramref name="count"/> intermediate values off the evaluation stack and discards them, used to clear
+    /// values left beneath a branch's carried results before jumping.
+    /// </summary>
+    public static void DiscardIntermediates(CompilationContext context, int count)
+    {
+        for (var i = 0; i < count; i++)
+            context.Emit(OpCodes.Pop);
+    }
+
     /// <summary>
     /// The multi-value types a branch to the target carries: a loop's parameters, a block/if's results, or — at the
     /// function boundary — the function's results when there are two or more. Empty for void and single-value

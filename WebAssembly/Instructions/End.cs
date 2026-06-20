@@ -52,8 +52,7 @@ public class End : SimpleInstruction
             if (!context.IsUnreachable && !ifNoElsePassThrough && returns.Length > 0)
             {
                 blockContext.ResultLocals ??= context.DeclareResultLocals(returns);
-                for (var i = returns.Length - 1; i >= 0; i--)
-                    context.Emit(OpCodes.Stloc, blockContext.ResultLocals[i]);
+                BranchHelper.StashResults(context, blockContext.ResultLocals);
             }
         }
         else if (blockType.TryToValueType(out var expectedType))
@@ -96,15 +95,9 @@ public class End : SimpleInstruction
             // the pass-through values on the stack; stash them so the exit label has the same clean stack as the
             // true/branch paths.
             if (blockContext.ResultLocals != null)
-            {
-                var returns = blockContext.BlockSignature!.RawReturnTypes;
-                for (var i = returns.Length - 1; i >= 0; i--)
-                    context.Emit(OpCodes.Stloc, blockContext.ResultLocals[i]);
-            }
+                BranchHelper.StashResults(context, blockContext.ResultLocals);
             else if (blockContext.ResultLocal != null)
-            {
                 context.Emit(OpCodes.Stloc, blockContext.ResultLocal);
-            }
         }
 
         context.BlockContexts.Remove(context.Depth.Count);
@@ -141,14 +134,9 @@ public class End : SimpleInstruction
 
         // Reload the ferried results after the label so the parent continues with them on the evaluation stack.
         if (blockContext.ResultLocals != null)
-        {
-            foreach (var local in blockContext.ResultLocals)
-                context.Emit(OpCodes.Ldloc, local);
-        }
+            BranchHelper.ReloadResults(context, blockContext.ResultLocals);
         else if (blockContext.ResultLocal != null)
-        {
             context.Emit(OpCodes.Ldloc, blockContext.ResultLocal);
-        }
     }
 
     static void CompileFunctionEnd(CompilationContext context)
@@ -196,17 +184,14 @@ public class End : SimpleInstruction
             if (!context.IsUnreachable)
             {
                 functionBlock.ResultLocals ??= context.DeclareResultLocals(returns);
-                for (var i = returnsLength - 1; i >= 0; i--)
-                    context.Emit(OpCodes.Stloc, functionBlock.ResultLocals[i]);
+                BranchHelper.StashResults(context, functionBlock.ResultLocals);
             }
 
             context.MarkLabel(context.Labels[0]);
 
             if (functionBlock.ResultLocals != null)
             {
-                foreach (var local in functionBlock.ResultLocals)
-                    context.Emit(OpCodes.Ldloc, local);
-
+                BranchHelper.ReloadResults(context, functionBlock.ResultLocals);
                 MultiValueHelper.EmitTuplePack(context, context.CheckedSignature.ReturnTypes);
             }
         }
