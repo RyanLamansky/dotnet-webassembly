@@ -12,8 +12,8 @@ Personal, machine-specific preferences can go in `CLAUDE.local.md` (gitignored, 
 **WebAssembly for .NET** — a pure-.NET library (NuGet package `WebAssembly`) to create, read, modify, write, and execute WebAssembly (`.wasm`) binaries, plus convert them to .NET DLLs.
 Execution is not an interpreter: WASM instructions are emitted as .NET IL via `System.Reflection.Emit` and JIT-compiled to native code by the CLR.
 
-- Execution currently targets WASM **1.0** (spec compliance is good but imperfect).
-  The spec **test data** covers ratified WASM 2.0; post-2.0 proposals aren't covered yet.
+- Execution targets ratified WASM **2.0** — bulk memory, reference types, fixed-width SIMD, multi-value, and typed `select` — with spec compliance that's good but imperfect.
+  Post-2.0 proposals aren't covered yet; the remaining 2.0 gaps (a few validation edge cases, NaN-payload bit patterns) are documented as skips in `SpecTests.cs`.
 - `WebAssembly.Module` is the object-model root for reading, writing, and modifying.
   It exposes typed section collections — `Types`, `Imports`, `Functions`, `Tables`, `Memories`, `Globals`, `Exports`, `Elements`, `Codes`, `Data`, `CustomSections` — with `ReadFromBinary()` / `WriteToBinary()` for serialization.
 - `WebAssembly.Runtime.Compile` drives execution and the WASM→DLL path.
