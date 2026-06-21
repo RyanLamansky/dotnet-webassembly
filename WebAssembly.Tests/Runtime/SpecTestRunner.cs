@@ -66,6 +66,7 @@ static partial class SpecTestRunner
         // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
         var imports = new ImportDictionary
         {
+            { "spectest", "print", new FunctionImport((Action)(() => { })) },
             { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
             { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
             { "spectest", "print_f64_f64", new FunctionImport((Action<double, double>)((d1, d2) => { })) },
@@ -245,6 +246,7 @@ static partial class SpecTestRunner
                             case "unknown type":
                             case "unknown data segment":
                             case "unknown data segment 1":
+                            case "start function":
                                 Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
                             case "unknown global":
@@ -468,7 +470,9 @@ static partial class SpecTestRunner
                         {
                             try
                             {
-                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                // Instantiate, not just compile: active data/element-segment bounds checks and the
+                                // start function run in the instance constructor, which is where these modules trap.
+                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
                             }
                             catch (TargetInvocationException x) when (x.InnerException != null)
                             {
@@ -478,8 +482,44 @@ static partial class SpecTestRunner
                         switch (assert.text)
                         {
                             case "unreachable":
-                                Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
                                 continue;
+                            case "out of bounds memory access":
+                                try
+                                {
+                                    trapExpected();
+                                }
+                                catch (MemoryAccessOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (OverflowException)
+                                {
+                                    continue;
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                }
+                                throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
+                            case "out of bounds table access":
+                                try
+                                {
+                                    trapExpected();
+                                }
+                                catch (TableAccessOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (IndexOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (Exception x)
+                                {
+                                    throw new AssertFailedException($"{command.line} threw an unexpected exception of type {x.GetType().Name}.");
+                                }
+                                throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                         }

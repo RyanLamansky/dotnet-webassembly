@@ -98,6 +98,18 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
     private protected abstract byte Size { get; }
 
+    /// <summary>
+    /// Validates the alignment immediate against the access's natural alignment.
+    /// The immediate is encoded as log2 of the byte alignment, and the specification requires it not
+    /// exceed the natural alignment (the access size in bytes). Throws <see cref="CompilerException"/>
+    /// when violated, matching the spec's "alignment must not be larger than natural" validation error.
+    /// </summary>
+    private protected void ValidateAlignment()
+    {
+        if ((uint)this.Flags >= 32 || (1u << (int)this.Flags) > this.Size)
+            throw new CompilerException($"Alignment of 2^{(uint)this.Flags} for {this.OpCode} must not be larger than the natural {this.Size}-byte alignment.");
+    }
+
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
     private protected HelperMethod RangeCheckHelper => this.Size switch

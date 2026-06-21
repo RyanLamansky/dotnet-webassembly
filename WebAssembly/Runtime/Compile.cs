@@ -515,9 +515,24 @@ public static class Compile
                             throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
 
                         var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+                        // A memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
+                        const uint memoryPagesLimit = 0x1_0000;
+                        var preMinimumOffset = reader.Offset;
                         memoryPagesMinimum = reader.ReadVarUInt32();
+                        if (memoryPagesMinimum > memoryPagesLimit)
+                            throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMinimumOffset);
                         if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
-                            memoryPagesMaximum = Math.Min(reader.ReadVarUInt32(), uint.MaxValue / Memory.PageSize);
+                        {
+                            var preMaximumOffset = reader.Offset;
+                            var declaredMaximum = reader.ReadVarUInt32();
+                            if (declaredMaximum > memoryPagesLimit)
+                                throw new ModuleLoadException($"Memory size maximum of {declaredMaximum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMaximumOffset);
+                            if (declaredMaximum < memoryPagesMinimum)
+                                throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} must not be greater than maximum of {declaredMaximum}.", preMaximumOffset);
+                            // The backing store addresses memory with a uint, one byte short of a full 4GiB, so the
+                            // last allocatable page is clamped off even though the larger value validates per spec.
+                            memoryPagesMaximum = Math.Min(declaredMaximum, uint.MaxValue / Memory.PageSize);
+                        }
                         else
                             memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
@@ -583,7 +598,7 @@ public static class Compile
                 case Section.Start:
                     if (internalFunctions == null)
                         throw new ModuleLoadException("Start section created without any functions.", preSectionOffset);
-                    startFunction = SectionStart(reader, internalFunctions);
+                    startFunction = SectionStart(reader, internalFunctions, functionSignatures!);
                     break;
 
                 case Section.Element:
@@ -1248,12 +1263,17 @@ public static class Compile
         return [.. xFunctions];
     }
 
-    static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions)
+    static MethodInfo SectionStart(Reader reader, MethodInfo[] internalFunctions, Signature[] functionSignatures)
     {
         var preReadOffset = reader.Offset;
         var startIndex = reader.ReadVarInt32();
         if (startIndex >= internalFunctions.Length)
             throw new ModuleLoadException($"Start function of index {startIndex} exceeds available functions of {internalFunctions.Length}", preReadOffset);
+
+        // The start function must take no parameters and return nothing.
+        var signature = functionSignatures[startIndex];
+        if (signature.ParameterTypes.Length != 0 || signature.ReturnTypes.Length != 0)
+            throw new ModuleLoadException($"Start function of index {startIndex} must have no parameters and no results, found {signature.ParameterTypes.Length} parameter(s) and {signature.ReturnTypes.Length} result(s).", preReadOffset);
 
         return internalFunctions[startIndex];
     }

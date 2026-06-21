@@ -26,7 +26,10 @@ public class Int32TruncateFloat64Unsigned : SimpleInstruction
 
         context.PopStackNoReturn(OpCode.Int32TruncateFloat64Unsigned, WebAssemblyValueType.Float64);
 
-        context.Emit(OpCodes.Conv_Ovf_I4_Un);
+        // Conv_Ovf_U4 range-checks the float against [0, 2^32) and traps (OverflowException) on out-of-range or
+        // NaN; the result's 32 bits hold the unsigned value. Conv_Ovf_I4_Un treats the float source as signed,
+        // wrongly rejecting in-range results at or above 2^31.
+        context.Emit(OpCodes.Conv_Ovf_U4);
 
         stack.Push(WebAssemblyValueType.Int32);
     }

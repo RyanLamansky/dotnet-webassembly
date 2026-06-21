@@ -17,28 +17,11 @@ public class SpecTests
 
     /// <summary>Runs the address tests.</summary>
     [TestMethod]
-    public void SpecTest_address()
-    {
-        // 1x AssertFailedException: offset out of range doesn't have a test procedure set up.
-        var skips = new HashSet<uint>
-        {
-            214
-        };
-        SpecTestRunner.Run(DataPath("address"), "address.json", skips.Contains);
-    }
+    public void SpecTest_address() => SpecTestRunner.Run(DataPath("address"), "address.json");
 
     /// <summary>Runs the align tests.</summary>
     [TestMethod]
-    public void SpecTest_align()
-    {
-        // 37x AssertFailedException: expected CompilerException not thrown
-        var skips = new HashSet<uint>
-        {
-            306, 310, 314, 318, 322, 326, 330, 334, 338, 342, 346, 350, 354, 358, 363, 367, 371, 375, 379,
-            383, 387, 391, 395, 399, 403, 407, 411, 415, 420, 424, 428, 432, 436, 440, 444, 448, 452
-        };
-        SpecTestRunner.Run(DataPath("align"), "align.json", skips.Contains);
-    }
+    public void SpecTest_align() => SpecTestRunner.Run(DataPath("align"), "align.json");
 
     /// <summary>Runs the binary leb128 tests.</summary>
     [TestMethod]
@@ -103,16 +86,7 @@ public class SpecTests
 
     /// <summary>Runs the conversions tests.</summary>
     [TestMethod]
-    public void SpecTest_conversions()
-    {
-        // 8x AssertFailedException: Arithmetic operation overflow
-        // 4x AssertFailedException: expected OverflowException not thrown
-        var skips = new HashSet<uint>
-        {
-            96, 97, 101, 143, 144, 149, 151, 195, 199, 241, 246, 248
-        };
-        SpecTestRunner.Run(DataPath("conversions"), "conversions.json", skips.Contains);
-    }
+    public void SpecTest_conversions() => SpecTestRunner.Run(DataPath("conversions"), "conversions.json");
 
     /// <summary>Runs the custom tests.</summary>
     [TestMethod]
@@ -130,15 +104,15 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_data()
     {
-        // 2x AssertFailedException: out-of-bounds active data segment should trap on instantiation but doesn't (85, 89).
-        // 14x AssertFailedException: "out of bounds memory access" assert_trap has no test procedure set up.
-        // 4x AssertFailedException: "unknown memory 1" assert_invalid has no test procedure set up.
-        // 2x AssertFailedException: "unknown global 0/1" assert_invalid has no test procedure set up.
-        // 2x AssertFailedException: expected ModuleLoadException not thrown (466, 492).
+        // 2x AssertFailedException: "unknown global" — data offset referencing an unknown global not rejected (85, 89).
+        // 2x AssertFailedException: empty-content active data segment out of bounds should trap but doesn't
+        //    — the zero-length segment skips the instantiation bounds check (203, 210).
+        // 4x AssertFailedException: "unknown memory 1" assert_invalid not yet rejected (307, 331, 343, 365).
+        // 2x AssertFailedException: "constant expression required" — non-constant data offset not rejected (466, 492).
+        // 2x AssertFailedException: "unknown global 0/1" assert_invalid not yet rejected (475, 483).
         var skips = new HashSet<uint>
         {
-            85, 89, 180, 188, 196, 203, 210, 227, 236, 243, 251, 259, 267, 274, 282, 289, 307, 331, 343,
-            365, 466, 475, 483, 492
+            85, 89, 203, 210, 307, 331, 343, 365, 466, 475, 483, 492
         };
         SpecTestRunner.Run(DataPath("data"), "data.json", skips.Contains);
     }
@@ -172,8 +146,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_exports()
     {
-        // 18x AssertFailedException: expected ModuleLoadException not thrown
-        // 1x ModuleLoadException: At offset N: Overflow encountered.
+        // 18x AssertFailedException: "duplicate export name" not rejected — the library intentionally allows
+        //    duplicate export names to model a global's get/set as overloaded methods (see GlobalSetTests),
+        //    which conflicts with the spec's uniqueness rule; reconciling needs a maintainer decision.
+        // 1x ModuleLoadException: Exported table must be of index 0, found 1 — multi-table export not supported (133).
         var skips = new HashSet<uint>
         {
             51, 55, 59, 63, 67, 108, 112, 116, 120, 124, 133, 163, 171, 175, 179, 219, 228, 232, 236
@@ -214,11 +190,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_float_exprs()
     {
-        // 2x AssertFailedException: Arithmetic operation overflow
         // 7x AssertFailedException: Not equal iN: A and B (NaN payload mismatch)
         var skips = new HashSet<uint>
         {
-            511, 519, 2349, 2351, 2353, 2355, 2357, 2359, 2361
+            2349, 2351, 2353, 2355, 2357, 2359, 2361
         };
         SpecTestRunner.Run(DataPath("float_exprs"), "float_exprs.json", skips.Contains);
     }
@@ -279,27 +254,11 @@ public class SpecTests
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]
-    public void SpecTest_i32()
-    {
-        // 1x AssertFailedException: Arithmetic operation overflow
-        var skips = new HashSet<uint>
-        {
-            109
-        };
-        SpecTestRunner.Run(DataPath("i32"), "i32.json", skips.Contains);
-    }
+    public void SpecTest_i32() => SpecTestRunner.Run(DataPath("i32"), "i32.json");
 
     /// <summary>Runs the i64 tests.</summary>
     [TestMethod]
-    public void SpecTest_i64()
-    {
-        // 1x AssertFailedException: Arithmetic operation overflow
-        var skips = new HashSet<uint>
-        {
-            110
-        };
-        SpecTestRunner.Run(DataPath("i64"), "i64.json", skips.Contains);
-    }
+    public void SpecTest_i64() => SpecTestRunner.Run(DataPath("i64"), "i64.json");
 
     /// <summary>Runs the if tests.</summary>
     [TestMethod]
@@ -407,15 +366,7 @@ public class SpecTests
 
     /// <summary>Runs the memory tests.</summary>
     [TestMethod]
-    public void SpecTest_memory()
-    {
-        // 7x AssertFailedException: expected ModuleLoadException not thrown (oversized/invalid memory limits).
-        var skips = new HashSet<uint>
-        {
-            51, 55, 59, 63, 67, 71, 75
-        };
-        SpecTestRunner.Run(DataPath("memory"), "memory.json", skips.Contains);
-    }
+    public void SpecTest_memory() => SpecTestRunner.Run(DataPath("memory"), "memory.json");
 
     /// <summary>Runs the memory_grow tests.</summary>
     [TestMethod]
@@ -465,17 +416,7 @@ public class SpecTests
 
     /// <summary>Runs the start tests.</summary>
     [TestMethod]
-    public void SpecTest_start()
-    {
-        // 2x AssertFailedException: start function doesn't have a test procedure set up.
-        // 1x ImportException: Missing import for spectest::print.
-        // 1x AssertFailedException: expected ModuleLoadException not thrown
-        var skips = new HashSet<uint>
-        {
-            7, 14, 92, 98
-        };
-        SpecTestRunner.Run(DataPath("start"), "start.json", skips.Contains);
-    }
+    public void SpecTest_start() => SpecTestRunner.Run(DataPath("start"), "start.json");
 
     /// <summary>Runs the store tests.</summary>
     [TestMethod]
@@ -487,27 +428,11 @@ public class SpecTests
 
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
-    public void SpecTest_table()
-    {
-        // 2x AssertFailedException: expected ModuleLoadException not thrown (19, 23).
-        var skips = new HashSet<uint>
-        {
-            19, 23
-        };
-        SpecTestRunner.Run(DataPath("table"), "table.json", skips.Contains);
-    }
+    public void SpecTest_table() => SpecTestRunner.Run(DataPath("table"), "table.json");
 
     /// <summary>Runs the token tests.</summary>
     [TestMethod]
-    public void SpecTest_token()
-    {
-        // 1x ImportException: Missing import for spectest::print (47).
-        var skips = new HashSet<uint>
-        {
-            47
-        };
-        SpecTestRunner.Run(DataPath("token"), "token.json", skips.Contains);
-    }
+    public void SpecTest_token() => SpecTestRunner.Run(DataPath("token"), "token.json");
 
     /// <summary>Runs the traps tests.</summary>
     [TestMethod]

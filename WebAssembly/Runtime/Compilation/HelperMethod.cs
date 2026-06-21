@@ -28,6 +28,8 @@ enum HelperMethod
     StoreFloat64,
     Float32CopySign,
     Float64CopySign,
+    Int32RemainderSigned,
+    Int64RemainderSigned,
     GrowMemory,
     Int32TruncateSaturateFloat32Signed,
     Int32TruncateSaturateFloat32Unsigned,

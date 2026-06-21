@@ -23,6 +23,8 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        this.ValidateAlignment();
+
         var stack = context.Stack;
 
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);

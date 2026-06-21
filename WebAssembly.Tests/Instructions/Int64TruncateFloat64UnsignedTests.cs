@@ -19,10 +19,14 @@ public class Int64TruncateFloat64UnsignedTests
             new Int64TruncateFloat64Unsigned(),
             new End());
 
-        foreach (var value in new[] { 0, 1.5, -1.5, 123445678901234.0 })
-            Assert.AreEqual((long)value, exports.Test(value));
+        Assert.AreEqual(0L, exports.Test(0.0));
+        Assert.AreEqual(1L, exports.Test(1.5));
+        Assert.AreEqual(123445678901234L, exports.Test(123445678901234.0));
+        // 2^63 fits the unsigned range but not the signed range; the 64-bit result is its two's-complement pattern.
+        Assert.AreEqual(unchecked((long)9223372036854775808u), exports.Test(9223372036854775808.0));
 
-        const double exceptional = 1234456789012345678901234567890.0;
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(exceptional));
+        // Values below the unsigned range (< 0) and above it (>= 2^64) trap.
+        Assert.ThrowsException<System.OverflowException>(() => exports.Test(-1.5));
+        Assert.ThrowsException<System.OverflowException>(() => exports.Test(1234456789012345678901234567890.0));
     }
 }
