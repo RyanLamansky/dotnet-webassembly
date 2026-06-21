@@ -16,8 +16,8 @@ module.Types.Add(new WebAssemblyType // The first added type gets index 0.
     ],
     Returns =
     [
-        // Multiple returns are supported by the binary format.
-        // Standard currently allows a count of 0 or 1, though.
+        // WebAssembly 2.0 multi-value allows more than one return; this library supports it.
+        // This sample returns a single Int32.
         WebAssemblyValueType.Int32,
     ],
 });

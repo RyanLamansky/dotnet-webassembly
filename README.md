@@ -1,9 +1,9 @@
 ﻿# WebAssembly for .NET
 [![NuGet](https://img.shields.io/nuget/v/WebAssembly.svg)](https://www.nuget.org/packages/WebAssembly)
 
-> [!WARNING]
-> Only WebAssembly 1.0 is supported!
-> Most WASM files target a higher version and will encounter errors if you try to load them with WebAssembly for .NET.
+> [!NOTE]
+> WebAssembly 2.0 is supported.
+> WASM files that target a higher version may encounter errors.
 
 A library able to create, read, modify, write, execute WebAssembly (WASM) files from .NET-based applications.
 It can also convert WASM files to .NET DLLs.
@@ -16,12 +16,12 @@ Available on NuGet at https://www.nuget.org/packages/WebAssembly .
 
 - Use the `WebAssembly.Module` class to create, read, modify, and write WebAssembly (WASM) binary files.
   - `Module.ReadFromBinary` reads a stream into an instance, which can then be inspected and modified through its properties.
-    - Most WASM files use post-1.0 features and will experience errors when you try to load them.
+    - Files using ratified WebAssembly 2.0 features load fine; those using newer proposals may experience errors.
   - `WriteToBinary` on a module instance writes binary WASM to the provided stream.
 - Use the `WebAssembly.Runtime.Compile` class to execute WebAssembly (WASM) binary files using the .NET JIT compiler or convert it to a .NET DLL.
   - Most WASM files have many imports and exports--you'll need to cover these yourself.
-  - This should work for most WASM 1.0 files, but spec compliance is not perfect.
-  - Newer-than-1.0 files aren't currently supported.
+  - This works for most WebAssembly 1.0 and 2.0 files, but spec compliance is not perfect.
+  - Proposals newer than the ratified 2.0 standard aren't supported yet.
   - Saving to a DLL requires .NET 9 or higher and has several additional steps.
 
 If you hit a problem, write a bug report with the repro steps and links to any files needed.
@@ -47,8 +47,8 @@ module.Types.Add(new WebAssemblyType // The first added type gets index 0.
     ],
     Returns =
     [
-        // Multiple returns are supported by the binary format.
-        // Standard currently allows a count of 0 or 1, though.
+        // WebAssembly 2.0 multi-value allows more than one return; this library supports it.
+        // This sample returns a single Int32.
         WebAssemblyValueType.Int32,
     ],
 });
