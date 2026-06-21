@@ -146,13 +146,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_exports()
     {
-        // 18x AssertFailedException: "duplicate export name" not rejected — the library intentionally allows
-        //    duplicate export names to model a global's get/set as overloaded methods (see GlobalSetTests),
-        //    which conflicts with the spec's uniqueness rule; reconciling needs a maintainer decision.
         // 1x ModuleLoadException: Exported table must be of index 0, found 1 — multi-table export not supported (133).
         var skips = new HashSet<uint>
         {
-            51, 55, 59, 63, 67, 108, 112, 116, 120, 124, 133, 163, 171, 175, 179, 219, 228, 232, 236
+            133
         };
         SpecTestRunner.Run(DataPath("exports"), "exports.json", skips.Contains);
     }

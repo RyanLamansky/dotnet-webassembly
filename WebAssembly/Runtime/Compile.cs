@@ -1142,10 +1142,14 @@ public static class Compile
         const MethodAttributes exportedPropertyAttributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.Virtual | MethodAttributes.Final;
         var totalExports = reader.ReadVarUInt32();
         var xFunctions = new List<KeyValuePair<string, uint>>((int)Math.Min(int.MaxValue, totalExports));
+        var exportNames = new HashSet<string>(StringComparer.Ordinal);
 
         for (var i = 0; i < totalExports; i++)
         {
+            var preNameOffset = reader.Offset;
             var name = reader.ReadString(reader.ReadVarUInt32());
+            if (!exportNames.Add(name))
+                throw new ModuleLoadException($"Duplicate export name \"{name}\".", preNameOffset);
             var preKindOffset = reader.Offset;
             var kind = (ExternalKind)reader.ReadByte();
             var preIndexOffset = reader.Offset;
