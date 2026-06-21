@@ -32,14 +32,12 @@ namespace WebAssembly.Runtime;
 [TestClass]
 public class SpecDiscovery
 {
-    // Categories whose tests crash the runner process (StackOverflowException, CLR malfunction,
-    // JIT-internal-limitation faults). These would abort the entire test run if Discover invoked
-    // them; SpecTests.cs marks them [Ignore] for the same reason. Re-evaluate after library work
-    // that addresses the underlying crashes.
-    private static readonly HashSet<string> categoryExcludes =
-    [
-        "labels", "skip-stack-guard-page", "unwind",
-    ];
+    // Categories whose tests would crash the runner process (StackOverflowException, CLR malfunction,
+    // JIT-internal-limitation faults) rather than fail catchably, aborting the entire Discover run.
+    // Currently empty: the historical offenders (labels, skip-stack-guard-page, unwind) now pass, and
+    // process-crashing call-stack-exhaustion lines are auto-skipped at the top of the SpecTestRunner loop.
+    // Re-populate if a future spec refresh reintroduces a category that crashes the host.
+    private static readonly HashSet<string> categoryExcludes = [];
 
     /// <summary>Walks SpecTestData/ and writes a failure report to the OS temp dir.</summary>
     [TestMethod]

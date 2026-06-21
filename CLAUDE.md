@@ -89,7 +89,12 @@ Stack validation is mandatory and the spec tests will catch mismatches.
 
 `WebAssembly.Tests/Runtime/SpecTests.cs` is **hand-curated**, one `[TestMethod]` per spec category, each calling `SpecTestRunner.Run(...)` with a set of per-line `skips`.
 Each skip has a comment explaining *why* a line is skipped (a known limitation or an unimplemented assert harness).
-When you fix a limitation, remove the now-passing skips.
+A category with any per-line skips ends as Inconclusive (shown as "Skipped"); a category with none runs fully green.
+When you fix a limitation, remove the now-passing skips — and re-check the whole set, since one fix often clears many stale skips at once.
+
+Scenarios that can *never* pass under the .NET execution model (not a library limitation) are auto-skipped at the top of the `SpecTestRunner` command loop, recognized by command *shape* rather than line number, so they stay out of the hand-curated lists and don't trip the Inconclusive signal.
+The only case today is `assert_exhaustion` "call stack exhausted", which requires an uncatchable `StackOverflowException` that would tear down the test host.
+There are no whole-category `[Ignore]`s anymore — every category runs.
 
 `SpecTestData/` is **generated** by `Tools/RefreshSpecTests`.
 To refresh (rarely needed):

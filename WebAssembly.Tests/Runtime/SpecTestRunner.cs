@@ -91,6 +91,17 @@ static partial class SpecTestRunner
             if (skip != null && skip(command.line))
                 continue;
 
+            // Auto-skip scenarios that can never pass under this execution model, regardless of
+            // library correctness. Recognized by command *shape* (not line number), so they stay
+            // out of the hand-curated skip lists, never count toward the inconclusive signal, and
+            // keep the Discover helper from crashing the test host. "call stack exhausted" requires
+            // a StackOverflowException, which .NET makes uncatchable — it tears down the whole
+            // process — so invoking the runaway-recursion action would crash the host rather than
+            // produce a catchable failure. Keep this tightly scoped to genuinely-impossible cases;
+            // anything fixable belongs in a re-assessable per-line skip instead.
+            if (command is AssertExhaustion { text: "call stack exhausted" })
+                continue;
+
             void GetMethod(TestAction action, out MethodInfo info, out object host)
             {
                 var methodSource = action.module == null ? methodsByName : moduleMethodsByName[action.module];
@@ -405,27 +416,10 @@ static partial class SpecTestRunner
                     case AssertMalformed assert:
                         continue; // Not writing a WAT parser.
                     case AssertExhaustion assert:
-                        trapExpected = () =>
-                        {
-                            GetMethod(assert.action, out methodInfo, out obj);
-                            try
-                            {
-                                assert.action.Call(methodInfo, obj);
-                            }
-                            catch (TargetInvocationException x) when (x.InnerException != null)
-                            {
-                                ExceptionDispatchInfo.Capture(x.InnerException).Throw();
-                            }
-                        };
-
-                        switch (assert.text)
-                        {
-                            case "call stack exhausted":
-                                Assert.ThrowsException<StackOverflowException>(trapExpected, $"{command.line}");
-                                continue;
-                            default:
-                                throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
-                        }
+                        // "call stack exhausted" is the only text the spec suite emits here, and it's
+                        // auto-skipped at the top of the loop (a real StackOverflowException would crash
+                        // the host). Any other text is genuinely unhandled.
+                        throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                     case AssertUnlinkable assert:
                         trapExpected = () =>
                         {
