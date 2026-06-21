@@ -88,4 +88,51 @@ public class SelectWithTypeTests
         Assert.IsNull(exports.Test(1));
         Assert.IsNull(exports.Test(0));
     }
+
+    /// <summary>Export for a typed select on v128, reading a byte of the result back from memory.</summary>
+    public abstract class SelectV128Export
+    {
+        /// <summary>Selects the first operand when <paramref name="condition"/> is non-zero, then returns the byte at <paramref name="offset"/>.</summary>
+        public abstract int Test(int condition, int offset);
+    }
+
+    /// <summary>
+    /// Tests that <c>select t</c> with an explicit v128 annotation compiles and returns the correct operand.
+    /// Regression test: <see cref="SelectWithType"/> previously had no v128 arm and threw on this case.
+    /// </summary>
+    [TestMethod]
+    public void SelectWithType_V128_ReturnsCorrectOperand()
+    {
+        var module = new Module();
+        module.Memories.Add(new Memory(1, 1));
+        module.Types.Add(new WebAssemblyType
+        {
+            Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Int32],
+            Returns = [WebAssemblyValueType.Int32],
+        });
+        module.Functions.Add(new Function());
+        module.Exports.Add(new Export { Name = nameof(SelectV128Export.Test) });
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new Int32Constant(0), // store address
+                new V128Const { Value = [0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA] },
+                new V128Const { Value = [0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB] },
+                new LocalGet(0), // condition
+                new SelectWithType(WebAssemblyValueType.V128),
+                new V128Store(),
+                new LocalGet(1), // byte offset to read back
+                new Int32Load8Unsigned(),
+                new End(),
+            ],
+        });
+
+        using var compiled = module.ToInstance<SelectV128Export>();
+        var exports = compiled.Exports;
+        Assert.AreEqual(0xAA, exports.Test(1, 0));
+        Assert.AreEqual(0xBB, exports.Test(0, 0));
+        Assert.AreEqual(0xAA, exports.Test(7, 15));
+        Assert.AreEqual(0xBB, exports.Test(0, 9));
+    }
 }

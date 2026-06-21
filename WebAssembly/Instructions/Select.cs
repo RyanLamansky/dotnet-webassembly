@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Runtime.Intrinsics;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
@@ -50,6 +51,7 @@ public class Select : SimpleInstruction
             WebAssemblyValueType.Int64 => HelperMethod.SelectInt64,
             WebAssemblyValueType.Float32 => HelperMethod.SelectFloat32,
             WebAssemblyValueType.Float64 => HelperMethod.SelectFloat64,
+            WebAssemblyValueType.V128 => HelperMethod.SelectV128,
             _ => throw new InvalidOperationException(),// Shouldn't be possible.
         };
         context.Emit(OpCodes.Call, context[helper, CreateSelectHelper]);
@@ -106,6 +108,16 @@ public class Select : SimpleInstruction
           [
                                 typeof(object),
                                 typeof(object),
+                                typeof(int),
+          ]
+          ),
+            HelperMethod.SelectV128 => context.CheckedExportsBuilder.DefineMethod(
+          "☣ Select V128",
+          CompilationContext.HelperMethodAttributes,
+          typeof(Vector128<byte>),
+          [
+                                typeof(Vector128<byte>),
+                                typeof(Vector128<byte>),
                                 typeof(int),
           ]
           ),

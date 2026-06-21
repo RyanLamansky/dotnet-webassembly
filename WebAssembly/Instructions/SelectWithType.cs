@@ -89,6 +89,7 @@ public class SelectWithType : Instruction, IEquatable<SelectWithType>
             WebAssemblyValueType.Float32 => HelperMethod.SelectFloat32,
             WebAssemblyValueType.Float64 => HelperMethod.SelectFloat64,
             WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef => HelperMethod.SelectObject,
+            WebAssemblyValueType.V128 => HelperMethod.SelectV128,
             _ => throw new CompilerException($"Unsupported type for typed select: {this.Type}."),
         };
         context.Emit(OpCodes.Call, context[helper, Select.CreateSelectHelper]);
