@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Pmin instruction.</summary>
+/// <summary>f64x2 pseudo-min.</summary>
 public class Float64x2Pmin : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Pmin"/>.</summary>

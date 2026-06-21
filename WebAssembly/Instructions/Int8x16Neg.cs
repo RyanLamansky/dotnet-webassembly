@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16Neg instruction.</summary>
+/// <summary>i8x16 negate.</summary>
 public class Int8x16Neg : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16Neg"/>.</summary>

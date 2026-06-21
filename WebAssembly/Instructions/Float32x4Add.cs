@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4Add instruction.</summary>
+/// <summary>f32x4 add.</summary>
 public class Float32x4Add : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Add"/>.</summary>

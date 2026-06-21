@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4LessThanSigned instruction.</summary>
+/// <summary>i32x4 signed less-than.</summary>
 public class Int32x4LessThanSigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4LessThanSigned"/>.</summary>

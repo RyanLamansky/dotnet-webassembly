@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4NotEqual instruction.</summary>
+/// <summary>f32x4 not equal.</summary>
 public class Float32x4NotEqual : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4NotEqual"/>.</summary>

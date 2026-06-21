@@ -5,7 +5,8 @@ using System.Reflection;
 namespace WebAssembly.Runtime;
 
 /// <summary>
-/// An array-like structure representing a table import/export, which for the initial specification of WebAssembly is always a function list.
+/// An array-like structure representing a funcref table import/export (a list of functions).
+/// WebAssembly 2.0 reference types added the externref counterpart, <see cref="ExternRefTable"/>.
 /// Its behavior mimics the JavaScript version, where the import object is actually modified by the instantiation process.
 /// </summary>
 public class FunctionTable : TableImport

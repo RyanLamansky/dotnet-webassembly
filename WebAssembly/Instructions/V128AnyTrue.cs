@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>V128AnyTrue instruction.</summary>
+/// <summary>Test whether any lane is non-zero.</summary>
 public class V128AnyTrue : SimdV128ToI32Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.V128AnyTrue"/>.</summary>

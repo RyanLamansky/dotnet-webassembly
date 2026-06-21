@@ -3,7 +3,7 @@ using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Min instruction.</summary>
+/// <summary>f64x2 min.</summary>
 public class Float64x2Min : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Min"/>.</summary>

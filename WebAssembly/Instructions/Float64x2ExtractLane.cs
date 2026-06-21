@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2ExtractLane instruction.</summary>
+/// <summary>Extract an f64 lane.</summary>
 public class Float64x2ExtractLane : SimdExtractLaneInstruction, IEquatable<Float64x2ExtractLane>
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2ExtractLane"/>.</summary>

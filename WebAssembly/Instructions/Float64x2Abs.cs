@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Abs instruction.</summary>
+/// <summary>f64x2 absolute value.</summary>
 public class Float64x2Abs : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Abs"/>.</summary>

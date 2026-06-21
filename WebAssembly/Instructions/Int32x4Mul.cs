@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4Mul instruction.</summary>
+/// <summary>i32x4 multiply.</summary>
 public class Int32x4Mul : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4Mul"/>.</summary>

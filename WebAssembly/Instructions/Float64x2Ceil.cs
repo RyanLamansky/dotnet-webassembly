@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Ceil instruction.</summary>
+/// <summary>f64x2 ceiling.</summary>
 public class Float64x2Ceil : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Ceil"/>.</summary>

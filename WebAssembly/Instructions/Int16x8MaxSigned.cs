@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8MaxSigned instruction.</summary>
+/// <summary>i16x8 signed max.</summary>
 public class Int16x8MaxSigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8MaxSigned"/>.</summary>

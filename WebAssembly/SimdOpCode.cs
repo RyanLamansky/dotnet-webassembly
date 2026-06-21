@@ -304,7 +304,7 @@ public enum SimdOpCode : uint
     /// <summary>Bitwise select.</summary>
     [OpCodeCharacteristics("v128.bitselect")]
     V128Bitselect = 0x52,
-    /// <summary>Test whether all lanes are non-zero.</summary>
+    /// <summary>Test whether any lane is non-zero.</summary>
     [OpCodeCharacteristics("v128.any_true")]
     V128AnyTrue = 0x53,
 
@@ -414,10 +414,10 @@ public enum SimdOpCode : uint
     Int8x16AvgrUnsigned = 0x7B,
 
     // ---- i16x8 ops ----
-    /// <summary>i16x8 extend low lanes of i8x16, signed.</summary>
+    /// <summary>i16x8 pairwise add of adjacent i8x16 lanes, signed.</summary>
     [OpCodeCharacteristics("i16x8.extadd_pairwise_i8x16_s")]
     Int16x8ExtaddPairwiseInt8x16Signed = 0x7C,
-    /// <summary>i16x8 extend low lanes of i8x16, unsigned.</summary>
+    /// <summary>i16x8 pairwise add of adjacent i8x16 lanes, unsigned.</summary>
     [OpCodeCharacteristics("i16x8.extadd_pairwise_i8x16_u")]
     Int16x8ExtaddPairwiseInt8x16Unsigned = 0x7D,
     /// <summary>i16x8 absolute value.</summary>
@@ -426,7 +426,7 @@ public enum SimdOpCode : uint
     /// <summary>i16x8 negate.</summary>
     [OpCodeCharacteristics("i16x8.neg")]
     Int16x8Neg = 0x81,
-    /// <summary>i16x8 multiply-add with saturation.</summary>
+    /// <summary>i16x8 saturating rounding Q15 multiplication.</summary>
     [OpCodeCharacteristics("i16x8.q15mulr_sat_s")]
     Int16x8Q15MulrSatSigned = 0x82,
     /// <summary>Test whether all i16x8 lanes are non-zero.</summary>
@@ -575,16 +575,16 @@ public enum SimdOpCode : uint
     /// <summary>i32x4 unsigned dot product of i16x8.</summary>
     [OpCodeCharacteristics("i32x4.dot_i16x8_s")]
     Int32x4DotInt16x8Signed = 0xBA,
-    /// <summary>Multiply low i32x4 lanes, extend to i64x2, signed.</summary>
+    /// <summary>Multiply low i16x8 lanes, extend to i32x4, signed.</summary>
     [OpCodeCharacteristics("i32x4.extmul_low_i16x8_s")]
     Int32x4ExtmulLowInt16x8Signed = 0xBC,
-    /// <summary>Multiply high i32x4 lanes, extend to i64x2, signed.</summary>
+    /// <summary>Multiply high i16x8 lanes, extend to i32x4, signed.</summary>
     [OpCodeCharacteristics("i32x4.extmul_high_i16x8_s")]
     Int32x4ExtmulHighInt16x8Signed = 0xBD,
-    /// <summary>Multiply low i32x4 lanes, extend to i64x2, unsigned.</summary>
+    /// <summary>Multiply low i16x8 lanes, extend to i32x4, unsigned.</summary>
     [OpCodeCharacteristics("i32x4.extmul_low_i16x8_u")]
     Int32x4ExtmulLowInt16x8Unsigned = 0xBE,
-    /// <summary>Multiply high i32x4 lanes, extend to i64x2, unsigned.</summary>
+    /// <summary>Multiply high i16x8 lanes, extend to i32x4, unsigned.</summary>
     [OpCodeCharacteristics("i32x4.extmul_high_i16x8_u")]
     Int32x4ExtmulHighInt16x8Unsigned = 0xBF,
 

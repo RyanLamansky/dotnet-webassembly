@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2PromoteLowFloat32x4 instruction.</summary>
+/// <summary>Convert f32x4 to f64x2 (low two lanes).</summary>
 public class Float64x2PromoteLowFloat32x4 : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2PromoteLowFloat32x4"/>.</summary>

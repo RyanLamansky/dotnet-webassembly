@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int64x2ShiftLeft instruction.</summary>
+/// <summary>i64x2 shift left.</summary>
 public class Int64x2ShiftLeft : SimdShiftInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int64x2ShiftLeft"/>.</summary>

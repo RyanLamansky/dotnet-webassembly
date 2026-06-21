@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8ExtractLaneSigned instruction.</summary>
+/// <summary>Extract a signed i16 lane as i32.</summary>
 public class Int16x8ExtractLaneSigned : SimdExtractLaneInstruction, IEquatable<Int16x8ExtractLaneSigned>
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8ExtractLaneSigned"/>.</summary>

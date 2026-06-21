@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2LessThan instruction.</summary>
+/// <summary>f64x2 less-than.</summary>
 public class Float64x2LessThan : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2LessThan"/>.</summary>

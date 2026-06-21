@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16LessThanUnsigned instruction.</summary>
+/// <summary>i8x16 unsigned less-than.</summary>
 public class Int8x16LessThanUnsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16LessThanUnsigned"/>.</summary>

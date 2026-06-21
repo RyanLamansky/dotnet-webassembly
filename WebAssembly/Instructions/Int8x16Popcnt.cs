@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16Popcnt instruction.</summary>
+/// <summary>Count non-zero bits in each i8x16 lane.</summary>
 public class Int8x16Popcnt : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16Popcnt"/>.</summary>

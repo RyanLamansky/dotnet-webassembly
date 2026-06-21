@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8ExtmulHighInt8x16Unsigned instruction.</summary>
+/// <summary>Multiply high unsigned i16x8 lanes.</summary>
 public class Int16x8ExtmulHighInt8x16Unsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8ExtmulHighInt8x16Unsigned"/>.</summary>

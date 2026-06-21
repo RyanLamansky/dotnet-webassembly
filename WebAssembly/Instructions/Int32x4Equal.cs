@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4Equal instruction.</summary>
+/// <summary>i32x4 equal.</summary>
 public class Int32x4Equal : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4Equal"/>.</summary>

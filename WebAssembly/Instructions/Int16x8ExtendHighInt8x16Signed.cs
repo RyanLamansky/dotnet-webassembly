@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8ExtendHighInt8x16Signed instruction.</summary>
+/// <summary>Widen high i8x16 lanes to i16x8, signed.</summary>
 public class Int16x8ExtendHighInt8x16Signed : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8ExtendHighInt8x16Signed"/>.</summary>

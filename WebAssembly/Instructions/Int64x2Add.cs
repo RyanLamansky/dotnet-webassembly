@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int64x2Add instruction.</summary>
+/// <summary>i64x2 add.</summary>
 public class Int64x2Add : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int64x2Add"/>.</summary>

@@ -1,7 +1,8 @@
 ﻿namespace WebAssembly.Runtime;
 
 /// <summary>
-/// The base class for all table imports, which for the initial specification, is always <see cref="FunctionTable"/>.
+/// The base class for all table imports: a <see cref="FunctionTable"/> (funcref) or, as of WebAssembly 2.0
+/// reference types, an <see cref="ExternRefTable"/> (externref).
 /// </summary>
 public abstract class TableImport : RuntimeImport
 {

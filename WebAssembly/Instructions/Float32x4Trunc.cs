@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4Trunc instruction.</summary>
+/// <summary>f32x4 truncate.</summary>
 public class Float32x4Trunc : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Trunc"/>.</summary>

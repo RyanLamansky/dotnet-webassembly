@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4ConvertInt32x4Unsigned instruction.</summary>
+/// <summary>Convert i32x4 to f32x4, unsigned.</summary>
 public class Float32x4ConvertInt32x4Unsigned : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4ConvertInt32x4Unsigned"/>.</summary>

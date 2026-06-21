@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4Sqrt instruction.</summary>
+/// <summary>f32x4 square root.</summary>
 public class Float32x4Sqrt : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Sqrt"/>.</summary>

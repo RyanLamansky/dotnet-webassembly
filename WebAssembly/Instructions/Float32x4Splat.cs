@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4Splat instruction.</summary>
+/// <summary>Splat an f32 to all f32x4 lanes.</summary>
 public class Float32x4Splat : SimdSplatInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Splat"/>.</summary>

@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4GreaterThan instruction.</summary>
+/// <summary>f32x4 greater-than.</summary>
 public class Float32x4GreaterThan : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4GreaterThan"/>.</summary>

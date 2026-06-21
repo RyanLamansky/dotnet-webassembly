@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4Bitmask instruction.</summary>
+/// <summary>Bitmask of MSB of each i32x4 lane.</summary>
 public class Int32x4Bitmask : SimdV128ToI32Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4Bitmask"/>.</summary>

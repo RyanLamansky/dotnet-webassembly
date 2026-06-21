@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16AddSaturateUnsigned instruction.</summary>
+/// <summary>i8x16 unsigned add with saturation.</summary>
 public class Int8x16AddSaturateUnsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16AddSaturateUnsigned"/>.</summary>

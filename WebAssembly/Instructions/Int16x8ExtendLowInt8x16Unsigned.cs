@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8ExtendLowInt8x16Unsigned instruction.</summary>
+/// <summary>Widen low i8x16 lanes to i16x8, unsigned.</summary>
 public class Int16x8ExtendLowInt8x16Unsigned : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8ExtendLowInt8x16Unsigned"/>.</summary>

@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8Abs instruction.</summary>
+/// <summary>i16x8 absolute value.</summary>
 public class Int16x8Abs : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8Abs"/>.</summary>

@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int64x2ReplaceLane instruction.</summary>
+/// <summary>Replace an i64x2 lane.</summary>
 public class Int64x2ReplaceLane : SimdReplaceLaneInstruction, IEquatable<Int64x2ReplaceLane>
 {
     /// <summary>Always <see cref="SimdOpCode.Int64x2ReplaceLane"/>.</summary>

@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4TruncSatFloat64x2SignedZero instruction.</summary>
+/// <summary>Truncate f64x2 to i32x4, signed, with saturation (zero-extend).</summary>
 public class Int32x4TruncSatFloat64x2SignedZero : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4TruncSatFloat64x2SignedZero"/>.</summary>

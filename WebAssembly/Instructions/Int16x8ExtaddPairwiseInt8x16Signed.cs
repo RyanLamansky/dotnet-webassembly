@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8ExtaddPairwiseInt8x16Signed instruction.</summary>
+/// <summary>i16x8 pairwise add of adjacent i8x16 lanes, signed.</summary>
 public class Int16x8ExtaddPairwiseInt8x16Signed : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8ExtaddPairwiseInt8x16Signed"/>.</summary>

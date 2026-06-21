@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8MinSigned instruction.</summary>
+/// <summary>i16x8 signed min.</summary>
 public class Int16x8MinSigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8MinSigned"/>.</summary>

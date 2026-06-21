@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8GreaterThanUnsigned instruction.</summary>
+/// <summary>i16x8 unsigned greater-than.</summary>
 public class Int16x8GreaterThanUnsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8GreaterThanUnsigned"/>.</summary>

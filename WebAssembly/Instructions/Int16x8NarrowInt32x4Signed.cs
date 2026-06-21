@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8NarrowInt32x4Signed instruction.</summary>
+/// <summary>Narrow i32x4 to i16x8, signed with saturation.</summary>
 public class Int16x8NarrowInt32x4Signed : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8NarrowInt32x4Signed"/>.</summary>

@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4Pmax instruction.</summary>
+/// <summary>f32x4 pseudo-max.</summary>
 public class Float32x4Pmax : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4Pmax"/>.</summary>

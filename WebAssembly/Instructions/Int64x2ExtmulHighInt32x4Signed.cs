@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int64x2ExtmulHighInt32x4Signed instruction.</summary>
+/// <summary>Multiply i64x2 lanes, signed extended from high i32x4.</summary>
 public class Int64x2ExtmulHighInt32x4Signed : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int64x2ExtmulHighInt32x4Signed"/>.</summary>

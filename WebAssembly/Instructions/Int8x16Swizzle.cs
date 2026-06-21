@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16Swizzle instruction.</summary>
+/// <summary>Swizzle i8x16 lanes according to an index vector.</summary>
 public class Int8x16Swizzle : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16Swizzle"/>.</summary>

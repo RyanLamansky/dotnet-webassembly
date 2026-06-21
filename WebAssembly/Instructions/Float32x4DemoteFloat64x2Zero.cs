@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float32x4DemoteFloat64x2Zero instruction.</summary>
+/// <summary>Demote f64x2 to f32x4.</summary>
 public class Float32x4DemoteFloat64x2Zero : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float32x4DemoteFloat64x2Zero"/>.</summary>

@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Nearest instruction.</summary>
+/// <summary>f64x2 nearest integer.</summary>
 public class Float64x2Nearest : SimdUnaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Nearest"/>.</summary>

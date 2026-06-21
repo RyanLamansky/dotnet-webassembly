@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16NotEqual instruction.</summary>
+/// <summary>i8x16 not equal.</summary>
 public class Int8x16NotEqual : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16NotEqual"/>.</summary>

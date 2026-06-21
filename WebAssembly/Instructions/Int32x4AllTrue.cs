@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int32x4AllTrue instruction.</summary>
+/// <summary>Test whether all i32x4 lanes are non-zero.</summary>
 public class Int32x4AllTrue : SimdV128ToI32Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int32x4AllTrue"/>.</summary>

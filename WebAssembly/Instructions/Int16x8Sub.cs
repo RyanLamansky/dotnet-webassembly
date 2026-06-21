@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8Sub instruction.</summary>
+/// <summary>i16x8 subtract.</summary>
 public class Int16x8Sub : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8Sub"/>.</summary>

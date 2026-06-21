@@ -3,7 +3,7 @@ using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Max instruction.</summary>
+/// <summary>f64x2 max.</summary>
 public class Float64x2Max : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Max"/>.</summary>

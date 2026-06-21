@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int8x16ShiftRightUnsigned instruction.</summary>
+/// <summary>i8x16 unsigned shift right.</summary>
 public class Int8x16ShiftRightUnsigned : SimdShiftInstruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int8x16ShiftRightUnsigned"/>.</summary>

@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Int16x8AvgrUnsigned instruction.</summary>
+/// <summary>i16x8 unsigned average (rounding).</summary>
 public class Int16x8AvgrUnsigned : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Int16x8AvgrUnsigned"/>.</summary>

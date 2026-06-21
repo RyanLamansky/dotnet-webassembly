@@ -2,7 +2,7 @@ using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Float64x2Div instruction.</summary>
+/// <summary>f64x2 divide.</summary>
 public class Float64x2Div : SimdBinaryV128Instruction
 {
     /// <summary>Always <see cref="SimdOpCode.Float64x2Div"/>.</summary>

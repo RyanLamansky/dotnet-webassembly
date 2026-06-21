@@ -10,7 +10,7 @@ namespace WebAssembly.Runtime;
 public class MemoryImport(Func<UnmanagedMemory> method) : RuntimeImport
 {
     /// <summary>
-    /// Always <see cref="ExternalKind.Function"/>.
+    /// Always <see cref="ExternalKind.Memory"/>.
     /// </summary>
     public sealed override ExternalKind Kind => ExternalKind.Memory;
 
