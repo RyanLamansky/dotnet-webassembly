@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -23,9 +24,23 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     public uint Type { get; set; }
 
     /// <summary>
-    /// Reserved for future use.
+    /// The index of the table from which the indirect call selects its target, encoded as a <c>varuint32</c>.
+    /// Before WebAssembly 2.0 reference types this was a reserved zero byte; non-zero values (multiple tables)
+    /// are honored by the compiler.
     /// </summary>
-    public byte Reserved { get; set; }
+    public uint Table { get; set; }
+
+    /// <summary>
+    /// Obsolete alias for <see cref="Table"/>, retained for source compatibility from when this was a reserved
+    /// zero byte (before WebAssembly 2.0).
+    /// </summary>
+    [Obsolete("Use Table; this field is the table index.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public byte Reserved
+    {
+        get => (byte)this.Table;
+        set => this.Table = value;
+    }
 
     /// <summary>
     /// Creates a new  <see cref="CallIndirect"/> instance.
@@ -46,14 +61,14 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     internal CallIndirect(Reader reader)
     {
         Type = reader.ReadVarUInt32();
-        Reserved = reader.ReadVarUInt1();
+        Table = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
         writer.Write((byte)OpCode.CallIndirect);
         writer.WriteVar(this.Type);
-        writer.WriteVar(this.Reserved);
+        writer.WriteVar(this.Table);
     }
 
     /// <inheritdoc/>
@@ -74,14 +89,14 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
     public bool Equals(CallIndirect? other) =>
         other != null
         && other.Type == this.Type
-        && other.Reserved == this.Reserved
+        && other.Table == this.Table
         ;
 
     /// <summary>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)OpCode.CallIndirect, (int)this.Type, this.Reserved);
+    public override int GetHashCode() => HashCode.Combine((int)OpCode.CallIndirect, (int)this.Type, (int)this.Table);
 
     internal sealed override void Compile(CompilationContext context)
     {
@@ -100,7 +115,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
         // The second immediate is the table index (WASM 2.0); remappers are cached per (type, table) since
         // they load from a specific table field.
-        if (!context.DelegateRemappersByType.TryGetValue((signature.TypeIndex, this.Reserved), out var remapper))
+        if (!context.DelegateRemappersByType.TryGetValue((signature.TypeIndex, this.Table), out var remapper))
         {
             var parms = signature.ParameterTypes;
             var returns = signature.ReturnTypes;
@@ -115,8 +130,8 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
                 context.DelegateInvokersByTypeIndex.Add(signature.TypeIndex, invoker = del.GetTypeInfo().GetDeclaredMethod(nameof(Action.Invoke))!);
             }
 
-            context.DelegateRemappersByType.Add((signature.TypeIndex, this.Reserved), remapper = context.CheckedExportsBuilder.DefineMethod(
-                $"🔁 {signature.TypeIndex}_{this.Reserved}",
+            context.DelegateRemappersByType.Add((signature.TypeIndex, this.Table), remapper = context.CheckedExportsBuilder.DefineMethod(
+                $"🔁 {signature.TypeIndex}_{this.Table}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 MultiValueHelper.ClrReturnType(returns),
                 [.. parms, typeof(uint), context.CheckedExportsBuilder]
@@ -124,7 +139,7 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
             var il = remapper.GetILGenerator();
             il.EmitLoadArg(parms.Length + 1);
-            il.Emit(OpCodes.Ldfld, context.GetTable(this.Reserved));
+            il.Emit(OpCodes.Ldfld, context.GetTable(this.Table));
             il.EmitLoadArg(parms.Length);
             il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);

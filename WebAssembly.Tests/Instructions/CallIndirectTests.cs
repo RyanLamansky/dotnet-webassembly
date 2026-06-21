@@ -99,10 +99,22 @@ public class CallIndirectTests
         b.Type = 1;
         TestUtility.AreEqual(a, b);
 
-        a.Reserved = 1;
+        a.Table = 1;
         TestUtility.AreNotEqual(a, b);
-        b.Reserved = 1;
+        b.Table = 1;
         TestUtility.AreEqual(a, b);
+    }
+
+    /// <summary>The obsolete <c>Reserved</c> alias forwards to <see cref="CallIndirect.Table"/>.</summary>
+    [TestMethod]
+    public void CallIndirect_ReservedAlias_ForwardsToTable()
+    {
+        var instruction = new CallIndirect { Table = 3 };
+#pragma warning disable CS0618 // Type or member is obsolete
+        Assert.AreEqual((byte)3, instruction.Reserved);
+        instruction.Reserved = 7;
+#pragma warning restore CS0618
+        Assert.AreEqual(7u, instruction.Table);
     }
 
     /// <summary>

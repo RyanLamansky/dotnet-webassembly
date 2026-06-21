@@ -13,22 +13,25 @@ public class MemoryFill : MiscellaneousInstruction
     /// <summary>Always <see cref="MiscellaneousOpCode.MemoryFill"/>.</summary>
     public sealed override MiscellaneousOpCode MiscellaneousOpCode => MiscellaneousOpCode.MemoryFill;
 
-    /// <summary>Memory index (currently must be 0).</summary>
-    public byte MemoryIndex { get; set; }
+    /// <summary>
+    /// The target memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
+    /// requires 0 because multiple memories are not supported.
+    /// </summary>
+    public uint MemoryIndex { get; set; }
 
     /// <summary>Creates a new <see cref="MemoryFill"/> instance.</summary>
     public MemoryFill() { }
 
     internal MemoryFill(Reader reader)
     {
-        MemoryIndex = reader.ReadVarUInt1();
+        MemoryIndex = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
         writer.Write((byte)OpCode);
         writer.Write((byte)MiscellaneousOpCode);
-        writer.Write(MemoryIndex);
+        writer.WriteVar(MemoryIndex);
     }
 
     /// <inheritdoc/>
@@ -36,10 +39,13 @@ public class MemoryFill : MiscellaneousInstruction
         other is MemoryFill mf && mf.MemoryIndex == MemoryIndex;
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)OpCode, (int)MiscellaneousOpCode, MemoryIndex);
+    public override int GetHashCode() => HashCode.Combine((int)OpCode, (int)MiscellaneousOpCode, (int)MemoryIndex);
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (MemoryIndex != 0)
+            throw new ModuleLoadException($"memory.fill: only memory index 0 is supported, found {MemoryIndex}.", 0);
+
         // Stack: dst val len → (nothing)
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // val

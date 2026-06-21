@@ -1,3 +1,5 @@
+using System;
+using System.ComponentModel;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -15,9 +17,22 @@ public class MemorySize : Instruction
     public sealed override OpCode OpCode => OpCode.MemorySize;
 
     /// <summary>
-    /// Not currently used.
+    /// The target memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
+    /// requires 0 because multiple memories are not supported.
     /// </summary>
-    public byte Reserved { get; set; }
+    public uint MemoryIndex { get; set; }
+
+    /// <summary>
+    /// Obsolete alias for <see cref="MemoryIndex"/>, retained for source compatibility from when this was a
+    /// reserved zero byte (before WebAssembly 2.0).
+    /// </summary>
+    [Obsolete("Use MemoryIndex; this field is the target memory index.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public byte Reserved
+    {
+        get => (byte)this.MemoryIndex;
+        set => this.MemoryIndex = value;
+    }
 
     /// <summary>
     /// Creates a new  <see cref="MemorySize"/> instance.
@@ -28,13 +43,13 @@ public class MemorySize : Instruction
 
     internal MemorySize(Reader reader)
     {
-        Reserved = reader.ReadVarUInt1();
+        MemoryIndex = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
         writer.Write((byte)OpCode.MemorySize);
-        writer.Write(this.Reserved);
+        writer.WriteVar(this.MemoryIndex);
     }
 
     /// <summary>
@@ -44,17 +59,20 @@ public class MemorySize : Instruction
     /// <returns>True if they have the same type and value, otherwise false.</returns>
     public override bool Equals(Instruction? other) =>
         other is MemorySize instruction
-        && instruction.Reserved == this.Reserved
+        && instruction.MemoryIndex == this.MemoryIndex
         ;
 
     /// <summary>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, this.Reserved);
+    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.MemoryIndex);
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (MemoryIndex != 0)
+            throw new ModuleLoadException($"memory.size: only memory index 0 is supported, found {MemoryIndex}.", 0);
+
         if (context.Memory == null)
             throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
 

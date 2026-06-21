@@ -1,4 +1,5 @@
 using System.Reflection.Emit;
+using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -22,8 +23,13 @@ public class RefIsNull : SimpleInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        // Pop any reference type; push the i32 result.
-        context.PopStackNoReturn(OpCode.RefIsNull);
+        // The operand must be a reference type (funcref or externref); anything else would emit a
+        // nonsensical `ceq` comparing a non-reference value against null. A null type means the value
+        // is unknown because the code is unreachable, which is accepted.
+        var type = context.PopStack(OpCode.RefIsNull, null);
+        if (type is not (null or WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef))
+            throw new StackTypeInvalidException(OpCode.RefIsNull, WebAssemblyValueType.FuncRef, type.Value);
+
         context.Stack.Push(WebAssemblyValueType.Int32);
 
         context.Emit(OpCodes.Ldnull);

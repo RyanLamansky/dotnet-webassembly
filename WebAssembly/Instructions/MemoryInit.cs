@@ -16,8 +16,11 @@ public class MemoryInit : MiscellaneousInstruction
     /// <summary>Data segment index.</summary>
     public uint SegmentIndex { get; set; }
 
-    /// <summary>Memory index (currently must be 0).</summary>
-    public byte MemoryIndex { get; set; }
+    /// <summary>
+    /// The target memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
+    /// requires 0 because multiple memories are not supported.
+    /// </summary>
+    public uint MemoryIndex { get; set; }
 
     /// <summary>Creates a new <see cref="MemoryInit"/> instance.</summary>
     public MemoryInit() { }
@@ -25,7 +28,7 @@ public class MemoryInit : MiscellaneousInstruction
     internal MemoryInit(Reader reader)
     {
         SegmentIndex = reader.ReadVarUInt32();
-        MemoryIndex = reader.ReadVarUInt1();
+        MemoryIndex = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
@@ -33,7 +36,7 @@ public class MemoryInit : MiscellaneousInstruction
         writer.Write((byte)OpCode);
         writer.Write((byte)MiscellaneousOpCode);
         writer.WriteVar(SegmentIndex);
-        writer.Write(MemoryIndex);
+        writer.WriteVar(MemoryIndex);
     }
 
     /// <inheritdoc/>
@@ -41,10 +44,13 @@ public class MemoryInit : MiscellaneousInstruction
         other is MemoryInit mi && mi.SegmentIndex == SegmentIndex && mi.MemoryIndex == MemoryIndex;
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)MiscellaneousOpCode, (int)SegmentIndex, MemoryIndex);
+    public override int GetHashCode() => HashCode.Combine((int)MiscellaneousOpCode, (int)SegmentIndex, (int)MemoryIndex);
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (MemoryIndex != 0)
+            throw new ModuleLoadException($"memory.init: only memory index 0 is supported, found {MemoryIndex}.", 0);
+
         // Stack: dst src_offset len → (nothing)
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src offset

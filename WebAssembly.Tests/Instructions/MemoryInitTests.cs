@@ -79,4 +79,42 @@ public class MemoryInitTests
         Assert.AreEqual(20, compiled.Exports.Test(200, 1, 2, 200));
         Assert.AreEqual(30, compiled.Exports.Test(200, 1, 2, 201));
     }
+
+    /// <summary>
+    /// A non-zero memory index (multi-memory is not supported) is permitted in the object model but must be
+    /// rejected by the compiler.
+    /// </summary>
+    [TestMethod]
+    public void MemoryInit_NonZeroMemoryIndex_RejectedByCompiler()
+    {
+        var module = new Module();
+        module.Memories.Add(new Memory(1, 1));
+
+        var seg = new Data { Kind = DataKind.Passive };
+        seg.RawData.Add(10);
+        module.Data.Add(seg);
+
+        module.Types.Add(new WebAssemblyType
+        {
+            Parameters = [WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32, WebAssemblyValueType.Int32],
+            Returns = [WebAssemblyValueType.Int32],
+        });
+        module.Functions.Add(new Function());
+        module.Exports.Add(new Export { Name = nameof(MemoryInitExport.Test) });
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new LocalGet(0),
+                new LocalGet(1),
+                new LocalGet(2),
+                new MemoryInit { SegmentIndex = 0, MemoryIndex = 1 },
+                new LocalGet(3),
+                new Int32Load8Unsigned { Offset = 0 },
+                new End(),
+            ],
+        });
+
+        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<MemoryInitExport>());
+    }
 }

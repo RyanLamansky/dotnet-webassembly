@@ -13,27 +13,33 @@ public class MemoryCopy : MiscellaneousInstruction
     /// <summary>Always <see cref="MiscellaneousOpCode.MemoryCopy"/>.</summary>
     public sealed override MiscellaneousOpCode MiscellaneousOpCode => MiscellaneousOpCode.MemoryCopy;
 
-    /// <summary>Destination memory index (currently must be 0).</summary>
-    public byte DestinationMemoryIndex { get; set; }
+    /// <summary>
+    /// The destination memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
+    /// requires 0 because multiple memories are not supported.
+    /// </summary>
+    public uint DestinationMemoryIndex { get; set; }
 
-    /// <summary>Source memory index (currently must be 0).</summary>
-    public byte SourceMemoryIndex { get; set; }
+    /// <summary>
+    /// The source memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
+    /// requires 0 because multiple memories are not supported.
+    /// </summary>
+    public uint SourceMemoryIndex { get; set; }
 
     /// <summary>Creates a new <see cref="MemoryCopy"/> instance.</summary>
     public MemoryCopy() { }
 
     internal MemoryCopy(Reader reader)
     {
-        DestinationMemoryIndex = reader.ReadVarUInt1();
-        SourceMemoryIndex = reader.ReadVarUInt1();
+        DestinationMemoryIndex = reader.ReadVarUInt32();
+        SourceMemoryIndex = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
         writer.Write((byte)OpCode);
         writer.Write((byte)MiscellaneousOpCode);
-        writer.Write(DestinationMemoryIndex);
-        writer.Write(SourceMemoryIndex);
+        writer.WriteVar(DestinationMemoryIndex);
+        writer.WriteVar(SourceMemoryIndex);
     }
 
     /// <inheritdoc/>
@@ -41,10 +47,13 @@ public class MemoryCopy : MiscellaneousInstruction
         other is MemoryCopy mc && mc.DestinationMemoryIndex == DestinationMemoryIndex && mc.SourceMemoryIndex == SourceMemoryIndex;
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)MiscellaneousOpCode, DestinationMemoryIndex, SourceMemoryIndex);
+    public override int GetHashCode() => HashCode.Combine((int)MiscellaneousOpCode, (int)DestinationMemoryIndex, (int)SourceMemoryIndex);
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (DestinationMemoryIndex != 0 || SourceMemoryIndex != 0)
+            throw new ModuleLoadException($"memory.copy: only memory index 0 is supported, found destination {DestinationMemoryIndex} and source {SourceMemoryIndex}.", 0);
+
         // Stack: dst src len → (nothing)
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
