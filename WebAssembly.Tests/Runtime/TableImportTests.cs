@@ -308,7 +308,8 @@ public class TableImportTests
     }
 
     /// <summary>
-    /// Test importing a table whose initial size is too small.
+    /// Tests that importing a table too small to hold an active element segment traps at instantiation
+    /// (per spec) rather than silently growing the table to fit.
     /// </summary>
     [TestMethod]
     public void Compile_TableImport_UndersizedTable()
@@ -340,18 +341,12 @@ public class TableImportTests
         var table = new FunctionTable(0, 1);
         Assert.AreEqual(0u, table.Length);
 
-        var compiled = module.ToInstance<CompilerTestBase<int>>(
+        // The active element segment writes index 0, but the provided table has length 0; this traps.
+        Assert.ThrowsException<TableAccessOutOfRangeException>(() => module.ToInstance<CompilerTestBase<int>>(
             new ImportDictionary {
                     { "Test", "Test", table },
-            });
-
-        Assert.AreEqual(1u, table.Length);
-        var rawDelegate = table[0];
-        Assert.IsNotNull(rawDelegate);
-        Assert.IsInstanceOfType(rawDelegate, typeof(Func<int, int>));
-        var nativeDelegate = (Func<int, int>)rawDelegate!;
-        Assert.AreEqual(0, nativeDelegate(0));
-        Assert.AreEqual(5, nativeDelegate(5));
+            }));
+        Assert.AreEqual(0u, table.Length); // The table is not grown to fit.
     }
 
     /// <summary>

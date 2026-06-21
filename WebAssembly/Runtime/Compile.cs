@@ -589,7 +589,7 @@ public static class Compile
                     break;
 
                 case Section.Export:
-                    exportedFunctions = SectionExport(reader, functionTable, exportsBuilder, emptyTypes, memory, globals, configuration);
+                    exportedFunctions = SectionExport(reader, context, exportsBuilder, emptyTypes, memory, globals, configuration);
                     // Exported functions are implicitly declared as referenceable by ref.func.
                     foreach (var exported in exportedFunctions)
                         context.DeclaredFunctionReferences.Add(exported.Value);
@@ -1132,7 +1132,7 @@ public static class Compile
 
     static KeyValuePair<string, uint>[] SectionExport(
         Reader reader,
-        FieldBuilder? functionTable,
+        CompilationContext context,
         TypeBuilder exportsBuilder,
         Type[] emptyTypes,
         FieldBuilder? memory,
@@ -1150,7 +1150,6 @@ public static class Compile
             var name = reader.ReadString(reader.ReadVarUInt32());
             if (!exportNames.Add(name))
                 throw new ModuleLoadException($"Duplicate export name \"{name}\".", preNameOffset);
-            var preKindOffset = reader.Offset;
             var kind = (ExternalKind)reader.ReadByte();
             var preIndexOffset = reader.Offset;
             var index = reader.ReadVarUInt32();
@@ -1160,29 +1159,32 @@ public static class Compile
                     xFunctions.Add(new KeyValuePair<string, uint>(name, index));
                     break;
                 case ExternalKind.Table:
-                    if (index != 0)
-                        throw new ModuleLoadException($"Exported table must be of index 0, found {index}.", preIndexOffset);
-                    if (functionTable == null)
-                        throw new ModuleLoadException("Can't export a table without defining or importing one.", preKindOffset);
+                    if (index >= (uint)context.Tables.Count)
+                        throw new ModuleLoadException($"Exported table index {index} exceeds the {context.Tables.Count} table(s) defined or imported.", preIndexOffset);
 
                     {
+                        var tableField = context.GetTable(index);
+                        var tableClrType = configuration.NeutralizeType(
+                            context.GetTableElementType(index) == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
                         var tableGetter = exportsBuilder.DefineMethod("get_" + name,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            configuration.NeutralizeType(typeof(FunctionTable)),
+                            tableClrType,
                             emptyTypes
                             );
+                        var getterIL = tableGetter.GetILGenerator();
+                        getterIL.Emit(OpCodes.Ldarg_0);
+                        getterIL.Emit(OpCodes.Ldfld, tableField);
+                        getterIL.Emit(OpCodes.Ret);
+
+                        var tableProperty = exportsBuilder.DefineProperty(name, PropertyAttributes.None, tableClrType, emptyTypes);
+                        // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
+                        // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
 #if NET9_0_OR_GREATER
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
-                        tableGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
-                        var getterIL = tableGetter.GetILGenerator();
-                        getterIL.Emit(OpCodes.Ldarg_0);
-                        getterIL.Emit(OpCodes.Ldfld, functionTable);
-                        getterIL.Emit(OpCodes.Ret);
-
-                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(FunctionTable)), emptyTypes)
-                            .SetGetMethod(tableGetter);
+                        tableProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
+                        tableProperty.SetGetMethod(tableGetter);
                     }
                     break;
                 case ExternalKind.Memory:
@@ -1198,17 +1200,19 @@ public static class Compile
                             configuration.NeutralizeType(typeof(UnmanagedMemory)),
                             emptyTypes
                             );
-#if NET9_0_OR_GREATER
-                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
-                        memoryGetter.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Memory, name));
                         var getterIL = memoryGetter.GetILGenerator();
                         getterIL.Emit(OpCodes.Ldarg_0);
                         getterIL.Emit(OpCodes.Ldfld, memory);
                         getterIL.Emit(OpCodes.Ret);
 
-                        exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes)
-                            .SetGetMethod(memoryGetter);
+                        var memoryProperty = exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes);
+                        // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
+                        // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
+#if NET9_0_OR_GREATER
+                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
+                        memoryProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Memory, name));
+                        memoryProperty.SetGetMethod(memoryGetter);
                     }
                     break;
                 case ExternalKind.Global:
@@ -1444,26 +1448,29 @@ public static class Compile
 
                 var setter = isFunc ? FunctionTable.IndexSetter : ExternRefTable.IndexSetter;
 
-                // Grow a funcref table that is too small to hold the segment (preserves the historical behavior of
-                // sizing the table up to fit active elements rather than trapping).
-                if (isFunc)
-                {
-                    var isBigEnough = instanceConstructorIL.DefineLabel();
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
-                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-                    instanceConstructorIL.EmitLoadConstant(checked(offset + (uint)entryCount));
-                    instanceConstructorIL.Emit(OpCodes.Bge_Un, isBigEnough);
-
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
-                    instanceConstructorIL.EmitLoadConstant(checked(offset + (uint)entryCount));
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
-                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.LengthGetter);
-                    instanceConstructorIL.Emit(OpCodes.Sub);
-                    instanceConstructorIL.Emit(OpCodes.Call, FunctionTable.GrowMethod);
-                    instanceConstructorIL.Emit(OpCodes.Pop);
-
-                    instanceConstructorIL.MarkLabel(isBigEnough);
-                }
+                // An active element segment that does not fit its destination table traps at instantiation.
+                // (Earlier versions grew a funcref table to fit; the spec requires a trap instead.) The required
+                // extent (offset + count) is compared in 64-bit to avoid a uint overflow near the 2^32 boundary.
+                var lengthGetter = isFunc ? FunctionTable.LengthGetter : ExternRefTable.LengthGetter;
+                var fits = instanceConstructorIL.DefineLabel();
+                instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
+                instanceConstructorIL.Emit(OpCodes.Conv_U8);
+                instanceConstructorIL.Emit(OpCodes.Ldc_I8, (long)offset + entryCount);
+                instanceConstructorIL.Emit(OpCodes.Bge_Un, fits);
+                instanceConstructorIL.EmitLoadConstant(offset);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
+                instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
+                instanceConstructorIL.Emit(OpCodes.Newobj, typeof(TableAccessOutOfRangeException)
+                    .GetTypeInfo()
+                    .DeclaredConstructors
+                    .First(c =>
+                    {
+                        var parms = c.GetParameters();
+                        return parms.Length == 2 && parms[0].ParameterType == typeof(uint) && parms[1].ParameterType == typeof(uint);
+                    }));
+                instanceConstructorIL.Emit(OpCodes.Throw);
+                instanceConstructorIL.MarkLabel(fits);
 
                 for (var j = 0; j < entryCount; j++)
                 {

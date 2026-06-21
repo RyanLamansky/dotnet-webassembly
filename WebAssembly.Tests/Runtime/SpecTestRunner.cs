@@ -68,14 +68,15 @@ static partial class SpecTestRunner
         {
             { "spectest", "print", new FunctionImport((Action)(() => { })) },
             { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
+            { "spectest", "print_i64", new FunctionImport((Action<long>)(i => { })) },
             { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
             { "spectest", "print_f64_f64", new FunctionImport((Action<double, double>)((d1, d2) => { })) },
             { "spectest", "print_f32", new FunctionImport((Action<float>)(i => { })) },
             { "spectest", "print_f64", new FunctionImport((Action<double>)(i => { })) },
             { "spectest", "global_i32", new GlobalImport(() => 666) },
             { "spectest", "global_i64", new GlobalImport(() => 666L) },
-            { "spectest", "global_f32", new GlobalImport(() => 666.0F) },
-            { "spectest", "global_f64", new GlobalImport(() => 666.0) },
+            { "spectest", "global_f32", new GlobalImport(() => 666.6F) },
+            { "spectest", "global_f64", new GlobalImport(() => 666.6) },
             { "spectest", "table", new FunctionTable(10, 20) }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
             { "spectest", "memory", new MemoryImport(() => new UnmanagedMemory(1, 2)) }, // Memory.alloc (MemoryType {min = 1l; max = Some 2l})
         };

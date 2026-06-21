@@ -121,19 +121,13 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_elem()
     {
-        // 2x ModuleLoadException: Element segment offset must be a single Int32 constant followed by end (120, 127).
-        // 12x AssertFailedException: "out of bounds table access" assert_trap has no test procedure set up.
-        // 2x AssertFailedException: "unknown global 0/1" assert_invalid has no test procedure set up (467, 475).
-        // 2x ImportException: Missing import for module1::shared-table (589, 602).
-        // 3x AssertFailedException: Object reference not set to an instance of an object (598, 611, 692).
-        // 3x AssertFailedException: Not equal i32 (active-element value mismatch) (599, 612, 613).
-        // 1x ModuleLoadException: Can't export a table without defining or importing one (646).
-        // 9x KeyNotFoundException: The given key '$m' was not present in the dictionary.
-        // 1x ImportException: Missing import for exporter::table (664).
+        // 2x ModuleLoadException: element-segment offset uses global.get; only a single Int32 constant is supported (120, 127).
+        // 1x AssertFailedException: active element segment out of bounds doesn't trap (266 — boundary case).
+        // 2x AssertFailedException: "unknown global 0/1" — element offset referencing an unknown global not rejected (467, 475).
+        // 1x AssertFailedException: Object reference not set to an instance of an object (692).
         var skips = new HashSet<uint>
         {
-            120, 127, 239, 248, 257, 266, 273, 281, 290, 298, 307, 315, 324, 332, 467, 475, 589, 598, 599,
-            602, 611, 612, 613, 646, 653, 655, 656, 658, 659, 661, 662, 664, 668, 669, 692
+            120, 127, 266, 467, 475, 692
         };
         SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);
     }
@@ -144,15 +138,7 @@ public class SpecTests
 
     /// <summary>Runs the exports tests.</summary>
     [TestMethod]
-    public void SpecTest_exports()
-    {
-        // 1x ModuleLoadException: Exported table must be of index 0, found 1 — multi-table export not supported (133).
-        var skips = new HashSet<uint>
-        {
-            133
-        };
-        SpecTestRunner.Run(DataPath("exports"), "exports.json", skips.Contains);
-    }
+    public void SpecTest_exports() => SpecTestRunner.Run(DataPath("exports"), "exports.json");
 
     /// <summary>Runs the f32 tests.</summary>
     [TestMethod]
@@ -265,25 +251,13 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_imports()
     {
-        // 1x ModuleLoadException: Exported table must be of index 0, found 1 (3).
-        // 1x AssertFailedException: 21 tried to register null as a module method source.
-        // 1x ImportException: Missing import for spectest::print_i64 (26).
-        // 2x AssertFailedException: no method source (cascaded module-load failure) (85, 86).
-        // 7x ImportException: Missing import for test::func* (116-122).
-        // 2x AssertFailedException: imported-global value mismatch — spectest globals are stubbed at 666 (251, 252).
-        // 3x ImportException: Missing import for test::global-* (254-256).
-        // 12x ImportException: Missing import for test::table-10-* (389-400).
-        // 6x AssertFailedException: expected ImportException not thrown (436, 440, 529, 533, 563, 567).
+        // 13x AssertFailedException: "incompatible import type" assert_unlinkable not rejected — the library
+        //     doesn't yet type-check imports against their declared signature/type/limits
+        //     (312, 420, 424, 428, 432, 436, 440, 521, 525, 529, 533, 563, 567).
         // 1x AssertFailedException: "multiple memories" (imported + defined) not yet rejected — validation gap (489).
-        // 3x ImportException: Missing import for test::memory-2-inf (501-503).
-        // 1x ImportException: Missing import for grown-memory::memory (587).
-        // 1x ImportException: Missing import for grown-imported-memory::memory (594).
-        // 3x KeyNotFoundException: The given key '$Mgim*' was not present in the dictionary (592, 593, 599).
         var skips = new HashSet<uint>
         {
-            3, 21, 26, 85, 86, 116, 117, 118, 119, 120, 121, 122, 251, 252, 254, 255, 256, 389, 390, 391,
-            392, 393, 394, 395, 396, 397, 398, 399, 400, 436, 440, 489, 501, 502, 503, 529, 533, 563, 567,
-            587, 592, 593, 594, 599
+            312, 420, 424, 428, 432, 436, 440, 489, 521, 525, 529, 533, 563, 567
         };
         SpecTestRunner.Run(DataPath("imports"), "imports.json", skips.Contains);
     }
@@ -312,31 +286,13 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_linking()
     {
-        // 3x AssertFailedException: cross-module global method-lookup failure (68, 75, 81).
-        // 2x AssertFailedException: expected ImportException not thrown (87, 117).
-        // 2x ImportException: Missing import for Mt::tab (191, 229).
-        // 3x KeyNotFoundException: The given key '$Ot' was not present (207, 213, 219).
-        // 3x AssertFailedException: cross-module table-call value mismatch (209, 210, 212).
-        // 6x AssertFailedException: Object reference not set to an instance of an object.
-        // 1x AssertFailedException: Expected ModuleLoadException or IndexOutOfRangeException, received KeyNotFoundException (227).
+        // 3x AssertFailedException: a registered module's exported globals aren't exposed as gettable members,
+        //    so the harness can't look them up (68, 75, 81).
+        // 2x AssertFailedException: "incompatible import type" assert_unlinkable not rejected — no import type-check (87, 117).
         // 1x AssertFailedException: Common Language Runtime detected an invalid program (241).
-        // 3x AssertFailedException: "out of bounds table access" assert_trap has no test procedure set up (244, 267, 410).
-        // 3x AssertFailedException: "out of bounds memory access" assert_trap has no test procedure set up (279, 360, 398).
-        // 1x ModuleLoadException: Exported table must be of index 0, found 1 (291).
-        // 1x KeyNotFoundException: The given key '$Mtable_ex' was not present (295).
-        // 1x ImportException: Missing import for Mtable_ex::t-func (297).
-        // 3x ImportException: Missing import for Mm::mem (340, 354, 367).
-        // 2x AssertFailedException: cross-module memory value mismatch (349, 350).
-        // 1x KeyNotFoundException: The given key '$Om' was not present (352).
-        // 8x KeyNotFoundException: The given key '$Pm' was not present (375-382).
-        // 3x AssertFailedException: cross-module memory value mismatch (406, 419, 452).
-        // 1x AssertFailedException: memory access exceeded allocated memory (407).
-        // 1x AssertFailedException: expected ModuleLoadException not thrown (436).
         var skips = new HashSet<uint>
         {
-            68, 75, 81, 87, 117, 191, 207, 209, 210, 212, 213, 215, 216, 218, 219, 227, 229, 241, 244, 267,
-            275, 279, 288, 291, 295, 297, 340, 349, 350, 352, 354, 360, 367, 375, 376, 377, 378, 379, 380,
-            381, 382, 398, 406, 407, 410, 419, 436, 452, 453
+            68, 75, 81, 87, 117, 241
         };
         SpecTestRunner.Run(DataPath("linking"), "linking.json", skips.Contains);
     }
