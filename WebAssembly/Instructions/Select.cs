@@ -35,17 +35,14 @@ public class Select : SimpleInstruction
         if (typeA != typeB && typeA.HasValue && typeB.HasValue)
             throw new StackTypeInvalidException(OpCode.Select, typeA.Value, typeB.Value);
 
-        if (!typeA.HasValue)
-            stack.Push(typeB.GetValueOrDefault(WebAssemblyValueType.Int32));
-        else
-            stack.Push(typeA.GetValueOrDefault(WebAssemblyValueType.Int32));
+        // The result is the operands' common type, or unknown (null) when both are unknown — i.e. in
+        // unreachable code, where select propagates the spec's polymorphic value.
+        var resultType = typeA ?? typeB;
+        stack.Push(resultType);
 
-        if (!typeA.HasValue)
-        {
-            typeA = WebAssemblyValueType.Int32; //And treat it as an int32
-        }
-
-        var helper = typeA switch
+        // The emitted helper call is dead when the type is unknown (the code is unreachable), so any concrete
+        // overload is valid there; int32 is the fallback.
+        var helper = (resultType ?? WebAssemblyValueType.Int32) switch
         {
             WebAssemblyValueType.Int32 => HelperMethod.SelectInt32,
             WebAssemblyValueType.Int64 => HelperMethod.SelectInt64,

@@ -69,6 +69,8 @@ Target frameworks:
 - The assembly is strong-name signed (`WebAssembly.snk`); `InternalsVisibleTo` exposes internals to the test project, so tests can and do reach `internal` members.
 - Multi-targeting is now just net8 vs net9: guard net9-only APIs with `#if NET9_0_OR_GREATER` and provide a net8 fallback.
   The only remaining conditional symbols are `NET9_0_OR_GREATER` and `DEBUG`; the old netstandard2.0/netcoreapp3.0 fallbacks were removed when .NET Standard 2.0 was dropped.
+- Prefer `Module` when creating unit tests against well-formed WASMs to preserve human readability.
+  - No restrictions on using byte arrays, hex, or other WASM representations for throwaway work.
 
 ## How instructions work (the core pattern)
 
@@ -110,4 +112,4 @@ After a refresh you must re-curate `SpecTests.cs` by hand (line numbers and cate
 ## Gotchas
 
 - Don't edit anything under `bin/`, `obj/`, `TestResults/`, or `SpecTestData/` — all generated.
-- The library has no runtime third-party dependencies at all (only SourceLink, for packaging). The former netstandard2.0-only `System.Reflection.Emit` package reference was removed with the .NET Standard 2.0 target.
+- The library has no runtime third-party dependencies at all (only SourceLink, for packaging).

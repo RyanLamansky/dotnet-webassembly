@@ -77,8 +77,9 @@ static class BranchHelper
         for (var k = 0; k < branchTypes.Length; k++)
         {
             var actual = snapshot[branchTypes.Length - 1 - k];
-            if (actual != branchTypes[k])
-                throw new StackTypeInvalidException(opCode, branchTypes[k], actual);
+            // An unknown (null) entry is the polymorphic value from unreachable code; it matches any branch type.
+            if (actual.HasValue && actual != branchTypes[k])
+                throw new StackTypeInvalidException(opCode, branchTypes[k], actual.Value);
         }
     }
 

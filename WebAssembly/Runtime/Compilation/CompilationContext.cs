@@ -202,7 +202,10 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public readonly HashSet<Label> LoopLabels = [];
 
-    public readonly Stack<WebAssemblyValueType> Stack = new();
+    // A null entry is the "unknown" type from the spec's validation algorithm: the polymorphic value that
+    // an instruction in unreachable code pops from below the current block, or that an untyped select with
+    // unknown operands produces. Unknown matches any expected type.
+    public readonly Stack<WebAssemblyValueType?> Stack = new();
 
     public readonly Dictionary<int, BlockContext> BlockContexts = [];
 
@@ -296,8 +299,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         var type = this.Stack.Pop();
-        if (type != expectedType)
-            throw new StackTypeInvalidException(opcode, expectedType, type);
+        if (type.HasValue && type != expectedType)
+            throw new StackTypeInvalidException(opcode, expectedType, type.Value);
     }
 
     public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType1, WebAssemblyValueType expectedType2)
@@ -315,8 +318,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         var type = this.Stack.Pop();
-        if (type != expected)
-            throw new StackTypeInvalidException(opcode, expected, type);
+        if (type.HasValue && type != expected)
+            throw new StackTypeInvalidException(opcode, expected, type.Value);
 
         expected = expectedType2;
         if (initialStackSize - 1 <= blockContextInitialStackSize)
@@ -328,8 +331,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         type = this.Stack.Pop();
-        if (type != expected)
-            throw new StackTypeInvalidException(opcode, expected, type);
+        if (type.HasValue && type != expected)
+            throw new StackTypeInvalidException(opcode, expected, type.Value);
     }
 
     public void PopStackNoReturn(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
@@ -348,8 +351,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             }
 
             var type = this.Stack.Pop();
-            if (expected.HasValue && type != expected)
-                throw new StackTypeInvalidException(opcode, expected.Value, type);
+            if (expected.HasValue && type.HasValue && type != expected)
+                throw new StackTypeInvalidException(opcode, expected.Value, type.Value);
         }
     }
 

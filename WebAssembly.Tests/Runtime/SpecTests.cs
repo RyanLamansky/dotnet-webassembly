@@ -331,16 +331,7 @@ public class SpecTests
 
     /// <summary>Runs the unreached valid tests.</summary>
     [TestMethod]
-    public void SpecTest_unreached_valid()
-    {
-        // 1x StackTypeInvalidException: RefIsNull requires the top stack item to be FuncRef, found Int32 (1).
-        // 4x AssertFailedException: got AssertFailedException, expected UnreachableException (42-45).
-        var skips = new HashSet<uint>
-        {
-            1, 42, 43, 44, 45
-        };
-        SpecTestRunner.Run(DataPath("unreached-valid"), "unreached-valid.json", skips.Contains);
-    }
+    public void SpecTest_unreached_valid() => SpecTestRunner.Run(DataPath("unreached-valid"), "unreached-valid.json");
 
     /// <summary>Runs the unwind tests.</summary>
     [TestMethod]
