@@ -891,6 +891,11 @@ public static class Compile
                     break;
                 case ExternalKind.Memory:
                     {
+                        // At most one memory is supported; a second memory import (or an import plus a
+                        // defined memory) is rejected, mirroring the Memory section's own guard.
+                        if (memory != null)
+                            throw new ModuleLoadException("Memory already provided, multiple memories are not supported.", preKindOffset);
+
                         var limits = new ResizableLimits(reader);
 
                         var typedDelegate = typeof(Func<UnmanagedMemory>);
@@ -1209,6 +1214,10 @@ public static class Compile
             var name = reader.ReadString(reader.ReadVarUInt32());
             if (!exportNames.Add(name))
                 throw new ModuleLoadException($"Duplicate export name \"{name}\".", preNameOffset);
+            // Member (property/accessor) names must be valid identifiers; table/memory/global exports use this
+            // cleaned form just as function exports do. The raw name is kept for the NativeExportAttribute so
+            // re-import lookup still matches the original WASM field name.
+            var memberName = NameCleaner.CleanName(name);
             var kind = (ExternalKind)reader.ReadByte();
             var preIndexOffset = reader.Offset;
             var index = reader.ReadVarUInt32();
@@ -1225,7 +1234,7 @@ public static class Compile
                         var tableField = context.GetTable(index);
                         var tableClrType = configuration.NeutralizeType(
                             context.GetTableElementType(index) == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
-                        var tableGetter = exportsBuilder.DefineMethod("get_" + name,
+                        var tableGetter = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
                             tableClrType,
@@ -1236,7 +1245,7 @@ public static class Compile
                         getterIL.Emit(OpCodes.Ldfld, tableField);
                         getterIL.Emit(OpCodes.Ret);
 
-                        var tableProperty = exportsBuilder.DefineProperty(name, PropertyAttributes.None, tableClrType, emptyTypes);
+                        var tableProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, tableClrType, emptyTypes);
                         // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
                         // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
 #if NET9_0_OR_GREATER
@@ -1253,7 +1262,7 @@ public static class Compile
                         throw new CompilerException("Cannot export linear memory when linear memory is not defined.");
 
                     {
-                        var memoryGetter = exportsBuilder.DefineMethod("get_" + name,
+                        var memoryGetter = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
                             configuration.NeutralizeType(typeof(UnmanagedMemory)),
@@ -1264,7 +1273,7 @@ public static class Compile
                         getterIL.Emit(OpCodes.Ldfld, memory);
                         getterIL.Emit(OpCodes.Ret);
 
-                        var memoryProperty = exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes);
+                        var memoryProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes);
                         // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
                         // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
 #if NET9_0_OR_GREATER
@@ -1282,12 +1291,12 @@ public static class Compile
 
                     {
                         var global = globals[index];
-                        var property = exportsBuilder.DefineProperty(name, PropertyAttributes.None, configuration.NeutralizeType(global.Type.ToSystemType()), emptyTypes);
+                        var property = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, configuration.NeutralizeType(global.Type.ToSystemType()), emptyTypes);
 #if NET9_0_OR_GREATER
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
                         property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name));
-                        var wrappedGet = exportsBuilder.DefineMethod("get_" + name,
+                        var wrappedGet = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
                             configuration.NeutralizeType(global.Type.ToSystemType()),
@@ -1304,7 +1313,7 @@ public static class Compile
                         var setter = global.Setter;
                         if (setter != null)
                         {
-                            var wrappedSet = exportsBuilder.DefineMethod("set_" + name,
+                            var wrappedSet = exportsBuilder.DefineMethod("set_" + memberName,
                                 exportedPropertyAttributes,
                                 CallingConventions.HasThis,
                                 null,

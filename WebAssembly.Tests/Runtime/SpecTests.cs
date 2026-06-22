@@ -225,15 +225,7 @@ public class SpecTests
 
     /// <summary>Runs the imports tests.</summary>
     [TestMethod]
-    public void SpecTest_imports()
-    {
-        // 1x AssertFailedException: "multiple memories" (imported + defined) not yet rejected — validation gap (489).
-        var skips = new HashSet<uint>
-        {
-            489
-        };
-        SpecTestRunner.Run(DataPath("imports"), "imports.json", skips.Contains);
-    }
+    public void SpecTest_imports() => SpecTestRunner.Run(DataPath("imports"), "imports.json");
 
     /// <summary>Runs the inline module tests.</summary>
     [TestMethod]
@@ -257,16 +249,7 @@ public class SpecTests
 
     /// <summary>Runs the linking tests.</summary>
     [TestMethod]
-    public void SpecTest_linking()
-    {
-        // 3x AssertFailedException: a registered module's exported globals aren't exposed as gettable members,
-        //    so the harness can't look them up (68, 75, 81).
-        var skips = new HashSet<uint>
-        {
-            68, 75, 81
-        };
-        SpecTestRunner.Run(DataPath("linking"), "linking.json", skips.Contains);
-    }
+    public void SpecTest_linking() => SpecTestRunner.Run(DataPath("linking"), "linking.json");
 
     /// <summary>Runs the load tests.</summary>
     [TestMethod]
