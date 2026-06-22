@@ -37,7 +37,7 @@ public class ImportValidationTests
     public void GlobalImport_ValueTypeMismatch_Throws()
     {
         var module = GlobalModule(WebAssemblyValueType.Int32, mutable: false);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new GlobalImport(() => 0L)))); // i64 supplied for an i32 import
     }
 
@@ -46,7 +46,7 @@ public class ImportValidationTests
     public void GlobalImport_MutabilityMismatch_Throws()
     {
         var module = GlobalModule(WebAssemblyValueType.Int32, mutable: true);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new GlobalImport(() => 0)))); // immutable supplied for a mutable import
     }
 
@@ -63,7 +63,7 @@ public class ImportValidationTests
     public void MemoryImport_BelowMinimum_Throws()
     {
         var module = MemoryModule(2, null);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new MemoryImport(() => new UnmanagedMemory(1, null)))));
     }
 
@@ -72,7 +72,7 @@ public class ImportValidationTests
     public void MemoryImport_AboveMaximum_Throws()
     {
         var module = MemoryModule(1, 1);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new MemoryImport(() => new UnmanagedMemory(1, 5)))));
     }
 
@@ -89,7 +89,7 @@ public class ImportValidationTests
     public void TableImport_BelowMinimum_Throws()
     {
         var module = TableModule(2, null);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new FunctionTable(1))));
     }
 
@@ -98,7 +98,7 @@ public class ImportValidationTests
     public void TableImport_AboveMaximum_Throws()
     {
         var module = TableModule(1, 1);
-        Assert.ThrowsException<ImportException>(
+        Assert.ThrowsExactly<ImportException>(
             () => module.ToInstance<object>(With(new FunctionTable(1, 5))));
     }
 

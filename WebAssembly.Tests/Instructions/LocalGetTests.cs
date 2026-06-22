@@ -112,7 +112,7 @@ public class LocalGetTests
     [TestMethod]
     public void GetLocal_Compiled_Parameter_OutOfRange()
     {
-        var exception = Assert.ThrowsException<ModuleLoadException>(
+        var exception = Assert.ThrowsExactly<ModuleLoadException>(
             () => AssemblyBuilder.CreateInstance<ParameterTest>("Test", WebAssemblyValueType.Int32, [WebAssemblyValueType.Int32],
                 new LocalGet(1),
                 new End()

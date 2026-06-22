@@ -161,7 +161,7 @@ public class TableImportTests
             Kind = ExternalKind.Table,
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<ExportedTable>(new ImportDictionary()));
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<ExportedTable>(new ImportDictionary()));
     }
 
     /// <summary>
@@ -345,7 +345,7 @@ public class TableImportTests
         Assert.AreEqual(0u, table.Length);
 
         // The active element segment writes index 0, but the provided table has length 0; this traps.
-        Assert.ThrowsException<TableAccessOutOfRangeException>(() => module.ToInstance<CompilerTestBase<int>>(
+        Assert.ThrowsExactly<TableAccessOutOfRangeException>(() => module.ToInstance<CompilerTestBase<int>>(
             new ImportDictionary {
                     { "Test", "Test", table },
             }));
@@ -372,7 +372,7 @@ public class TableImportTests
         module.Tables.Add(new Table(0)); // funcref table of length 0
         module.Elements.Add(new Element(1)); // active segment at offset 1, no entries
 
-        Assert.ThrowsException<TableAccessOutOfRangeException>(
+        Assert.ThrowsExactly<TableAccessOutOfRangeException>(
             () => module.ToInstance<object>(new ImportDictionary()));
     }
 }

@@ -79,6 +79,6 @@ public class DataDropTests
     {
         var compiled = BuildModule().ToInstance<DataDropExport>();
         compiled.Exports.Drop();
-        Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => compiled.Exports.Init(0, 0, 1));
+        Assert.ThrowsExactly<MemoryAccessOutOfRangeException>(() => compiled.Exports.Init(0, 0, 1));
     }
 }

@@ -60,7 +60,7 @@ public class MemoryCopyTests
     /// A non-zero source or destination memory index (multi-memory is not supported) is permitted in the object
     /// model but must be rejected by the compiler.
     /// </summary>
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(true, false)]
     [DataRow(false, true)]
     public void MemoryCopy_NonZeroMemoryIndex_RejectedByCompiler(bool badDestination, bool badSource)
@@ -92,6 +92,6 @@ public class MemoryCopyTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<MemoryCopyExport>());
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<MemoryCopyExport>());
     }
 }

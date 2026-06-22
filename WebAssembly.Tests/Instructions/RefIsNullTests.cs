@@ -41,6 +41,6 @@ public class RefIsNullTests
             Code = [new Int32Constant(0), new RefIsNull(), new End()],
         });
 
-        Assert.ThrowsException<StackTypeInvalidException>(() => module.ToInstance<RefIsNullExport>());
+        Assert.ThrowsExactly<StackTypeInvalidException>(() => module.ToInstance<RefIsNullExport>());
     }
 }

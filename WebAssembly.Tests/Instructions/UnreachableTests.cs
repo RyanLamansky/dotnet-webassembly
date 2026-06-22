@@ -15,7 +15,7 @@ public class UnreachableTests
     [TestMethod]
     public void Unreachable_Compiled()
     {
-        Assert.ThrowsException<UnreachableException>(() =>
+        Assert.ThrowsExactly<UnreachableException>(() =>
         {
             AssemblyBuilder.CreateInstance<dynamic>("Test", null, new Unreachable(), new End()).Test();
         });

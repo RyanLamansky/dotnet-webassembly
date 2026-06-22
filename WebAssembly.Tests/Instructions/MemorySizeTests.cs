@@ -62,7 +62,7 @@ public class MemorySizeTests
         });
         module.Memories.Add(new Memory(1, 1));
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<dynamic>());
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<dynamic>());
     }
 
     /// <summary>The obsolete <c>Reserved</c> alias forwards to <see cref="MemorySize.MemoryIndex"/>.</summary>

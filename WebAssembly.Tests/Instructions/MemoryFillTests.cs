@@ -87,7 +87,7 @@ public class MemoryFillTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<MemoryFillExport>());
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<MemoryFillExport>());
     }
 
     /// <summary>

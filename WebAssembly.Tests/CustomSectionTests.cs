@@ -24,6 +24,6 @@ public class CustomSectionTests
             custom.PrecedingSection = value;
         }
 
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => custom.PrecedingSection = (Section)255);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => custom.PrecedingSection = (Section)255);
     }
 }

@@ -18,7 +18,7 @@ public class ModuleTests
     [TestMethod]
     public void Module_ReadFromBinaryStream()
     {
-        Assert.AreEqual("input", Assert.ThrowsException<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null!)).ParamName);
+        Assert.AreEqual("input", Assert.ThrowsExactly<ArgumentNullException>(() => Module.ReadFromBinary((Stream)null!)).ParamName);
 
         using var sample = new MemoryStream();
         var utf8 = new UTF8Encoding(false, false);
@@ -28,7 +28,7 @@ public class ModuleTests
             writer.Write(0x6e736100); //Bad magic number.
         }
         sample.Position = 0;
-        Assert.IsTrue(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
+        Assert.IsTrue(Assert.ThrowsExactly<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("magic"));
         Assert.IsTrue(sample.CanSeek, "Stream was closed but should have been left open.");
 
         sample.Position = 0;
@@ -38,7 +38,7 @@ public class ModuleTests
             //Missing version.
         }
         sample.Position = 0;
-        Assert.IsInstanceOfType(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).InnerException, typeof(EndOfStreamException));
+        Assert.IsInstanceOfType(Assert.ThrowsExactly<ModuleLoadException>(() => Module.ReadFromBinary(sample)).InnerException, typeof(EndOfStreamException));
 
         sample.Position = 0;
         using (var writer = new BinaryWriter(sample, utf8, true))
@@ -47,7 +47,7 @@ public class ModuleTests
             writer.Write(0x0); //Bad version
         }
         sample.Position = 0;
-        Assert.IsTrue(Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
+        Assert.IsTrue(Assert.ThrowsExactly<ModuleLoadException>(() => Module.ReadFromBinary(sample)).Message.ToLowerInvariant().Contains("version"));
 
         sample.Position = 0;
         using (var writer = new BinaryWriter(sample, utf8, true))
@@ -278,10 +278,10 @@ public class ModuleTests
     [TestMethod]
     public void Module_InstructionSequenceMissingEndValidation()
     {
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Globals = [new Global()] }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Elements = [new Element()] }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Codes = [new FunctionBody()] }.WriteToBinaryNoOutput());
-        Assert.ThrowsException<InvalidOperationException>(() => new Module { Data = [new Data()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsExactly<InvalidOperationException>(() => new Module { Globals = [new Global()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsExactly<InvalidOperationException>(() => new Module { Elements = [new Element()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsExactly<InvalidOperationException>(() => new Module { Codes = [new FunctionBody()] }.WriteToBinaryNoOutput());
+        Assert.ThrowsExactly<InvalidOperationException>(() => new Module { Data = [new Data()] }.WriteToBinaryNoOutput());
     }
 
     // Hand-assembled section bytes (id, payload length, payload) for a minimal module:
@@ -339,7 +339,7 @@ public class ModuleTests
         stream.Write(DataCountSection);
         stream.Position = 0;
 
-        var x = Assert.ThrowsException<ModuleLoadException>(() => Module.ReadFromBinary(stream));
+        var x = Assert.ThrowsExactly<ModuleLoadException>(() => Module.ReadFromBinary(stream));
         Assert.IsTrue(x.Message.Contains("out of order"), x.Message);
     }
 }

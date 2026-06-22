@@ -37,7 +37,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_IncorrectStack_Expect1Actual2()
     {
-        var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
+        var exception = Assert.ThrowsExactly<StackSizeIncorrectException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                 new Int32Constant(5),
                 new Int32Constant(6),
@@ -54,7 +54,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_IncorrectStack_Expect1Actual0()
     {
-        var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
+        var exception = Assert.ThrowsExactly<StackSizeIncorrectException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                 new End()
                 ).Test());
@@ -69,7 +69,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_IncorrectStack_Expect0Actual1()
     {
-        var exception = Assert.ThrowsException<StackSizeIncorrectException>(() =>
+        var exception = Assert.ThrowsExactly<StackSizeIncorrectException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", null,
                 new Int32Constant(5),
                 new End()
@@ -100,7 +100,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_BlockInt32_WrongType()
     {
-        var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
+        var exception = Assert.ThrowsExactly<StackTypeInvalidException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int32,
                 new Block(BlockType.Int32),
                 new Int64Constant(5),
@@ -134,7 +134,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_BlockInt64_WrongType()
     {
-        var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
+        var exception = Assert.ThrowsExactly<StackTypeInvalidException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Int64,
                 new Block(BlockType.Int64),
                 new Int32Constant(5),
@@ -168,7 +168,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_BlockFloat32_WrongType()
     {
-        var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
+        var exception = Assert.ThrowsExactly<StackTypeInvalidException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float32,
                 new Block(BlockType.Float32),
                 new Float64Constant(5),
@@ -202,7 +202,7 @@ public class EndTests
     [TestMethod]
     public void End_Compiled_BlockFloat64_WrongType()
     {
-        var exception = Assert.ThrowsException<StackTypeInvalidException>(() =>
+        var exception = Assert.ThrowsExactly<StackTypeInvalidException>(() =>
             AssemblyBuilder.CreateInstance<dynamic>("Test", WebAssemblyValueType.Float64,
                 new Block(BlockType.Float64),
                 new Float32Constant(5),

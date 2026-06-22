@@ -23,6 +23,6 @@ public class Int32TruncateFloat32SignedTests
             Assert.AreEqual((int)value, exports.Test(value));
 
         const float exceptional = 123445678901234f;
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(exceptional));
+        Assert.ThrowsExactly<System.OverflowException>(() => exports.Test(exceptional));
     }
 }

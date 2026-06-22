@@ -34,7 +34,7 @@ public class LocalSetTests
     [TestMethod]
     public void GetLocal_Compiled_Parameter_OutOfRange()
     {
-        var exception = Assert.ThrowsException<ModuleLoadException>(
+        var exception = Assert.ThrowsExactly<ModuleLoadException>(
             () => CompilerTestBase<int>.CreateInstance(
                 new Int32Constant(42),
                 new LocalSet(1),

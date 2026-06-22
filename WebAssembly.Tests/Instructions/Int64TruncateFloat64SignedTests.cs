@@ -23,6 +23,6 @@ public class Int64TruncateFloat64SignedTests
             Assert.AreEqual((long)value, exports.Test(value));
 
         const double exceptional = 1234456789012345678901234567890.0;
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(exceptional));
+        Assert.ThrowsExactly<System.OverflowException>(() => exports.Test(exceptional));
     }
 }

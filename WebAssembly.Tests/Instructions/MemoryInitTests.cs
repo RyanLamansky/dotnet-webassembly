@@ -115,6 +115,6 @@ public class MemoryInitTests
             ],
         });
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<MemoryInitExport>());
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<MemoryInitExport>());
     }
 }

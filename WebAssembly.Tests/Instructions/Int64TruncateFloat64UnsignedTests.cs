@@ -26,7 +26,7 @@ public class Int64TruncateFloat64UnsignedTests
         Assert.AreEqual(unchecked((long)9223372036854775808u), exports.Test(9223372036854775808.0));
 
         // Values below the unsigned range (< 0) and above it (>= 2^64) trap.
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(-1.5));
-        Assert.ThrowsException<System.OverflowException>(() => exports.Test(1234456789012345678901234567890.0));
+        Assert.ThrowsExactly<System.OverflowException>(() => exports.Test(-1.5));
+        Assert.ThrowsExactly<System.OverflowException>(() => exports.Test(1234456789012345678901234567890.0));
     }
 }

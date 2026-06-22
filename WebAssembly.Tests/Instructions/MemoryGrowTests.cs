@@ -92,7 +92,7 @@ public class MemoryGrowTests
         });
         module.Memories.Add(new Memory(1, 2));
 
-        Assert.ThrowsException<ModuleLoadException>(() => module.ToInstance<Tester>());
+        Assert.ThrowsExactly<ModuleLoadException>(() => module.ToInstance<Tester>());
     }
 
     /// <summary>The obsolete <c>Reserved</c> alias forwards to <see cref="MemoryGrow.MemoryIndex"/>.</summary>

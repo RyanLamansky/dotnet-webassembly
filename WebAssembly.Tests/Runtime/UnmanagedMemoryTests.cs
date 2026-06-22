@@ -26,6 +26,6 @@ public class UnmanagedMemoryTests
     {
         var memory = new UnmanagedMemory(0, 1);
         memory.Dispose();
-        Assert.ThrowsException<ObjectDisposedException>(() => memory.Grow(1));
+        Assert.ThrowsExactly<ObjectDisposedException>(() => memory.Grow(1));
     }
 }

@@ -241,7 +241,7 @@ static partial class SpecTestRunner
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "alignment must not be larger than natural":
                             case "global is immutable":
-                                Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<CompilerException>(trapExpected, $"{command.line}");
                                 continue;
                             // "unknown memory" suffixed with the offending index ("unknown memory 0/1"), e.g. an
                             // active data segment whose explicit memory index refers to a memory that doesn't exist.
@@ -258,7 +258,7 @@ static partial class SpecTestRunner
                             case "unknown data segment":
                             case "unknown data segment 1":
                             case "start function":
-                                Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
                             case "unknown memory":
                             case "unknown function":
@@ -292,7 +292,7 @@ static partial class SpecTestRunner
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "multiple tables":
-                                Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -314,10 +314,10 @@ static partial class SpecTestRunner
                         switch (assert.text)
                         {
                             case "integer divide by zero":
-                                Assert.ThrowsException<DivideByZeroException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<DivideByZeroException>(trapExpected, $"{command.line}");
                                 continue;
                             case "integer overflow":
-                                Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<OverflowException>(trapExpected, $"{command.line}");
                                 continue;
                             case "out of bounds memory access":
                                 try
@@ -360,7 +360,7 @@ static partial class SpecTestRunner
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "invalid conversion to integer":
-                                Assert.ThrowsException<OverflowException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<OverflowException>(trapExpected, $"{command.line}");
                                 continue;
                             case "undefined element":
                             case "uninitialized element 7":
@@ -381,10 +381,10 @@ static partial class SpecTestRunner
                                 }
                                 continue;
                             case "indirect call type mismatch":
-                                Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<InvalidCastException>(trapExpected, $"{command.line}");
                                 continue;
                             case "unreachable":
-                                Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<UnreachableException>(trapExpected, $"{command.line}");
                                 continue;
                             case "uninitialized element":
                             case "uninitialized":
@@ -423,7 +423,7 @@ static partial class SpecTestRunner
                                 }
                                 continue;
                             case "indirect call":
-                                Assert.ThrowsException<InvalidCastException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<InvalidCastException>(trapExpected, $"{command.line}");
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -466,7 +466,7 @@ static partial class SpecTestRunner
                                 continue;
                             case "unknown import":
                             case "incompatible import type":
-                                Assert.ThrowsException<ImportException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<ImportException>(trapExpected, $"{command.line}");
                                 continue;
                             default:
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
@@ -495,7 +495,7 @@ static partial class SpecTestRunner
                         switch (assert.text)
                         {
                             case "unreachable":
-                                Assert.ThrowsException<UnreachableException>(trapExpected, $"{command.line}");
+                                Assert.ThrowsExactly<UnreachableException>(trapExpected, $"{command.line}");
                                 continue;
                             case "out of bounds memory access":
                                 try

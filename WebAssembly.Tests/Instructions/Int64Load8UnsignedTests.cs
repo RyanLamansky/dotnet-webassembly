@@ -49,11 +49,11 @@ public class Int64Load8UnsignedTests
 
             MemoryAccessOutOfRangeException x;
 
-            x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize));
+            x = Assert.ThrowsExactly<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize));
             Assert.AreEqual(Memory.PageSize, x.Offset);
             Assert.AreEqual(1u, x.Length);
 
-            Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
+            Assert.ThrowsExactly<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
         }
     }
 
@@ -98,11 +98,11 @@ public class Int64Load8UnsignedTests
 
             MemoryAccessOutOfRangeException x;
 
-            x = Assert.ThrowsException<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
+            x = Assert.ThrowsExactly<MemoryAccessOutOfRangeException>(() => exports.Test((int)Memory.PageSize - 1));
             Assert.AreEqual(Memory.PageSize, x.Offset);
             Assert.AreEqual(1u, x.Length);
 
-            Assert.ThrowsException<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
+            Assert.ThrowsExactly<OverflowException>(() => exports.Test(unchecked((int)uint.MaxValue)));
         }
     }
 
