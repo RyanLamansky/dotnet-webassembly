@@ -1444,7 +1444,8 @@ public static class Compile
 
     static void EmitElementRefValue(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
     {
-        // Each per-element initializer is a constant expression of the form [ref.func N, end] or [ref.null t, end].
+        // Each per-element initializer is a constant expression of the form [ref.func N, end], [ref.null t, end],
+        // or [global.get N, end].
         if (initExpr.Count >= 1 && initExpr[0] is Instructions.RefFunc refFunc)
         {
             context.DeclaredFunctionReferences.Add(refFunc.Index);
@@ -1452,6 +1453,15 @@ public static class Compile
             il.Emit(OpCodes.Ldfld, context.FunctionReferences!);
             il.EmitLoadConstant(refFunc.Index);
             il.Emit(OpCodes.Ldelem_Ref);
+        }
+        else if (initExpr.Count >= 1 && initExpr[0] is Instructions.GlobalGet globalGet)
+        {
+            // The referenced (imported, immutable) global holds the reference value to store. Its getter
+            // return type is Delegate (funcref) or object (externref), matching the destination table's setter.
+            var global = context.Globals![globalGet.Index];
+            if (global.RequiresInstance)
+                il.EmitLoadArg(0);
+            il.Emit(OpCodes.Call, global.Getter);
         }
         else
         {
@@ -1462,6 +1472,12 @@ public static class Compile
     static void SectionElement(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
     {
         var count = reader.ReadVarUInt32();
+
+        // An active segment's offset is a constant expression compiled into the instance constructor, so it
+        // can be a global.get of an imported global as well as an i32.const. The result is held in this local.
+        context.Reset(instanceConstructorIL, Signature.Empty, Signature.Empty.RawParameterTypes);
+        var offsetBlock = new Instructions.Block(BlockType.Int32);
+        var offsetLocal = instanceConstructorIL.DeclareLocal(typeof(uint));
 
         for (var i = 0u; i < count; i++)
         {
@@ -1501,14 +1517,19 @@ public static class Compile
                 if (tableElemType != elemType)
                     throw new ModuleLoadException($"Element segment type {elemType} does not match table {tableIndex} type {tableElemType}.", 0);
 
-                // Offset from the initializer expression (single Int32 constant followed by end).
-                var initializer = element.InitializerExpression;
-                if (initializer.Count != 2 || initializer[0] is not Instructions.Int32Constant c || initializer[1] is not Instructions.End)
-                    throw new ModuleLoadException("Element segment offset must be a single Int32 constant followed by end.", 0);
-                var offset = (uint)c.Value;
-
-                if (entryCount == 0)
-                    continue;
+                // Offset is a constant expression (i32.const or global.get of an imported immutable i32 global),
+                // compiled into the constructor and left in offsetLocal.
+                offsetBlock.Compile(context);
+                context.ConstantExpression = true;
+                foreach (var instruction in element.InitializerExpression)
+                {
+                    instruction.Compile(context);
+                    context.Previous = instruction.OpCode;
+                }
+                context.ConstantExpression = false;
+                context.Stack.Pop();
+                context.BlockContexts.Remove(context.Depth.Count);
+                instanceConstructorIL.Emit(OpCodes.Stloc, offsetLocal);
 
                 var isFunc = tableElemType == ElementType.FunctionReference;
                 var tableType = isFunc ? typeof(FunctionTable) : typeof(ExternRefTable);
@@ -1522,14 +1543,18 @@ public static class Compile
                 // An active element segment that does not fit its destination table traps at instantiation.
                 // (Earlier versions grew a funcref table to fit; the spec requires a trap instead.) The required
                 // extent (offset + count) is compared in 64-bit to avoid a uint overflow near the 2^32 boundary.
+                // This also covers an empty segment whose offset alone exceeds the table.
                 var lengthGetter = isFunc ? FunctionTable.LengthGetter : ExternRefTable.LengthGetter;
                 var fits = instanceConstructorIL.DefineLabel();
                 instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
                 instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
                 instanceConstructorIL.Emit(OpCodes.Conv_U8);
-                instanceConstructorIL.Emit(OpCodes.Ldc_I8, (long)offset + entryCount);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+                instanceConstructorIL.Emit(OpCodes.Conv_U8);
+                instanceConstructorIL.Emit(OpCodes.Ldc_I8, (long)entryCount);
+                instanceConstructorIL.Emit(OpCodes.Add);
                 instanceConstructorIL.Emit(OpCodes.Bge_Un, fits);
-                instanceConstructorIL.EmitLoadConstant(offset);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
                 instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
                 instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
                 instanceConstructorIL.Emit(OpCodes.Newobj, typeof(TableAccessOutOfRangeException)
@@ -1546,7 +1571,9 @@ public static class Compile
                 for (var j = 0; j < entryCount; j++)
                 {
                     instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
-                    instanceConstructorIL.EmitLoadConstant(offset + (uint)j);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+                    instanceConstructorIL.Emit(OpCodes.Ldc_I4, j);
+                    instanceConstructorIL.Emit(OpCodes.Add);
                     if (usesInitExprs)
                         EmitElementRefValue(instanceConstructorIL, context, element.InitExprs[j]);
                     else

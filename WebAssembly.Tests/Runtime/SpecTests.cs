@@ -88,17 +88,7 @@ public class SpecTests
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
-    public void SpecTest_elem()
-    {
-        // 2x ModuleLoadException: element-segment offset uses global.get; only a single Int32 constant is supported (120, 127).
-        // 1x AssertFailedException: active element segment out of bounds doesn't trap (266 — boundary case).
-        // 1x AssertFailedException: Object reference not set to an instance of an object (692).
-        var skips = new HashSet<uint>
-        {
-            120, 127, 266, 692
-        };
-        SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);
-    }
+    public void SpecTest_elem() => SpecTestRunner.Run(DataPath("elem"), "elem.json");
 
     /// <summary>Runs the endianness tests.</summary>
     [TestMethod]

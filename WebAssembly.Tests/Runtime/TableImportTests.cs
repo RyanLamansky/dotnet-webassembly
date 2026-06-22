@@ -360,4 +360,19 @@ public class TableImportTests
     {
         Assert.AreEqual(ElementType.FunctionReference, new Table().ElementType);
     }
+
+    /// <summary>
+    /// An empty active element segment writes nothing, but its offset must still be within the table; an
+    /// offset past the end traps at instantiation rather than silently succeeding.
+    /// </summary>
+    [TestMethod]
+    public void Compile_EmptyActiveElementSegment_OffsetPastEnd_Traps()
+    {
+        var module = new Module();
+        module.Tables.Add(new Table(0)); // funcref table of length 0
+        module.Elements.Add(new Element(1)); // active segment at offset 1, no entries
+
+        Assert.ThrowsException<TableAccessOutOfRangeException>(
+            () => module.ToInstance<object>(new ImportDictionary()));
+    }
 }
