@@ -17,23 +17,23 @@ namespace WebAssembly.Runtime;
 static partial class SpecTestRunner
 {
     /// <summary>
-    /// Runs every command in the JSON file.
+    /// Runs every command in the spec category's JSON file.
     /// </summary>
-    /// <param name="pathBase">Directory containing the spec test data.</param>
-    /// <param name="json">Name of the JSON command file within <paramref name="pathBase"/>.</param>
+    /// <param name="category">The spec category relative to <c>Runtime/SpecTestData</c>, using <c>/</c> to
+    /// separate nested directories (e.g. <c>address</c> or <c>simd/simd_address</c>). The data directory and
+    /// its <c>&lt;leaf&gt;.json</c> command file are derived from this, since the JSON stem always matches the
+    /// leaf directory name.</param>
     /// <param name="skip">Lines deferred because of a fixable limitation. A category with any such line ends
     /// Inconclusive, signalling work that remains.</param>
     /// <param name="unsupported">Lines intentionally not supported — scenarios that can't reasonably pass under
     /// the .NET execution model (e.g. JIT folding of identity float operations) and aren't expected to. These
     /// are skipped like <paramref name="skip"/> lines but do <em>not</em> make the category Inconclusive, since
     /// nothing is pending. This is the per-line counterpart to the shape-based auto-skip at the top of the loop.</param>
-    public static void Run(string pathBase, string json, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
-        => Run<object>(pathBase, json, skip, unsupported);
-
-    /// <inheritdoc cref="Run(string, string, ReadOnlySpan{uint}, ReadOnlySpan{uint})"/>
-    public static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
-        where TExports : class
-        => Run<TExports>(pathBase, json, skip, unsupported, onFailure: null);
+    public static void Run(string category, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
+    {
+        var parts = category.Split('/');
+        Run<object>(Path.Combine(["Runtime", "SpecTestData", ..parts]), parts[^1] + ".json", skip, unsupported, onFailure: null);
+    }
 
     /// <summary>
     /// Runs every command in the JSON file, catching all failures into the returned list rather

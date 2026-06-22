@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.IO;
 
 namespace WebAssembly.Runtime;
@@ -10,11 +11,9 @@ namespace WebAssembly.Runtime;
 [TestClass]
 public class EmptySectionTests
 {
-    static readonly byte[] header = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
-
-    static void CompileAndInstantiate(params byte[] sectionBytes)
+    static void CompileAndInstantiate(params ReadOnlySpan<byte> sectionBytes)
     {
-        using var stream = new MemoryStream([.. header, .. sectionBytes]);
+        using var stream = new MemoryStream([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, .. sectionBytes]);
         var maker = Compile.FromBinary<object>(stream);
         Assert.IsNotNull(maker(new ImportDictionary()));
     }

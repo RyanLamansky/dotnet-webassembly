@@ -1,6 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.IO;
 
 namespace WebAssembly.Runtime;
 
@@ -10,116 +8,113 @@ namespace WebAssembly.Runtime;
 [TestClass]
 public class SpecTests
 {
-    private static string DataPath(params string[] parts)
-        => Path.Combine(["Runtime", "SpecTestData", ..parts]);
-
     // ==== WASM 1.0 ====
 
     /// <summary>Runs the address tests.</summary>
     [TestMethod]
-    public void SpecTest_address() => SpecTestRunner.Run(DataPath("address"), "address.json");
+    public void SpecTest_address() => SpecTestRunner.Run("address");
 
     /// <summary>Runs the align tests.</summary>
     [TestMethod]
-    public void SpecTest_align() => SpecTestRunner.Run(DataPath("align"), "align.json");
+    public void SpecTest_align() => SpecTestRunner.Run("align");
 
     /// <summary>Runs the binary leb128 tests.</summary>
     [TestMethod]
     public void SpecTest_binary_leb128()
         // 881: a memory64 module (memory limits flag 0x04, i64 address, u64 memarg offset); memory64 is a
         //      post-2.0 proposal and out of scope.
-        => SpecTestRunner.Run(DataPath("binary-leb128"), "binary-leb128.json", skip: [881]);
+        => SpecTestRunner.Run("binary-leb128", skip: [881]);
 
     /// <summary>Runs the binary tests.</summary>
     [TestMethod]
-    public void SpecTest_binary() => SpecTestRunner.Run(DataPath("binary"), "binary.json");
+    public void SpecTest_binary() => SpecTestRunner.Run("binary");
 
     /// <summary>Runs the block tests.</summary>
     [TestMethod]
-    public void SpecTest_block() => SpecTestRunner.Run(DataPath("block"), "block.json");
+    public void SpecTest_block() => SpecTestRunner.Run("block");
 
     /// <summary>Runs the br tests.</summary>
     [TestMethod]
-    public void SpecTest_br() => SpecTestRunner.Run(DataPath("br"), "br.json");
+    public void SpecTest_br() => SpecTestRunner.Run("br");
 
     /// <summary>Runs the br_if tests.</summary>
     [TestMethod]
-    public void SpecTest_br_if() => SpecTestRunner.Run(DataPath("br_if"), "br_if.json");
+    public void SpecTest_br_if() => SpecTestRunner.Run("br_if");
 
     /// <summary>Runs the br_table tests.</summary>
     [TestMethod]
-    public void SpecTest_br_table() => SpecTestRunner.Run(DataPath("br_table"), "br_table.json");
+    public void SpecTest_br_table() => SpecTestRunner.Run("br_table");
 
     /// <summary>Runs the call tests.</summary>
     [TestMethod]
     // Call-stack-exhaustion lines are auto-skipped by the runner (uncatchable StackOverflowException).
-    public void SpecTest_call() => SpecTestRunner.Run(DataPath("call"), "call.json");
+    public void SpecTest_call() => SpecTestRunner.Run("call");
 
     /// <summary>Runs the call_indirect tests.</summary>
     [TestMethod]
     // Call-stack-exhaustion lines are auto-skipped by the runner (uncatchable StackOverflowException).
-    public void SpecTest_call_indirect() => SpecTestRunner.Run(DataPath("call_indirect"), "call_indirect.json");
+    public void SpecTest_call_indirect() => SpecTestRunner.Run("call_indirect");
 
     /// <summary>Runs the comments tests.</summary>
     [TestMethod]
-    public void SpecTest_comments() => SpecTestRunner.Run(DataPath("comments"), "comments.json");
+    public void SpecTest_comments() => SpecTestRunner.Run("comments");
 
     /// <summary>Runs the const tests.</summary>
     [TestMethod]
-    public void SpecTest_const() => SpecTestRunner.Run(DataPath("const"), "const.json");
+    public void SpecTest_const() => SpecTestRunner.Run("const");
 
     /// <summary>Runs the conversions tests.</summary>
     [TestMethod]
-    public void SpecTest_conversions() => SpecTestRunner.Run(DataPath("conversions"), "conversions.json");
+    public void SpecTest_conversions() => SpecTestRunner.Run("conversions");
 
     /// <summary>Runs the custom tests.</summary>
     [TestMethod]
-    public void SpecTest_custom() => SpecTestRunner.Run(DataPath("custom"), "custom.json");
+    public void SpecTest_custom() => SpecTestRunner.Run("custom");
 
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
-    public void SpecTest_data() => SpecTestRunner.Run(DataPath("data"), "data.json");
+    public void SpecTest_data() => SpecTestRunner.Run("data");
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
-    public void SpecTest_elem() => SpecTestRunner.Run(DataPath("elem"), "elem.json");
+    public void SpecTest_elem() => SpecTestRunner.Run("elem");
 
     /// <summary>Runs the endianness tests.</summary>
     [TestMethod]
-    public void SpecTest_endianness() => SpecTestRunner.Run(DataPath("endianness"), "endianness.json");
+    public void SpecTest_endianness() => SpecTestRunner.Run("endianness");
 
     /// <summary>Runs the exports tests.</summary>
     [TestMethod]
-    public void SpecTest_exports() => SpecTestRunner.Run(DataPath("exports"), "exports.json");
+    public void SpecTest_exports() => SpecTestRunner.Run("exports");
 
     /// <summary>Runs the f32 tests.</summary>
     [TestMethod]
-    public void SpecTest_f32() => SpecTestRunner.Run(DataPath("f32"), "f32.json");
+    public void SpecTest_f32() => SpecTestRunner.Run("f32");
 
     /// <summary>Runs the f32_bitwise tests.</summary>
     [TestMethod]
-    public void SpecTest_f32_bitwise() => SpecTestRunner.Run(DataPath("f32_bitwise"), "f32_bitwise.json");
+    public void SpecTest_f32_bitwise() => SpecTestRunner.Run("f32_bitwise");
 
     /// <summary>Runs the f32_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_f32_cmp() => SpecTestRunner.Run(DataPath("f32_cmp"), "f32_cmp.json");
+    public void SpecTest_f32_cmp() => SpecTestRunner.Run("f32_cmp");
 
     /// <summary>Runs the f64 tests.</summary>
     [TestMethod]
-    public void SpecTest_f64() => SpecTestRunner.Run(DataPath("f64"), "f64.json");
+    public void SpecTest_f64() => SpecTestRunner.Run("f64");
 
     /// <summary>Runs the f64_bitwise tests.</summary>
     [TestMethod]
-    public void SpecTest_f64_bitwise() => SpecTestRunner.Run(DataPath("f64_bitwise"), "f64_bitwise.json");
+    public void SpecTest_f64_bitwise() => SpecTestRunner.Run("f64_bitwise");
 
     /// <summary>Runs the f64_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_f64_cmp() => SpecTestRunner.Run(DataPath("f64_cmp"), "f64_cmp.json");
+    public void SpecTest_f64_cmp() => SpecTestRunner.Run("f64_cmp");
 
     /// <summary>Runs the fac tests.</summary>
     [TestMethod]
     // The call-stack-exhaustion line is auto-skipped by the runner (uncatchable StackOverflowException).
-    public void SpecTest_fac() => SpecTestRunner.Run(DataPath("fac"), "fac.json");
+    public void SpecTest_fac() => SpecTestRunner.Run("fac");
 
     /// <summary>Runs the float_exprs tests.</summary>
     [TestMethod]
@@ -133,502 +128,502 @@ public class SpecTests
         // Whether a given line folds is JIT-config-dependent (e.g. 2361 folds under net10 Release but not net9
         // Debug). These can't reasonably be fixed and don't affect normal execution, so they are marked
         // unsupported (intentional avoidance) rather than skipped, and the category stays green.
-        SpecTestRunner.Run(DataPath("float_exprs"), "float_exprs.json",
+        SpecTestRunner.Run("float_exprs",
             unsupported: [2349, 2351, 2353, 2355, 2357, 2359, 2361]);
     }
 
     /// <summary>Runs the float_literals tests.</summary>
     [TestMethod]
-    public void SpecTest_float_literals() => SpecTestRunner.Run(DataPath("float_literals"), "float_literals.json");
+    public void SpecTest_float_literals() => SpecTestRunner.Run("float_literals");
 
     /// <summary>Runs the float_memory tests.</summary>
     [TestMethod]
-    public void SpecTest_float_memory() => SpecTestRunner.Run(DataPath("float_memory"), "float_memory.json");
+    public void SpecTest_float_memory() => SpecTestRunner.Run("float_memory");
 
     /// <summary>Runs the float_misc tests.</summary>
     [TestMethod]
-    public void SpecTest_float_misc() => SpecTestRunner.Run(DataPath("float_misc"), "float_misc.json");
+    public void SpecTest_float_misc() => SpecTestRunner.Run("float_misc");
 
     /// <summary>Runs the forward tests.</summary>
     [TestMethod]
-    public void SpecTest_forward() => SpecTestRunner.Run(DataPath("forward"), "forward.json");
+    public void SpecTest_forward() => SpecTestRunner.Run("forward");
 
     /// <summary>Runs the func tests.</summary>
     [TestMethod]
-    public void SpecTest_func() => SpecTestRunner.Run(DataPath("func"), "func.json");
+    public void SpecTest_func() => SpecTestRunner.Run("func");
 
     /// <summary>Runs the func_ptrs tests.</summary>
     [TestMethod]
-    public void SpecTest_func_ptrs() => SpecTestRunner.Run(DataPath("func_ptrs"), "func_ptrs.json");
+    public void SpecTest_func_ptrs() => SpecTestRunner.Run("func_ptrs");
 
     /// <summary>Runs the global tests.</summary>
     [TestMethod]
-    public void SpecTest_global() => SpecTestRunner.Run(DataPath("global"), "global.json");
+    public void SpecTest_global() => SpecTestRunner.Run("global");
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]
-    public void SpecTest_i32() => SpecTestRunner.Run(DataPath("i32"), "i32.json");
+    public void SpecTest_i32() => SpecTestRunner.Run("i32");
 
     /// <summary>Runs the i64 tests.</summary>
     [TestMethod]
-    public void SpecTest_i64() => SpecTestRunner.Run(DataPath("i64"), "i64.json");
+    public void SpecTest_i64() => SpecTestRunner.Run("i64");
 
     /// <summary>Runs the if tests.</summary>
     [TestMethod]
-    public void SpecTest_if() => SpecTestRunner.Run(DataPath("if"), "if.json");
+    public void SpecTest_if() => SpecTestRunner.Run("if");
 
     /// <summary>Runs the imports tests.</summary>
     [TestMethod]
-    public void SpecTest_imports() => SpecTestRunner.Run(DataPath("imports"), "imports.json");
+    public void SpecTest_imports() => SpecTestRunner.Run("imports");
 
     /// <summary>Runs the inline module tests.</summary>
     [TestMethod]
-    public void SpecTest_inline_module() => SpecTestRunner.Run(DataPath("inline-module"), "inline-module.json");
+    public void SpecTest_inline_module() => SpecTestRunner.Run("inline-module");
 
     /// <summary>Runs the int_exprs tests.</summary>
     [TestMethod]
-    public void SpecTest_int_exprs() => SpecTestRunner.Run(DataPath("int_exprs"), "int_exprs.json");
+    public void SpecTest_int_exprs() => SpecTestRunner.Run("int_exprs");
 
     /// <summary>Runs the int_literals tests.</summary>
     [TestMethod]
-    public void SpecTest_int_literals() => SpecTestRunner.Run(DataPath("int_literals"), "int_literals.json");
+    public void SpecTest_int_literals() => SpecTestRunner.Run("int_literals");
 
     /// <summary>Runs the labels tests.</summary>
     [TestMethod]
-    public void SpecTest_labels() => SpecTestRunner.Run(DataPath("labels"), "labels.json");
+    public void SpecTest_labels() => SpecTestRunner.Run("labels");
 
     /// <summary>Runs the left to right tests.</summary>
     [TestMethod]
-    public void SpecTest_left_to_right() => SpecTestRunner.Run(DataPath("left-to-right"), "left-to-right.json");
+    public void SpecTest_left_to_right() => SpecTestRunner.Run("left-to-right");
 
     /// <summary>Runs the linking tests.</summary>
     [TestMethod]
-    public void SpecTest_linking() => SpecTestRunner.Run(DataPath("linking"), "linking.json");
+    public void SpecTest_linking() => SpecTestRunner.Run("linking");
 
     /// <summary>Runs the load tests.</summary>
     [TestMethod]
-    public void SpecTest_load() => SpecTestRunner.Run(DataPath("load"), "load.json");
+    public void SpecTest_load() => SpecTestRunner.Run("load");
 
     /// <summary>Runs the local_get tests.</summary>
     [TestMethod]
-    public void SpecTest_local_get() => SpecTestRunner.Run(DataPath("local_get"), "local_get.json");
+    public void SpecTest_local_get() => SpecTestRunner.Run("local_get");
 
     /// <summary>Runs the local_set tests.</summary>
     [TestMethod]
-    public void SpecTest_local_set() => SpecTestRunner.Run(DataPath("local_set"), "local_set.json");
+    public void SpecTest_local_set() => SpecTestRunner.Run("local_set");
 
     /// <summary>Runs the local_tee tests.</summary>
     [TestMethod]
-    public void SpecTest_local_tee() => SpecTestRunner.Run(DataPath("local_tee"), "local_tee.json");
+    public void SpecTest_local_tee() => SpecTestRunner.Run("local_tee");
 
     /// <summary>Runs the loop tests.</summary>
     [TestMethod]
-    public void SpecTest_loop() => SpecTestRunner.Run(DataPath("loop"), "loop.json");
+    public void SpecTest_loop() => SpecTestRunner.Run("loop");
 
     /// <summary>Runs the memory tests.</summary>
     [TestMethod]
-    public void SpecTest_memory() => SpecTestRunner.Run(DataPath("memory"), "memory.json");
+    public void SpecTest_memory() => SpecTestRunner.Run("memory");
 
     /// <summary>Runs the memory_grow tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_grow() => SpecTestRunner.Run(DataPath("memory_grow"), "memory_grow.json");
+    public void SpecTest_memory_grow() => SpecTestRunner.Run("memory_grow");
 
     /// <summary>Runs the memory_redundancy tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_redundancy() => SpecTestRunner.Run(DataPath("memory_redundancy"), "memory_redundancy.json");
+    public void SpecTest_memory_redundancy() => SpecTestRunner.Run("memory_redundancy");
 
     /// <summary>Runs the memory_size tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_size() => SpecTestRunner.Run(DataPath("memory_size"), "memory_size.json");
+    public void SpecTest_memory_size() => SpecTestRunner.Run("memory_size");
 
     /// <summary>Runs the memory_trap tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_trap() => SpecTestRunner.Run(DataPath("memory_trap"), "memory_trap.json");
+    public void SpecTest_memory_trap() => SpecTestRunner.Run("memory_trap");
 
     /// <summary>Runs the names tests.</summary>
     [TestMethod]
-    public void SpecTest_names() => SpecTestRunner.Run(DataPath("names"), "names.json");
+    public void SpecTest_names() => SpecTestRunner.Run("names");
 
     /// <summary>Runs the nop tests.</summary>
     [TestMethod]
-    public void SpecTest_nop() => SpecTestRunner.Run(DataPath("nop"), "nop.json");
+    public void SpecTest_nop() => SpecTestRunner.Run("nop");
 
     /// <summary>Runs the obsolete keywords tests.</summary>
     [TestMethod]
-    public void SpecTest_obsolete_keywords() => SpecTestRunner.Run(DataPath("obsolete-keywords"), "obsolete-keywords.json");
+    public void SpecTest_obsolete_keywords() => SpecTestRunner.Run("obsolete-keywords");
 
     /// <summary>Runs the return tests.</summary>
     [TestMethod]
-    public void SpecTest_return() => SpecTestRunner.Run(DataPath("return"), "return.json");
+    public void SpecTest_return() => SpecTestRunner.Run("return");
 
     /// <summary>Runs the select tests.</summary>
     [TestMethod]
-    public void SpecTest_select() => SpecTestRunner.Run(DataPath("select"), "select.json");
+    public void SpecTest_select() => SpecTestRunner.Run("select");
 
     /// <summary>Runs the skip stack guard page tests.</summary>
     [TestMethod]
     // The call-stack-exhaustion lines are auto-skipped by the runner (uncatchable StackOverflowException);
     // running them is what previously caused the CLR malfunction this was ignored for.
-    public void SpecTest_skip_stack_guard_page() => SpecTestRunner.Run(DataPath("skip-stack-guard-page"), "skip-stack-guard-page.json");
+    public void SpecTest_skip_stack_guard_page() => SpecTestRunner.Run("skip-stack-guard-page");
 
     /// <summary>Runs the stack tests.</summary>
     [TestMethod]
-    public void SpecTest_stack() => SpecTestRunner.Run(DataPath("stack"), "stack.json");
+    public void SpecTest_stack() => SpecTestRunner.Run("stack");
 
     /// <summary>Runs the start tests.</summary>
     [TestMethod]
-    public void SpecTest_start() => SpecTestRunner.Run(DataPath("start"), "start.json");
+    public void SpecTest_start() => SpecTestRunner.Run("start");
 
     /// <summary>Runs the store tests.</summary>
     [TestMethod]
-    public void SpecTest_store() => SpecTestRunner.Run(DataPath("store"), "store.json");
+    public void SpecTest_store() => SpecTestRunner.Run("store");
 
     /// <summary>Runs the switch tests.</summary>
     [TestMethod]
-    public void SpecTest_switch() => SpecTestRunner.Run(DataPath("switch"), "switch.json");
+    public void SpecTest_switch() => SpecTestRunner.Run("switch");
 
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
-    public void SpecTest_table() => SpecTestRunner.Run(DataPath("table"), "table.json");
+    public void SpecTest_table() => SpecTestRunner.Run("table");
 
     /// <summary>Runs the token tests.</summary>
     [TestMethod]
-    public void SpecTest_token() => SpecTestRunner.Run(DataPath("token"), "token.json");
+    public void SpecTest_token() => SpecTestRunner.Run("token");
 
     /// <summary>Runs the traps tests.</summary>
     [TestMethod]
-    public void SpecTest_traps() => SpecTestRunner.Run(DataPath("traps"), "traps.json");
+    public void SpecTest_traps() => SpecTestRunner.Run("traps");
 
     /// <summary>Runs the type tests.</summary>
     [TestMethod]
-    public void SpecTest_type() => SpecTestRunner.Run(DataPath("type"), "type.json");
+    public void SpecTest_type() => SpecTestRunner.Run("type");
 
     /// <summary>Runs the unreachable tests.</summary>
     [TestMethod]
-    public void SpecTest_unreachable() => SpecTestRunner.Run(DataPath("unreachable"), "unreachable.json");
+    public void SpecTest_unreachable() => SpecTestRunner.Run("unreachable");
 
     /// <summary>Runs the unreached invalid tests.</summary>
     [TestMethod]
-    public void SpecTest_unreached_invalid() => SpecTestRunner.Run(DataPath("unreached-invalid"), "unreached-invalid.json");
+    public void SpecTest_unreached_invalid() => SpecTestRunner.Run("unreached-invalid");
 
     /// <summary>Runs the unreached valid tests.</summary>
     [TestMethod]
-    public void SpecTest_unreached_valid() => SpecTestRunner.Run(DataPath("unreached-valid"), "unreached-valid.json");
+    public void SpecTest_unreached_valid() => SpecTestRunner.Run("unreached-valid");
 
     /// <summary>Runs the unwind tests.</summary>
     [TestMethod]
-    public void SpecTest_unwind() => SpecTestRunner.Run(DataPath("unwind"), "unwind.json");
+    public void SpecTest_unwind() => SpecTestRunner.Run("unwind");
 
     /// <summary>Runs the utf8 custom section id tests.</summary>
     [TestMethod]
-    public void SpecTest_utf8_custom_section_id() => SpecTestRunner.Run(DataPath("utf8-custom-section-id"), "utf8-custom-section-id.json");
+    public void SpecTest_utf8_custom_section_id() => SpecTestRunner.Run("utf8-custom-section-id");
 
     /// <summary>Runs the utf8 import field tests.</summary>
     [TestMethod]
-    public void SpecTest_utf8_import_field() => SpecTestRunner.Run(DataPath("utf8-import-field"), "utf8-import-field.json");
+    public void SpecTest_utf8_import_field() => SpecTestRunner.Run("utf8-import-field");
 
     /// <summary>Runs the utf8 import module tests.</summary>
     [TestMethod]
-    public void SpecTest_utf8_import_module() => SpecTestRunner.Run(DataPath("utf8-import-module"), "utf8-import-module.json");
+    public void SpecTest_utf8_import_module() => SpecTestRunner.Run("utf8-import-module");
 
     /// <summary>Runs the utf8 invalid encoding tests.</summary>
     [TestMethod]
-    public void SpecTest_utf8_invalid_encoding() => SpecTestRunner.Run(DataPath("utf8-invalid-encoding"), "utf8-invalid-encoding.json");
+    public void SpecTest_utf8_invalid_encoding() => SpecTestRunner.Run("utf8-invalid-encoding");
 
 
     // ==== WASM 2.0 — Bulk memory operations ====
 
     /// <summary>Runs the bulk tests.</summary>
     [TestMethod]
-    public void SpecTest_bulk() => SpecTestRunner.Run(DataPath("bulk"), "bulk.json");
+    public void SpecTest_bulk() => SpecTestRunner.Run("bulk");
 
     /// <summary>Runs the memory_copy tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_copy() => SpecTestRunner.Run(DataPath("memory_copy"), "memory_copy.json");
+    public void SpecTest_memory_copy() => SpecTestRunner.Run("memory_copy");
 
     /// <summary>Runs the memory_fill tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_fill() => SpecTestRunner.Run(DataPath("memory_fill"), "memory_fill.json");
+    public void SpecTest_memory_fill() => SpecTestRunner.Run("memory_fill");
 
     /// <summary>Runs the memory_init tests.</summary>
     [TestMethod]
-    public void SpecTest_memory_init() => SpecTestRunner.Run(DataPath("memory_init"), "memory_init.json");
+    public void SpecTest_memory_init() => SpecTestRunner.Run("memory_init");
 
     /// <summary>Runs the table_copy tests.</summary>
     [TestMethod]
-    public void SpecTest_table_copy() => SpecTestRunner.Run(DataPath("table_copy"), "table_copy.json");
+    public void SpecTest_table_copy() => SpecTestRunner.Run("table_copy");
 
     /// <summary>Runs the table_fill tests.</summary>
     [TestMethod]
-    public void SpecTest_table_fill() => SpecTestRunner.Run(DataPath("table_fill"), "table_fill.json");
+    public void SpecTest_table_fill() => SpecTestRunner.Run("table_fill");
 
     /// <summary>Runs the table_init tests.</summary>
     [TestMethod]
-    public void SpecTest_table_init() => SpecTestRunner.Run(DataPath("table_init"), "table_init.json");
+    public void SpecTest_table_init() => SpecTestRunner.Run("table_init");
 
 
     // ==== WASM 2.0 — Reference types & multi-table ====
 
     /// <summary>Runs the ref_func tests.</summary>
     [TestMethod]
-    public void SpecTest_ref_func() => SpecTestRunner.Run(DataPath("ref_func"), "ref_func.json");
+    public void SpecTest_ref_func() => SpecTestRunner.Run("ref_func");
 
     /// <summary>Runs the ref_is_null tests.</summary>
     [TestMethod]
-    public void SpecTest_ref_is_null() => SpecTestRunner.Run(DataPath("ref_is_null"), "ref_is_null.json");
+    public void SpecTest_ref_is_null() => SpecTestRunner.Run("ref_is_null");
 
     /// <summary>Runs the ref_null tests.</summary>
     [TestMethod]
-    public void SpecTest_ref_null() => SpecTestRunner.Run(DataPath("ref_null"), "ref_null.json");
+    public void SpecTest_ref_null() => SpecTestRunner.Run("ref_null");
 
     /// <summary>Runs the table sub tests.</summary>
     [TestMethod]
-    public void SpecTest_table_sub() => SpecTestRunner.Run(DataPath("table-sub"), "table-sub.json");
+    public void SpecTest_table_sub() => SpecTestRunner.Run("table-sub");
 
     /// <summary>Runs the table_get tests.</summary>
     [TestMethod]
-    public void SpecTest_table_get() => SpecTestRunner.Run(DataPath("table_get"), "table_get.json");
+    public void SpecTest_table_get() => SpecTestRunner.Run("table_get");
 
     /// <summary>Runs the table_grow tests.</summary>
     [TestMethod]
-    public void SpecTest_table_grow() => SpecTestRunner.Run(DataPath("table_grow"), "table_grow.json");
+    public void SpecTest_table_grow() => SpecTestRunner.Run("table_grow");
 
     /// <summary>Runs the table_set tests.</summary>
     [TestMethod]
-    public void SpecTest_table_set() => SpecTestRunner.Run(DataPath("table_set"), "table_set.json");
+    public void SpecTest_table_set() => SpecTestRunner.Run("table_set");
 
     /// <summary>Runs the table_size tests.</summary>
     [TestMethod]
-    public void SpecTest_table_size() => SpecTestRunner.Run(DataPath("table_size"), "table_size.json");
+    public void SpecTest_table_size() => SpecTestRunner.Run("table_size");
 
 
     // ==== WASM 2.0 — SIMD (fixed-width 128-bit) ====
 
     /// <summary>Runs the simd_address tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_address() => SpecTestRunner.Run(DataPath("simd", "simd_address"), "simd_address.json");
+    public void SpecTest_simd_address() => SpecTestRunner.Run("simd/simd_address");
 
     /// <summary>Runs the simd_align tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_align() => SpecTestRunner.Run(DataPath("simd", "simd_align"), "simd_align.json");
+    public void SpecTest_simd_align() => SpecTestRunner.Run("simd/simd_align");
 
     /// <summary>Runs the simd_bit_shift tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_bit_shift() => SpecTestRunner.Run(DataPath("simd", "simd_bit_shift"), "simd_bit_shift.json");
+    public void SpecTest_simd_bit_shift() => SpecTestRunner.Run("simd/simd_bit_shift");
 
     /// <summary>Runs the simd_bitwise tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_bitwise() => SpecTestRunner.Run(DataPath("simd", "simd_bitwise"), "simd_bitwise.json");
+    public void SpecTest_simd_bitwise() => SpecTestRunner.Run("simd/simd_bitwise");
 
     /// <summary>Runs the simd_boolean tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_boolean() => SpecTestRunner.Run(DataPath("simd", "simd_boolean"), "simd_boolean.json");
+    public void SpecTest_simd_boolean() => SpecTestRunner.Run("simd/simd_boolean");
 
     /// <summary>Runs the simd_const tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_const() => SpecTestRunner.Run(DataPath("simd", "simd_const"), "simd_const.json");
+    public void SpecTest_simd_const() => SpecTestRunner.Run("simd/simd_const");
 
     /// <summary>Runs the simd_conversions tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_conversions() => SpecTestRunner.Run(DataPath("simd", "simd_conversions"), "simd_conversions.json");
+    public void SpecTest_simd_conversions() => SpecTestRunner.Run("simd/simd_conversions");
 
     /// <summary>Runs the simd_f32x4 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4"), "simd_f32x4.json");
+    public void SpecTest_simd_f32x4() => SpecTestRunner.Run("simd/simd_f32x4");
 
     /// <summary>Runs the simd_f32x4_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4_arith() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_arith"), "simd_f32x4_arith.json");
+    public void SpecTest_simd_f32x4_arith() => SpecTestRunner.Run("simd/simd_f32x4_arith");
 
     /// <summary>Runs the simd_f32x4_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_cmp"), "simd_f32x4_cmp.json");
+    public void SpecTest_simd_f32x4_cmp() => SpecTestRunner.Run("simd/simd_f32x4_cmp");
 
     /// <summary>Runs the simd_f32x4_pmin_pmax tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4_pmin_pmax() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_pmin_pmax"), "simd_f32x4_pmin_pmax.json");
+    public void SpecTest_simd_f32x4_pmin_pmax() => SpecTestRunner.Run("simd/simd_f32x4_pmin_pmax");
 
     /// <summary>Runs the simd_f32x4_rounding tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f32x4_rounding() => SpecTestRunner.Run(DataPath("simd", "simd_f32x4_rounding"), "simd_f32x4_rounding.json");
+    public void SpecTest_simd_f32x4_rounding() => SpecTestRunner.Run("simd/simd_f32x4_rounding");
 
     /// <summary>Runs the simd_f64x2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2"), "simd_f64x2.json");
+    public void SpecTest_simd_f64x2() => SpecTestRunner.Run("simd/simd_f64x2");
 
     /// <summary>Runs the simd_f64x2_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2_arith() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_arith"), "simd_f64x2_arith.json");
+    public void SpecTest_simd_f64x2_arith() => SpecTestRunner.Run("simd/simd_f64x2_arith");
 
     /// <summary>Runs the simd_f64x2_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_cmp"), "simd_f64x2_cmp.json");
+    public void SpecTest_simd_f64x2_cmp() => SpecTestRunner.Run("simd/simd_f64x2_cmp");
 
     /// <summary>Runs the simd_f64x2_pmin_pmax tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2_pmin_pmax() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_pmin_pmax"), "simd_f64x2_pmin_pmax.json");
+    public void SpecTest_simd_f64x2_pmin_pmax() => SpecTestRunner.Run("simd/simd_f64x2_pmin_pmax");
 
     /// <summary>Runs the simd_f64x2_rounding tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_f64x2_rounding() => SpecTestRunner.Run(DataPath("simd", "simd_f64x2_rounding"), "simd_f64x2_rounding.json");
+    public void SpecTest_simd_f64x2_rounding() => SpecTestRunner.Run("simd/simd_f64x2_rounding");
 
     /// <summary>Runs the simd_i16x8_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_arith"), "simd_i16x8_arith.json");
+    public void SpecTest_simd_i16x8_arith() => SpecTestRunner.Run("simd/simd_i16x8_arith");
 
     /// <summary>Runs the simd_i16x8_arith2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_arith2"), "simd_i16x8_arith2.json");
+    public void SpecTest_simd_i16x8_arith2() => SpecTestRunner.Run("simd/simd_i16x8_arith2");
 
     /// <summary>Runs the simd_i16x8_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_cmp"), "simd_i16x8_cmp.json");
+    public void SpecTest_simd_i16x8_cmp() => SpecTestRunner.Run("simd/simd_i16x8_cmp");
 
     /// <summary>Runs the simd_i16x8_extadd_pairwise_i8x16 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_extadd_pairwise_i8x16() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_extadd_pairwise_i8x16"), "simd_i16x8_extadd_pairwise_i8x16.json");
+    public void SpecTest_simd_i16x8_extadd_pairwise_i8x16() => SpecTestRunner.Run("simd/simd_i16x8_extadd_pairwise_i8x16");
 
     /// <summary>Runs the simd_i16x8_extmul_i8x16 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_extmul_i8x16() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_extmul_i8x16"), "simd_i16x8_extmul_i8x16.json");
+    public void SpecTest_simd_i16x8_extmul_i8x16() => SpecTestRunner.Run("simd/simd_i16x8_extmul_i8x16");
 
     /// <summary>Runs the simd_i16x8_q15mulr_sat_s tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_q15mulr_sat_s() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_q15mulr_sat_s"), "simd_i16x8_q15mulr_sat_s.json");
+    public void SpecTest_simd_i16x8_q15mulr_sat_s() => SpecTestRunner.Run("simd/simd_i16x8_q15mulr_sat_s");
 
     /// <summary>Runs the simd_i16x8_sat_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i16x8_sat_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i16x8_sat_arith"), "simd_i16x8_sat_arith.json");
+    public void SpecTest_simd_i16x8_sat_arith() => SpecTestRunner.Run("simd/simd_i16x8_sat_arith");
 
     /// <summary>Runs the simd_i32x4_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_arith"), "simd_i32x4_arith.json");
+    public void SpecTest_simd_i32x4_arith() => SpecTestRunner.Run("simd/simd_i32x4_arith");
 
     /// <summary>Runs the simd_i32x4_arith2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_arith2"), "simd_i32x4_arith2.json");
+    public void SpecTest_simd_i32x4_arith2() => SpecTestRunner.Run("simd/simd_i32x4_arith2");
 
     /// <summary>Runs the simd_i32x4_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_cmp"), "simd_i32x4_cmp.json");
+    public void SpecTest_simd_i32x4_cmp() => SpecTestRunner.Run("simd/simd_i32x4_cmp");
 
     /// <summary>Runs the simd_i32x4_dot_i16x8 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_dot_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_dot_i16x8"), "simd_i32x4_dot_i16x8.json");
+    public void SpecTest_simd_i32x4_dot_i16x8() => SpecTestRunner.Run("simd/simd_i32x4_dot_i16x8");
 
     /// <summary>Runs the simd_i32x4_extadd_pairwise_i16x8 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_extadd_pairwise_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_extadd_pairwise_i16x8"), "simd_i32x4_extadd_pairwise_i16x8.json");
+    public void SpecTest_simd_i32x4_extadd_pairwise_i16x8() => SpecTestRunner.Run("simd/simd_i32x4_extadd_pairwise_i16x8");
 
     /// <summary>Runs the simd_i32x4_extmul_i16x8 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_extmul_i16x8() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_extmul_i16x8"), "simd_i32x4_extmul_i16x8.json");
+    public void SpecTest_simd_i32x4_extmul_i16x8() => SpecTestRunner.Run("simd/simd_i32x4_extmul_i16x8");
 
     /// <summary>Runs the simd_i32x4_trunc_sat_f32x4 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_trunc_sat_f32x4() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_trunc_sat_f32x4"), "simd_i32x4_trunc_sat_f32x4.json");
+    public void SpecTest_simd_i32x4_trunc_sat_f32x4() => SpecTestRunner.Run("simd/simd_i32x4_trunc_sat_f32x4");
 
     /// <summary>Runs the simd_i32x4_trunc_sat_f64x2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i32x4_trunc_sat_f64x2() => SpecTestRunner.Run(DataPath("simd", "simd_i32x4_trunc_sat_f64x2"), "simd_i32x4_trunc_sat_f64x2.json");
+    public void SpecTest_simd_i32x4_trunc_sat_f64x2() => SpecTestRunner.Run("simd/simd_i32x4_trunc_sat_f64x2");
 
     /// <summary>Runs the simd_i64x2_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i64x2_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_arith"), "simd_i64x2_arith.json");
+    public void SpecTest_simd_i64x2_arith() => SpecTestRunner.Run("simd/simd_i64x2_arith");
 
     /// <summary>Runs the simd_i64x2_arith2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i64x2_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_arith2"), "simd_i64x2_arith2.json");
+    public void SpecTest_simd_i64x2_arith2() => SpecTestRunner.Run("simd/simd_i64x2_arith2");
 
     /// <summary>Runs the simd_i64x2_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i64x2_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_cmp"), "simd_i64x2_cmp.json");
+    public void SpecTest_simd_i64x2_cmp() => SpecTestRunner.Run("simd/simd_i64x2_cmp");
 
     /// <summary>Runs the simd_i64x2_extmul_i32x4 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i64x2_extmul_i32x4() => SpecTestRunner.Run(DataPath("simd", "simd_i64x2_extmul_i32x4"), "simd_i64x2_extmul_i32x4.json");
+    public void SpecTest_simd_i64x2_extmul_i32x4() => SpecTestRunner.Run("simd/simd_i64x2_extmul_i32x4");
 
     /// <summary>Runs the simd_i8x16_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i8x16_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_arith"), "simd_i8x16_arith.json");
+    public void SpecTest_simd_i8x16_arith() => SpecTestRunner.Run("simd/simd_i8x16_arith");
 
     /// <summary>Runs the simd_i8x16_arith2 tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i8x16_arith2() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_arith2"), "simd_i8x16_arith2.json");
+    public void SpecTest_simd_i8x16_arith2() => SpecTestRunner.Run("simd/simd_i8x16_arith2");
 
     /// <summary>Runs the simd_i8x16_cmp tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i8x16_cmp() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_cmp"), "simd_i8x16_cmp.json");
+    public void SpecTest_simd_i8x16_cmp() => SpecTestRunner.Run("simd/simd_i8x16_cmp");
 
     /// <summary>Runs the simd_i8x16_sat_arith tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_i8x16_sat_arith() => SpecTestRunner.Run(DataPath("simd", "simd_i8x16_sat_arith"), "simd_i8x16_sat_arith.json");
+    public void SpecTest_simd_i8x16_sat_arith() => SpecTestRunner.Run("simd/simd_i8x16_sat_arith");
 
     /// <summary>Runs the simd_int_to_int_extend tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_int_to_int_extend() => SpecTestRunner.Run(DataPath("simd", "simd_int_to_int_extend"), "simd_int_to_int_extend.json");
+    public void SpecTest_simd_int_to_int_extend() => SpecTestRunner.Run("simd/simd_int_to_int_extend");
 
     /// <summary>Runs the simd_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_lane() => SpecTestRunner.Run(DataPath("simd", "simd_lane"), "simd_lane.json");
+    public void SpecTest_simd_lane() => SpecTestRunner.Run("simd/simd_lane");
 
     /// <summary>Runs the simd_linking tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_linking() => SpecTestRunner.Run(DataPath("simd", "simd_linking"), "simd_linking.json");
+    public void SpecTest_simd_linking() => SpecTestRunner.Run("simd/simd_linking");
 
     /// <summary>Runs the simd_load tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load() => SpecTestRunner.Run(DataPath("simd", "simd_load"), "simd_load.json");
+    public void SpecTest_simd_load() => SpecTestRunner.Run("simd/simd_load");
 
     /// <summary>Runs the simd_load16_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load16_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load16_lane"), "simd_load16_lane.json");
+    public void SpecTest_simd_load16_lane() => SpecTestRunner.Run("simd/simd_load16_lane");
 
     /// <summary>Runs the simd_load32_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load32_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load32_lane"), "simd_load32_lane.json");
+    public void SpecTest_simd_load32_lane() => SpecTestRunner.Run("simd/simd_load32_lane");
 
     /// <summary>Runs the simd_load64_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load64_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load64_lane"), "simd_load64_lane.json");
+    public void SpecTest_simd_load64_lane() => SpecTestRunner.Run("simd/simd_load64_lane");
 
     /// <summary>Runs the simd_load8_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load8_lane() => SpecTestRunner.Run(DataPath("simd", "simd_load8_lane"), "simd_load8_lane.json");
+    public void SpecTest_simd_load8_lane() => SpecTestRunner.Run("simd/simd_load8_lane");
 
     /// <summary>Runs the simd_load_extend tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load_extend() => SpecTestRunner.Run(DataPath("simd", "simd_load_extend"), "simd_load_extend.json");
+    public void SpecTest_simd_load_extend() => SpecTestRunner.Run("simd/simd_load_extend");
 
     /// <summary>Runs the simd_load_splat tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load_splat() => SpecTestRunner.Run(DataPath("simd", "simd_load_splat"), "simd_load_splat.json");
+    public void SpecTest_simd_load_splat() => SpecTestRunner.Run("simd/simd_load_splat");
 
     /// <summary>Runs the simd_load_zero tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_load_zero() => SpecTestRunner.Run(DataPath("simd", "simd_load_zero"), "simd_load_zero.json");
+    public void SpecTest_simd_load_zero() => SpecTestRunner.Run("simd/simd_load_zero");
 
     /// <summary>Runs the simd_splat tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_splat() => SpecTestRunner.Run(DataPath("simd", "simd_splat"), "simd_splat.json");
+    public void SpecTest_simd_splat() => SpecTestRunner.Run("simd/simd_splat");
 
     /// <summary>Runs the simd_store tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_store() => SpecTestRunner.Run(DataPath("simd", "simd_store"), "simd_store.json");
+    public void SpecTest_simd_store() => SpecTestRunner.Run("simd/simd_store");
 
     /// <summary>Runs the simd_store16_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_store16_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store16_lane"), "simd_store16_lane.json");
+    public void SpecTest_simd_store16_lane() => SpecTestRunner.Run("simd/simd_store16_lane");
 
     /// <summary>Runs the simd_store32_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_store32_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store32_lane"), "simd_store32_lane.json");
+    public void SpecTest_simd_store32_lane() => SpecTestRunner.Run("simd/simd_store32_lane");
 
     /// <summary>Runs the simd_store64_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_store64_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store64_lane"), "simd_store64_lane.json");
+    public void SpecTest_simd_store64_lane() => SpecTestRunner.Run("simd/simd_store64_lane");
 
     /// <summary>Runs the simd_store8_lane tests.</summary>
     [TestMethod]
-    public void SpecTest_simd_store8_lane() => SpecTestRunner.Run(DataPath("simd", "simd_store8_lane"), "simd_store8_lane.json");
+    public void SpecTest_simd_store8_lane() => SpecTestRunner.Run("simd/simd_store8_lane");
 }
