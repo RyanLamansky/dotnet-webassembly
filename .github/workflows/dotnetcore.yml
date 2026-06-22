@@ -5,6 +5,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # Debug and Release might be different due to conditional compilation, so validate both.
+      matrix:
+        configuration: [Debug, Release]
+    name: Build and Test (${{ matrix.configuration }})
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -17,12 +23,7 @@ jobs:
             10.0.x
     - name: Restore Dependencies
       run: dotnet restore
-    # Debug and Release might be different due to conditional compilation, so validate both.
-    - name: Build (Debug)
-      run: dotnet build --configuration Debug --no-restore
-    - name: Build (Release)
-      run: dotnet build --configuration Release --no-restore
-    - name: Test (Debug)
-      run: dotnet test --configuration Debug --no-build --nologo
-    - name: Test (Release)
-      run: dotnet test --configuration Release --no-build --nologo
+    - name: Build
+      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
+    - name: Test
+      run: dotnet test --configuration ${{ matrix.configuration }} --no-build --nologo
