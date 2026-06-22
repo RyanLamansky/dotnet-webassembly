@@ -82,12 +82,14 @@ public sealed class UnmanagedMemory : IDisposable
         if (delta == 0)
             return oldCurrent;
 
-        static unsafe void ZeroMemory(IntPtr s, uint n)
+        static unsafe void ZeroMemory(IntPtr s, uint offset, uint n)
         {
             // CIL `initblk` can't be generated from C# (as of v8.0).
             // Using run-time code generation here would interfere with AoT efforts.
             // The logic below is 95% as fast as `initblk`.
-            var p = (ulong*)s;
+            // `offset` is applied via byte* arithmetic (zero-extended) so it stays correct above 2 GiB,
+            // where a 32-bit cast would overflow or sign-extend.
+            var p = (ulong*)((byte*)s + offset);
             var limit = n / 8;
             var init = 0ul; // Not const for smaller CIL size and potentially more favorable JIT optimization.
 
@@ -115,12 +117,12 @@ public sealed class UnmanagedMemory : IDisposable
             if (this.Start == default)
             {
                 this.Start = Marshal.AllocHGlobal(new IntPtr(newSize));
-                ZeroMemory(this.Start, newSize);
+                ZeroMemory(this.Start, 0, newSize);
             }
             else
             {
                 this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
-                ZeroMemory(this.Start + checked((int)this.Size), newSize - this.Size);
+                ZeroMemory(this.Start, this.Size, newSize - this.Size);
             }
             this.Size = newSize;
 
@@ -151,7 +153,8 @@ public sealed class UnmanagedMemory : IDisposable
             throw new MemoryAccessOutOfRangeException(srcEnd, this.Size);
         if (length == 0)
             return;
-        Buffer.MemoryCopy((void*)(this.Start + (int)src), (void*)(this.Start + (int)dst), length, length);
+        // byte* arithmetic zero-extends the uint offsets, staying correct above 2 GiB where a (int) cast would sign-extend.
+        Buffer.MemoryCopy((byte*)this.Start + src, (byte*)this.Start + dst, length, length);
     }
 
     /// <summary>
@@ -177,7 +180,7 @@ public sealed class UnmanagedMemory : IDisposable
         if (length == 0)
             return;
         fixed (byte* pSrc = src)
-            Buffer.MemoryCopy(pSrc + srcOffset, (void*)(this.Start + (int)dst), length, length);
+            Buffer.MemoryCopy(pSrc + srcOffset, (byte*)this.Start + dst, length, length);
     }
 
     /// <summary>
@@ -195,7 +198,7 @@ public sealed class UnmanagedMemory : IDisposable
             throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
         if (length == 0)
             return;
-        var p = (byte*)(this.Start + (int)dst);
+        var p = (byte*)this.Start + dst;
         var b = (byte)(value & 0xFF);
         for (uint i = 0; i < length; i++)
             p[i] = b;

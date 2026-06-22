@@ -1776,7 +1776,7 @@ public static class Compile
             instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
             instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
             instanceConstructorIL.Emit(OpCodes.Ldloc, address);
-            instanceConstructorIL.Emit(OpCodes.Conv_I);
+            instanceConstructorIL.Emit(OpCodes.Conv_U); // Zero-extend the offset; Conv_I would sign-extend an offset >= 2^31 into a wild pointer.
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
             instanceConstructorIL.Emit(OpCodes.Ldsflda, field);

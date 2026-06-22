@@ -142,10 +142,15 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
             _ => throw new InvalidOperationException(), // Shouldn't be possible.
         };
 
+        // Returns the validated address widened to a native unsigned integer. Callers add this directly to the
+        // base pointer (UnmanagedMemory.Start), so it must be zero-extended: a plain 32-bit address would be
+        // sign-extended by the IL `add`, corrupting any access at an offset >= 2^31 (reachable once linear
+        // memory grows past 2 GiB). Returning native-unsigned-int and emitting Conv_U below keeps the widening
+        // in one place for every scalar and SIMD load/store path.
         var builder = context.CheckedExportsBuilder.DefineMethod(
             $"☣ Range Check {size}",
             CompilationContext.HelperMethodAttributes,
-            typeof(uint),
+            typeof(UIntPtr),
             [typeof(uint), context.CheckedExportsBuilder]
             );
         var il = builder.GetILGenerator();
@@ -174,6 +179,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         var outOfRange = il.DefineLabel();
         il.Emit(OpCodes.Blt_Un_S, outOfRange);
         il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Conv_U); // Zero-extend to native unsigned int; see the return-type comment above.
         il.Emit(OpCodes.Ret);
         il.MarkLabel(outOfRange);
         il.Emit(OpCodes.Ldarg_0);
