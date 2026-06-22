@@ -441,12 +441,14 @@ public static class Compile
                             internalFunctions = context.Methods = new MethodInfo[functionSignatures.Length];
                         }
 
-                        if (signatures == null)
+                        // Only a non-empty function section needs the type section; an empty one (no entries
+                        // beyond imports) is valid even when no Type section is present.
+                        if (functionSignatures.Length > importedFunctionCount && signatures == null)
                             throw new InvalidOperationException();
 
                         for (var i = importedFunctionCount; i < functionSignatures.Length; i++)
                         {
-                            var signature = functionSignatures[i] = signatures[reader.ReadVarUInt32()];
+                            var signature = functionSignatures[i] = signatures![reader.ReadVarUInt32()];
                             var parms = signature.ParameterTypes.Concat([exportsBuilder]).ToArray();
                             internalFunctions[i] = exportsBuilder.DefineMethod(
                                 $"👻 {i}",
@@ -534,6 +536,9 @@ public static class Compile
 
                         if (count != 0 && memory != null)
                             throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
+
+                        if (count == 0)
+                            break; // An empty memory section is valid and defines no memory.
 
                         var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
                         // A memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
@@ -628,12 +633,10 @@ public static class Compile
                     break;
 
                 case Section.Code:
-                    if (functionSignatures == null)
-                        throw new InvalidOperationException($"Code section found but {nameof(functionSignatures)} is null");
-                    if (internalFunctions == null)
-                        throw new InvalidOperationException($"Code section found but {nameof(internalFunctions)} is null");
                     EnsureFunctionReferences(); // Function bodies may use ref.func.
                     context.EnforceDeclaredFunctionReferences = true;
+                    // functionSignatures/internalFunctions may legitimately be null for an empty code section
+                    // (no Function section); SectionCode validates the body count against the defined functions.
                     SectionCode(reader, context, functionSignatures, internalFunctions, importedFunctions);
                     break;
 
@@ -1594,19 +1597,23 @@ public static class Compile
         il.Emit(OpCodes.Ldelem_Ref);
     }
 
-    static void SectionCode(Reader reader, CompilationContext context, Signature[] functionSignatures, MethodInfo[] internalFunctions, int importedFunctions)
+    static void SectionCode(Reader reader, CompilationContext context, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, int importedFunctions)
     {
         var preBodiesIndex = reader.Offset;
         var functionBodies = reader.ReadVarUInt32();
 
-        if (functionBodies > 0 && (functionSignatures == null || functionSignatures.Length == importedFunctions))
-            throw new ModuleLoadException("Code section is invalid when Function section is missing.", preBodiesIndex);
-        if (functionBodies != functionSignatures.Length - importedFunctions)
-            throw new ModuleLoadException($"Code section has {functionBodies} functions described but {functionSignatures.Length - importedFunctions} were expected.", preBodiesIndex);
+        // Defined (non-imported) functions; zero when there is no Function section at all.
+        var definedFunctions = (functionSignatures?.Length ?? importedFunctions) - importedFunctions;
+        if (functionBodies != definedFunctions)
+            throw new ModuleLoadException($"Code section has {functionBodies} functions described but {definedFunctions} were expected.", preBodiesIndex);
 
+        if (functionBodies == 0)
+            return; // An empty code section is valid and needs no Function/Type section.
+
+        // functionBodies > 0 implies definedFunctions > 0, so both arrays are present.
         for (var functionBodyIndex = 0; functionBodyIndex < functionBodies; functionBodyIndex++)
         {
-            var signature = functionSignatures[importedFunctions + functionBodyIndex];
+            var signature = functionSignatures![importedFunctions + functionBodyIndex];
             var byteLength = reader.ReadVarUInt32();
             var startingOffset = reader.Offset;
 
@@ -1614,7 +1621,7 @@ public static class Compile
             for (var localIndex = 0; localIndex < locals.Length; localIndex++)
                 locals[localIndex] = new Local(reader);
 
-            var il = ((MethodBuilder)internalFunctions[importedFunctions + functionBodyIndex]).GetILGenerator();
+            var il = ((MethodBuilder)internalFunctions![importedFunctions + functionBodyIndex]).GetILGenerator();
 
             context.Reset(
                 il,

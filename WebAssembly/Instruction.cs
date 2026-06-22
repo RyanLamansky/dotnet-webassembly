@@ -313,7 +313,9 @@ public abstract class Instruction : IEquatable<Instruction>
 
                 case OpCode.MiscellaneousOperationPrefix:
                     var miscellaneousOpCodeOffset = reader.Offset;
-                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadByte();
+                    // The opcode following the 0xFC prefix is a LEB128 u32, not a single byte, so overlong
+                    // encodings (e.g. 0x80 0x00 for 0) parse to the same opcode as the canonical form.
+                    var miscellaneousOpCode = (MiscellaneousOpCode)reader.ReadVarUInt32();
                     switch (miscellaneousOpCode)
                     {
                         default: throw new ModuleLoadException($"Don't know how to parse miscellaneous opcode \"{miscellaneousOpCode}\".", miscellaneousOpCodeOffset);

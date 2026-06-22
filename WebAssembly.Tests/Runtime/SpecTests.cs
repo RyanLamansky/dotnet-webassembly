@@ -27,28 +27,18 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_binary_leb128()
     {
-        // 881: StackTypeInvalidException: Int32Load requires the top stack item to be Int32, found Int64.
-        // 998: ModuleLoadException: Don't know how to parse miscellaneous opcode "128".
+        // 881: a memory64 module (memory limits flag 0x04, i64 address, u64 memarg offset); memory64 is a
+        //      post-2.0 proposal and out of scope.
         var skips = new HashSet<uint>
         {
-            881, 998
+            881
         };
         SpecTestRunner.Run(DataPath("binary-leb128"), "binary-leb128.json", skips.Contains);
     }
 
     /// <summary>Runs the binary tests.</summary>
     [TestMethod]
-    public void SpecTest_binary()
-    {
-        // 1172: ModuleLoadException: Operation is not valid due to the current state of the object.
-        // 1178: ModuleLoadException: Code section found but functionSignatures is null.
-        // 1538: ModuleLoadException: Stream ended unexpectedly.
-        var skips = new HashSet<uint>
-        {
-            1172, 1178, 1538
-        };
-        SpecTestRunner.Run(DataPath("binary"), "binary.json", skips.Contains);
-    }
+    public void SpecTest_binary() => SpecTestRunner.Run(DataPath("binary"), "binary.json");
 
     /// <summary>Runs the block tests.</summary>
     [TestMethod]
@@ -90,15 +80,7 @@ public class SpecTests
 
     /// <summary>Runs the custom tests.</summary>
     [TestMethod]
-    public void SpecTest_custom()
-    {
-        // 1x ModuleLoadException: At offset N: WebAssemblyValueType N not recognized. (Parameter 'valueType')
-        var skips = new HashSet<uint>
-        {
-            14
-        };
-        SpecTestRunner.Run(DataPath("custom"), "custom.json", skips.Contains);
-    }
+    public void SpecTest_custom() => SpecTestRunner.Run(DataPath("custom"), "custom.json");
 
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
