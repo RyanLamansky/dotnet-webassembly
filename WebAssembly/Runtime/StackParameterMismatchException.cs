@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Runtime;
+﻿using System;
+
+namespace WebAssembly.Runtime;
 
 /// <summary>
 /// Used by the compiler to indicate that the value types being fed as parameters to an operation that requires them to match, do not match.
@@ -6,6 +8,7 @@
 /// <param name="opCode">The operation attempted.</param>
 /// <param name="first">The first parameter type.</param>
 /// <param name="second">The second parameter type.</param>
+[method: Obsolete("The compiler never throws this exception; it may be removed in a future release.")]
 public class StackParameterMismatchException(OpCode opCode, WebAssemblyValueType first, WebAssemblyValueType second) : OpCodeCompilationException(opCode, $"requires the type parameters to match, found {first} and {second}.")
 {
 

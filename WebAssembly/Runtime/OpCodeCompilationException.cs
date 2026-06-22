@@ -29,6 +29,18 @@ public class OpCodeCompilationException : CompilerException
     }
 
     /// <summary>
+    /// Creates a new <see cref="OpCodeCompilationException"/> with the provided parameters.
+    /// </summary>
+    /// <param name="simdOpCode">The SIMD operation attempted.</param>
+    /// <param name="message">An explanation of the problem, concatenated with <paramref name="simdOpCode"/> and passed to the base as the message.</param>
+    public OpCodeCompilationException(SimdOpCode simdOpCode, string message)
+        : base($"{simdOpCode} {message}")
+    {
+        this.OpCode = OpCode.SimdOperationPrefix;
+        this.SimdOpCode = simdOpCode;
+    }
+
+    /// <summary>
     /// The operation attempted.
     /// </summary>
     public OpCode OpCode { get; }
@@ -37,4 +49,9 @@ public class OpCodeCompilationException : CompilerException
     /// The miscellaneous operation attempted, if <see cref="OpCode"/> is <see cref="OpCode.MiscellaneousOperationPrefix"/>.
     /// </summary>
     public MiscellaneousOpCode? MiscellaneousOpCode { get; }
+
+    /// <summary>
+    /// The SIMD operation attempted, if <see cref="OpCode"/> is <see cref="OpCode.SimdOperationPrefix"/>.
+    /// </summary>
+    public SimdOpCode? SimdOpCode { get; }
 }

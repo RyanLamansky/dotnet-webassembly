@@ -1667,6 +1667,7 @@ public static class Compile
 
             foreach (var instruction in Instruction.Parse(reader))
             {
+                context.CurrentInstruction = instruction;
                 instruction.Compile(context);
                 context.Previous = instruction.OpCode;
             }

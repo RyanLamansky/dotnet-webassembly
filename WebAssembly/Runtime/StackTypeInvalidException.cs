@@ -32,6 +32,19 @@ public class StackTypeInvalidException : OpCodeCompilationException
     }
 
     /// <summary>
+    /// Creates a new <see cref="StackTypeInvalidException"/> with the provided parameters.
+    /// </summary>
+    /// <param name="simdOpCode">The SIMD operation attempted.</param>
+    /// <param name="expected">The expected value type.</param>
+    /// <param name="actual">The actual value type.</param>
+    public StackTypeInvalidException(SimdOpCode simdOpCode, WebAssemblyValueType expected, WebAssemblyValueType actual)
+        : base(simdOpCode, $"requires the top stack item to be {expected}, found {actual}.")
+    {
+        this.Expected = expected;
+        this.Actual = actual;
+    }
+
+    /// <summary>
     /// The expected value type.
     /// </summary>
     public WebAssemblyValueType Expected { get; }

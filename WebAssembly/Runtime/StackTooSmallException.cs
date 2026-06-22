@@ -32,6 +32,19 @@ public class StackTooSmallException : OpCodeCompilationException
     }
 
     /// <summary>
+    /// Creates a new <see cref="StackTooSmallException"/> with the provided parameters.
+    /// </summary>
+    /// <param name="simdOpCode">The SIMD operation attempted.</param>
+    /// <param name="minimum">The minimum acceptable stack height.</param>
+    /// <param name="actual">The actual stack height at the time the operation was attempted.</param>
+    public StackTooSmallException(SimdOpCode simdOpCode, int minimum, int actual)
+        : base(simdOpCode, $"requires at least {minimum} values on the stack, found {actual}.")
+    {
+        this.Minimum = minimum;
+        this.Actual = actual;
+    }
+
+    /// <summary>
     /// The minimum acceptable stack height.
     /// </summary>
     public int Minimum { get; }

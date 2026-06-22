@@ -51,6 +51,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             this.Depth.Push(new FunctionOuterBlock(returnType));
         }
         this.Previous = OpCode.NoOperation;
+        this.CurrentInstruction = null;
         this.Labels.Clear();
         this.LoopLabels.Clear();
         this.Stack.Clear();
@@ -198,6 +199,13 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public OpCode Previous;
 
+    /// <summary>
+    /// The instruction currently being compiled, set by the compilation loops before each
+    /// <see cref="Instruction.Compile"/> call.  Used to attribute stack-validation failures to the
+    /// specific miscellaneous (0xFC) or SIMD (0xFD) operation rather than the generic prefix opcode.
+    /// </summary>
+    public Instruction? CurrentInstruction;
+
     public readonly Dictionary<uint, Label> Labels = [];
 
     public readonly HashSet<Label> LoopLabels = [];
@@ -266,6 +274,30 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public void Emit(ILOpCode opcode, Type type) => CheckedGenerator.Emit(opcode, type);
 
+    // Miscellaneous (0xFC) and SIMD (0xFD) instructions all report OpCode.MiscellaneousOperationPrefix /
+    // OpCode.SimdOperationPrefix as their OpCode, so a validation failure attributed to the raw opcode would
+    // name only the generic prefix.  When the operation being validated is the current instruction, prefer its
+    // specific sub-opcode so the exception message identifies the real operation.
+    private StackTooSmallException StackTooSmall(OpCode opcode, int minimum, int actual)
+        => this.CurrentInstruction is { } current && current.OpCode == opcode
+            ? current switch
+            {
+                MiscellaneousInstruction m => new StackTooSmallException(m.MiscellaneousOpCode, minimum, actual),
+                SimdInstruction s => new StackTooSmallException(s.SimdOpCode, minimum, actual),
+                _ => new StackTooSmallException(opcode, minimum, actual),
+            }
+            : new StackTooSmallException(opcode, minimum, actual);
+
+    private StackTypeInvalidException StackTypeInvalid(OpCode opcode, WebAssemblyValueType expected, WebAssemblyValueType actual)
+        => this.CurrentInstruction is { } current && current.OpCode == opcode
+            ? current switch
+            {
+                MiscellaneousInstruction m => new StackTypeInvalidException(m.MiscellaneousOpCode, expected, actual),
+                SimdInstruction s => new StackTypeInvalidException(s.SimdOpCode, expected, actual),
+                _ => new StackTypeInvalidException(opcode, expected, actual),
+            }
+            : new StackTypeInvalidException(opcode, expected, actual);
+
     public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
     {
         return PopStack(opcode, [expectedType], 1).FirstOrDefault();
@@ -280,7 +312,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             if (this.IsUnreachable)
                 return;
 
-            throw new StackTooSmallException(opcode, 1, stackCount);
+            throw StackTooSmall(opcode, 1, stackCount);
         }
 
         this.Stack.Pop();
@@ -295,12 +327,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             if (this.IsUnreachable)
                 return;
 
-            throw new StackTooSmallException(opcode, 1, stackCount);
+            throw StackTooSmall(opcode, 1, stackCount);
         }
 
         var type = this.Stack.Pop();
         if (type.HasValue && type != expectedType)
-            throw new StackTypeInvalidException(opcode, expectedType, type.Value);
+            throw StackTypeInvalid(opcode, expectedType, type.Value);
     }
 
     public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType1, WebAssemblyValueType expectedType2)
@@ -314,12 +346,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             if (this.IsUnreachable)
                 return;
 
-            throw new StackTooSmallException(opcode, 2, initialStackSize);
+            throw StackTooSmall(opcode, 2, initialStackSize);
         }
 
         var type = this.Stack.Pop();
         if (type.HasValue && type != expected)
-            throw new StackTypeInvalidException(opcode, expected, type.Value);
+            throw StackTypeInvalid(opcode, expected, type.Value);
 
         expected = expectedType2;
         if (initialStackSize - 1 <= blockContextInitialStackSize)
@@ -327,12 +359,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             if (this.IsUnreachable)
                 return;
 
-            throw new StackTooSmallException(opcode, 2, initialStackSize);
+            throw StackTooSmall(opcode, 2, initialStackSize);
         }
 
         type = this.Stack.Pop();
         if (type.HasValue && type != expected)
-            throw new StackTypeInvalidException(opcode, expected, type.Value);
+            throw StackTypeInvalid(opcode, expected, type.Value);
     }
 
     public void PopStackNoReturn(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
@@ -347,12 +379,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
                 if (this.IsUnreachable)
                     continue;
 
-                throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
+                throw StackTooSmall(opcode, expectedCount, initialStackSize);
             }
 
             var type = this.Stack.Pop();
             if (expected.HasValue && type.HasValue && type != expected)
-                throw new StackTypeInvalidException(opcode, expected.Value, type.Value);
+                throw StackTypeInvalid(opcode, expected.Value, type.Value);
         }
     }
 
@@ -380,7 +412,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
                 if (this.IsUnreachable)
                     type = null;
                 else
-                    throw new StackTooSmallException(opcode, expectedCount, initialStackSize);
+                    throw StackTooSmall(opcode, expectedCount, initialStackSize);
             }
             else
             {
@@ -390,7 +422,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             if (type.HasValue)
             {
                 if (expected.HasValue && type != expected)
-                    throw new StackTypeInvalidException(opcode, expected.Value, type.Value);
+                    throw StackTypeInvalid(opcode, expected.Value, type.Value);
             }
             else
             {

@@ -67,7 +67,8 @@ Target frameworks:
   Completeness is enforced, if some params are documented, all must be.
 - Code style (`.editorconfig`): file-scoped namespaces, `var` preferred, expression-bodied members preferred, explicit accessibility modifiers, pattern matching preferred.
   C# 14 / `LangVersion=14.0`.
-- The assembly is strong-name signed (`WebAssembly.snk`); `InternalsVisibleTo` exposes internals to the test project, so tests can and do reach `internal` members.
+- The assembly is strong-name signed (`WebAssembly.snk`), but there is **no** `InternalsVisibleTo`, so the test project sees only the public API.
+  When a test genuinely needs an `internal` helper, the csproj links that source file directly (e.g. `<Compile Include="..\WebAssembly\RegeneratingWeakReference.cs">`); internal types like `Signature`, `Reader`, and `Writer` are otherwise unreachable from tests.
 - Multi-targeting is now just net8 vs net9: guard net9-only APIs with `#if NET9_0_OR_GREATER` and provide a net8 fallback.
   The only remaining conditional symbols are `NET9_0_OR_GREATER` and `DEBUG`; the old netstandard2.0/netcoreapp3.0 fallbacks were removed when .NET Standard 2.0 was dropped.
 - Prefer `Module` when creating unit tests against well-formed WASMs to preserve human readability.
