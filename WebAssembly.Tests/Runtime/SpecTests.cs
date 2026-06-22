@@ -104,15 +104,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_data()
     {
-        // 2x AssertFailedException: "unknown global" — data offset referencing an unknown global not rejected (85, 89).
-        // 2x AssertFailedException: empty-content active data segment out of bounds should trap but doesn't
-        //    — the zero-length segment skips the instantiation bounds check (203, 210).
         // 4x AssertFailedException: "unknown memory 1" assert_invalid not yet rejected (307, 331, 343, 365).
-        // 2x AssertFailedException: "constant expression required" — non-constant data offset not rejected (466, 492).
-        // 2x AssertFailedException: "unknown global 0/1" assert_invalid not yet rejected (475, 483).
         var skips = new HashSet<uint>
         {
-            85, 89, 203, 210, 307, 331, 343, 365, 466, 475, 483, 492
+            307, 331, 343, 365
         };
         SpecTestRunner.Run(DataPath("data"), "data.json", skips.Contains);
     }
@@ -123,11 +118,10 @@ public class SpecTests
     {
         // 2x ModuleLoadException: element-segment offset uses global.get; only a single Int32 constant is supported (120, 127).
         // 1x AssertFailedException: active element segment out of bounds doesn't trap (266 — boundary case).
-        // 2x AssertFailedException: "unknown global 0/1" — element offset referencing an unknown global not rejected (467, 475).
         // 1x AssertFailedException: Object reference not set to an instance of an object (692).
         var skips = new HashSet<uint>
         {
-            120, 127, 266, 467, 475, 692
+            120, 127, 266, 692
         };
         SpecTestRunner.Run(DataPath("elem"), "elem.json", skips.Contains);
     }
@@ -223,17 +217,7 @@ public class SpecTests
 
     /// <summary>Runs the global tests.</summary>
     [TestMethod]
-    public void SpecTest_global()
-    {
-        // 2x AssertFailedException: Common Language Runtime detected an invalid program (202, 203).
-        // 2x AssertFailedException: mutable-global validation should trap but doesn't (352, 356).
-        // 1x AssertFailedException: expected ModuleLoadException not thrown (371).
-        var skips = new HashSet<uint>
-        {
-            202, 203, 352, 356, 371
-        };
-        SpecTestRunner.Run(DataPath("global"), "global.json", skips.Contains);
-    }
+    public void SpecTest_global() => SpecTestRunner.Run(DataPath("global"), "global.json");
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]

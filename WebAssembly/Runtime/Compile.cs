@@ -195,6 +195,20 @@ public static class Compile
         MethodAttributes.HideBySig
         ;
 
+    // The (offset, length) constructor used to trap an out-of-bounds active data segment, matching the
+    // exception the runtime's RangeCheck helpers throw for ordinary memory accesses.
+    static readonly ConstructorInfo MemoryAccessOutOfRangeExceptionConstructor =
+        typeof(MemoryAccessOutOfRangeException)
+        .GetTypeInfo()
+        .DeclaredConstructors
+        .First(c =>
+        {
+            var parameters = c.GetParameters();
+            return parameters.Length == 2
+                && parameters[0].ParameterType == typeof(uint)
+                && parameters[1].ParameterType == typeof(uint);
+        });
+
     const MethodAttributes ExportedFunctionAttributes =
         MethodAttributes.Public |
         MethodAttributes.Virtual |
@@ -395,6 +409,7 @@ public static class Compile
                         memory,
                         functionTable
                     ) = SectionImport(reader, context, importedMemoryProvider, configuration, signatures, exportsBuilder, instanceConstructorIL, emptyTypes, memory, functionTable);
+                    context.ImportedGlobals = importedGlobals;
                     break;
 
                 case Section.Function:
@@ -1039,12 +1054,18 @@ public static class Compile
             var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
             var isMutable = reader.ReadVarUInt1() == 1;
 
+            // The getter always takes the exports instance as its (only) argument, even for an immutable
+            // global whose value is a plain constant. An immutable initializer may itself be `global.get`
+            // of an imported global, which needs the instance to reach that import's backing delegate;
+            // since the instance occupies the argument slot at index = parameter-count (0 here), emitting
+            // it unconditionally keeps EmitLoadThis valid. Callers push the instance whenever
+            // GlobalInfo.RequiresInstance is set, which is now always true for module-defined globals.
             var getter = exportsBuilder.DefineMethod(
                 $"🌍 Get {i}",
                 InternalFunctionAttributes,
                 CallingConventions.Standard,
                 configuration.NeutralizeType(contentType.ToSystemType()),
-                isMutable ? [exportsBuilder] : null
+                [exportsBuilder]
                 );
 
             var il = getter.GetILGenerator();
@@ -1059,6 +1080,7 @@ public static class Compile
                     getterSignature.RawParameterTypes
                     );
 
+                context.ConstantExpression = true;
                 foreach (var instruction in Instruction.ParseInitializerExpression(reader))
                 {
                     if (instruction is Instructions.RefFunc rfGlobal)
@@ -1066,6 +1088,7 @@ public static class Compile
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
                 }
+                context.ConstantExpression = false;
 
                 setter = null;
             }
@@ -1104,6 +1127,7 @@ public static class Compile
                 context.EmitLoadThis();
                 var ended = false;
 
+                context.ConstantExpression = true;
                 foreach (var instruction in Instruction.ParseInitializerExpression(reader))
                 {
                     if (ended)
@@ -1122,9 +1146,10 @@ public static class Compile
                     instruction.Compile(context);
                     context.Previous = instruction.OpCode;
                 }
+                context.ConstantExpression = false;
             }
 
-            globals[importedGlobals + i] = new GlobalInfo(contentType, isMutable, getter, setter);
+            globals[importedGlobals + i] = new GlobalInfo(contentType, true, getter, setter);
         }
 
         return globals;
@@ -1619,11 +1644,13 @@ public static class Compile
                 throw new ModuleLoadException("Active data segment cannot be used unless a memory section is defined.", startingOffset);
 
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
+            context.ConstantExpression = true;
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))
             {
                 instruction.Compile(context);
                 context.Previous = instruction.OpCode;
             }
+            context.ConstantExpression = false;
             context.Stack.Pop();
             context.BlockContexts.Remove(context.Depth.Count);
             instanceConstructorIL.Emit(OpCodes.Stloc, address);
@@ -1631,7 +1658,25 @@ public static class Compile
             var data = reader.ReadBytes(reader.ReadVarUInt32());
 
             if (data.Length == 0)
+            {
+                // An empty active segment writes nothing, but its offset must still be in bounds: the spec
+                // bounds check is offset + length <= memory size, which for length 0 is offset <= memory size.
+                // The RangeCheck8 path below would validate offset + (length - 1) as an accessible byte, one
+                // too strict here (offset == size is in bounds for an empty segment), so check the boundary
+                // directly and trap with the same exception type the runtime raises for memory accesses.
+                var inBounds = instanceConstructorIL.DefineLabel();
+                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+                instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
+                instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
+                instanceConstructorIL.Emit(OpCodes.Ble_Un_S, inBounds);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+                instanceConstructorIL.Emit(OpCodes.Ldc_I4_0);
+                instanceConstructorIL.Emit(OpCodes.Newobj, MemoryAccessOutOfRangeExceptionConstructor);
+                instanceConstructorIL.Emit(OpCodes.Throw);
+                instanceConstructorIL.MarkLabel(inBounds);
                 continue;
+            }
 
             //Ensure sufficient memory is allocated, error if max is exceeded. RangeCheck8 validates that the
             //last written byte (address + data.Length - 1) is accessible, which permits a segment that exactly

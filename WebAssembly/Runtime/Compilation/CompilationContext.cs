@@ -68,6 +68,20 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public GlobalInfo[]? Globals;
 
+    /// <summary>
+    /// The number of imported globals, which occupy the low indices of <see cref="Globals"/>. A
+    /// constant (initializer/offset) expression may only <c>global.get</c> an imported global, so this
+    /// is the exclusive upper bound on a valid global index in that context.
+    /// </summary>
+    public int ImportedGlobals;
+
+    /// <summary>
+    /// True while compiling a constant expression — a global/data/element initializer or offset. In that
+    /// context the spec restricts <c>global.get</c> to imported, immutable globals; <see cref="Instructions.GlobalGet"/>
+    /// enforces that only when this is set, leaving ordinary function bodies unrestricted.
+    /// </summary>
+    public bool ConstantExpression;
+
     public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 
     public readonly Dictionary<(uint TypeIndex, uint TableIndex), MethodBuilder> DelegateRemappersByType = [];

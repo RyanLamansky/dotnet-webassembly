@@ -40,6 +40,16 @@ public class GlobalGet : VariableAccessInstruction
         if (context.Globals == null)
             throw new CompilerException("Can't use GetGlobal without a global section or global imports.");
 
+        if (context.ConstantExpression && this.Index >= (uint)context.ImportedGlobals)
+        {
+            // In a constant (initializer/offset) expression, global.get is in scope only for imported
+            // globals — those occupy indices below ImportedGlobals. Referencing a module-defined global
+            // (or an out-of-range index) is "unknown global" per the spec's constant-expression context.
+            throw new ModuleLoadException(
+                $"global.get in a constant expression may only reference an imported global; index {this.Index} is out of that range.",
+                0);
+        }
+
         GlobalInfo global;
         try
         {
@@ -48,6 +58,15 @@ public class GlobalGet : VariableAccessInstruction
         catch (System.IndexOutOfRangeException x)
         {
             throw new CompilerException($"Global at index {this.Index} does not exist.", x);
+        }
+
+        if (context.ConstantExpression && global.Setter != null)
+        {
+            // A constant expression's global.get must reference an immutable global; a mutable one
+            // (its setter is non-null) is rejected as "constant expression required".
+            throw new ModuleLoadException(
+                $"global.get in a constant expression must reference an immutable global; index {this.Index} is mutable.",
+                0);
         }
 
         if (global.RequiresInstance)

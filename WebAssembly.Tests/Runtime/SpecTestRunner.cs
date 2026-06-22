@@ -250,7 +250,6 @@ static partial class SpecTestRunner
                             case "start function":
                                 Assert.ThrowsException<ModuleLoadException>(trapExpected, $"{command.line}");
                                 continue;
-                            case "unknown global":
                             case "unknown memory":
                             case "unknown function":
                             case "unknown table 0":
@@ -258,6 +257,9 @@ static partial class SpecTestRunner
                             case "invalid lane index":
                             // Result-arity validation can surface as a stack-size compilation error rather than a parse error.
                             case "invalid result arity":
+                            // "unknown global", optionally suffixed with the offending index ("unknown global 0/1"),
+                            // covers a constant expression's global.get referencing a module-defined or out-of-range global.
+                            case var ug when ug.StartsWith("unknown global", StringComparison.Ordinal):
                             case var tf when tf.StartsWith("unknown function ", StringComparison.Ordinal):
                             case var tt when tt.StartsWith("unknown table ", StringComparison.Ordinal):
                             case var te when te.StartsWith("unknown elem segment", StringComparison.Ordinal):
