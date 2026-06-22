@@ -195,6 +195,12 @@ public static class Compile
         MethodAttributes.HideBySig
         ;
 
+    // Import type-compatibility validators, emitted into the instance constructor after each import is
+    // resolved and its .NET subtype confirmed (see ImportException for the matching rules).
+    static readonly MethodInfo ValidateGlobalImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateGlobal))!;
+    static readonly MethodInfo ValidateMemoryImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemory))!;
+    static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable))!;
+
     // The (offset, length) constructor used to trap an out-of-bounds active data segment, matching the
     // exception the runtime's RangeCheck helpers throw for ordinary memory accesses.
     static readonly ConstructorInfo MemoryAccessOutOfRangeExceptionConstructor =
@@ -870,6 +876,16 @@ public static class Compile
 
                         ImportException.EmitTryCast(instanceConstructorIL, tableType, configuration);
 
+                        // Confirm the supplied table's limits satisfy the declaration (element type was
+                        // already verified by the cast above).
+                        instanceConstructorIL.Emit(OpCodes.Dup);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.Minimum);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.Maximum ?? 0));
+                        instanceConstructorIL.Emit(limits.Maximum.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                        instanceConstructorIL.Emit(OpCodes.Call, ValidateTableImport);
+
                         instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
                     }
                     break;
@@ -915,6 +931,16 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
+
+                        // Confirm the supplied memory's limits satisfy the declaration before storing it.
+                        instanceConstructorIL.Emit(OpCodes.Dup);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.Minimum);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.Maximum ?? 0));
+                        instanceConstructorIL.Emit(limits.Maximum.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                        instanceConstructorIL.Emit(OpCodes.Call, ValidateMemoryImport);
+
                         instanceConstructorIL.Emit(OpCodes.Stfld, memory);
                     }
                     break;
@@ -948,6 +974,14 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
 
                         ImportException.EmitTryCast(instanceConstructorIL, typeof(GlobalImport), configuration);
+
+                        // Confirm the supplied global's value type and mutability match the declaration.
+                        instanceConstructorIL.Emit(OpCodes.Dup);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)contentType);
+                        instanceConstructorIL.Emit(mutable ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                        instanceConstructorIL.Emit(OpCodes.Call, ValidateGlobalImport);
 
                         instanceConstructorIL.Emit(OpCodes.Callvirt,
                              typeof(GlobalImport)

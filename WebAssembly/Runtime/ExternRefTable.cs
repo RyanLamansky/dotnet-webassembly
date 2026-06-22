@@ -59,7 +59,7 @@ public class ExternRefTable : TableImport
     /// <summary>
     /// The maximum number of elements the table is allowed to grow to.
     /// </summary>
-    public uint? Maximum { get; }
+    public sealed override uint? Maximum { get; }
 
     /// <summary>
     /// Creates a new <see cref="ExternRefTable"/> with the provided initial size with no maximum.
@@ -103,7 +103,7 @@ public class ExternRefTable : TableImport
     /// <summary>
     /// The current length of the table.
     /// </summary>
-    public uint Length => (uint)this.values.Length;
+    public sealed override uint Length => (uint)this.values.Length;
 
     /// <summary>
     /// Grows the table by the indicated number of elements, filling new elements with the provided value.

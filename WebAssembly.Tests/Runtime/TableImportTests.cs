@@ -171,7 +171,8 @@ public class TableImportTests
     public void Compile_TableImport_ExportedImport()
     {
         var module = new Module();
-        module.Imports.Add(new Import.Table("Test", "Test", 1));
+        // Declared minimum 0 to match the supplied empty table; this test only checks the identity round-trip.
+        module.Imports.Add(new Import.Table("Test", "Test", 0));
         module.Exports.Add(new Export
         {
             Name = nameof(ExportedTable.Table),
@@ -320,7 +321,9 @@ public class TableImportTests
             Returns = [WebAssemblyValueType.Int32],
             Parameters = [WebAssemblyValueType.Int32]
         });
-        module.Imports.Add(new Import.Table("Test", "Test", 1));
+        // Declared minimum 0 so the supplied empty table satisfies import-limit validation; the trap under
+        // test comes from the active element segment writing past the table's length, not from a limit check.
+        module.Imports.Add(new Import.Table("Test", "Test", 0));
         module.Functions.Add(new Function
         {
         });

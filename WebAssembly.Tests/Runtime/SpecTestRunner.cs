@@ -235,7 +235,9 @@ static partial class SpecTestRunner
                             case "global is immutable":
                                 Assert.ThrowsException<CompilerException>(trapExpected, $"{command.line}");
                                 continue;
-                            case "unknown memory 0":
+                            // "unknown memory" suffixed with the offending index ("unknown memory 0/1"), e.g. an
+                            // active data segment whose explicit memory index refers to a memory that doesn't exist.
+                            case var um when um.StartsWith("unknown memory ", StringComparison.Ordinal):
                             case "constant expression required":
                             case "duplicate export name":
                             case "unknown table":

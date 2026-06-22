@@ -71,7 +71,7 @@ public class FunctionTable : TableImport
     /// <summary>
     /// The maximum number of elements the table is allowed to grow to.
     /// </summary>
-    public uint? Maximum { get; }
+    public sealed override uint? Maximum { get; }
 
     /// <summary>
     /// Creates a new <see cref="FunctionTable"/> with the provided initial size with no maximum.
@@ -119,7 +119,7 @@ public class FunctionTable : TableImport
     /// <summary>
     /// Gets the current size of the table.
     /// </summary>
-    public uint Length => (uint)this.delegates.Length;
+    public sealed override uint Length => (uint)this.delegates.Length;
 
     /// <summary>
     /// Increases the size of the instance by a specified number of elements.

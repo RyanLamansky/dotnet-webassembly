@@ -102,15 +102,7 @@ public class SpecTests
 
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
-    public void SpecTest_data()
-    {
-        // 4x AssertFailedException: "unknown memory 1" assert_invalid not yet rejected (307, 331, 343, 365).
-        var skips = new HashSet<uint>
-        {
-            307, 331, 343, 365
-        };
-        SpecTestRunner.Run(DataPath("data"), "data.json", skips.Contains);
-    }
+    public void SpecTest_data() => SpecTestRunner.Run(DataPath("data"), "data.json");
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
@@ -235,13 +227,10 @@ public class SpecTests
     [TestMethod]
     public void SpecTest_imports()
     {
-        // 13x AssertFailedException: "incompatible import type" assert_unlinkable not rejected — the library
-        //     doesn't yet type-check imports against their declared signature/type/limits
-        //     (312, 420, 424, 428, 432, 436, 440, 521, 525, 529, 533, 563, 567).
         // 1x AssertFailedException: "multiple memories" (imported + defined) not yet rejected — validation gap (489).
         var skips = new HashSet<uint>
         {
-            312, 420, 424, 428, 432, 436, 440, 489, 521, 525, 529, 533, 563, 567
+            489
         };
         SpecTestRunner.Run(DataPath("imports"), "imports.json", skips.Contains);
     }
@@ -272,11 +261,9 @@ public class SpecTests
     {
         // 3x AssertFailedException: a registered module's exported globals aren't exposed as gettable members,
         //    so the harness can't look them up (68, 75, 81).
-        // 2x AssertFailedException: "incompatible import type" assert_unlinkable not rejected — no import type-check (87, 117).
-        // 1x AssertFailedException: Common Language Runtime detected an invalid program (241).
         var skips = new HashSet<uint>
         {
-            68, 75, 81, 87, 117, 241
+            68, 75, 81
         };
         SpecTestRunner.Run(DataPath("linking"), "linking.json", skips.Contains);
     }
