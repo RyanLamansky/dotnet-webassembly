@@ -64,6 +64,7 @@ Target frameworks:
   Honor nullability; don't paper over it with `!` unless there's a real invariant.
 - **Public API requires XML doc comments** (`GenerateDocumentationFile`).
   Every public type/member needs `///` docs, matching the existing terse style (see any file in `Instructions/`).
+  Completeness is enforced, if some params are documented, all must be.
 - Code style (`.editorconfig`): file-scoped namespaces, `var` preferred, expression-bodied members preferred, explicit accessibility modifiers, pattern matching preferred.
   C# 14 / `LangVersion=14.0`.
 - The assembly is strong-name signed (`WebAssembly.snk`); `InternalsVisibleTo` exposes internals to the test project, so tests can and do reach `internal` members.
@@ -89,13 +90,15 @@ Stack validation is mandatory and the spec tests will catch mismatches.
 
 ## Spec tests
 
-`WebAssembly.Tests/Runtime/SpecTests.cs` is **hand-curated**, one `[TestMethod]` per spec category, each calling `SpecTestRunner.Run(...)` with a set of per-line `skips`.
-Each skip has a comment explaining *why* a line is skipped (a known limitation or an unimplemented assert harness).
-A category with any per-line skips ends as Inconclusive (shown as "Skipped"); a category with none runs fully green.
-When you fix a limitation, remove the now-passing skips — and re-check the whole set, since one fix often clears many stale skips at once.
+`WebAssembly.Tests/Runtime/SpecTests.cs` is **hand-curated**, one `[TestMethod]` per spec category, each calling `SpecTestRunner.Run(...)` with optional per-line predicates.
+Each carries a comment explaining *why* a line is excluded.
+A line falls into one of two buckets:
 
-Scenarios that can *never* pass under the .NET execution model (not a library limitation) are auto-skipped at the top of the `SpecTestRunner` command loop, recognized by command *shape* rather than line number, so they stay out of the hand-curated lists and don't trip the Inconclusive signal.
-The only case today is `assert_exhaustion` "call stack exhausted", which requires an uncatchable `StackOverflowException` that would tear down the test host.
+- `skip` — a **deferral**: a fixable limitation or an unimplemented assert harness. A category with any `skip` line ends Inconclusive (shown as "Skipped"), signalling work that remains. When you fix the limitation, remove the now-passing skips — and re-check the whole set, since one fix often clears many stale skips at once.
+- `unsupported` — **intentional avoidance**: a scenario that can't reasonably pass under the .NET execution model and isn't expected to (e.g. the JIT folding `x±0` / `x*1` so a signaling NaN is never quieted, in `float_exprs`). These are skipped like `skip` lines but do **not** make the category Inconclusive, because nothing is pending; the category stays green.
+
+Scenarios that can *never* pass under the .NET execution model are also auto-skipped at the top of the `SpecTestRunner` command loop, recognized by command *shape* rather than line number — the shape-based counterpart to `unsupported`, for cases identifiable without a line list, so they stay out of the hand-curated lists and don't trip the Inconclusive signal.
+The only such case today is `assert_exhaustion` "call stack exhausted", which requires an uncatchable `StackOverflowException` that would tear down the test host.
 There are no whole-category `[Ignore]`s anymore — every category runs.
 
 `SpecTestData/` is **generated** by `Tools/RefreshSpecTests`.

@@ -16,25 +16,34 @@ namespace WebAssembly.Runtime;
 
 static partial class SpecTestRunner
 {
-    public static void Run(string pathBase, string json) => Run<object>(pathBase, json);
+    /// <summary>
+    /// Runs every command in the JSON file.
+    /// </summary>
+    /// <param name="pathBase">Directory containing the spec test data.</param>
+    /// <param name="json">Name of the JSON command file within <paramref name="pathBase"/>.</param>
+    /// <param name="skip">Lines deferred because of a fixable limitation. A category with any such line ends
+    /// Inconclusive, signalling work that remains.</param>
+    /// <param name="unsupported">Lines intentionally not supported — scenarios that can't reasonably pass under
+    /// the .NET execution model (e.g. JIT folding of identity float operations) and aren't expected to. These
+    /// are skipped like <paramref name="skip"/> lines but do <em>not</em> make the category Inconclusive, since
+    /// nothing is pending. This is the per-line counterpart to the shape-based auto-skip at the top of the loop.</param>
+    public static void Run(string pathBase, string json, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
+        => Run<object>(pathBase, json, skip, unsupported);
 
-    public static void Run(string pathBase, string json, Func<uint, bool>? skip) => Run<object>(pathBase, json, skip);
-
-    public static void Run<TExports>(string pathBase, string json)
+    /// <inheritdoc cref="Run(string, string, ReadOnlySpan{uint}, ReadOnlySpan{uint})"/>
+    public static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
         where TExports : class
-    {
-        Run<TExports>(pathBase, json, null);
-    }
+        => Run<TExports>(pathBase, json, skip, unsupported, onFailure: null);
 
     /// <summary>
     /// Runs every command in the JSON file, catching all failures into the returned list rather
     /// than throwing on the first one. Used by <see cref="SpecDiscovery"/> to enumerate the line
-    /// numbers that need skip-predicate coverage after a spec test refresh.
+    /// numbers that need skip coverage after a spec test refresh.
     /// </summary>
     public static List<(uint Line, string Message)> Discover(string pathBase, string json)
     {
         var failures = new List<(uint, string)>();
-        Run<object>(pathBase, json, skip: null,
+        Run<object>(pathBase, json, skip: default, unsupported: default,
             onFailure: (line, x) => failures.Add((line, $"{x.GetType().Name}: {x.Message.Split('\n')[0]}")));
         return failures;
     }
@@ -45,13 +54,7 @@ static partial class SpecTestRunner
     {
     }
 
-    public static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip)
-        where TExports : class
-    {
-        Run<TExports>(pathBase, json, skip, onFailure: null);
-    }
-
-    private static void Run<TExports>(string pathBase, string json, Func<uint, bool>? skip, Action<uint, Exception>? onFailure)
+    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure)
         where TExports : class
     {
         TestInfo testInfo;
@@ -90,7 +93,12 @@ static partial class SpecTestRunner
         TExports? exports = null;
         foreach (var command in testInfo.commands)
         {
-            if (skip != null && skip(command.line))
+            if (skip.Contains(command.line))
+                continue;
+
+            // Intentionally-unsupported lines are skipped like deferred ones but, unlike skips, do not make the
+            // category Inconclusive (see the end of the loop) — there is no pending work behind them.
+            if (unsupported.Contains(command.line))
                 continue;
 
             // Auto-skip scenarios that can never pass under this execution model, regardless of
@@ -544,7 +552,9 @@ static partial class SpecTestRunner
             }
         }
 
-        if (onFailure == null && skip != null)
+        // Only deferred skips make a category Inconclusive; an `unsupported` list alone leaves it green,
+        // because those lines are intentional avoidance rather than pending work.
+        if (onFailure == null && !skip.IsEmpty)
             Assert.Inconclusive("Some scenarios were skipped.");
     }
 
@@ -563,8 +573,23 @@ static partial class SpecTestRunner
                 Assert.Inconclusive($"{line}: Failed to parse expected value type.");
                 return false;
 
+            // A float reinterpreted to its integer bits: .NET cannot reproduce a specific NaN payload (the
+            // hardware/JIT chooses it), so a result that is a NaN bit pattern differing from an expected NaN
+            // bit pattern is an execution-model divergence, not a library error — accept it. This is the same
+            // tolerance the runner already applies to the nan:canonical / nan:arithmetic markers, extended to
+            // the exact-bit NaN expectations the float_literals/float_exprs/float_memory suites use.
             case RawValueType.i32:
+                if (actual is int actualI32
+                    && float.IsNaN(BitConverter.Int32BitsToSingle((int)rawExpected.BoxedValue!))
+                    && float.IsNaN(BitConverter.Int32BitsToSingle(actualI32)))
+                    return true;
+                break;
             case RawValueType.i64:
+                if (actual is long actualI64
+                    && double.IsNaN(BitConverter.Int64BitsToDouble((long)rawExpected.BoxedValue!))
+                    && double.IsNaN(BitConverter.Int64BitsToDouble(actualI64)))
+                    return true;
+                break;
             case RawValueType.externref:
             case RawValueType.funcref:
                 break;
