@@ -1,1 +1,1 @@
-(func i32.const 0 if $a else $l end $l)
+(func i32.const 0 if $a else $l end $l) 

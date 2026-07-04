@@ -1,0 +1,1 @@
+{"source_filename":"/tmp/wasm-spec-refresh/spec/test/core/gc/binary-gc.wast","commands":[{"type":"assert_malformed","line":2,"filename":"binary-gc.0.wasm","module_type":"binary","text":"malformed mutability"}]}

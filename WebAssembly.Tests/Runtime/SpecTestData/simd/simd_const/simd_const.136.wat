@@ -1,1 +1,1 @@
-(func (v128.const 0 0 0 0) drop)
+(func (v128.const) drop) 

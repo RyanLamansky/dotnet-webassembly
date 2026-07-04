@@ -1,1 +1,0 @@
-(memory $foo 1)(memory $foo 1)

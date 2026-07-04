@@ -1,1 +1,1 @@
-(import "" "" (memory $foo 1))(import "" "" (memory $foo 1))
+(memory $foo 1) (memory $foo 1) 

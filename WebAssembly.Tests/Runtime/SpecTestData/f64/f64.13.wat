@@ -1,1 +1,1 @@
-(func (result f64) (f64.const nan:canonical))
+(func (result f64) (f64.const nan:canonical)) 

@@ -1,1 +1,1 @@
-(func $foo)(func $foo)
+(func (local i32) (param i32)) 

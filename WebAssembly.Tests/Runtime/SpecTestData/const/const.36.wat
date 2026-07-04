@@ -1,1 +1,1 @@
-(func (f32.const) drop)
+(func (f32.const) drop) 

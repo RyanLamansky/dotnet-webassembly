@@ -1,1 +1,1 @@
-(func (f32.const nan:0x80_0000) drop)
+(func (f32.const nan:0x80_0000) drop) 

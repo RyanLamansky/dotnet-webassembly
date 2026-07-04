@@ -1,1 +1,1 @@
-(module (func $a (unreachable)) (func $b (unreachable)) (start $a) (start $b))
+(module (func $a (unreachable)) (func $b (unreachable)) (start $a) (start $b)) 

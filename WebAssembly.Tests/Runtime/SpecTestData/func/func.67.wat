@@ -1,1 +1,1 @@
-(func (local i32) (param i32))
+(func (nop) (local i32)) 

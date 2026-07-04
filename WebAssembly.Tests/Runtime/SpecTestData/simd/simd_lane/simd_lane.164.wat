@@ -1,1 +1,1 @@
-(func $i32x4.extract_lane-arg-empty (result i32)  (i32x4.extract_lane))
+(func $i32x4.extract_lane-arg-empty (result i32)   (i32x4.extract_lane) ) 

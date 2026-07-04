@@ -1,1 +1,0 @@
-(import "" "" (global $foo i32))(import "" "" (global $foo i32))

@@ -1,1 +1,1 @@
-(import "" "" (func $foo))(func $foo)
+(func (local i32) (result i32) (local.get 0)) 

@@ -1,1 +1,1 @@
-(func (param i32) (result i32) (if (param $x i32) (then)))
+(func (param i32) (result i32) (if (param $x i32) (then))) 

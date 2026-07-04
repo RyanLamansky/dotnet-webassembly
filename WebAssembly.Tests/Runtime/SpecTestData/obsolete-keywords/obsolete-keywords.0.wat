@@ -1,1 +1,1 @@
-(memory 1)(func (drop (current_memory)))
+(memory 1) (func (drop (current_memory))) 

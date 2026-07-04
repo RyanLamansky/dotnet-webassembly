@@ -1,1 +1,1 @@
-(global f32 (f32.const 1e1_))
+(global f32 (f32.const 1e1_)) 

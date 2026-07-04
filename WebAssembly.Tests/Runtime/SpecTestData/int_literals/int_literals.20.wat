@@ -1,1 +1,1 @@
-(global i64 (i64.const 0xff__ffff))
+(global i64 (i64.const 0xff__ffff)) 

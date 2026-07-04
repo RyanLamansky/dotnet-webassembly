@@ -1,1 +1,1 @@
-(func (i64.const) drop)
+(func (i64.const) drop) 

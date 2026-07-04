@@ -1,1 +1,0 @@
-(table $foo 1 funcref)(table $foo 1 funcref)

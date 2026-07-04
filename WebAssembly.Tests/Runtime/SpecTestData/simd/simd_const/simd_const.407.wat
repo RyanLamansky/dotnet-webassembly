@@ -1,1 +1,1 @@
-(global v128 (v128.const i64x2 0x00_ 0x00_))
+(global v128 (v128.const i64x2 0x_100000 0x_100000)) 

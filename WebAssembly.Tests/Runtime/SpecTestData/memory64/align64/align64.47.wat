@@ -1,0 +1,1 @@
+(module (memory i64 0) (func (drop (f32.load align=0 (i64.const 0))))) 

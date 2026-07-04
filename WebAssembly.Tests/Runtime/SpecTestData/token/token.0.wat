@@ -1,1 +1,1 @@
-(func (drop (i32.const0)))
+(func (drop (i32.const0))) 

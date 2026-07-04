@@ -36,6 +36,23 @@ static partial class SpecTestRunner
     }
 
     /// <summary>
+    /// Runs a whole spec category as deferred: every command is skipped and the category ends
+    /// Inconclusive. Used for WASM 3.0 feature categories whose modules cannot yet load under the
+    /// current library at all (pending Part B of the 3.0 upgrade), where an explicit per-line skip
+    /// list would just enumerate every line in the file. The <paramref name="reason"/> names the
+    /// missing feature so each call self-documents what remains.
+    /// </summary>
+    /// <param name="category">The spec category, as in <see cref="Run(string, ReadOnlySpan{uint}, ReadOnlySpan{uint})"/>.</param>
+    /// <param name="reason">The pending feature this category waits on (documentation only).</param>
+    public static void RunAllSkipped(string category, string reason)
+    {
+        _ = reason; // Documentation only; kept as a required parameter so each call states its deferral.
+        var parts = category.Split('/');
+        Run<object>(Path.Combine(["Runtime", "SpecTestData", ..parts]), parts[^1] + ".json",
+            skip: default, unsupported: default, onFailure: null, skipAll: true);
+    }
+
+    /// <summary>
     /// Runs every command in the JSON file, catching all failures into the returned list rather
     /// than throwing on the first one. Used by <see cref="SpecDiscovery"/> to enumerate the line
     /// numbers that need skip coverage after a spec test refresh.
@@ -54,7 +71,7 @@ static partial class SpecTestRunner
     {
     }
 
-    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure)
+    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure, bool skipAll = false)
         where TExports : class
     {
         TestInfo testInfo;
@@ -65,6 +82,9 @@ static partial class SpecTestRunner
 
         ObjectMethods? methodsByName = null;
         var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
+        // WASM 3.0 `module definition`s: a compiled-but-not-yet-instantiated module kept by name so
+        // one or more later `module instance` commands can instantiate it.
+        var moduleDefinitions = new Dictionary<string, InstanceCreator<TExports>>();
 
         // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
         var imports = new ImportDictionary
@@ -93,6 +113,10 @@ static partial class SpecTestRunner
         TExports? exports = null;
         foreach (var command in testInfo.commands)
         {
+            // Whole-category deferral (RunAllSkipped): skip every command without attempting it.
+            if (skipAll)
+                continue;
+
             if (skip.Contains(command.line))
                 continue;
 
@@ -125,12 +149,24 @@ static partial class SpecTestRunner
                 switch (command)
                 {
                     case ModuleCommand module:
-                        var path = Path.Combine(pathBase, module.filename);
+                        var path = Path.Combine(pathBase, module.LoadFilename);
                         var parsed = Module.ReadFromBinary(path); // Ensure the module parser can read it.
                         Assert.IsNotNull(parsed);
                         methodsByName = new ObjectMethods(exports = Compile.FromBinary<TExports>(path)(imports).Exports);
                         if (module.name != null)
                             moduleMethodsByName[module.name] = methodsByName;
+                        continue;
+                    case ModuleDefinition definition:
+                        // Compile once; instantiation is deferred to the matching module_instance commands.
+                        var defPath = Path.Combine(pathBase, definition.LoadFilename);
+                        Assert.IsNotNull(Module.ReadFromBinary(defPath)); // Ensure the module parser can read it.
+                        moduleDefinitions[definition.name] = Compile.FromBinary<TExports>(defPath);
+                        continue;
+                    case ModuleInstance instance:
+                        Assert.IsTrue(moduleDefinitions.TryGetValue(instance.module, out var creator),
+                            $"{command.line} references undefined module definition {instance.module}.");
+                        // A fresh instantiation of the shared compiled definition, keyed by instance name.
+                        moduleMethodsByName[instance.instance] = new ObjectMethods(creator!(imports).Exports);
                         continue;
                     case AssertReturn assert:
                         GetMethod(assert.action, out methodInfo, out obj);
@@ -430,6 +466,11 @@ static partial class SpecTestRunner
                         }
                     case AssertMalformed assert:
                         continue; // Not writing a WAT parser.
+                    case AssertException assert:
+                        // WASM 3.0 exception handling (Phase 6) is not implemented. Surface as a
+                        // failure so it flows through the normal per-line skip mechanism (the
+                        // exceptions/* categories are wholesale-skipped for now) rather than crashing.
+                        throw new AssertFailedException($"{command.line}: assert_exception requires exception handling (Phase 6), not yet implemented.");
                     case AssertExhaustion assert:
                         // "call stack exhausted" is the only text the spec suite emits here, and it's
                         // auto-skipped at the top of the loop (a real StackOverflowException would crash
@@ -472,11 +513,14 @@ static partial class SpecTestRunner
                                 throw new AssertFailedException($"{command.line}: {assert.text} doesn't have a test procedure set up.");
                         }
                     case Register register:
-                        Assert.IsNotNull(
-                            moduleMethodsByName[register.@as] = register.name != null ? moduleMethodsByName[register.name] : methodsByName!,
-                            $"{command.line} tried to register null as a module method source.");
-                        Assert.IsNotNull(exports);
-                        imports.AddFromExports(register.@as, exports!);
+                        // Resolve the module being registered by name (a plain module, or a 3.0
+                        // module instance — both land in moduleMethodsByName), falling back to the
+                        // most recently defined one. Register its own exports (source.Host), not the
+                        // last-compiled `exports`, so instance-based registration resolves correctly.
+                        var registerSource = register.name != null ? moduleMethodsByName[register.name] : methodsByName!;
+                        Assert.IsNotNull(registerSource, $"{command.line} tried to register null as a module method source.");
+                        moduleMethodsByName[register.@as] = registerSource;
+                        imports.AddFromExports(register.@as, registerSource.Host);
                         continue;
                     case AssertUninstantiable assert:
                         trapExpected = () =>
@@ -553,8 +597,9 @@ static partial class SpecTestRunner
         }
 
         // Only deferred skips make a category Inconclusive; an `unsupported` list alone leaves it green,
-        // because those lines are intentional avoidance rather than pending work.
-        if (onFailure == null && !skip.IsEmpty)
+        // because those lines are intentional avoidance rather than pending work. A whole-category
+        // deferral (skipAll) is Inconclusive for the same pending-work reason.
+        if (onFailure == null && (skipAll || !skip.IsEmpty))
             Assert.Inconclusive("Some scenarios were skipped.");
     }
 
@@ -675,7 +720,12 @@ static partial class SpecTestRunner
         assert_unlinkable,
         register,
         action,
-        assert_uninstantiable
+        assert_uninstantiable,
+        // WASM 3.0 script syntax: a reusable module definition plus per-instance instantiation
+        // (instance.wast and parts of memory64/), and the exceptions assert.
+        module_definition,
+        module_instance,
+        assert_exception,
     }
 
 #pragma warning disable 649
@@ -699,6 +749,9 @@ static partial class SpecTestRunner
     [JsonDerivedType(typeof(Register), typeDiscriminator: nameof(CommandType.register))]
     [JsonDerivedType(typeof(NoReturn), typeDiscriminator: nameof(CommandType.action))]
     [JsonDerivedType(typeof(AssertUninstantiable), typeDiscriminator: nameof(CommandType.assert_uninstantiable))]
+    [JsonDerivedType(typeof(ModuleDefinition), typeDiscriminator: nameof(CommandType.module_definition))]
+    [JsonDerivedType(typeof(ModuleInstance), typeDiscriminator: nameof(CommandType.module_instance))]
+    [JsonDerivedType(typeof(AssertException), typeDiscriminator: nameof(CommandType.assert_exception))]
     abstract class Command(CommandType commandType)
     {
         // [JsonIgnore] is required on .NET 10+: the JsonPolymorphic discriminator above is named
@@ -716,8 +769,38 @@ static partial class SpecTestRunner
     {
         public string name;
         public string filename;
+        // wasm-tools emits a text module as both a .wat (filename) and an assembled .wasm
+        // (binary_filename). Prefer the binary so the library — which has no WAT parser — can load it.
+        public string? binary_filename;
 
-        public override string ToString() => $"{base.ToString()}: {filename}";
+        // The loadable module path: the assembled binary when the primary is text, else the primary.
+        public string LoadFilename => binary_filename ?? filename;
+
+        public override string ToString() => $"{base.ToString()}: {LoadFilename}";
+    }
+
+    // WASM 3.0 script syntax. A `module definition` compiles a module once and stores it by name; a
+    // `module instance` instantiates a previously-defined module (InstanceCreator supports multiple
+    // instantiations of the same compiled definition). Together they back instance.wast and the
+    // multi-instance patterns in memory64/.
+    class ModuleDefinition() : Command(CommandType.module_definition)
+    {
+        public string name;
+        public string filename;
+        public string? binary_filename;
+
+        // The loadable module path: the assembled binary when the primary is text, else the primary.
+        public string LoadFilename => binary_filename ?? filename;
+
+        public override string ToString() => $"{base.ToString()}: {name} <- {LoadFilename}";
+    }
+
+    class ModuleInstance() : Command(CommandType.module_instance)
+    {
+        public string instance;
+        public string module;
+
+        public override string ToString() => $"{base.ToString()}: {instance} of {module}";
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<RawValueType>))]
@@ -733,13 +816,37 @@ static partial class SpecTestRunner
         externref = -100,
         funcref = -101,
         v128 = WebAssemblyValueType.V128,
+        // Reference types added by WASM 3.0 (typed function references, GC, exceptions). As with
+        // the 2.0 ref types above, these are deserialize-only: the categories that use them are
+        // wholesale-skipped pending Part B (Phases 5–8). Distinct negative sentinels so the
+        // polymorphic discriminator round-trips.
+        anyref = -102,
+        eqref = -103,
+        structref = -104,
+        arrayref = -105,
+        i31ref = -106,
+        exnref = -107,
+        nullref = -108,
+        nullfuncref = -109,
+        nullexternref = -110,
+        nullexnref = -111,
+        // The wasm-tools "refnull" expected value is a bare null of unspecified ref type.
+        refnull = -112,
+        // "either" is not a value type but a multi-alternative expected result (relaxed-simd): the
+        // actual result may match any one of `values`. Deserialize-only for now (Phase 7).
+        either = -113,
     }
 
-    // Custom converter that accepts both numeric-string values ("0", "4286578688", ...) and the
-    // post-2.0 inline NaN markers ("nan:canonical", "nan:arithmetic"), which replaced the older
-    // separate assert_return_canonical_nan / assert_return_arithmetic_nan command types.
-    // Map each NaN marker to a NaN bit pattern; the runner's existing equality fast-path then
-    // matches any NaN result (float.NaN.Equals(float.NaN) is true, regardless of payload).
+    // Custom converter that accepts both numeric-string values and the post-2.0 inline NaN markers
+    // ("nan:canonical", "nan:arithmetic"), which replaced the older separate
+    // assert_return_canonical_nan / assert_return_arithmetic_nan command types. Map each NaN marker
+    // to a NaN bit pattern; the runner's existing equality fast-path then matches any NaN result
+    // (float.NaN.Equals(float.NaN) is true, regardless of payload).
+    //
+    // Numeric strings arrive in two conventions: wast2json (wabt) emitted unsigned decimal
+    // ("4294967294"), wasm-tools (the 3.0-capable generator) emits signed decimal ("-2"). Accept
+    // both by parsing through the widest signed type that spans the whole unsigned range and taking
+    // the low bits: a 32-bit value spans int.MinValue..uint.MaxValue, which fits in long.
     class NanCapableUInt32Converter : JsonConverter<uint>
     {
         public override uint Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -750,7 +857,7 @@ static partial class SpecTestRunner
             {
                 "nan:canonical" => 0x7FC00000u,
                 "nan:arithmetic" => 0x7FC00001u,
-                _ => uint.Parse(s),
+                _ => unchecked((uint)long.Parse(s)),
             };
         }
         public override void Write(Utf8JsonWriter writer, uint value, JsonSerializerOptions options) => writer.WriteNumberValue(value);
@@ -766,7 +873,9 @@ static partial class SpecTestRunner
             {
                 "nan:canonical" => 0x7FF8000000000000u,
                 "nan:arithmetic" => 0x7FF8000000000001u,
-                _ => ulong.Parse(s),
+                // A signed i64 ("-2") won't fit in ulong; parse it as long and take the low 64 bits.
+                // An unsigned u64 ("18446744073709551615") exceeds long, so parse it directly.
+                _ => s.StartsWith('-') ? unchecked((ulong)long.Parse(s)) : ulong.Parse(s),
             };
         }
         public override void Write(Utf8JsonWriter writer, ulong value, JsonSerializerOptions options) => writer.WriteNumberValue(value);
@@ -787,6 +896,18 @@ static partial class SpecTestRunner
     [JsonDerivedType(typeof(ExternRefValue), typeDiscriminator: nameof(RawValueType.externref))]
     [JsonDerivedType(typeof(FuncRefValue), typeDiscriminator: nameof(RawValueType.funcref))]
     [JsonDerivedType(typeof(V128Value), typeDiscriminator: nameof(RawValueType.v128))]
+    [JsonDerivedType(typeof(AnyRefValue), typeDiscriminator: nameof(RawValueType.anyref))]
+    [JsonDerivedType(typeof(EqRefValue), typeDiscriminator: nameof(RawValueType.eqref))]
+    [JsonDerivedType(typeof(StructRefValue), typeDiscriminator: nameof(RawValueType.structref))]
+    [JsonDerivedType(typeof(ArrayRefValue), typeDiscriminator: nameof(RawValueType.arrayref))]
+    [JsonDerivedType(typeof(I31RefValue), typeDiscriminator: nameof(RawValueType.i31ref))]
+    [JsonDerivedType(typeof(ExnRefValue), typeDiscriminator: nameof(RawValueType.exnref))]
+    [JsonDerivedType(typeof(NullRefValue), typeDiscriminator: nameof(RawValueType.nullref))]
+    [JsonDerivedType(typeof(NullFuncRefValue), typeDiscriminator: nameof(RawValueType.nullfuncref))]
+    [JsonDerivedType(typeof(NullExternRefValue), typeDiscriminator: nameof(RawValueType.nullexternref))]
+    [JsonDerivedType(typeof(NullExnRefValue), typeDiscriminator: nameof(RawValueType.nullexnref))]
+    [JsonDerivedType(typeof(RefNullValue), typeDiscriminator: nameof(RawValueType.refnull))]
+    [JsonDerivedType(typeof(EitherValue), typeDiscriminator: nameof(RawValueType.either))]
     abstract class TypedValue(RawValueType valueType)
     {
         // Not inheriting TypeOnly here: the inherited `type` field would conflict with the
@@ -867,6 +988,46 @@ static partial class SpecTestRunner
         public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
+    // Reference-type values added by WASM 3.0 (typed function references, GC, exceptions). The
+    // library doesn't implement these yet, so they are deserialize-only: a bare null (no value, or
+    // value "null") boxes to null; any concrete payload throws, which the wholesale category skips
+    // (Phases 5–8) keep out of the run. One leaf class per JSON discriminator, sharing the boxing
+    // logic through this base.
+    abstract class ReferenceLikeValue(RawValueType valueType) : TypedValue(valueType)
+    {
+        public string? value;
+
+        public override object? BoxedValue => value is null or "null"
+            ? null
+            : throw new NotSupportedException($"{type} value '{value}' cannot be boxed - not implemented.");
+
+        public override string ToString() => $"{type}: {value ?? "null"}";
+    }
+
+    class AnyRefValue() : ReferenceLikeValue(RawValueType.anyref);
+    class EqRefValue() : ReferenceLikeValue(RawValueType.eqref);
+    class StructRefValue() : ReferenceLikeValue(RawValueType.structref);
+    class ArrayRefValue() : ReferenceLikeValue(RawValueType.arrayref);
+    class I31RefValue() : ReferenceLikeValue(RawValueType.i31ref);
+    class ExnRefValue() : ReferenceLikeValue(RawValueType.exnref);
+    class NullRefValue() : ReferenceLikeValue(RawValueType.nullref);
+    class NullFuncRefValue() : ReferenceLikeValue(RawValueType.nullfuncref);
+    class NullExternRefValue() : ReferenceLikeValue(RawValueType.nullexternref);
+    class NullExnRefValue() : ReferenceLikeValue(RawValueType.nullexnref);
+    class RefNullValue() : ReferenceLikeValue(RawValueType.refnull);
+
+    // Multi-alternative expected result (relaxed-simd): the actual result is a match if it equals
+    // any one of `values`. Deserialize-only for now; comparison support lands with Phase 7.
+    class EitherValue() : TypedValue(RawValueType.either)
+    {
+        public TypedValue[]? values;
+
+        public override object? BoxedValue =>
+            throw new NotSupportedException("'either' expected results are not yet supported (Phase 7).");
+
+        public override string ToString() => $"either[{string.Join(',', (IEnumerable<TypedValue>?)values ?? [])}]";
+    }
+
     // SIMD v128 value (WASM 2.0). The spec data expresses a v128 as a lane_type plus an array of
     // per-lane integer/NaN strings; we pack those into the 16 bytes of a Vector128<byte>, which is
     // how the runtime represents v128 on the test target frameworks (net5+).
@@ -883,7 +1044,10 @@ static partial class SpecTestRunner
         private ulong ParseLane(string s)
         {
             if (!s.StartsWith("nan:", StringComparison.Ordinal))
-                return ulong.Parse(s);
+                // Lane values follow the same signed/unsigned split as scalar ints: wasm-tools emits
+                // signed decimal ("-1" for an all-ones lane), wast2json emitted unsigned. A signed
+                // i64 lane won't fit ulong, so parse it as long and take the low bits.
+                return s.StartsWith('-') ? unchecked((ulong)long.Parse(s)) : ulong.Parse(s);
             return lane_type == "f64" ? 0x7FF8000000000000UL : 0x7FC00000UL;
         }
 
@@ -1084,6 +1248,11 @@ static partial class SpecTestRunner
     {
         public string text;
     }
+
+    // WASM 3.0 exception handling: the action is expected to throw a WASM exception carrying the
+    // named tag. Deserialize-only for now — implementation lands with Phase 6, so the runner defers
+    // these through the normal skip mechanism (see the switch handler).
+    class AssertException() : AssertCommand(CommandType.assert_exception);
 
     class AssertUnlinkable() : InvalidCommand(CommandType.assert_unlinkable);
 

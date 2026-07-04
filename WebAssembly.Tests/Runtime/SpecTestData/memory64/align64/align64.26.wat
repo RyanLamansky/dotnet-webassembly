@@ -1,0 +1,1 @@
+(module (memory i64 0) (func (drop (i32.load8_u align=7 (i64.const 0))))) 

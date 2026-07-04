@@ -1,1 +1,1 @@
-(func (result i32) (param i32) (local.get 0))
+(func (nop) (result i32)) 

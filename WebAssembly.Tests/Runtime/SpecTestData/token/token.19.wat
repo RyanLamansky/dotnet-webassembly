@@ -1,1 +1,1 @@
-(func (block $l (i32.const 0) (br_table 0$l)))
+(func (block $l (i32.const 0) (br_table 0$l))) 

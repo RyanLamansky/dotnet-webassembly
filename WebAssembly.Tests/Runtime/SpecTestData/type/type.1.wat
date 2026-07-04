@@ -1,1 +1,1 @@
-(type (func (result i32) (param i32)))
+(type (func (result i32) (param i32))) 

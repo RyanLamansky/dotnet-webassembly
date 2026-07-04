@@ -1,1 +1,1 @@
-(memory 1) (func (drop (i16x8.load16x4_s (i32.const 0))))
+(memory 1) (func (drop (i16x8.load16x4_s (i32.const 0)))) 

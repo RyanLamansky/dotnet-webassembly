@@ -1,1 +1,1 @@
-(type $sig (func (param i32) (result i32)))(func (i32.const 0) (block (type $sig) (param i32) (drop)) (unreachable))
+(type $sig (func (param i32) (result i32))) (func (i32.const 0) (block (type $sig) (param i32) (drop)) (unreachable)) 

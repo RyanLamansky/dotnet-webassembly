@@ -1,1 +1,1 @@
-(memory 1) (func (result v128) (v128.load32x2_u align=-1 (i32.const 0)))
+(memory 1) (func (result v128) (v128.load32x2_u align=-1 (i32.const 0))) 

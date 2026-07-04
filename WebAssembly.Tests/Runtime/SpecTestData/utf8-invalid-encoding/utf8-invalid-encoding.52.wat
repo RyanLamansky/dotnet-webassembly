@@ -1,1 +1,1 @@
-(func (export "\ec\80\fd"))
+(func (export "\ec\80\fd")) 

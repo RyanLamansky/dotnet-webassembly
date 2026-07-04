@@ -1,1 +1,1 @@
-(func $f32x4.replace_lane-arg-empty (result v128)  (f32x4.replace_lane))
+(func $f32x4.replace_lane-arg-empty (result v128)   (f32x4.replace_lane) ) 

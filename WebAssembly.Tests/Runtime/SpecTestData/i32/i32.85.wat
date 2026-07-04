@@ -1,1 +1,1 @@
-(func (result i32) (i32.const nan:canonical))
+(func (result i32) (i32.const nan:canonical)) 

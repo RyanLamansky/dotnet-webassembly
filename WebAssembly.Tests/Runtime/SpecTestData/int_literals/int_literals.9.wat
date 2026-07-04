@@ -1,1 +1,1 @@
-(global i32 (i32.const 0x00_))
+(global i32 (i32.const 0x00_)) 

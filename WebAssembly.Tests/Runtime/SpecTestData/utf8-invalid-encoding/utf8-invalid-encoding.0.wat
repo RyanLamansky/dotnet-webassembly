@@ -1,1 +1,1 @@
-(func (export "\00\00\fe\ff"))
+(func (export "\00\00\fe\ff")) 

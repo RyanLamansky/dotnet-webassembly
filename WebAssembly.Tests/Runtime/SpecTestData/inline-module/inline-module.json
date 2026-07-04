@@ -1,3 +1,1 @@
-{"source_filename": "/tmp/wasm-spec-refresh/spec/test/core/inline-module.wast",
- "commands": [
-  {"type": "module", "line": 1, "filename": "inline-module.0.wasm"}]}
+{"source_filename":"/tmp/wasm-spec-refresh/spec/test/core/inline-module.wast","commands":[{"type":"module","line":1,"filename":"inline-module.0.wasm","module_type":"binary"}]}

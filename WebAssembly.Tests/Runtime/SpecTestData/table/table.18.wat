@@ -1,1 +1,0 @@
-(import "" "" (table $foo 1 funcref))(import "" "" (table $foo 1 funcref))

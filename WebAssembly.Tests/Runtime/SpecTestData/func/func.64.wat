@@ -1,1 +1,0 @@
-(func (nop) (local i32))
