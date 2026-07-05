@@ -46,7 +46,7 @@ public class TableFill : MiscellaneousInstruction
 
         // Stack: dst val len → (). table64: dst and len are i64; the value stays a ref.
         context.PopStackNoReturn(this.OpCode, indexType); // len
-        context.PopStackNoReturn(this.OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef); // value
+        context.PopStackNoReturn(this.OpCode, context.TableElementValType(TableIndex)); // value
         context.PopStackNoReturn(this.OpCode, indexType); // dst
 
         // IL stack at entry: [..., dst, value, len]

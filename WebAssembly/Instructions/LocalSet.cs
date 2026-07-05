@@ -40,6 +40,7 @@ public class LocalSet : VariableAccessInstruction
         if (this.Index >= context.CheckedLocals.Length)
             throw new System.InvalidOperationException($"Attempt to set local at index {this.Index} but only {context.CheckedLocals.Length} {(context.CheckedLocals.Length == 1 ? "local was" : "locals were")} defined.");
         context.PopStackNoReturn(OpCode.LocalSet, context.CheckedLocals[this.Index]);
+        context.MarkLocalInitialized(checked((int)this.Index));
 
         var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;
         if (localIndex < 0)

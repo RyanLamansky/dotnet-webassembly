@@ -32,6 +32,11 @@ public abstract class TableImport : RuntimeImport
     /// </summary>
     public bool Is64Bit { get; set; }
 
+    // Set by RuntimeImport.FromCompiledExports when this table is another compiled module's reference-typed table
+    // export: the closed structural descriptor of its element type. Null for host-supplied tables, which fall back
+    // to the coarse CLR-type check in ImportException.ValidateTable.
+    internal string? Descriptor;
+
     private protected TableImport()
     {
     }

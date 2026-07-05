@@ -57,7 +57,13 @@ public class RefFunc : Instruction, IEquatable<RefFunc>
 
     internal sealed override void Compile(CompilationContext context)
     {
-        context.Stack.Push(WebAssemblyValueType.FuncRef);
+        // ref.func produces a non-null typed reference to the function's concrete signature, (ref $sig(f)), which is
+        // a subtype of funcref. The precise type is required for e.g. (global (ref $ll) (ref.func $fac)) to validate.
+        var signatures = context.FunctionSignatures;
+        if (signatures != null && this.Index < signatures.Length)
+            context.Stack.Push(ValType.RefIndexed(false, signatures[this.Index].TypeIndex));
+        else
+            context.Stack.Push(ValType.Ref(false, WebAssemblyHeapType.Func));
 
         if (context.FunctionReferences == null)
             throw new CompilerException("ref.func: function references array not initialized.");

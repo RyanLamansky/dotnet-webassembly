@@ -23,12 +23,12 @@ public class RefIsNull : SimpleInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        // The operand must be a reference type (funcref or externref); anything else would emit a
-        // nonsensical `ceq` comparing a non-reference value against null. A null type means the value
-        // is unknown because the code is unreachable, which is accepted.
+        // The operand must be a reference type (any func/extern/any/exn-hierarchy reference); anything else would
+        // emit a nonsensical `ceq` comparing a non-reference value against null. A null type means the value is
+        // unknown because the code is unreachable, which is accepted.
         var type = context.PopStack(OpCode.RefIsNull, null);
-        if (type is not (null or WebAssemblyValueType.FuncRef or WebAssemblyValueType.ExternRef))
-            throw new StackTypeInvalidException(OpCode.RefIsNull, WebAssemblyValueType.FuncRef, type.Value);
+        if (type.HasValue && !type.Value.IsReference)
+            throw new StackTypeInvalidException(OpCode.RefIsNull, WebAssemblyValueType.FuncRef, type.Value.ToNarrow());
 
         context.Stack.Push(WebAssemblyValueType.Int32);
 

@@ -75,6 +75,7 @@ public abstract class RuntimeImport
                         if (getter.Invoke(exports, []) is not TableImport table)
                             continue; // TODO: Throw an exception for missing result.
 
+                        table.Descriptor = native.Descriptor;
                         yield return (native.Name, table);
                     }
                     continue;
@@ -111,7 +112,7 @@ public abstract class RuntimeImport
                         var getter = GetDelegate(rawGetter);
                         var setter = rawSetter != null ? GetDelegate(rawSetter) : null;
 
-                        yield return (native.Name, new GlobalImport(getter, setter));
+                        yield return (native.Name, new GlobalImport(getter, setter) { Descriptor = native.Descriptor });
                     }
                     continue;
             }

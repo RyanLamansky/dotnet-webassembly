@@ -42,6 +42,73 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
         set => this.returns = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    // Positional sidecars carrying the full WASM 3.0 reference type for parameter/return slots whose narrow entry is
+    // Reference/NullableReference. Keyed by index into Parameters/Returns; positional edits must keep these in sync.
+    private Dictionary<int, ReferenceType>? parameterRefTypes;
+    private Dictionary<int, ReferenceType>? returnRefTypes;
+
+    /// <summary>
+    /// Gets the full WASM 3.0 reference type of the parameter at <paramref name="index"/>, or null if that parameter
+    /// is not a long-form typed reference.
+    /// </summary>
+    /// <param name="index">The index into <see cref="Parameters"/>.</param>
+    public ReferenceType? GetParameterRefType(int index) =>
+        this.parameterRefTypes is { } map && map.TryGetValue(index, out var refType) ? refType : null;
+
+    /// <summary>
+    /// Sets the parameter at <paramref name="index"/> to the given long-form typed reference, updating both
+    /// <see cref="Parameters"/> and the sidecar.
+    /// </summary>
+    /// <param name="index">The index into <see cref="Parameters"/>.</param>
+    /// <param name="refType">The reference type.</param>
+    public void SetParameterRefType(int index, ReferenceType refType)
+    {
+        this.Parameters[index] = refType.ToValueType();
+        (this.parameterRefTypes ??= [])[index] = refType;
+    }
+
+    /// <summary>
+    /// Gets the full WASM 3.0 reference type of the return at <paramref name="index"/>, or null if that return is not
+    /// a long-form typed reference.
+    /// </summary>
+    /// <param name="index">The index into <see cref="Returns"/>.</param>
+    public ReferenceType? GetReturnRefType(int index) =>
+        this.returnRefTypes is { } map && map.TryGetValue(index, out var refType) ? refType : null;
+
+    /// <summary>
+    /// Sets the return at <paramref name="index"/> to the given long-form typed reference, updating both
+    /// <see cref="Returns"/> and the sidecar.
+    /// </summary>
+    /// <param name="index">The index into <see cref="Returns"/>.</param>
+    /// <param name="refType">The reference type.</param>
+    public void SetReturnRefType(int index, ReferenceType refType)
+    {
+        this.Returns[index] = refType.ToValueType();
+        (this.returnRefTypes ??= [])[index] = refType;
+    }
+
+    /// <summary>
+    /// Appends a long-form typed-reference parameter, keeping <see cref="Parameters"/> and the sidecar in sync.
+    /// </summary>
+    /// <param name="refType">The reference type.</param>
+    public void AddParameter(ReferenceType refType)
+    {
+        var parameters = this.Parameters;
+        parameters.Add(refType.ToValueType());
+        (this.parameterRefTypes ??= [])[parameters.Count - 1] = refType;
+    }
+
+    /// <summary>
+    /// Appends a long-form typed-reference return, keeping <see cref="Returns"/> and the sidecar in sync.
+    /// </summary>
+    /// <param name="refType">The reference type.</param>
+    public void AddReturn(ReferenceType refType)
+    {
+        var returns = this.Returns;
+        returns.Add(refType.ToValueType());
+        (this.returnRefTypes ??= [])[returns.Count - 1] = refType;
+    }
+
     /// <summary>
     /// Creates a new <see cref="WebAssemblyType"/> instance.
     /// </summary>
@@ -53,18 +120,29 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
     internal WebAssemblyType(Reader reader)
     {
         this.Form = (FunctionType)reader.ReadVarInt7();
+        if (this.Form != FunctionType.Function)
+            throw new ModuleLoadException($"GC composite types (form 0x{(byte)(sbyte)this.Form:X2}) are not yet supported (Phase 8).", reader.Offset);
+
         int count;
 
         count = checked((int)reader.ReadVarUInt32());
         var parameters = this.parameters = new List<WebAssemblyValueType>(count);
 
         for (var i = 0; i < count; i++)
-            parameters.Add((WebAssemblyValueType)reader.ReadVarInt7());
+        {
+            parameters.Add(ReferenceType.ReadValueType(reader, out var refType));
+            if (refType is { } r)
+                (this.parameterRefTypes ??= [])[i] = r;
+        }
 
         count = checked((int)reader.ReadVarUInt32());
         var returns = this.returns = new List<WebAssemblyValueType>(count);
         for (var i = 0; i < count; i++)
-            returns.Add((WebAssemblyValueType)reader.ReadVarInt7());
+        {
+            returns.Add(ReferenceType.ReadValueType(reader, out var refType));
+            if (refType is { } r)
+                (this.returnRefTypes ??= [])[i] = r;
+        }
     }
 
     /// <summary>
@@ -115,12 +193,20 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
         writer.WriteVar((sbyte)this.Form);
 
         writer.WriteVar((uint)parameters.Count);
-        foreach (var parameter in parameters)
-            writer.WriteVar((sbyte)parameter);
+        for (var i = 0; i < parameters.Count; i++)
+            WriteValueType(writer, parameters[i], this.parameterRefTypes, i);
 
         writer.WriteVar((uint)returns.Count);
-        foreach (var @return in returns)
-            writer.WriteVar((sbyte)@return);
+        for (var i = 0; i < returns.Count; i++)
+            WriteValueType(writer, returns[i], this.returnRefTypes, i);
+    }
+
+    private static void WriteValueType(Writer writer, WebAssemblyValueType valueType, Dictionary<int, ReferenceType>? refTypes, int index)
+    {
+        if (refTypes is { } map && map.TryGetValue(index, out var refType))
+            refType.WriteTo(writer);
+        else
+            writer.WriteVar((sbyte)valueType);
     }
 
     /// <summary>
@@ -129,7 +215,39 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
     {
-        return (int)this.Form ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v));
+        return (int)this.Form
+            ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v))
+            ^ RefSidecarHash(this.parameterRefTypes)
+            ^ RefSidecarHash(this.returnRefTypes);
+    }
+
+    private static int RefSidecarHash(Dictionary<int, ReferenceType>? map)
+    {
+        if (map == null)
+            return 0;
+
+        var result = 0;
+        foreach (var kv in map)
+            result ^= System.HashCode.Combine(kv.Key, kv.Value);
+        return result;
+    }
+
+    private static bool RefSidecarEquals(Dictionary<int, ReferenceType>? a, Dictionary<int, ReferenceType>? b)
+    {
+        var countA = a?.Count ?? 0;
+        var countB = b?.Count ?? 0;
+        if (countA != countB)
+            return false;
+        if (countA == 0)
+            return true;
+
+        foreach (var kv in a!)
+        {
+            if (!b!.TryGetValue(kv.Key, out var value) || value != kv.Value)
+                return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -181,6 +299,7 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
                 return false;
         }
 
-        return true;
+        return RefSidecarEquals(this.parameterRefTypes, other.parameterRefTypes)
+            && RefSidecarEquals(this.returnRefTypes, other.returnRefTypes);
     }
 }

@@ -58,9 +58,10 @@ public class TableInit : MiscellaneousInstruction
             throw new ModuleLoadException($"table.init: element segment {SegmentIndex} does not exist.", 0);
 
         var (table, isFunc) = context.ResolveTable(TableIndex);
-        var tableElemType = isFunc ? ElementType.FunctionReference : ElementType.ExternRef;
+        var tableElemType = context.TableElementValType(TableIndex);
 
-        if (segElemType != tableElemType)
+        // The segment's element type must be a subtype of the table's element type (WebAssembly 3.0 subtyping).
+        if (!context.IsSubtype(segElemType, tableElemType))
             throw new ModuleLoadException($"table.init: type mismatch between element segment {SegmentIndex} ({segElemType}) and table {TableIndex} ({tableElemType}).", 0);
 
         var len = context.DeclareLocal(typeof(uint));

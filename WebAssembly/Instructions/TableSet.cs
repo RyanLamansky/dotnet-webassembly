@@ -42,8 +42,9 @@ public class TableSet : Instruction
         var (table, isFunc) = context.ResolveTable(TableIndex);
         var is64 = context.IsTable64(TableIndex);
 
-        // Tracked stack: [..., index, ref] — pop ref (top) then index.
-        context.PopStackNoReturn(OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef);
+        // Tracked stack: [..., index, ref] — pop ref (top) then index. The stored value must be a subtype of
+        // the table's element type.
+        context.PopStackNoReturn(OpCode, context.TableElementValType(TableIndex));
         context.PopStackNoReturn(OpCode, context.TableIndexType(TableIndex));
 
         // IL eval stack at entry: [..., index, ref]  (ref is on top). table64 uses the u64 Set64 helper, which

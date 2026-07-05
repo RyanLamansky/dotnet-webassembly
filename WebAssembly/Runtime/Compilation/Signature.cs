@@ -7,9 +7,9 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
 {
     public readonly uint TypeIndex;
     public readonly Type[] ParameterTypes;
-    public readonly WebAssemblyValueType[] RawParameterTypes;
+    public readonly ValType[] RawParameterTypes;
     public readonly Type[] ReturnTypes;
-    public readonly WebAssemblyValueType[] RawReturnTypes;
+    public readonly ValType[] RawReturnTypes;
 
     private static readonly RegeneratingWeakReference<Signature> empty = new(() => new Signature());
 
@@ -29,23 +29,42 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
         this.RawReturnTypes = [returnType];
     }
 
+    // A synthetic single-result signature used for an inline typed-reference block result
+    // (`block (result (ref null? ht))`), routing it through the same multi-value block machinery.
+    public Signature(ValType returnType, CompilerConfiguration configuration)
+        : this()
+    {
+        this.ReturnTypes = [configuration.NeutralizeType(returnType.ToSystemType())];
+        this.RawReturnTypes = [returnType];
+    }
+
     public Signature(Reader reader, uint typeIndex, CompilerConfiguration configuration)
     {
         this.TypeIndex = typeIndex;
 
-        reader.ReadVarInt7(); //Function Type
+        var form = reader.ReadVarInt7(); //Function Type
+        if ((FunctionType)form != FunctionType.Function)
+            throw new ModuleLoadException($"GC composite types (form 0x{(byte)form:X2}) are not yet supported (Phase 8).", reader.Offset);
 
         var parameters = this.ParameterTypes = new Type[reader.ReadVarUInt32()];
-        var rawParameters = this.RawParameterTypes = new WebAssemblyValueType[parameters.Length];
+        var rawParameters = this.RawParameterTypes = new ValType[parameters.Length];
 
         for (var i = 0; i < parameters.Length; i++)
-            parameters[i] = configuration.NeutralizeType((rawParameters[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());
+        {
+            var value = ReferenceType.ReadValueType(reader, out var refType);
+            var canonical = rawParameters[i] = ValType.FromValueType(value, refType);
+            parameters[i] = configuration.NeutralizeType(canonical.ToSystemType());
+        }
 
         var returns = this.ReturnTypes = new Type[reader.ReadVarUInt32()];
-        var rawReturns = this.RawReturnTypes = new WebAssemblyValueType[returns.Length];
+        var rawReturns = this.RawReturnTypes = new ValType[returns.Length];
 
         for (var i = 0; i < returns.Length; i++)
-            returns[i] = configuration.NeutralizeType((rawReturns[i] = (WebAssemblyValueType)reader.ReadVarInt7()).ToSystemType());
+        {
+            var value = ReferenceType.ReadValueType(reader, out var refType);
+            var canonical = rawReturns[i] = ValType.FromValueType(value, refType);
+            returns[i] = configuration.NeutralizeType(canonical.ToSystemType());
+        }
     }
 
     public bool Equals(WebAssemblyType? other)
@@ -67,13 +86,13 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
 
         for (var i = 0; i < thisReturns.Length; i++)
         {
-            if (thisReturns[i] != otherReturns[i])
+            if (thisReturns[i].ToNarrow() != otherReturns[i])
                 return false;
         }
 
         for (var i = 0; i < thisParameters.Length; i++)
         {
-            if (thisParameters[i] != otherParameters[i])
+            if (thisParameters[i].ToNarrow() != otherParameters[i])
                 return false;
         }
 

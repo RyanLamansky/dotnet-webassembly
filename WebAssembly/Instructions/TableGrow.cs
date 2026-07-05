@@ -46,7 +46,7 @@ public class TableGrow : MiscellaneousInstruction
 
         // Stack: initValue delta → old-size. table64: delta and the returned old size (or -1) are i64.
         context.PopStackNoReturn(this.OpCode, indexType); // delta
-        context.PopStackNoReturn(this.OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef); // initValue
+        context.PopStackNoReturn(this.OpCode, context.TableElementValType(TableIndex)); // initValue
         context.Stack.Push(indexType);
 
         // IL stack at entry: [..., initValue, delta]

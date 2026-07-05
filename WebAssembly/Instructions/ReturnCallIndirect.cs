@@ -99,17 +99,19 @@ public class ReturnCallIndirect : Instruction, IEquatable<ReturnCallIndirect>
         var paramTypes = signature.RawParameterTypes;
         var returnTypes = signature.RawReturnTypes;
 
-        // The callee's results must exactly match the enclosing function's results (the tail call returns to the
+        // The callee's results must be subtypes of the enclosing function's results (the tail call returns to the
         // caller's caller). A mismatch is a "type mismatch" validation error.
-        if (!returnTypes.SequenceEqual(context.CheckedSignature.RawReturnTypes))
+        var enclosingReturns = context.CheckedSignature.RawReturnTypes;
+        if (returnTypes.Length != enclosingReturns.Length
+            || returnTypes.Where((t, i) => !context.IsSubtype(t, enclosingReturns[i])).Any())
             throw new ModuleLoadException(
-                $"return_call_indirect target result types [{string.Join(", ", returnTypes)}] do not match the enclosing function's results [{string.Join(", ", context.CheckedSignature.RawReturnTypes)}].",
+                $"return_call_indirect target result types [{string.Join(", ", returnTypes)}] do not match the enclosing function's results [{string.Join(", ", enclosingReturns)}].",
                 0);
 
         var stackCountBefore = context.Stack.Count;
 
         // The table index (i32) sits on top of the arguments.
-        context.PopStackNoReturn(this.OpCode, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(WebAssemblyValueType.Int32), paramTypes.Length + 1);
+        context.PopStackNoReturn(this.OpCode, paramTypes.Select(t => (ValType?)t).Reverse().Prepend(WebAssemblyValueType.Int32), paramTypes.Length + 1);
 
         var parms = signature.ParameterTypes;
         var returns = signature.ReturnTypes;
@@ -126,7 +128,7 @@ public class ReturnCallIndirect : Instruction, IEquatable<ReturnCallIndirect>
 
         // Spill the arguments and the table index; discard any operand-stack values beneath them (an IL tail-call
         // requires exactly the call arguments on the stack). Operand order is [args..., index], index on top.
-        var operandTypes = new WebAssemblyValueType[paramTypes.Length + 1];
+        var operandTypes = new ValType[paramTypes.Length + 1];
         Array.Copy(paramTypes, operandTypes, paramTypes.Length);
         operandTypes[paramTypes.Length] = WebAssemblyValueType.Int32;
         var locals = TailCallHelper.SpillOperands(context, operandTypes, stackCountBefore);

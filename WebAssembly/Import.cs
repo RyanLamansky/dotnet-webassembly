@@ -276,10 +276,28 @@ public abstract class Import
         /// </summary>
         public sealed override ExternalKind Kind => ExternalKind.Global;
 
+        private WebAssemblyValueType contentType;
+        private ReferenceType? contentRefType;
+
         /// <summary>
-        /// Type of the value.
+        /// Type of the value. For a WASM 3.0 long-form typed reference this reports
+        /// <see cref="WebAssemblyValueType.Reference"/>/<see cref="WebAssemblyValueType.NullableReference"/>;
+        /// the heap-type detail is available via <see cref="ContentRefType"/>. Setting this clears <see cref="ContentRefType"/>.
         /// </summary>
-        public WebAssemblyValueType ContentType { get; set; }
+        public WebAssemblyValueType ContentType
+        {
+            get => this.contentRefType?.ToValueType() ?? this.contentType;
+            set { this.contentType = value; this.contentRefType = null; }
+        }
+
+        /// <summary>
+        /// The full WASM 3.0 reference type when the content type is a long-form typed reference, otherwise null.
+        /// </summary>
+        public ReferenceType? ContentRefType
+        {
+            get => this.contentRefType;
+            set => this.contentRefType = value;
+        }
 
         /// <summary>
         /// When true, the value can be changed by running code.
@@ -308,7 +326,7 @@ public abstract class Import
 
         internal Global(Reader reader)
         {
-            this.ContentType = (WebAssemblyValueType)reader.ReadVarInt7();
+            this.contentType = ReferenceType.ReadValueType(reader, out this.contentRefType);
             this.IsMutable = reader.ReadVarUInt1() == 1;
         }
 
@@ -322,7 +340,10 @@ public abstract class Import
         {
             base.WriteTo(writer);
             writer.Write((byte)ExternalKind.Global);
-            writer.WriteVar((sbyte)this.ContentType);
+            if (this.contentRefType is { } rt)
+                rt.WriteTo(writer);
+            else
+                writer.WriteVar((sbyte)this.contentType);
             writer.WriteVar(this.IsMutable ? 1u : 0);
         }
     }

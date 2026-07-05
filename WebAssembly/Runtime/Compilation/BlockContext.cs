@@ -10,6 +10,13 @@ internal sealed class BlockContext
     public readonly int InitialStackSize;
     public bool IsUnreachable { get; private set; }
 
+    /// <summary>
+    /// The height of <see cref="CompilationContext.InitLog"/> when this block was entered. The block's <c>end</c>
+    /// (and, for an <c>if</c>, its <c>else</c>) rolls local-initialization back to this height — a local assigned
+    /// inside a block does not stay assigned after the block, per WebAssembly 3.0 definite-assignment validation.
+    /// </summary>
+    public int InitLogHeight;
+
     // Result ferrying uses exactly one of the fields below per block: ResultLocal for an inline single-value block,
     // ResultLocals for a multi-value (type-index) block, and neither for a void block. They are never both set.
 

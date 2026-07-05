@@ -35,6 +35,10 @@ public class End : SimpleInstruction
 
         var blockContext = context.BlockContexts[context.Depth.Count];
 
+        // Local initializations performed inside this block do not survive its end (WebAssembly 3.0
+        // definite-assignment): roll back to the state recorded when the block was entered.
+        context.RollbackInit(blockContext.InitLogHeight);
+
         if (blockContext.BlockSignature != null)
         {
             // Multi-value block: validate the results and ferry them through result locals so the end label is

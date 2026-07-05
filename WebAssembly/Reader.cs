@@ -124,6 +124,20 @@ internal sealed class Reader(Stream input) : IDisposable
         return result;
     }
 
+    /// <summary>
+    /// Reads a heap type encoded as an s33 (following a <c>0x63</c>/<c>0x64</c> reference-type lead byte, or as the
+    /// immediate of <c>ref.null</c>). A non-negative value is a concrete type index; a negative value is an abstract
+    /// heap type. Returns the raw signed value; the caller distinguishes and range-checks it.
+    /// </summary>
+    public long ReadHeapTypeS33()
+    {
+        var initialOffset = this.Offset;
+        var value = this.ReadVarInt64();
+        if (value > uint.MaxValue)
+            throw new ModuleLoadException($"Heap type index {value} exceeds the 32-bit range.", initialOffset);
+        return value;
+    }
+
     public float ReadFloat32()
     {
         var result = CheckedReader.ReadSingle();

@@ -101,6 +101,18 @@ public enum OpCode : byte
     ReturnCallIndirect = 0x13,
 
     /// <summary>
+    /// Call a function through a typed function reference on the stack (WASM 3.0 typed function references).
+    /// </summary>
+    [OpCodeCharacteristics("call_ref")]
+    CallRef = 0x14,
+
+    /// <summary>
+    /// Tail-call a function through a typed function reference, replacing the current call frame (WASM 3.0).
+    /// </summary>
+    [OpCodeCharacteristics("return_call_ref")]
+    ReturnCallRef = 0x15,
+
+    /// <summary>
     /// A unary operator that discards the value of its operand.
     /// </summary>
     [OpCodeCharacteristics("drop")]
@@ -1119,6 +1131,24 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("ref.func")]
     RefFunc = 0xd2,
+
+    /// <summary>
+    /// (ref null ht){ref ht}; Convert a nullable reference to a non-null one, trapping on null (WASM 3.0).
+    /// </summary>
+    [OpCodeCharacteristics("ref.as_non_null")]
+    RefAsNonNull = 0xd4,
+
+    /// <summary>
+    /// (ref null ht){}; Branch to a label if the reference is null, otherwise continue with it (WASM 3.0).
+    /// </summary>
+    [OpCodeCharacteristics("br_on_null")]
+    BranchOnNull = 0xd5,
+
+    /// <summary>
+    /// (ref null ht){ref ht}; Branch to a label carrying the reference if it is non-null, otherwise continue (WASM 3.0).
+    /// </summary>
+    [OpCodeCharacteristics("br_on_non_null")]
+    BranchOnNonNull = 0xd6,
 
     /// <summary>
     /// Prefix byte for miscellaneous operations.

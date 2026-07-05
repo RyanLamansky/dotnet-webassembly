@@ -305,6 +305,9 @@ static partial class SpecTestRunner
                             // compiler rejects it with a ModuleLoadException naming the page limit.
                             case "memory size":
                             case "unknown label":
+                            // A local.get of a non-nullable reference local that is not definitely assigned at that
+                            // point (WebAssembly 3.0 definite-assignment); the compiler rejects it at validation.
+                            case "uninitialized local":
                             case "unknown type":
                             case "unknown data segment":
                             case "unknown data segment 1":
@@ -369,6 +372,13 @@ static partial class SpecTestRunner
                                 continue;
                             case "integer overflow":
                                 Assert.ThrowsExactly<OverflowException>(trapExpected, $"{command.line}");
+                                continue;
+                            // WebAssembly 3.0 typed function references: calling through a null funcref
+                            // (call_ref/return_call_ref) or ref.as_non_null on a null both surface as a
+                            // .NET NullReferenceException from the delegate invoke / explicit null check.
+                            case "null function reference":
+                            case "null reference":
+                                Assert.ThrowsExactly<NullReferenceException>(trapExpected, $"{command.line}");
                                 continue;
                             case "out of bounds memory access":
                                 try
@@ -630,6 +640,12 @@ static partial class SpecTestRunner
     // expected value type could not be parsed (an inconclusive result the caller propagates).
     static bool CompareReturnValue(TypedValue rawExpected, object? actual, uint line)
     {
+        // funcref results: the spec pins only the type, not the function identity (which is CLR-shape coarse and
+        // not representable in the JSON). "null" expects a null reference; an unspecified `(ref.func)` expects any
+        // non-null function reference (a CLR Delegate).
+        if (rawExpected is FuncRefValue funcRef)
+            return funcRef.value == "null" ? actual is null : actual is Delegate;
+
         if (Equals(rawExpected.BoxedValue, actual))
             return true;
 

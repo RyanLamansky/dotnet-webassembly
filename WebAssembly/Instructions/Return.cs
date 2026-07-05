@@ -56,7 +56,7 @@ public class Return : SimpleInstruction
         else
         {
             // Validate (last return is on top, so check in reverse) and pack the results into a ValueTuple.
-            context.PopStackNoReturn(OpCode.Return, returns.Cast<WebAssemblyValueType?>().Reverse(), returnsLength);
+            context.PopStackNoReturn(OpCode.Return, returns.Select(t => (ValType?)t).Reverse(), returnsLength);
 
             var clrTypes = context.CheckedSignature.ReturnTypes;
             MultiValueHelper.EmitTuplePack(context, clrTypes);

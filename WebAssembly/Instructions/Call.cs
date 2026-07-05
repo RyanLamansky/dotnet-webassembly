@@ -85,7 +85,7 @@ public class Call : Instruction, IEquatable<Call>
 
         var stack = context.Stack;
 
-        context.PopStackNoReturn(this.OpCode, paramTypes.Cast<WebAssemblyValueType?>().Reverse(), paramTypes.Length);
+        context.PopStackNoReturn(this.OpCode, paramTypes.Select(t => (ValType?)t).Reverse(), paramTypes.Length);
 
         for (var i = 0; i < returnTypes.Length; i++)
             stack.Push(returnTypes[i]);

@@ -43,7 +43,7 @@ public class TableGet : Instruction
         var is64 = context.IsTable64(TableIndex);
 
         context.PopStackNoReturn(OpCode, context.TableIndexType(TableIndex));
-        context.Stack.Push(isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef);
+        context.Stack.Push(context.TableElementValType(TableIndex));
 
         // IL stack on entry: [..., index]  — store it, load table, reload index, call the indexer getter. table64
         // uses the u64 Get64 helper, which traps for an index beyond the table (never wrapping a huge i64).

@@ -34,6 +34,34 @@ public enum BlockType : sbyte
     /// </summary>
     ExternRef = -0x11,
     /// <summary>
+    /// A non-null typed reference (WASM 3.0), encoded as 0x64 followed by an s33 heap type.
+    /// </summary>
+    Reference = -0x1C,
+    /// <summary>
+    /// A nullable typed reference (WASM 3.0), encoded as 0x63 followed by an s33 heap type.
+    /// </summary>
+    NullableReference = -0x1D,
+    /// <summary>A nullable reference to the top of the internal hierarchy (anyref, WASM 3.0); encoded as 0x6E.</summary>
+    AnyRef = -0x12,
+    /// <summary>A nullable reference comparable with <c>ref.eq</c> (eqref, WASM 3.0); encoded as 0x6D.</summary>
+    EqRef = -0x13,
+    /// <summary>A nullable unboxed 31-bit integer reference (i31ref, WASM 3.0); encoded as 0x6C.</summary>
+    I31Ref = -0x14,
+    /// <summary>A nullable structure reference (structref, WASM 3.0); encoded as 0x6B.</summary>
+    StructRef = -0x15,
+    /// <summary>A nullable array reference (arrayref, WASM 3.0); encoded as 0x6A.</summary>
+    ArrayRef = -0x16,
+    /// <summary>A nullable reference to the bottom of the internal hierarchy (nullref, WASM 3.0); encoded as 0x71.</summary>
+    NoneRef = -0x0F,
+    /// <summary>A nullable reference to the bottom of the function hierarchy (nullfuncref, WASM 3.0); encoded as 0x73.</summary>
+    NoFuncRef = -0x0D,
+    /// <summary>A nullable reference to the bottom of the external hierarchy (nullexternref, WASM 3.0); encoded as 0x72.</summary>
+    NoExternRef = -0x0E,
+    /// <summary>A nullable exception reference (exnref, WASM 3.0); encoded as 0x69.</summary>
+    ExnRef = -0x17,
+    /// <summary>A nullable reference to the bottom of the exception hierarchy (nullexnref, WASM 3.0); encoded as 0x74.</summary>
+    NoExnRef = -0x0C,
+    /// <summary>
     /// Pseudo type for representing an empty block type.
     /// </summary>
     Empty = -0x40,

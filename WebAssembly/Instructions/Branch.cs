@@ -82,45 +82,7 @@ public class Branch : Instruction
 
         if (!context.IsUnreachable)
         {
-            if (branchTypes.Length > 0)
-            {
-                BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes, targetBlockContext);
-
-                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize - branchTypes.Length;
-
-                if (!isLoop)
-                {
-                    // Stash the results into the target's result locals (reloaded at its end label), then discard any
-                    // intermediates left beneath them.
-                    targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);
-                    BranchHelper.StashResults(context, targetBlockContext.ResultLocals);
-                    BranchHelper.DiscardIntermediates(context, discardCount);
-                }
-                else if (discardCount > 0)
-                {
-                    // Loop back-edge with intermediates beneath the parameters: temporarily stash the parameters so
-                    // the intermediates can be discarded, then restore the parameters as the back-edge values.
-                    var temporaries = context.DeclareResultLocals(branchTypes);
-                    BranchHelper.StashResults(context, temporaries);
-                    BranchHelper.DiscardIntermediates(context, discardCount);
-                    BranchHelper.ReloadResults(context, temporaries);
-                }
-                // else: loop back-edge with the parameters already in place — branch directly.
-            }
-            else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
-            {
-                context.ValidateStack(this.OpCode, expectedType);
-                context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(checked((int)this.Index), expectedType));
-
-                var intermediateCount = context.Stack.Count - targetBlockContext.InitialStackSize - 1;
-                BranchHelper.DiscardIntermediates(context, intermediateCount);
-            }
-            else
-            {
-                // Void target: discard every value pushed inside this block before branching.
-                var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize;
-                BranchHelper.DiscardIntermediates(context, discardCount);
-            }
+            BranchHelper.EmitReachableBranch(context, this.OpCode, checked((int)this.Index), blockType, targetBlockContext, isLoop, branchTypes);
         }
         else
         {

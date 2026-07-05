@@ -61,9 +61,12 @@ public class TableCopy : MiscellaneousInstruction
         context.PopStackNoReturn(this.OpCode, dstType); // dst
 
         var (dstTable, dstIsFunc) = context.ResolveTable(DestinationTableIndex);
-        var (srcTable, srcIsFunc) = context.ResolveTable(SourceTableIndex);
-        if (dstIsFunc != srcIsFunc)
-            throw new ModuleLoadException("table.copy: source and destination tables have different element types.", 0);
+        var (srcTable, _) = context.ResolveTable(SourceTableIndex);
+
+        // The source element type must be a subtype of the destination element type (WebAssembly 3.0 subtyping);
+        // this also guarantees both tables share the same runtime backing (func vs. external).
+        if (!context.IsSubtype(context.TableElementValType(SourceTableIndex), context.TableElementValType(DestinationTableIndex)))
+            throw new ModuleLoadException("table.copy: source table element type is not a subtype of the destination table element type.", 0);
 
         var isFunc = dstIsFunc;
 

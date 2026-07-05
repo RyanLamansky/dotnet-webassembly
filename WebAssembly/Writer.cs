@@ -78,6 +78,18 @@ internal sealed class Writer : IDisposable
         } while (hasMore);
     }
 
+    /// <summary>
+    /// Writes a heap type as an s33: a concrete <paramref name="typeIndex"/> as its non-negative index, or an abstract
+    /// <paramref name="heapType"/> as its negative s7 value. Exactly one argument must be non-null.
+    /// </summary>
+    public void WriteHeapType(WebAssemblyHeapType? heapType, uint? typeIndex)
+    {
+        if (heapType is { } ht)
+            this.WriteVar((long)(sbyte)ht);
+        else
+            this.WriteVar((long)typeIndex!.Value);
+    }
+
     public void Write(float value) => CheckedWriter.Write(value);
 
     public void Write(double value) => CheckedWriter.Write(value);

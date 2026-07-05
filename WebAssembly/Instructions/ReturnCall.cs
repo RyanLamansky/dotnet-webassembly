@@ -85,15 +85,17 @@ public class ReturnCall : Instruction, IEquatable<ReturnCall>
         var paramTypes = signature.RawParameterTypes;
         var returnTypes = signature.RawReturnTypes;
 
-        // The callee's results must exactly match the enclosing function's results, since the tail call returns
+        // The callee's results must be subtypes of the enclosing function's results, since the tail call returns
         // straight to the caller's caller. A mismatch is a "type mismatch" validation error.
-        if (!returnTypes.SequenceEqual(context.CheckedSignature.RawReturnTypes))
+        var enclosingReturns = context.CheckedSignature.RawReturnTypes;
+        if (returnTypes.Length != enclosingReturns.Length
+            || returnTypes.Where((t, i) => !context.IsSubtype(t, enclosingReturns[i])).Any())
             throw new ModuleLoadException(
-                $"return_call target result types [{string.Join(", ", returnTypes)}] do not match the enclosing function's results [{string.Join(", ", context.CheckedSignature.RawReturnTypes)}].",
+                $"return_call target result types [{string.Join(", ", returnTypes)}] do not match the enclosing function's results [{string.Join(", ", enclosingReturns)}].",
                 0);
 
         var stackCountBefore = context.Stack.Count;
-        context.PopStackNoReturn(this.OpCode, paramTypes.Cast<WebAssemblyValueType?>().Reverse(), paramTypes.Length);
+        context.PopStackNoReturn(this.OpCode, paramTypes.Select(t => (ValType?)t).Reverse(), paramTypes.Length);
 
         var target = context.CheckedMethods[this.Index];
 

@@ -21,7 +21,7 @@ internal static class TailCallHelper
     /// <param name="types">The operand types, in operand (bottom-to-top) order.</param>
     /// <param name="stackCountBefore">The evaluation-stack depth before the operands were consumed.</param>
     /// <returns>The spilled operands as locals, in operand order.</returns>
-    public static LocalBuilder[] SpillOperands(CompilationContext context, ReadOnlySpan<WebAssemblyValueType> types, int stackCountBefore)
+    public static LocalBuilder[] SpillOperands(CompilationContext context, ReadOnlySpan<ValType> types, int stackCountBefore)
     {
         var locals = new LocalBuilder[types.Length];
         for (var i = types.Length - 1; i >= 0; i--)

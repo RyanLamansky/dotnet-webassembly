@@ -173,7 +173,148 @@ public static class Compile
     private readonly struct Local(Reader reader)
     {
         public readonly uint Count = reader.ReadVarUInt32();
-        public readonly WebAssemblyValueType Type = (WebAssemblyValueType)reader.ReadVarInt7();
+        public readonly ValType Type = ReadType(reader);
+
+        // Locals can be typed references in WebAssembly 3.0, so read the full reference type (not just a varint7).
+        private static ValType ReadType(Reader reader)
+        {
+            var value = ReferenceType.ReadValueType(reader, out var refType);
+            return ValType.FromValueType(value, refType);
+        }
+    }
+
+    // A concrete-index typed reference must point at a type the module actually defines; otherwise it is the
+    // spec's "unknown type" validation failure.
+    static void ValidateTypeIndex(ValType valType, int typeCount, long offset)
+    {
+        if (valType.IsReference && valType.IsIndexed && valType.TypeIndex >= (uint)typeCount)
+            throw new ModuleLoadException($"unknown type {valType.TypeIndex}: the module defines only {typeCount} type(s).", offset);
+    }
+
+    // Interprets an already-consumed table element-type lead byte, which in WebAssembly 3.0 is any reference type
+    // (funcref/externref shorthands or a long-form typed reference). Rejects a non-reference type.
+    static ValType ReadTableElementTypeFromLead(Reader reader, sbyte lead, long offset)
+    {
+        var value = (WebAssemblyValueType)lead;
+        ReferenceType? refType = null;
+        if (value is WebAssemblyValueType.Reference or WebAssemblyValueType.NullableReference)
+            refType = ReferenceType.Parse(reader, lead);
+        var valType = ValType.FromValueType(value, refType);
+        if (!valType.IsReference)
+            throw new ModuleLoadException($"Table element type {value} is not a reference type.", offset);
+        return valType;
+    }
+
+    // Defines a table backing field, emits its construction into the instance constructor, and — for a WebAssembly
+    // 3.0 table-with-initializer — fills every slot in [0, minimum) with the evaluated constant expression.
+    static void EmitTableDefinition(
+        CompilationContext context,
+        TypeBuilder exportsBuilder,
+        ILGenerator il,
+        CompilerConfiguration configuration,
+        ref FieldBuilder? functionTable,
+        ValType elementValType,
+        ResizableLimits limits,
+        IList<Instruction>? tableInit,
+        long offset,
+        Action ensureFunctionReferences)
+    {
+        // A non-nullable element type with no initializer cannot be default-filled (there is no null to seed the
+        // slots) — the spec rejects it as a "type mismatch".
+        if (!elementValType.IsNullable && tableInit == null)
+            throw new ModuleLoadException("type mismatch: a table with a non-nullable element type requires an initializer expression.", offset);
+
+        var isFuncTable = CompilationContext.IsFunctionReference(elementValType);
+        var tableType = configuration.NeutralizeType(isFuncTable ? typeof(FunctionTable) : typeof(ExternRefTable));
+        var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
+
+        context.Tables.Add(tableField);
+        context.TableElementTypes.Add(elementValType);
+        context.TableIs64.Add(limits.Is64Bit);
+
+        // Retain the first funcref table for the WASM 1.0 single-table paths (call_indirect, active elements).
+        if (functionTable == null && isFuncTable)
+            functionTable = tableField;
+
+        il.EmitLoadArg(0);
+        il.EmitLoadConstant(limits.ClampedMinimum);
+        if (limits.Maximum64.HasValue)
+        {
+            il.EmitLoadConstant(limits.ClampedMaximum);
+            il.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
+                .GetTypeInfo()
+                .DeclaredConstructors
+                .Where(constructor =>
+                {
+                    var parms = constructor.GetParameters();
+                    return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                })
+                .Single());
+            il.Emit(OpCodes.Newobj, tableType
+                .GetTypeInfo()
+                .DeclaredConstructors
+                .Where(constructor =>
+                {
+                    var parms = constructor.GetParameters();
+                    return parms.Length == 2
+                        && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
+                        && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
+                })
+                .Single());
+        }
+        else
+        {
+            il.Emit(OpCodes.Newobj, tableType
+                .GetTypeInfo()
+                .DeclaredConstructors
+                .Where(constructor =>
+                {
+                    var parms = constructor.GetParameters();
+                    return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                })
+                .Single());
+        }
+
+        // Record the index type on the table so an importer of this (exported) table can reject an i32/i64
+        // mismatch. Emitted only for table64, leaving 32-bit modules unchanged.
+        EmitSetIs64(il, configuration, typeof(TableImport), limits.Is64Bit);
+        il.Emit(OpCodes.Stfld, tableField);
+
+        if (tableInit != null)
+        {
+            // The initializer must produce a reference that is a subtype of the table's element type.
+            ValidateElementInitExpr(tableInit, elementValType, context);
+
+            // Fill every slot [0, minimum) with the value produced by the initializer constant expression.
+            if (tableInit.Any(inst => inst is Instructions.RefFunc))
+                ensureFunctionReferences();
+
+            var valLocal = il.DeclareLocal(isFuncTable ? typeof(Delegate) : typeof(object));
+            EmitElementRefValue(il, context, tableInit);
+            il.Emit(OpCodes.Stloc, valLocal);
+
+            var setter = isFuncTable ? FunctionTable.IndexSetter : ExternRefTable.IndexSetter;
+            var iLocal = il.DeclareLocal(typeof(int));
+            var loopStart = il.DefineLabel();
+            var loopEnd = il.DefineLabel();
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Stloc, iLocal);
+            il.MarkLabel(loopStart);
+            il.Emit(OpCodes.Ldloc, iLocal);
+            il.EmitLoadConstant(limits.ClampedMinimum);
+            il.Emit(OpCodes.Bge_Un, loopEnd);
+            il.EmitLoadArg(0);
+            il.Emit(OpCodes.Ldfld, tableField);
+            il.Emit(OpCodes.Ldloc, iLocal);
+            il.Emit(OpCodes.Ldloc, valLocal);
+            il.Emit(OpCodes.Call, setter);
+            il.Emit(OpCodes.Ldloc, iLocal);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Add);
+            il.Emit(OpCodes.Stloc, iLocal);
+            il.Emit(OpCodes.Br, loopStart);
+            il.MarkLabel(loopEnd);
+        }
     }
 
     const TypeAttributes ClassAttributes =
@@ -197,9 +338,23 @@ public static class Compile
 
     // Import type-compatibility validators, emitted into the instance constructor after each import is
     // resolved and its .NET subtype confirmed (see ImportException for the matching rules).
-    static readonly MethodInfo ValidateGlobalImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateGlobal))!;
+    // The descriptor-aware overloads are selected explicitly by parameter list (the plain overloads remain for
+    // public API compatibility); the extra string? carries the declaration's closed structural descriptor.
+    static readonly MethodInfo ValidateGlobalImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateGlobal),
+        [typeof(GlobalImport), typeof(WebAssemblyValueType), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
     static readonly MethodInfo ValidateMemoryImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemory))!;
-    static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable))!;
+    static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable),
+        [typeof(TableImport), typeof(uint), typeof(uint), typeof(bool), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
+
+    // Pushes a closed structural descriptor argument for the descriptor-aware Validate* overloads: the string when
+    // the import is reference-typed, or null (which keeps the coarse CLR-type fallback in force) when it is numeric.
+    static void EmitDescriptor(ILGenerator il, string? descriptor)
+    {
+        if (descriptor is null)
+            il.Emit(OpCodes.Ldnull);
+        else
+            il.Emit(OpCodes.Ldstr, descriptor);
+    }
 
     // The (offset, length) constructor used to trap an out-of-bounds active data segment, matching the
     // exception the runtime's RangeCheck helpers throw for ordinary memory accesses.
@@ -416,6 +571,16 @@ public static class Compile
 
                         for (var i = 0; i < signatures.Length; i++)
                             signatures[i] = new Signature(reader, (uint)i, configuration);
+
+                        // A typed reference may target a concrete type index; that index must refer to a defined type.
+                        // (Forward references within the section are legal, so this is checked once the count is known.)
+                        foreach (var signature in signatures)
+                        {
+                            foreach (var valType in signature.RawParameterTypes)
+                                ValidateTypeIndex(valType, signatures.Length, reader.Offset);
+                            foreach (var valType in signature.RawReturnTypes)
+                                ValidateTypeIndex(valType, signatures.Length, reader.Offset);
+                        }
                     }
                     break;
 
@@ -484,64 +649,27 @@ public static class Compile
                         for (var i = 0; i < count; i++)
                         {
                             var preElementTypeOffset = reader.Offset;
-                            var elementType = (ElementType)reader.ReadVarInt7();
-                            if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
-                                throw new ModuleLoadException($"Unsupported table element type {elementType}.", preElementTypeOffset);
+
+                            // WebAssembly 3.0 table-with-initializer: a leading 0x40 (s7 -0x40, impossible as a
+                            // reftype) then a reserved 0x00 selects "0x40 0x00 tabletype constexpr". The classic
+                            // encoding is just "elementtype limits".
+                            var hasInit = false;
+                            var lead = reader.ReadVarInt7();
+                            if (lead == -0x40)
+                            {
+                                _ = reader.ReadByte(); // reserved 0x00
+                                lead = reader.ReadVarInt7();
+                                hasInit = true;
+                            }
+
+                            var elementValType = ReadTableElementTypeFromLead(reader, lead, preElementTypeOffset);
+                            ValidateTypeIndex(elementValType, signatures?.Length ?? 0, preElementTypeOffset);
 
                             var limits = new ResizableLimits(reader);
-                            var tableType = configuration.NeutralizeType(elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
-                            var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
+                            var tableInit = hasInit ? Instruction.ParseInitializerExpression(reader).ToList() : null;
 
-                            context.Tables.Add(tableField);
-                            context.TableElementTypes.Add(elementType);
-                            context.TableIs64.Add(limits.Is64Bit);
-
-                            // Retain the first funcref table for the WASM 1.0 single-table paths (call_indirect, active elements).
-                            if (functionTable == null && elementType == ElementType.FunctionReference)
-                                functionTable = tableField;
-
-                            instanceConstructorIL.EmitLoadArg(0);
-                            instanceConstructorIL.EmitLoadConstant(limits.ClampedMinimum);
-                            if (limits.Maximum64.HasValue)
-                            {
-                                instanceConstructorIL.EmitLoadConstant(limits.ClampedMaximum);
-                                instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
-                                    .GetTypeInfo()
-                                    .DeclaredConstructors
-                                    .Where(constructor =>
-                                    {
-                                        var parms = constructor.GetParameters();
-                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                    })
-                                    .Single());
-                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
-                                    .GetTypeInfo()
-                                    .DeclaredConstructors
-                                    .Where(constructor =>
-                                    {
-                                        var parms = constructor.GetParameters();
-                                        return parms.Length == 2
-                                            && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint))
-                                            && parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
-                                    })
-                                    .Single());
-                            }
-                            else
-                            {
-                                instanceConstructorIL.Emit(OpCodes.Newobj, tableType
-                                    .GetTypeInfo()
-                                    .DeclaredConstructors
-                                    .Where(constructor =>
-                                    {
-                                        var parms = constructor.GetParameters();
-                                        return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                                    })
-                                    .Single());
-                            }
-                            // Record the index type on the table so an importer of this (exported) table can reject
-                            // an i32/i64 mismatch. Emitted only for table64, leaving 32-bit modules unchanged.
-                            EmitSetIs64(instanceConstructorIL, configuration, typeof(TableImport), limits.Is64Bit);
-                            instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
+                            EmitTableDefinition(context, exportsBuilder, instanceConstructorIL, configuration,
+                                ref functionTable, elementValType, limits, tableInit, preElementTypeOffset, EnsureFunctionReferences);
                         }
                     }
                     break;
@@ -893,19 +1021,19 @@ public static class Compile
                 case ExternalKind.Table:
                     {
                         var preElementTypeoffset = reader.Offset;
-                        var elementType = (ElementType)reader.ReadVarInt7();
-                        if (elementType != ElementType.FunctionReference && elementType != ElementType.ExternRef)
-                            throw new ModuleLoadException($"{moduleName}::{fieldName} imported table element type {elementType} is not recognized.", preElementTypeoffset);
+                        var elementValType = ReadTableElementTypeFromLead(reader, reader.ReadVarInt7(), preElementTypeoffset);
+                        ValidateTypeIndex(elementValType, signatures?.Length ?? 0, preElementTypeoffset);
 
                         var limits = new ResizableLimits(reader);
 
-                        var tableType = configuration.NeutralizeType(elementType == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
+                        var isFuncTable = CompilationContext.IsFunctionReference(elementValType);
+                        var tableType = configuration.NeutralizeType(isFuncTable ? typeof(FunctionTable) : typeof(ExternRefTable));
                         var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
                         context.Tables.Add(tableField);
-                        context.TableElementTypes.Add(elementType);
+                        context.TableElementTypes.Add(elementValType);
                         context.TableIs64.Add(limits.Is64Bit);
-                        if (functionTable == null && elementType == ElementType.FunctionReference)
+                        if (functionTable == null && isFuncTable)
                             functionTable = tableField;
 
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -923,6 +1051,7 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.ClampedMaximum ?? 0));
                         instanceConstructorIL.Emit(limits.Maximum64.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                         instanceConstructorIL.Emit(limits.Is64Bit ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        EmitDescriptor(instanceConstructorIL, WasmTypeDescriptor.Render(elementValType, signatures));
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateTableImport);
@@ -1002,10 +1131,15 @@ public static class Compile
                     break;
                 case ExternalKind.Global:
                     {
-                        var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
+                        var preContentOffset = reader.Offset;
+                        var contentValueType = ReferenceType.ReadValueType(reader, out var contentRefType);
+                        var contentValType = ValType.FromValueType(contentValueType, contentRefType);
+                        ValidateTypeIndex(contentValType, signatures?.Length ?? 0, preContentOffset);
+                        var contentType = contentValType.ToNarrow();
+                        var contentClrType = configuration.NeutralizeType(contentValType.ToSystemType());
                         var mutable = reader.ReadVarUInt1() == 1;
 
-                        var typedDelegate = configuration.NeutralizeType(typeof(Func<>).MakeGenericType([contentType.ToSystemType()]));
+                        var typedDelegate = configuration.NeutralizeType(typeof(Func<>).MakeGenericType([contentValType.ToSystemType()]));
                         var delField = $"➡ Get {moduleName}::{fieldName}";
                         var delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -1013,7 +1147,7 @@ public static class Compile
                             $"Invoke {delField}",
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
-                            configuration.NeutralizeType(contentType.ToSystemType()),
+                            contentClrType,
                             [exportsBuilder]
                             );
 
@@ -1035,6 +1169,7 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Dup);
                         instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)contentType);
                         instanceConstructorIL.Emit(mutable ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        EmitDescriptor(instanceConstructorIL, WasmTypeDescriptor.Render(contentValType, signatures));
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateGlobalImport);
@@ -1054,7 +1189,7 @@ public static class Compile
                         }
                         else
                         {
-                            typedDelegate = configuration.NeutralizeType(typeof(Action<>).MakeGenericType([contentType.ToSystemType()]));
+                            typedDelegate = configuration.NeutralizeType(typeof(Action<>).MakeGenericType([contentValType.ToSystemType()]));
                             delField = $"➡ Set {moduleName}::{fieldName}";
                             delFieldBuilder = exportsBuilder.DefineField(delField, typedDelegate, PrivateReadonlyField);
 
@@ -1063,14 +1198,14 @@ public static class Compile
                             InternalFunctionAttributes,
                             CallingConventions.Standard,
                             null,
-                            [configuration.NeutralizeType(contentType.ToSystemType()), exportsBuilder]
+                            [contentClrType, exportsBuilder]
                             );
 
                             invokerIL = setterInvoker.GetILGenerator();
                             invokerIL.EmitLoadArg(1);
                             invokerIL.Emit(OpCodes.Ldfld, delFieldBuilder);
                             invokerIL.EmitLoadArg(0);
-                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), [configuration.NeutralizeType(contentType.ToSystemType())])!);
+                            invokerIL.Emit(OpCodes.Callvirt, typedDelegate.GetRuntimeMethod(nameof(Action<WebAssemblyValueType>.Invoke), [contentClrType])!);
                             invokerIL.Emit(OpCodes.Ret);
 
                             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -1090,7 +1225,7 @@ public static class Compile
                             instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
                         }
 
-                        globalImports.Add(new GlobalInfo(contentType, true, getterInvoker, setterInvoker));
+                        globalImports.Add(new GlobalInfo(contentValType, true, getterInvoker, setterInvoker));
                     }
                     break;
                 default:
@@ -1141,7 +1276,11 @@ public static class Compile
 
         for (var i = 0; i < count; i++)
         {
-            var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
+            var preContentOffset = reader.Offset;
+            var contentValueType = ReferenceType.ReadValueType(reader, out var contentRefType);
+            var contentValType = ValType.FromValueType(contentValueType, contentRefType);
+            ValidateTypeIndex(contentValType, context.Types?.Length ?? 0, preContentOffset);
+            var contentClrType = configuration.NeutralizeType(contentValType.ToSystemType());
             var isMutable = reader.ReadVarUInt1() == 1;
 
             // A global initializer (a constant expression) may reference any previously-declared immutable global:
@@ -1158,12 +1297,12 @@ public static class Compile
                 $"🌍 Get {i}",
                 InternalFunctionAttributes,
                 CallingConventions.Standard,
-                configuration.NeutralizeType(contentType.ToSystemType()),
+                contentClrType,
                 [exportsBuilder]
                 );
 
             var il = getter.GetILGenerator();
-            var getterSignature = new Signature(contentType, configuration);
+            var getterSignature = new Signature(contentValType, configuration);
             MethodBuilder? setter;
 
             if (!isMutable)
@@ -1190,7 +1329,7 @@ public static class Compile
             {
                 var field = exportsBuilder.DefineField(
                     $"🌍 {i}",
-                    configuration.NeutralizeType(contentType.ToSystemType()),
+                    contentClrType,
                     FieldAttributes.Private | (isMutable ? 0 : FieldAttributes.InitOnly)
                     );
 
@@ -1203,7 +1342,7 @@ public static class Compile
                     InternalFunctionAttributes,
                     CallingConventions.Standard,
                     configuration.NeutralizeType(typeof(void)),
-                    [configuration.NeutralizeType(contentType.ToSystemType()), exportsBuilder]
+                    [contentClrType, exportsBuilder]
                     );
 
                 il = setter.GetILGenerator();
@@ -1243,7 +1382,7 @@ public static class Compile
                 context.ConstantExpression = false;
             }
 
-            globals[importedGlobals + i] = new GlobalInfo(contentType, true, getter, setter);
+            globals[importedGlobals + i] = new GlobalInfo(contentValType, true, getter, setter);
         }
 
         return globals;
@@ -1287,7 +1426,7 @@ public static class Compile
                     {
                         var tableField = context.GetTable(index);
                         var tableClrType = configuration.NeutralizeType(
-                            context.GetTableElementType(index) == ElementType.FunctionReference ? typeof(FunctionTable) : typeof(ExternRefTable));
+                            context.IsFuncTable(index) ? typeof(FunctionTable) : typeof(ExternRefTable));
                         var tableGetter = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
@@ -1305,7 +1444,8 @@ public static class Compile
 #if NET9_0_OR_GREATER
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
-                        tableProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name));
+                        tableProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name,
+                            WasmTypeDescriptor.Render(context.TableElementValType(index), context.Types)));
                         tableProperty.SetGetMethod(tableGetter);
                     }
                     break;
@@ -1348,7 +1488,8 @@ public static class Compile
 #if NET9_0_OR_GREATER
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
-                        property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name));
+                        property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name,
+                            WasmTypeDescriptor.Render(global.Type, context.Types)));
                         var wrappedGet = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
@@ -1472,24 +1613,43 @@ public static class Compile
 
     // Emits IL that pushes a reference value onto the stack for an element entry: either a funcref delegate loaded from
     // FunctionReferences (and the function index registered as declared), or a null reference for ref.null.
-    static void ValidateElementInitExpr(IList<Instruction> initExpr, ElementType elemType)
+    static void ValidateElementInitExpr(IList<Instruction> initExpr, ValType elemType, CompilationContext context)
     {
         // A reference-type element initializer is a constant expression yielding exactly one reference value, then end.
         if (initExpr.Count != 2 || initExpr[1] is not Instructions.End)
             throw new ModuleLoadException("An element initializer expression must be a single reference-producing constant expression followed by end.", 0);
 
+        ValType produced;
         switch (initExpr[0])
         {
-            case Instructions.RefFunc when elemType == ElementType.FunctionReference:
+            case Instructions.RefFunc refFunc:
+            {
+                var sigs = context.CheckedFunctionSignatures;
+                if (refFunc.Index >= (uint)sigs.Length)
+                    throw new ModuleLoadException($"unknown function {refFunc.Index}: the module declares only {sigs.Length} function(s).", 0);
+                produced = ValType.RefIndexed(false, sigs[refFunc.Index].TypeIndex); // (ref $sig(f))
                 break;
-            case Instructions.RefNull refNull when (ElementType)refNull.Type == elemType:
+            }
+            case Instructions.RefNull refNull:
+                produced = refNull.TypeIndex is { } idx
+                    ? ValType.RefIndexed(true, idx)
+                    : ValType.Ref(true, refNull.HeapType ?? WebAssemblyHeapType.Func);
                 break;
-            // global.get's reference type isn't validated here; any other instruction yields a non-matching value.
-            case Instructions.GlobalGet:
+            case Instructions.GlobalGet globalGet:
+            {
+                var globals = context.Globals ?? [];
+                if (globalGet.Index >= (uint)globals.Length)
+                    throw new ModuleLoadException($"unknown global {globalGet.Index}.", 0);
+                produced = globals[globalGet.Index].Type;
                 break;
+            }
             default:
-                throw new ModuleLoadException($"Element initializer expression ({initExpr[0].OpCode}) does not produce a value matching the segment element type {elemType}.", 0);
+                throw new ModuleLoadException($"Element initializer expression ({initExpr[0].OpCode}) is not a supported constant reference expression.", 0);
         }
+
+        // The initializer's produced reference type must be a subtype of the segment's element type.
+        if (!context.IsSubtype(produced, elemType))
+            throw new ModuleLoadException($"type mismatch: element initializer produces {produced.ToNarrow()}, not a subtype of segment element type {elemType.ToNarrow()}.", 0);
     }
 
     static void EmitElementRefValue(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
@@ -1535,7 +1695,18 @@ public static class Compile
             var isActive = element.IsActive;
             var isDeclarative = element.IsDeclarative;
             var usesInitExprs = element.UsesExpressions;
-            var elemType = usesInitExprs ? element.ElemType : ElementType.FunctionReference;
+
+            // The segment's element reference type: a WebAssembly 3.0 long-form typed reference when present,
+            // otherwise the shorthand elem type. The func-index form's elements are non-null function references
+            // (`ref.func`), so its element type is (ref func) — the type that is a subtype of both funcref and any
+            // typed (ref func)-family table element type (elem.2 initializes a `(ref func)` table this way).
+            var elemValType = element.ElemRefType is { } elemRefType
+                ? ValType.FromReferenceType(elemRefType)
+                : usesInitExprs
+                    ? ValType.FromValueType((WebAssemblyValueType)(sbyte)element.ElemType)
+                    : ValType.Ref(false, WebAssemblyHeapType.Func);
+            ValidateTypeIndex(elemValType, context.Types?.Length ?? 0, 0);
+            var elemIsFunc = CompilationContext.IsFunctionReference(elemValType);
             var entryCount = usesInitExprs ? element.InitExprs.Count : element.Elements.Count;
 
             // Register declared function references (func-index forms); init-expr forms register in EmitElementRefValue.
@@ -1547,15 +1718,15 @@ public static class Compile
             // Passive segments are populated below; active and declarative segments leave the field null (= empty/dropped).
             var segField = exportsBuilder.DefineField(
                 $"☣ ElementSegment {i}",
-                elemType == ElementType.FunctionReference ? typeof(Delegate[]) : typeof(object[]),
+                elemIsFunc ? typeof(Delegate[]) : typeof(object[]),
                 FieldAttributes.Private);
             context.ElementSegments[i] = segField;
-            context.ElementSegmentTypes[i] = elemType;
+            context.ElementSegmentTypes[i] = elemValType;
 
             // Each reference-producing initializer expression must yield a value matching the segment's element type.
             if (usesInitExprs)
                 foreach (var initExpr in element.InitExprs)
-                    ValidateElementInitExpr(initExpr, elemType);
+                    ValidateElementInitExpr(initExpr, elemValType, context);
 
             if (isActive)
             {
@@ -1563,9 +1734,10 @@ public static class Compile
                 if (tableIndex >= (uint)context.Tables.Count)
                     throw new ModuleLoadException($"Element segment references table {tableIndex} but only {context.Tables.Count} tables exist.", 0);
 
-                var tableElemType = context.GetTableElementType(tableIndex);
-                if (tableElemType != elemType)
-                    throw new ModuleLoadException($"Element segment type {elemType} does not match table {tableIndex} type {tableElemType}.", 0);
+                // The active segment's element type must be a subtype of the destination table's element type.
+                var tableElemType = context.TableElementValType(tableIndex);
+                if (!context.IsSubtype(elemValType, tableElemType))
+                    throw new ModuleLoadException($"type mismatch: element segment type {elemValType.ToNarrow()} is not a subtype of table {tableIndex} element type {tableElemType.ToNarrow()}.", 0);
 
                 // For a table64 destination the offset constant expression is an i64; hold it in a ulong local and
                 // run the fits check in 64-bit. A 32-bit table keeps the original i32/uint path.
@@ -1588,7 +1760,7 @@ public static class Compile
                 context.BlockContexts.Remove(context.Depth.Count);
                 instanceConstructorIL.Emit(OpCodes.Stloc, localOffset);
 
-                var isFunc = tableElemType == ElementType.FunctionReference;
+                var isFunc = context.IsFuncTable(tableIndex);
                 var tableType = isFunc ? typeof(FunctionTable) : typeof(ExternRefTable);
                 var localTable = instanceConstructorIL.DeclareLocal(tableType);
                 instanceConstructorIL.EmitLoadArg(0);
@@ -1660,7 +1832,7 @@ public static class Compile
             else
             {
                 // Passive segment: populate the backing array field that table.init copies from and elem.drop nulls.
-                var elementClrType = elemType == ElementType.FunctionReference ? typeof(Delegate) : typeof(object);
+                var elementClrType = elemIsFunc ? typeof(Delegate) : typeof(object);
                 context.PassiveElementSegments.Add(i);
 
                 instanceConstructorIL.EmitLoadArg(0);
@@ -1717,20 +1889,25 @@ public static class Compile
 
             var il = ((MethodBuilder)internalFunctions![importedFunctions + functionBodyIndex]).GetILGenerator();
 
+            // Expand the declared locals into per-slot canonical types (each Local.Type already carries the full
+            // typed-reference detail parsed above). A local's concrete-index reference must name a defined type.
+            var typeCount = context.Types?.Length ?? 0;
+            var localValTypes = locals
+                .SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
+                .ToArray();
+            foreach (var localValType in localValTypes)
+                ValidateTypeIndex(localValType, typeCount, reader.Offset);
+
             context.Reset(
                 il,
                 signature,
                 [
                     .. signature.RawParameterTypes,
-                    .. locals
-                    .SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type))
-,
+                    .. localValTypes,
                 ]);
 
-            foreach (var local in locals.SelectMany(local => Enumerable.Range(0, checked((int)local.Count)).Select(_ => local.Type)))
-            {
+            foreach (var local in localValTypes)
                 il.DeclareLocal(local.ToSystemType());
-            }
 
             foreach (var instruction in Instruction.Parse(reader))
             {

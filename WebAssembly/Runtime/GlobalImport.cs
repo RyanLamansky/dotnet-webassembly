@@ -24,6 +24,11 @@ public class GlobalImport : RuntimeImport
 
     internal readonly WebAssemblyValueType GetterType;
 
+    // Set by RuntimeImport.FromCompiledExports when this import wraps another compiled module's reference-typed
+    // global export: the closed structural descriptor of its WASM type. Null for host-supplied or numeric globals,
+    // which fall back to the coarse CLR value-type check in ImportException.ValidateGlobal.
+    internal string? Descriptor;
+
     /// <summary>
     /// Creates a new <see cref="GlobalImport"/> instance with the provided delegates.
     /// </summary>

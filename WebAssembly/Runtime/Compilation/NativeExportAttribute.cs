@@ -22,10 +22,22 @@ public sealed class NativeExportAttribute(ExternalKind kind, string name) : Attr
     /// </summary>
     public string Name { get; } = name;
 
+    /// <summary>
+    /// For a reference-typed global or table export, a closed structural rendering of its WebAssembly type
+    /// (for example <c>ref null func</c>), used to validate cross-module linking; <c>null</c> for every other export.
+    /// </summary>
+    public string? Descriptor { get; init; }
+
     static readonly RegeneratingWeakReference<ConstructorInfo> Constructor = new(() =>
         typeof(NativeExportAttribute).GetConstructors()[0]
     );
 
-    internal static CustomAttributeBuilder Emit(ExternalKind kind, string name) =>
-        new(Constructor, [kind, name]);
+    static readonly RegeneratingWeakReference<PropertyInfo> DescriptorProperty = new(() =>
+        typeof(NativeExportAttribute).GetProperty(nameof(Descriptor))!
+    );
+
+    internal static CustomAttributeBuilder Emit(ExternalKind kind, string name, string? descriptor = null) =>
+        descriptor is null
+            ? new(Constructor, [kind, name])
+            : new(Constructor, [kind, name], [DescriptorProperty], [descriptor]);
 }

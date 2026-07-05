@@ -150,6 +150,11 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.CallIndirect: yield return new CallIndirect(reader); break;
                 case OpCode.ReturnCall: yield return new ReturnCall(reader); break;
                 case OpCode.ReturnCallIndirect: yield return new ReturnCallIndirect(reader); break;
+                case OpCode.CallRef: yield return new CallRef(reader); break;
+                case OpCode.ReturnCallRef: yield return new ReturnCallRef(reader); break;
+                case OpCode.RefAsNonNull: yield return new RefAsNonNull(); break;
+                case OpCode.BranchOnNull: yield return new BranchOnNull(reader); break;
+                case OpCode.BranchOnNonNull: yield return new BranchOnNonNull(reader); break;
                 case OpCode.Drop: yield return new Drop(); break;
                 case OpCode.Select: yield return new Select(); break;
                 case OpCode.SelectWithType: yield return new SelectWithType(reader); break;

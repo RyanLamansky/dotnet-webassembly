@@ -24,7 +24,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public void Reset(
         ILGenerator generator,
         Signature signature,
-        WebAssemblyValueType[] locals
+        ValType[] locals
         )
     {
         this.generator = generator;
@@ -33,21 +33,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
         this.Depth.Clear();
         {
-            BlockType returnType;
-            if (signature.RawReturnTypes.Length == 0)
-            {
-                returnType = BlockType.Empty;
-            }
-            else
-            {
-                returnType = signature.RawReturnTypes[0] switch
-                {
-                    WebAssemblyValueType.Int64 => BlockType.Int64,
-                    WebAssemblyValueType.Float32 => BlockType.Float32,
-                    WebAssemblyValueType.Float64 => BlockType.Float64,
-                    _ => BlockType.Int32,
-                };
-            }
+            // The outer block's single-result type must reflect the actual return type — including references and
+            // v128 — so that a branch to the function boundary validates against the correct type. (Multi-result
+            // functions route through the signature's full result list instead of this single BlockType.)
+            var returnType = signature.RawReturnTypes.Length == 0
+                ? BlockType.Empty
+                : signature.RawReturnTypes[0].ToBlockType();
             this.Depth.Push(new FunctionOuterBlock(returnType));
         }
         this.Previous = OpCode.NoOperation;
@@ -59,6 +50,52 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         this.BlockContexts.Add(this.Depth.Count, new BlockContext());
 
         this.Labels.Add(0, generator.DefineLabel());
+
+        // Definite-assignment tracking for non-defaultable (non-nullable reference) locals (WebAssembly 3.0).
+        // Parameters and every defaultable local (numerics, v128, nullable references) start initialized; a
+        // non-nullable-ref local starts uninitialized and must be assigned before any local.get. For pre-3.0
+        // modules every local is defaultable, so this is all-true and inert.
+        var parameterCount = signature.RawParameterTypes.Length;
+        this.LocalIsInitialized = new bool[locals.Length];
+        for (var i = 0; i < locals.Length; i++)
+            this.LocalIsInitialized[i] = i < parameterCount || !locals[i].IsReference || locals[i].IsNullable;
+        this.InitLog.Clear();
+    }
+
+    /// <summary>
+    /// Per-local definite-assignment flags (indexed in the combined parameter+local space). A non-nullable
+    /// reference local is only marked once assigned; <c>local.get</c> of an unassigned one is invalid.
+    /// </summary>
+    public bool[]? LocalIsInitialized;
+
+    /// <summary>
+    /// The ordered list of local indices newly initialized since the enclosing block was entered, so that a block's
+    /// <c>end</c> (or an <c>if</c>'s <c>else</c>) can roll those initializations back — initialization never survives
+    /// the enclosing block. See <see cref="BlockContext.InitLogHeight"/>.
+    /// </summary>
+    public readonly List<int> InitLog = [];
+
+    /// <summary>Whether the local at <paramref name="index"/> is definitely assigned at this point.</summary>
+    public bool IsLocalInitialized(int index) => this.LocalIsInitialized is not { } initialized || initialized[index];
+
+    /// <summary>Marks the local at <paramref name="index"/> assigned, logging it so the enclosing block can roll it back.</summary>
+    public void MarkLocalInitialized(int index)
+    {
+        if (this.LocalIsInitialized is { } initialized && !initialized[index])
+        {
+            initialized[index] = true;
+            this.InitLog.Add(index);
+        }
+    }
+
+    /// <summary>Un-initializes every local logged after <paramref name="height"/>, restoring the state at that point.</summary>
+    public void RollbackInit(int height)
+    {
+        var log = this.InitLog;
+        for (var i = log.Count - 1; i >= height; i--)
+            this.LocalIsInitialized![log[i]] = false;
+        if (log.Count > height)
+            log.RemoveRange(height, log.Count - height);
     }
 
     public Signature[]? FunctionSignatures;
@@ -98,13 +135,37 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public readonly Dictionary<(uint TypeIndex, uint TableIndex), MethodBuilder> DelegateRemappersByType = [];
 
     /// <summary>
+    /// Per-type-index static callers for <c>call_ref</c>: each takes the WASM parameters plus the target
+    /// <see cref="System.Delegate"/> and invokes it (after a <c>castclass</c> to the concrete delegate type).
+    /// </summary>
+    public readonly Dictionary<uint, MethodBuilder> DelegateCallersByTypeIndex = [];
+
+    /// <summary>
     /// Table backing fields, indexed by table index. Each field is either a <see cref="FunctionTable"/> or an
     /// <see cref="ExternRefTable"/> (WASM 2.0 reference types permit multiple tables of either element type).
     /// </summary>
     public readonly List<FieldBuilder> Tables = [];
 
-    /// <summary>Element type (funcref or externref) for each table, indexed by table index.</summary>
-    public readonly List<ElementType> TableElementTypes = [];
+    /// <summary>
+    /// The element reference type of each table, indexed by table index. WebAssembly 3.0 tables may carry a typed
+    /// reference (a concrete function-type index or an abstract heap type), not just funcref/externref.
+    /// </summary>
+    public readonly List<ValType> TableElementTypes = [];
+
+    /// <summary>The precise element reference type of the table at <paramref name="tableIndex"/>.</summary>
+    public ValType TableElementValType(uint tableIndex)
+    {
+        if (tableIndex >= (uint)this.TableElementTypes.Count)
+            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {this.TableElementTypes.Count} table types defined).");
+        return this.TableElementTypes[(int)tableIndex];
+    }
+
+    /// <summary>
+    /// Whether the given reference type belongs to the function hierarchy (backed at runtime by
+    /// <see cref="FunctionTable"/>/<see cref="System.Delegate"/>); everything else is backed by
+    /// <see cref="ExternRefTable"/>/<see cref="object"/>.
+    /// </summary>
+    public static bool IsFunctionReference(ValType type) => type.IsReference && type.ToSystemType() == typeof(System.Delegate);
 
     /// <summary>Whether each table (indexed by table index) uses a 64-bit (i64) index type — WebAssembly 3.0 table64.</summary>
     public readonly List<bool> TableIs64 = [];
@@ -129,13 +190,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         return this.Tables[(int)tableIndex];
     }
 
-    /// <summary>Gets the element type for the table at <paramref name="tableIndex"/>.</summary>
-    public ElementType GetTableElementType(uint tableIndex)
-    {
-        if (tableIndex >= (uint)this.TableElementTypes.Count)
-            throw new InvalidOperationException($"Table index {tableIndex} out of range (only {this.TableElementTypes.Count} table types defined).");
-        return this.TableElementTypes[(int)tableIndex];
-    }
+    /// <summary>Whether the table at <paramref name="tableIndex"/> holds function references (vs. external references).</summary>
+    public bool IsFuncTable(uint tableIndex) => IsFunctionReference(this.TableElementValType(tableIndex));
 
     /// <summary>
     /// Validates a table index for a table instruction and resolves its backing field and whether it holds function
@@ -145,7 +201,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     {
         if (tableIndex >= (uint)this.Tables.Count)
             throw new ModuleLoadException($"Table index {tableIndex} out of range (only {this.Tables.Count} tables defined).", 0);
-        return (this.Tables[(int)tableIndex], this.TableElementTypes[(int)tableIndex] == ElementType.FunctionReference);
+        return (this.Tables[(int)tableIndex], this.IsFuncTable(tableIndex));
     }
 
     /// <summary>Per-function reference delegates, used by <c>ref.func</c>. Assigned during compilation.</summary>
@@ -154,8 +210,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>Maps a passive/declarative element segment index to the field that backs it (for table.init / elem.drop).</summary>
     public readonly Dictionary<uint, FieldBuilder> ElementSegments = [];
 
-    /// <summary>Maps an element segment index to its element type (funcref or externref).</summary>
-    public readonly Dictionary<uint, ElementType> ElementSegmentTypes = [];
+    /// <summary>Maps an element segment index to its element reference type.</summary>
+    public readonly Dictionary<uint, ValType> ElementSegmentTypes = [];
 
     /// <summary>Indices of passive element segments, the only segments valid for <c>table.init</c> and <c>elem.drop</c>.</summary>
     public readonly HashSet<uint> PassiveElementSegments = [];
@@ -280,7 +336,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// </summary>
     public readonly Dictionary<uint, FieldBuilder> DataSegments = [];
 
-    public WebAssemblyValueType[]? Locals;
+    public ValType[]? Locals;
 
     // Three coordinate systems address the enclosing blocks; a branch instruction's immediate is a "distance":
     //   distance      - branch immediate: 0 = innermost enclosing block, counting outward. Indexes Depth directly.
@@ -304,11 +360,17 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     // A null entry is the "unknown" type from the spec's validation algorithm: the polymorphic value that
     // an instruction in unreachable code pops from below the current block, or that an untyped select with
     // unknown operands produces. Unknown matches any expected type.
-    public readonly Stack<WebAssemblyValueType?> Stack = new();
+    public readonly Stack<ValType?> Stack = new();
+
+    /// <summary>
+    /// Whether <paramref name="actual"/> is a subtype of <paramref name="expected"/> under the WebAssembly 3.0
+    /// lattice (equality for numerics). Consults the module's type section for concrete-index references.
+    /// </summary>
+    public bool IsSubtype(ValType actual, ValType expected) => TypeAlgebra.IsSubtype(actual, expected, this.Types);
 
     public readonly Dictionary<int, BlockContext> BlockContexts = [];
 
-    public WebAssemblyValueType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
+    public ValType[] CheckedLocals => Locals ?? throw new InvalidOperationException();
 
     public Signature[] CheckedFunctionSignatures => FunctionSignatures ?? throw new InvalidOperationException();
 
@@ -379,8 +441,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             }
             : new StackTooSmallException(opcode, minimum, actual);
 
-    private StackTypeInvalidException StackTypeInvalid(OpCode opcode, WebAssemblyValueType expected, WebAssemblyValueType actual)
-        => this.CurrentInstruction is { } current && current.OpCode == opcode
+    private StackTypeInvalidException StackTypeInvalid(OpCode opcode, ValType expectedType, ValType actualType)
+    {
+        var expected = expectedType.ToNarrow();
+        var actual = actualType.ToNarrow();
+        return this.CurrentInstruction is { } current && current.OpCode == opcode
             ? current switch
             {
                 MiscellaneousInstruction m => new StackTypeInvalidException(m.MiscellaneousOpCode, expected, actual),
@@ -388,8 +453,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
                 _ => new StackTypeInvalidException(opcode, expected, actual),
             }
             : new StackTypeInvalidException(opcode, expected, actual);
+    }
 
-    public WebAssemblyValueType? PopStack(OpCode opcode, WebAssemblyValueType? expectedType)
+    public ValType? PopStack(OpCode opcode, ValType? expectedType)
     {
         return PopStack(opcode, [expectedType], 1).FirstOrDefault();
     }
@@ -409,7 +475,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         this.Stack.Pop();
     }
 
-    public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType)
+    public void PopStackNoReturn(OpCode opcode, ValType expectedType)
     {
         var stackCount = this.Stack.Count;
 
@@ -422,11 +488,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         var type = this.Stack.Pop();
-        if (type.HasValue && type != expectedType)
+        if (type.HasValue && !this.IsSubtype(type.Value, expectedType))
             throw StackTypeInvalid(opcode, expectedType, type.Value);
     }
 
-    public void PopStackNoReturn(OpCode opcode, WebAssemblyValueType expectedType1, WebAssemblyValueType expectedType2)
+    public void PopStackNoReturn(OpCode opcode, ValType expectedType1, ValType expectedType2)
     {
         var initialStackSize = this.Stack.Count;
         var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
@@ -441,7 +507,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         var type = this.Stack.Pop();
-        if (type.HasValue && type != expected)
+        if (type.HasValue && !this.IsSubtype(type.Value, expected))
             throw StackTypeInvalid(opcode, expected, type.Value);
 
         expected = expectedType2;
@@ -454,11 +520,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         }
 
         type = this.Stack.Pop();
-        if (type.HasValue && type != expected)
+        if (type.HasValue && !this.IsSubtype(type.Value, expected))
             throw StackTypeInvalid(opcode, expected, type.Value);
     }
 
-    public void PopStackNoReturn(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
+    public void PopStackNoReturn(OpCode opcode, IEnumerable<ValType?> expectedTypes, int expectedCount)
     {
         var initialStackSize = this.Stack.Count;
         var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
@@ -474,7 +540,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             }
 
             var type = this.Stack.Pop();
-            if (expected.HasValue && type.HasValue && type != expected)
+            if (expected.HasValue && type.HasValue && !this.IsSubtype(type.Value, expected.Value))
                 throw StackTypeInvalid(opcode, expected.Value, type.Value);
         }
     }
@@ -488,15 +554,15 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <param name="expectedTypes">Sequence of expected types (or null, which indicates any type is accepted)</param>
     /// <param name="expectedCount">The number of expected types.</param>
     /// <returns>Sequence of actually popped types (or null, which indicates unknown type).</returns>
-    public IEnumerable<WebAssemblyValueType?> PopStack(OpCode opcode, IEnumerable<WebAssemblyValueType?> expectedTypes, int expectedCount)
+    public IEnumerable<ValType?> PopStack(OpCode opcode, IEnumerable<ValType?> expectedTypes, int expectedCount)
     {
-        var actualTypes = new List<WebAssemblyValueType?>(expectedCount);
+        var actualTypes = new List<ValType?>(expectedCount);
         var initialStackSize = this.Stack.Count;
         var blockContextInitialStackSize = this.CurrentBlockContext.InitialStackSize;
 
         foreach (var expected in expectedTypes)
         {
-            WebAssemblyValueType? type;
+            ValType? type;
 
             if (this.Stack.Count <= blockContextInitialStackSize)
             {
@@ -512,7 +578,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
             if (type.HasValue)
             {
-                if (expected.HasValue && type != expected)
+                if (expected.HasValue && !this.IsSubtype(type.Value, expected.Value))
                     throw StackTypeInvalid(opcode, expected.Value, type.Value);
             }
             else
@@ -526,7 +592,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         return actualTypes;
     }
 
-    public void ValidateStack(OpCode opcode, WebAssemblyValueType expectedType)
+    public void ValidateStack(OpCode opcode, ValType expectedType)
     {
         this.PopStackNoReturn(opcode, expectedType);
         this.Stack.Push(expectedType);
@@ -536,7 +602,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// Returns the single-result ferry local for the block at the given ancestor distance (0 is the immediate
     /// parent), allocating it on first access. See <see cref="BlockContext.ResultLocal"/>.
     /// </summary>
-    public LocalBuilder GetOrCreateResultLocal(int depthIndex, WebAssemblyValueType valueType)
+    public LocalBuilder GetOrCreateResultLocal(int depthIndex, ValType valueType)
     {
         var blockContext = this.BlockContexts[this.Depth.Count - depthIndex];
         return blockContext.ResultLocal ??= this.DeclareLocal(valueType.ToSystemType());
@@ -545,7 +611,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>
     /// Declares one fresh local per provided value type, used to ferry multi-value block results across branches.
     /// </summary>
-    public LocalBuilder[] DeclareResultLocals(WebAssemblyValueType[] types)
+    public LocalBuilder[] DeclareResultLocals(ValType[] types)
     {
         var locals = new LocalBuilder[types.Length];
         for (var i = 0; i < types.Length; i++)

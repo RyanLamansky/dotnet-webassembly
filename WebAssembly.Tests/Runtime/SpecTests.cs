@@ -49,8 +49,8 @@ public class SpecTests
 
     /// <summary>Runs the br_table tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed-reference table element type — Phase 5.
-    public void SpecTest_br_table() => SpecTestRunner.RunAllSkipped("br_table", "typed-reference table element type — Phase 5");
+    // Typed-reference table element types + per-label subtype "meet" (Phase 5) — fully green.
+    public void SpecTest_br_table() => SpecTestRunner.Run("br_table");
 
     /// <summary>Runs the call tests.</summary>
     [TestMethod]
@@ -59,11 +59,8 @@ public class SpecTests
     /// <summary>Runs the call_indirect tests.</summary>
     [TestMethod]
     public void SpecTest_call_indirect()
-        // 3.0 call_indirect validation edge — Part B.
-        => SpecTestRunner.Run("call_indirect", skip:
-        [
-        995,
-        ]);
+        // Subtype-aware call_indirect argument/table validation (Phase 5) cleared the former "type mismatch" skip.
+        => SpecTestRunner.Run("call_indirect");
 
     /// <summary>Runs the comments tests.</summary>
     [TestMethod]
@@ -90,12 +87,8 @@ public class SpecTests
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
     public void SpecTest_elem()
-        // Extended-const offsets (Phase 1) now pass; the remaining lines use typed-ref element types and the
-        // 3.0 table-with-initializer encoding — Phase 5.
-        => SpecTestRunner.Run("elem", skip:
-        [
-        87, 315, 448, 453, 465, 470, 482, 487, 499, 504, 539, 544, 556, 561, 573, 578,
-        ]);
+        // Extended-const offsets (Phase 1) and typed-ref element types / table-with-initializer (Phase 5) all pass.
+        => SpecTestRunner.Run("elem");
 
     /// <summary>Runs the endianness tests.</summary>
     [TestMethod]
@@ -167,11 +160,8 @@ public class SpecTests
     /// <summary>Runs the func tests.</summary>
     [TestMethod]
     public void SpecTest_func()
-        // non-defaultable locals validation — Phase 5.
-        => SpecTestRunner.Run("func", skip:
-        [
-        660,
-        ]);
+        // Non-defaultable-locals validation (Phase 5) cleared the former func:660 skip.
+        => SpecTestRunner.Run("func");
 
     /// <summary>Runs the func_ptrs tests.</summary>
     [TestMethod]
@@ -180,12 +170,8 @@ public class SpecTests
     /// <summary>Runs the global tests.</summary>
     [TestMethod]
     public void SpecTest_global()
-        // Extended constant expressions (Phase 1) now compile. The remaining lines exercise the 3.0
-        // table-with-initializer encoding (global.50.wasm and its get-elem/get-data queries) — Phase 5.
-        => SpecTestRunner.Run("global", skip:
-        [
-        634, 659, 660, 661, 663, 664,
-        ]);
+        // Extended-const initializers (Phase 1) and typed-ref globals / table-with-initializer (Phase 5) all pass.
+        => SpecTestRunner.Run("global");
 
     /// <summary>Runs the i32 tests.</summary>
     [TestMethod]
@@ -234,13 +220,10 @@ public class SpecTests
 
     /// <summary>Runs the linking tests.</summary>
     [TestMethod]
-    public void SpecTest_linking()
-        // linking with 3.0 features (extended const, tags, typed refs) — Part B.
-        => SpecTestRunner.Run("linking", skip:
-        [
-        96, 110, 112, 138, 142, 146, 151, 155, 159, 164, 168, 172, 176, 199, 203, 207, 211, 216, 220, 224, 228,
-         233, 237, 241, 245, 426, 432, 434, 451, 455,
-        ]);
+    // Typed-ref globals/tables link via closed structural import/export descriptors (Phase 5 M5.5) — fully green,
+    // including the immutable-global subtype supply (line 112) and the mutable-global / table-element invariant
+    // rejections (182/186/190/442/451) that the coarse Delegate/object CLR shape cannot distinguish.
+    public void SpecTest_linking() => SpecTestRunner.Run("linking");
 
     /// <summary>Runs the load tests.</summary>
     [TestMethod]
@@ -301,11 +284,8 @@ public class SpecTests
     /// <summary>Runs the select tests.</summary>
     [TestMethod]
     public void SpecTest_select()
-        // typed select with funcref value — Phase 5.
-        => SpecTestRunner.Run("select", skip:
-        [
-        279,
-        ]);
+        // Typed select over reference operands (Phase 5) cleared the former select:279 skip.
+        => SpecTestRunner.Run("select");
 
     /// <summary>Runs the skip-stack-guard-page tests.</summary>
     [TestMethod]
@@ -329,12 +309,10 @@ public class SpecTests
 
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
-    public void SpecTest_table()
-        // 3.0 tables: typed-ref element types and the table-with-initializer encoding — Phase 5.
-        => SpecTestRunner.Run("table", skip:
-        [
-        9, 14, 19, 20, 21, 86, 93, 112, 113, 114, 115, 116,
-        ]);
+    // Typed-ref element types, the table-with-initializer encoding, and cross-module typed-ref global linking
+    // (line 93 imports `(ref $dummy)` satisfied by an exported `(ref $f)`, checked via closed structural
+    // descriptors) are all handled — fully green.
+    public void SpecTest_table() => SpecTestRunner.Run("table");
 
     /// <summary>Runs the token tests.</summary>
     [TestMethod]
@@ -358,8 +336,8 @@ public class SpecTests
 
     /// <summary>Runs the unreached-valid tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed-ref opcodes in unreachable code — Phase 5.
-    public void SpecTest_unreached_valid() => SpecTestRunner.RunAllSkipped("unreached-valid", "typed-ref opcodes in unreachable code — Phase 5");
+    // Typed-ref opcodes in unreachable code (Phase 5) — fully green.
+    public void SpecTest_unreached_valid() => SpecTestRunner.Run("unreached-valid");
 
     /// <summary>Runs the unwind tests.</summary>
     [TestMethod]
@@ -415,11 +393,8 @@ public class SpecTests
     /// <summary>Runs the bulk-memory/table-sub tests.</summary>
     [TestMethod]
     public void SpecTest_table_sub()
-        // typed-ref subtyping in table.init — Phase 5.
-        => SpecTestRunner.Run("bulk-memory/table-sub", skip:
-        [
-        1,
-        ]);
+        // Subtype-checked table.init (Phase 5) cleared the former table-sub:1 skip.
+        => SpecTestRunner.Run("bulk-memory/table-sub");
 
 
     // ==== WASM 2.0 — Reference types & multi-table ====
@@ -430,13 +405,13 @@ public class SpecTests
 
     /// <summary>Runs the ref_is_null tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed ref.is_null — Phase 5.
-    public void SpecTest_ref_is_null() => SpecTestRunner.RunAllSkipped("ref_is_null", "typed ref.is_null — Phase 5");
+    // Typed ref.is_null over any reference (Phase 5) — fully green.
+    public void SpecTest_ref_is_null() => SpecTestRunner.Run("ref_is_null");
 
     /// <summary>Runs the ref_null tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed null references — Phase 5.
-    public void SpecTest_ref_null() => SpecTestRunner.RunAllSkipped("ref_null", "typed null references — Phase 5");
+    // Typed null references incl. abstract heap types (Phase 5) — fully green.
+    public void SpecTest_ref_null() => SpecTestRunner.Run("ref_null");
 
     /// <summary>Runs the table_get tests.</summary>
     [TestMethod]
@@ -1001,37 +976,34 @@ public class SpecTests
 
     /// <summary>Runs the br_on_non_null tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed function references (branch-on-null) — Phase 5.
-    public void SpecTest_br_on_non_null() => SpecTestRunner.RunAllSkipped("br_on_non_null", "typed function references (branch-on-null) — Phase 5");
+    // br_on_non_null incl. the [t* (ref null ht)] -> [t*] label-prefix re-typing (Phase 5) — fully green.
+    public void SpecTest_br_on_non_null() => SpecTestRunner.Run("br_on_non_null");
 
     /// <summary>Runs the br_on_null tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed function references (branch-on-null) — Phase 5.
-    public void SpecTest_br_on_null() => SpecTestRunner.RunAllSkipped("br_on_null", "typed function references (branch-on-null) — Phase 5");
+    // br_on_null over typed references (Phase 5) — fully green.
+    public void SpecTest_br_on_null() => SpecTestRunner.Run("br_on_null");
 
     /// <summary>Runs the call_ref tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed function references (call_ref) — Phase 5.
-    public void SpecTest_call_ref() => SpecTestRunner.RunAllSkipped("call_ref", "typed function references (call_ref) — Phase 5");
+    // Typed function references (call_ref) (Phase 5) — fully green.
+    public void SpecTest_call_ref() => SpecTestRunner.Run("call_ref");
 
     /// <summary>Runs the local_init tests.</summary>
     [TestMethod]
-    // Whole category deferred: non-defaultable locals (typed refs) — Phase 5.
-    public void SpecTest_local_init() => SpecTestRunner.RunAllSkipped("local_init", "non-defaultable locals (typed refs) — Phase 5");
+    // Non-defaultable-local definite assignment (M5.3) plus inline reference block results (M5.4) — fully green.
+    public void SpecTest_local_init() => SpecTestRunner.Run("local_init");
 
     /// <summary>Runs the ref tests.</summary>
     [TestMethod]
     public void SpecTest_ref()
-        // typed function references — Phase 5.
-        => SpecTestRunner.Run("ref", skip:
-        [
-        3, 65, 69, 73, 78,
-        ]);
+        // Typed function references + concrete-index "unknown type" bounds checks (Phase 5) — fully green.
+        => SpecTestRunner.Run("ref");
 
     /// <summary>Runs the ref_as_non_null tests.</summary>
     [TestMethod]
-    // Whole category deferred: typed function references (branch-on-null) — Phase 5.
-    public void SpecTest_ref_as_non_null() => SpecTestRunner.RunAllSkipped("ref_as_non_null", "typed function references (branch-on-null) — Phase 5");
+    // ref.as_non_null trapping on null (Phase 5) — fully green.
+    public void SpecTest_ref_as_non_null() => SpecTestRunner.Run("ref_as_non_null");
 
 
     // ==== WASM 3.0 — Exception handling (Phase 6) ====
@@ -1189,10 +1161,13 @@ public class SpecTests
     /// <summary>Runs the type-equivalence tests.</summary>
     [TestMethod]
     public void SpecTest_type_equivalence()
-        // recursive/structural type groups (GC) — Phase 8.
+        // Recursive/structural type-group equivalence (GC) — Phase 8. Several formerly-skipped lines now pass
+        // (typed-ref parsing and "unknown type" bounds checks landed in Phase 5); the list below is the fresh
+        // SpecDiscovery set. Line 77 references a later type index across singleton rec groups (an "unknown type"
+        // only the rec-group scoping rules reject — Phase 8).
         => SpecTestRunner.Run("type-equivalence", skip:
         [
-        5, 16, 30, 38, 49, 107, 136, 161, 195, 200, 208, 218, 233, 238, 246, 257, 268, 279, 290, 308,
+        30, 49, 77, 136, 161, 233, 238, 246, 257, 268, 279, 290, 308,
         ]);
 
     /// <summary>Runs the type-rec tests.</summary>
@@ -1202,6 +1177,10 @@ public class SpecTests
         => SpecTestRunner.Run("type-rec", skip:
         [
         3, 39, 45, 71, 78, 137, 141, 143, 149, 157, 167, 174, 176, 183, 185, 192, 197,
+        // 22: a type references a later type index (forward reference across singleton rec groups), an "unknown
+        // type" the rec-group scoping rules reject — Phase 8. Previously threw by accident of the pre-M5.2 reftype
+        // mis-parse; the encoding now parses cleanly, so it defers until rec groups land.
+        22,
         ]);
 
 

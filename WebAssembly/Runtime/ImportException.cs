@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime;
 
@@ -66,6 +67,43 @@ public class ImportException : RuntimeException
     }
 
     /// <summary>
+    /// Throws an <see cref="ImportException"/> if a supplied global import's value type or mutability does not
+    /// match what the importing module declared. When both the supplied global and the declaration carry a closed
+    /// structural descriptor (the case for reference-typed globals linked from another compiled module), the WASM
+    /// type is compared structurally — an immutable global's supply need only be a subtype, a mutable global's type
+    /// is invariant — which is finer than the CLR representation can express. When either descriptor is absent
+    /// (host-supplied or numeric globals), this falls back to the coarse CLR value-type check.
+    /// </summary>
+    /// <param name="import">The resolved global import.</param>
+    /// <param name="expectedType">The value type the module declared for this import.</param>
+    /// <param name="expectedMutable">Whether the module declared this import as mutable.</param>
+    /// <param name="expectedDescriptor">The declared type's closed structural descriptor, or null for a numeric global.</param>
+    /// <param name="module">The import's module name, for diagnostics.</param>
+    /// <param name="field">The import's field name, for diagnostics.</param>
+    public static void ValidateGlobal(GlobalImport import, WebAssemblyValueType expectedType, bool expectedMutable, string? expectedDescriptor, string module, string field)
+    {
+        var actualMutable = import.Setter != null;
+        if (actualMutable != expectedMutable)
+            throw new ImportException(
+                $"Import {module}::{field} expected a{(expectedMutable ? " mutable" : "n immutable")} global but the supplied global was {(actualMutable ? "mutable" : "immutable")}.");
+
+        if (import.Descriptor is { } suppliedDescriptor && expectedDescriptor is not null)
+        {
+            var compatible = expectedMutable
+                ? suppliedDescriptor == expectedDescriptor                            // mutable: invariant
+                : WasmTypeDescriptor.IsSubtype(suppliedDescriptor, expectedDescriptor); // immutable: supplied <: expected
+            if (!compatible)
+                throw new ImportException(
+                    $"Import {module}::{field} expected a{(expectedMutable ? " mutable" : "n immutable")} global of type {expectedDescriptor} but the supplied global was {suppliedDescriptor}.");
+            return;
+        }
+
+        if (import.GetterType != expectedType)
+            throw new ImportException(
+                $"Import {module}::{field} expected a {(expectedMutable ? "mutable " : "")}{expectedType} global but the supplied global was {(actualMutable ? "mutable " : "")}{import.GetterType}.");
+    }
+
+    /// <summary>
     /// Throws an <see cref="ImportException"/> if a supplied memory's limits are not compatible with what the
     /// importing module declared (the memory must be at least as large as required and no larger than allowed).
     /// </summary>
@@ -112,6 +150,37 @@ public class ImportException : RuntimeException
 
         // As with memory, the effective lower bound is the table's current length, not its declared initial.
         // An unbounded supplied table can't satisfy a bounded import, hence the explicit null check.
+        if (table.Length < expectedMinimum || (expectedHasMaximum && (table.Maximum == null || table.Maximum > expectedMaximum)))
+            throw new ImportException(
+                $"Import {module}::{field} expected a table of at least {expectedMinimum} entr{(expectedMinimum == 1 ? "y" : "ies")}{(expectedHasMaximum ? $" and at most {expectedMaximum}" : "")} but the supplied table had a range of [{table.Length}, {(object?)table.Maximum ?? "unbounded"}].");
+    }
+
+    /// <summary>
+    /// Throws an <see cref="ImportException"/> if a supplied table's element type or limits are not compatible with
+    /// what the importing module declared. A table's element type is invariant, so when both the supplied table and
+    /// the declaration carry a closed structural descriptor (reference-typed tables linked from another compiled
+    /// module) the descriptors must match exactly — finer than the CLR <see cref="FunctionTable"/>/<see cref="ExternRefTable"/>
+    /// distinction the cast can see. When either descriptor is absent (host-supplied tables), the element type is
+    /// assumed already verified by the caller's type cast, as before.
+    /// </summary>
+    /// <param name="table">The resolved table.</param>
+    /// <param name="expectedMinimum">The minimum number of entries the module declared.</param>
+    /// <param name="expectedMaximum">The maximum number of entries the module declared; ignored when <paramref name="expectedHasMaximum"/> is false.</param>
+    /// <param name="expectedHasMaximum">Whether the module declared a maximum.</param>
+    /// <param name="expectedIs64">Whether the module declared a 64-bit (table64) table.</param>
+    /// <param name="expectedDescriptor">The declared element type's closed structural descriptor, or null when unavailable.</param>
+    /// <param name="module">The import's module name, for diagnostics.</param>
+    /// <param name="field">The import's field name, for diagnostics.</param>
+    public static void ValidateTable(TableImport table, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, bool expectedIs64, string? expectedDescriptor, string module, string field)
+    {
+        if (table.Is64Bit != expectedIs64)
+            throw new ImportException(
+                $"Import {module}::{field} expected a{(expectedIs64 ? " 64-bit" : " 32-bit")} table but the supplied table was {(table.Is64Bit ? "64-bit" : "32-bit")}.");
+
+        if (table.Descriptor is { } suppliedDescriptor && expectedDescriptor is not null && suppliedDescriptor != expectedDescriptor)
+            throw new ImportException(
+                $"Import {module}::{field} expected a table of element type {expectedDescriptor} but the supplied table had element type {suppliedDescriptor}.");
+
         if (table.Length < expectedMinimum || (expectedHasMaximum && (table.Maximum == null || table.Maximum > expectedMaximum)))
             throw new ImportException(
                 $"Import {module}::{field} expected a table of at least {expectedMinimum} entr{(expectedMinimum == 1 ? "y" : "ies")}{(expectedHasMaximum ? $" and at most {expectedMaximum}" : "")} but the supplied table had a range of [{table.Length}, {(object?)table.Maximum ?? "unbounded"}].");

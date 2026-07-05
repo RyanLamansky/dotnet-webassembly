@@ -39,6 +39,7 @@ public class LocalTee : VariableAccessInstruction
     {
         //Assuming validation passes, the remaining type will be context.CheckedLocals[this.Index]).
         context.ValidateStack(OpCode.LocalTee, context.CheckedLocals[this.Index]);
+        context.MarkLocalInitialized(checked((int)this.Index)); // local.tee assigns the local (WebAssembly 3.0).
 
         context.Emit(OpCodes.Dup);
 

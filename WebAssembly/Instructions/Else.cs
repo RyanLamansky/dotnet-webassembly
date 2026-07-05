@@ -27,6 +27,10 @@ public class Else : SimpleInstruction
         var blockType = context.Depth.Count == 0 ? BlockType.Empty : context.Depth.Peek().Type;
         var blockContext = context.BlockContexts[context.Depth.Count];
 
+        // The else-arm starts from the definite-assignment state at `if` entry: roll back anything the then-arm
+        // initialized (the recorded height is kept, so the construct's end rolls the else-arm back too).
+        context.RollbackInit(blockContext.InitLogHeight);
+
         if (blockContext.BlockSignature != null)
         {
             // Multi-value if: the then-branch must have produced all result values; stash them so the else-branch

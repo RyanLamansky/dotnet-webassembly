@@ -39,6 +39,11 @@ public class LocalGet : VariableAccessInstruction
     {
         if (this.Index >= context.CheckedLocals.Length)
             throw new System.InvalidOperationException($"Attempt to get local at index {this.Index} but only {context.CheckedLocals.Length} {(context.CheckedLocals.Length == 1 ? "local was" : "locals were")} defined.");
+
+        // A non-nullable reference local must be definitely assigned before it can be read (WebAssembly 3.0).
+        if (!context.IsLocalInitialized(checked((int)this.Index)))
+            throw new ModuleLoadException($"uninitialized local {this.Index}", 0);
+
         context.Stack.Push(context.CheckedLocals[this.Index]);
 
         var localIndex = this.Index - context.CheckedSignature.ParameterTypes.Length;

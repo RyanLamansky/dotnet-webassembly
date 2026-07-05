@@ -162,13 +162,30 @@ For every new instruction, remember the established five-touch pattern (see `CLA
 
 ### Phase 5 — Typed function references  *(foundational)*
 
-- [ ] New value-type encoding: `(ref null? $t)` — a reference carrying a concrete type index, plus the abstract heap types (`func`, `extern`, and the 3.0 additions `any`, `eq`, `i31`, `struct`, `array`, `none`, `nofunc`, `noextern`). This needs a richer representation than today's flat `WebAssemblyValueType` enum (`WebAsssemblyValueType.cs`) and `ElementType` enum — likely a `ReferenceType` struct (nullable flag + heap type / type index).
-- [ ] Non-defaultable locals: locals of non-nullable ref type require definite-assignment validation before use.
-- [ ] New instructions: `call_ref`, `return_call_ref`, `ref.as_non_null`, `br_on_null`, `br_on_non_null`, typed `ref.func`, `ref.null ht`.
-- [ ] Subtyping in the validator: stack-type matching becomes "is-subtype-of," not equality.
-- [ ] .NET mapping: typed funcrefs are still `Delegate`-shaped at runtime; the new machinery is mostly *validation-time*. Decide how `(ref $t)` maps to a concrete delegate type for `call_ref`.
-- [ ] Categories: `ref` / `typed-ref` categories; completes the `return_call_ref` slice of `tail_call`.
-- Risk: large design surface (the type algebra), modest runtime surface.
+> Full design (representation decision, subtyping lattice, milestones M5.1–M5.5, ranked risks): [Wasm3Phase5Design.md](Wasm3Phase5Design.md), produced and reviewed 2026-07-05.
+
+**Progress: Phase 5 is complete.** M5.1–M5.5 are all done, including the closed structural import/export descriptors.
+All Phase 5 spec categories are green — `call_ref`, `return_call_ref`, `br_on_null`, `br_on_non_null`, `ref_as_non_null`, `local_init`, `br_table`, `ref_is_null`, `ref_null`, `ref`, `unreached-valid`, plus the per-line clears on `select`, `table`, `elem`, `global`, `func`, `call_indirect`, `bulk-memory/table-sub` — and the last twelve typed-reference linking lines (`table:93,112–116` and `linking:112,182,186,190,442,451`) now flip green as well.
+Those needed a new `WasmTypeDescriptor` (a closed, canonical string rendering of a reference type, concrete indices expanded structurally): the exported global's/table's descriptor rides an additive `NativeExportAttribute.Descriptor`, `RuntimeImport.FromCompiledExports` copies it onto the `GlobalImport`/`TableImport`, and descriptor-aware `ImportException.ValidateGlobal`/`ValidateTable` overloads compare them — immutable global supplied `<:` expected, mutable global and table element type invariant — falling back to the coarse CLR-type check whenever either side lacks a descriptor (so host-supplied imports are unchanged).
+The skip count dropped from 52 → 36 → 34 across the phase on net8/9/10 × Debug/Release (0 failures).
+`table.6` (design risk 7) needed no work — it was already green from the Phase 4 varuint/limits work.
+See `Wasm3Phase5Design.md`'s Implementation notes (M5.4/M5.5) for the per-milestone detail.
+
+- [x] New value-type encoding: `(ref null? $t)` — a reference carrying a concrete type index, plus the abstract heap types (`func`, `extern`, and the 3.0 additions `any`, `eq`, `i31`, `struct`, `array`, `none`, `nofunc`, `noextern`, plus `exn`/`noexn`). This needs a richer representation than today's flat `WebAssemblyValueType` enum (`WebAsssemblyValueType.cs`) and `ElementType` enum — likely a `ReferenceType` struct (nullable flag + heap type / type index).
+      Done (M5.1): new public `WebAssemblyHeapType` enum + `ReferenceType` struct; additive `Reference`/`NullableReference` + ten shorthand members on `WebAssemblyValueType`/`BlockType`/`ElementType`; `Reader.ReadHeapTypeS33`/`Writer.WriteHeapType`; narrow/wide sibling pairs on `Local`, `Global`, `Import.Global`, `Table` (+ `InitializerExpression` for the `0x40 0x00` form), `Element`, `RefNull`, `SelectWithType`, `BlockTypeInstruction`; positional ref sidecar on `WebAssemblyType`; GC composite-form rejection in both parse paths. Every pre-3.0 and new encoding re-emits byte-identically (`ReferenceTypeTests`); full suite green on net8/9/10 × Debug/Release with the baseline 52 skips unchanged.
+- [x] Non-defaultable locals: locals of non-nullable ref type require definite-assignment validation before use.
+      Done (M5.3): block-scoped init tracking with rollback; "uninitialized local" ModuleLoadException; `LocalInitTests` covers all seven `local_init` shapes.
+- [x] New instructions: `call_ref`, `return_call_ref`, `ref.as_non_null`, `br_on_null`, `br_on_non_null`, typed `ref.func`, `ref.null ht`.
+      Done (M5.4): all five new instruction classes (opcode + parse dispatch + `Compile` + tests) plus the `ref.func`/`ref.null`/`ref.is_null` upgrades. `return_call_ref` tail-calls the spilled delegate directly; its 5,000,000-deep mutual-recursion proof passes on net8/9/10 × Debug/Release.
+- [x] Subtyping in the validator: stack-type matching becomes "is-subtype-of," not equality.
+      Done (M5.2): internal `ValType` currency + `TypeAlgebra` lattice; every pop/validate/branch/return equality site relaxed to subtyping (equality for numerics, so zero behavior change on pre-3.0 modules).
+- [x] .NET mapping: typed funcrefs are still `Delegate`-shaped at runtime; the new machinery is mostly *validation-time*.
+      Done: `ValType.ToSystemType()` maps the func hierarchy (and every concrete type index, all functions in Phase 5) to `Delegate`, everything else to `object`; `call_ref` applies the concrete delegate type by `castclass` at the call site only.
+- [x] Remaining M5.4: inline reference block results (`block (result (ref …))`), typed `SelectWithType`, typed tables/globals/elements + the `0x40 0x00` table-with-initializer in `Compile.cs`, and the `table.6` investigation.
+      Done: inline reference block results route through a synthetic single-result `Signature` so the existing multi-value block machinery (End/Else/Branch/BranchTable) handles them; `SelectWithType` subtype-matches reference operands; the `Compile.cs` Table/Global/Element sections read full reftypes (`TableElementTypes`/`ElementSegmentTypes` and `GlobalInfo` are now `ValType`), the `0x40 0x00` initializer form fills every slot with the evaluated const expr, a non-nullable element type without an initializer is a "type mismatch", and `table.get/set/grow/fill/copy/init`/`call_indirect` use the table's precise element `ValType`. `table.6` was already green.
+- [x] M5.5 (mostly): runner trap texts (`"null function reference"`/`"null reference"` → `NullReferenceException`); flipped every Phase 5 spec category listed above; removed the temporary `ref:47` skip; re-derived the full skip set from a fresh `SpecDiscovery` run (52 → 36).
+- [x] M5.5 remainder — **import/export linking descriptors**: `table:93,112–116` and `linking:112,182,186,190,442,451` flipped green via closed structural descriptors (`WasmTypeDescriptor`) on `NativeExportAttribute` + `GlobalImport`/`TableImport`, with descriptor-aware `ImportException.ValidateGlobal`/`ValidateTable` overloads comparing them (immutable global: supplied <: expected; mutable + table elem: invariant), falling back to the CLR-type check when either side lacks a descriptor. See design §3g and its final Implementation note.
+- Risk: large design surface (the type algebra), modest runtime surface. **Resolved** — the descriptor grammar the fixtures require turned out closed and small (see §3g note).
 
 ### Phase 6 — Exception handling  *(medium)*
 

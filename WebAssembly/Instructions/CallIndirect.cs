@@ -104,11 +104,16 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
         var paramTypes = signature.RawParameterTypes;
         var returnTypes = signature.RawReturnTypes;
 
+        // call_indirect requires a table whose element type is in the function hierarchy (a subtype of funcref);
+        // an external-reference table is a "type mismatch".
+        if (!context.IsFuncTable(this.Table))
+            throw new ModuleLoadException($"call_indirect requires a function-reference table; table {this.Table} holds {context.TableElementValType(this.Table).ToNarrow()}.", 0);
+
         var stack = context.Stack;
 
         // The element index on top of the stack is i64 for a table64 target, i32 otherwise.
         var isTable64 = context.IsTable64(this.Table);
-        context.PopStackNoReturn(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(context.TableIndexType(this.Table)), paramTypes.Length + 1);
+        context.PopStackNoReturn(OpCode.CallIndirect, paramTypes.Select(t => (ValType?)t).Reverse().Prepend(context.TableIndexType(this.Table)), paramTypes.Length + 1);
 
         for (var i = 0; i < returnTypes.Length; i++)
             stack.Push(returnTypes[i]);

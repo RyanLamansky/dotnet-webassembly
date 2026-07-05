@@ -21,6 +21,13 @@ public abstract class BlockTypeInstruction : Instruction
     public uint? TypeIndex { get; set; }
 
     /// <summary>
+    /// When non-null, the inline WASM 3.0 typed-reference result of this block; <see cref="Type"/> then reports
+    /// <see cref="BlockType.Reference"/>/<see cref="BlockType.NullableReference"/>. Only meaningful when
+    /// <see cref="TypeIndex"/> is null.
+    /// </summary>
+    public ReferenceType? RefType { get; set; }
+
+    /// <summary>
     /// Creates a new <see cref="BlockTypeInstruction"/> instance.
     /// </summary>
     private protected BlockTypeInstruction()
@@ -51,6 +58,10 @@ public abstract class BlockTypeInstruction : Instruction
         else
         {
             this.Type = (BlockType)(sbyte)raw;
+            // A single-byte 0x63/0x64 lead (never a genuine type index, which would encode multi-byte) introduces an
+            // inline WASM 3.0 typed reference; the heap type follows.
+            if (this.Type is BlockType.Reference or BlockType.NullableReference)
+                this.RefType = ReferenceType.Parse(reader, (sbyte)raw);
         }
     }
 
@@ -59,6 +70,8 @@ public abstract class BlockTypeInstruction : Instruction
         writer.Write((byte)this.OpCode);
         if (this.TypeIndex.HasValue)
             writer.WriteVar((int)this.TypeIndex.Value);
+        else if (this.RefType is { } rt)
+            rt.WriteTo(writer);
         else
             writer.WriteVar((sbyte)this.Type);
     }
@@ -73,13 +86,14 @@ public abstract class BlockTypeInstruction : Instruction
         && instruction.OpCode == this.OpCode
         && instruction.TypeIndex == this.TypeIndex
         && instruction.Type == this.Type
+        && instruction.RefType == this.RefType
         ;
 
     /// <summary>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.TypeIndex.GetValueOrDefault(), (int)this.Type);
+    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.TypeIndex.GetValueOrDefault(), (int)this.Type, this.RefType?.GetHashCode() ?? 0);
 
     /// <summary>
     /// Provides a native representation of the instruction.
@@ -95,10 +109,38 @@ public abstract class BlockTypeInstruction : Instruction
     /// block's baseline (<see cref="BlockContext.InitialStackSize"/>) is recorded below those parameters, and the
     /// parameters are then pushed back so they are available inside the block.
     /// </summary>
+    /// <summary>
+    /// Validates that an inline concrete-index reference result (and a multi-value <see cref="TypeIndex"/>) targets
+    /// a type the module defines, throwing the spec's "unknown type" otherwise. Called before any stack effect so
+    /// the error precedes an unrelated stack-size failure (e.g. an <c>if</c> missing its condition).
+    /// </summary>
+    internal static void ValidateBlockTypeIndex(BlockTypeInstruction instruction, CompilationContext context)
+    {
+        var typeCount = context.Types?.Length ?? 0;
+
+        if (instruction.TypeIndex is { } multiValueIndex && multiValueIndex >= (uint)typeCount)
+            throw new ModuleLoadException($"unknown type {multiValueIndex}: the module defines only {typeCount} type(s).", 0);
+
+        if (instruction.RefType is { TypeIndex: { } refTypeIndex } && refTypeIndex >= (uint)typeCount)
+            throw new ModuleLoadException($"unknown type {refTypeIndex}: the module defines only {typeCount} type(s).", 0);
+    }
+
     internal static BlockContext MakeBlockContext(BlockTypeInstruction instruction, CompilationContext context)
     {
         if (!instruction.TypeIndex.HasValue)
-            return new BlockContext(context.Stack.Count);
+        {
+            // An inline WASM 3.0 typed-reference result (`block (result (ref null? ht))`) has no type-section
+            // index; synthesize a zero-parameter, single-result signature so it flows through the same
+            // multi-value machinery (End/Else/Branch/BranchTable) as a real signature block.
+            if (instruction.RefType is { } refType)
+            {
+                ValidateBlockTypeIndex(instruction, context);
+                var synthetic = new Signature(ValType.FromReferenceType(refType), context.Configuration);
+                return new BlockContext(context.Stack.Count) { BlockSignature = synthetic, InitLogHeight = context.InitLog.Count };
+            }
+
+            return new BlockContext(context.Stack.Count) { InitLogHeight = context.InitLog.Count };
+        }
 
         var signature = context.CheckedTypes[instruction.TypeIndex.Value];
         var parameters = signature.RawParameterTypes;
@@ -106,7 +148,7 @@ public abstract class BlockTypeInstruction : Instruction
         for (var i = parameters.Length - 1; i >= 0; i--)
             context.PopStackNoReturn(instruction.OpCode, parameters[i]);
 
-        var blockContext = new BlockContext(context.Stack.Count) { BlockSignature = signature };
+        var blockContext = new BlockContext(context.Stack.Count) { BlockSignature = signature, InitLogHeight = context.InitLog.Count };
 
         for (var i = 0; i < parameters.Length; i++)
             context.Stack.Push(parameters[i]);

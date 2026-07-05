@@ -2,9 +2,9 @@
 
 namespace WebAssembly.Runtime.Compilation;
 
-internal sealed class GlobalInfo(WebAssemblyValueType type, bool requiresInstance, MethodInfo getter, MethodInfo? setter)
+internal sealed class GlobalInfo(ValType type, bool requiresInstance, MethodInfo getter, MethodInfo? setter)
 {
-    public readonly WebAssemblyValueType Type = type;
+    public readonly ValType Type = type;
     public readonly bool RequiresInstance = requiresInstance;
     public readonly MethodInfo Getter = getter;
     public readonly MethodInfo? Setter = setter;

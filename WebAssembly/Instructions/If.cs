@@ -36,6 +36,10 @@ public class If : BlockTypeInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        // Validate the (inline reference or multi-value) block type before consuming the condition, so an
+        // out-of-range type index surfaces as "unknown type" rather than a stack-size error (ref.11).
+        BlockTypeInstruction.ValidateBlockTypeIndex(this, context);
+
         context.PopStackNoReturn(OpCode.If, WebAssemblyValueType.Int32);
 
         // exitLabel is where the construct ends (the target of br/br_if to this depth and of the fall-through end).

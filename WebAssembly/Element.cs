@@ -68,10 +68,28 @@ public class Element
         set => this.elements = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    private ElementType elemType = ElementType.FunctionReference;
+    private ReferenceType? elemRefType;
+
     /// <summary>
-    /// The element type for the reference-typed forms (where UsesExpressions).
+    /// The element type for the reference-typed forms (where UsesExpressions). For a WASM 3.0 long-form typed
+    /// reference this reports <see cref="ElementType.Reference"/>/<see cref="ElementType.NullableReference"/>; the
+    /// heap-type detail is available via <see cref="ElemRefType"/>. Setting this clears <see cref="ElemRefType"/>.
     /// </summary>
-    public ElementType ElemType { get; set; } = ElementType.FunctionReference;
+    public ElementType ElemType
+    {
+        get => this.elemRefType is { } rt ? (ElementType)(sbyte)rt.ToValueType() : this.elemType;
+        set { this.elemType = value; this.elemRefType = null; }
+    }
+
+    /// <summary>
+    /// The full WASM 3.0 reference type when the element type is a long-form typed reference, otherwise null.
+    /// </summary>
+    public ReferenceType? ElemRefType
+    {
+        get => this.elemRefType;
+        set => this.elemRefType = value;
+    }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private IList<IList<Instruction>>? initExprs;
@@ -152,25 +170,38 @@ public class Element
                 break;
 
             case ElementKind.PassiveExpressions:
-                this.ElemType = (ElementType)reader.ReadVarInt7();
+                this.ReadElemType(reader);
                 this.ReadInitExprs(reader);
                 break;
 
             case ElementKind.ActiveExplicitTableExpressions:
                 this.Index = reader.ReadVarUInt32();
                 this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
-                this.ElemType = (ElementType)reader.ReadVarInt7();
+                this.ReadElemType(reader);
                 this.ReadInitExprs(reader);
                 break;
 
             case ElementKind.DeclarativeExpressions:
-                this.ElemType = (ElementType)reader.ReadVarInt7();
+                this.ReadElemType(reader);
                 this.ReadInitExprs(reader);
                 break;
 
             default:
                 throw new ModuleLoadException($"Unsupported element segment kind {this.Kind}.", reader.Offset);
         }
+    }
+
+    private void ReadElemType(Reader reader)
+    {
+        this.elemType = (ElementType)(sbyte)ReferenceType.ReadValueType(reader, out this.elemRefType);
+    }
+
+    private void WriteElemType(Writer writer)
+    {
+        if (this.elemRefType is { } rt)
+            rt.WriteTo(writer);
+        else
+            writer.WriteVar((sbyte)this.elemType);
     }
 
     private void ReadFuncIndices(Reader reader)
@@ -232,7 +263,7 @@ public class Element
                 break;
 
             case ElementKind.PassiveExpressions:
-                writer.WriteVar((sbyte)this.ElemType);
+                this.WriteElemType(writer);
                 this.WriteInitExprs(writer);
                 break;
 
@@ -240,12 +271,12 @@ public class Element
                 writer.WriteVar(this.Index);
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
-                writer.WriteVar((sbyte)this.ElemType);
+                this.WriteElemType(writer);
                 this.WriteInitExprs(writer);
                 break;
 
             case ElementKind.DeclarativeExpressions:
-                writer.WriteVar((sbyte)this.ElemType);
+                this.WriteElemType(writer);
                 this.WriteInitExprs(writer);
                 break;
 

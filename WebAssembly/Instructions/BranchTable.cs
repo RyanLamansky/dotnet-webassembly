@@ -127,7 +127,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
         // The values a branch to the target at the given ancestor distance carries (loop parameters, block/if
         // results, or the function's results), or empty for void targets.
-        WebAssemblyValueType[] GetBranchTypes(int distance)
+        ValType[] GetBranchTypes(int distance)
         {
             var target = context.Depth.ElementAt(distance);
             var targetDepthKey = context.Depth.Count - distance;
@@ -142,11 +142,23 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         }
 
         var defaultBranchTypes = GetBranchTypes(checked((int)this.DefaultLabel));
-        WebAssemblyValueType? typedResult = null;
+        ValType? typedResult = null;
         var isReachable = !context.IsUnreachable;
         if (defaultLabelType.OpCode != OpCode.Loop && defaultBranchTypes.Length == 1)
         {
-            context.ValidateStack(this.OpCode, defaultBranchTypes[0]);
+            if (isReachable)
+            {
+                // Validate the single carried value against the default label's type *non-destructively*, keeping
+                // the actual (possibly more specific) type on the stack so the per-label "meet" checks below see
+                // it rather than the default label's (wider) type — WebAssembly 3.0 subtyping.
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, defaultBranchTypes, context.BlockContexts[context.Depth.Count - checked((int)this.DefaultLabel)]);
+            }
+            else
+            {
+                // Dead code: concrete values pushed after `unreachable` are still type-checked by the reference
+                // algorithm (unreached-invalid.85). The pop family handles the polymorphic stack gracefully.
+                context.ValidateStack(this.OpCode, defaultBranchTypes[0]);
+            }
             typedResult = defaultBranchTypes[0];
         }
 
@@ -154,36 +166,24 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         static BlockType EffectiveLabelType(BlockTypeInstruction instruction) =>
             instruction.OpCode == OpCode.Loop ? BlockType.Empty : instruction.Type;
 
-        // All targets must agree on branch arity (and, for multi-value, the exact result signature).
+        // Every target must share the default's branch arity. WebAssembly 3.0 no longer requires the labels to agree
+        // with each other; instead the operand types must be a subtype of *each* label's expected types, validated
+        // independently below (the "meet" over all targets).
         foreach (var label in this.Labels)
         {
             var labelInstruction = context.Depth.ElementAt(checked((int)label));
             var labelBranchTypes = GetBranchTypes(checked((int)label));
-            if (!isReachable)
+
+            if (defaultBranchTypes.Length != labelBranchTypes.Length)
             {
-                if (defaultBranchTypes.Length != labelBranchTypes.Length)
-                {
-                    if (defaultBranchTypes.Length <= 1 && labelBranchTypes.Length <= 1)
-                        throw new LabelTypeMismatchException(this.OpCode, EffectiveLabelType(defaultLabelType), EffectiveLabelType(labelInstruction));
+                if (defaultBranchTypes.Length <= 1 && labelBranchTypes.Length <= 1)
+                    throw new LabelTypeMismatchException(this.OpCode, EffectiveLabelType(defaultLabelType), EffectiveLabelType(labelInstruction));
 
-                    throw new CompilerException("All labels in br_table must have matching branch arities.");
-                }
-
-                continue;
+                throw new CompilerException("All labels in br_table must have matching branch arities.");
             }
 
-            if (defaultBranchTypes.Length > 1 || labelBranchTypes.Length > 1)
-            {
-                if (!defaultBranchTypes.SequenceEqual(labelBranchTypes))
-                    throw new CompilerException("All labels in br_table must have matching branch signatures.");
-
-                continue;
-            }
-
-            var labelEffective = EffectiveLabelType(labelInstruction);
-            var defaultEffective = EffectiveLabelType(defaultLabelType);
-            if (labelEffective != defaultEffective)
-                throw new LabelTypeMismatchException(this.OpCode, defaultEffective, labelEffective);
+            if (isReachable && labelBranchTypes.Length > 0)
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, labelBranchTypes, context.BlockContexts[context.Depth.Count - checked((int)label)]);
         }
 
         var blockDepth = checked((uint)context.Depth.Count);

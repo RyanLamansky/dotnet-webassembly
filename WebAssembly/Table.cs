@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace WebAssembly;
 
@@ -8,10 +10,41 @@ namespace WebAssembly;
 /// </summary>
 public class Table
 {
+    private ElementType elementType;
+    private ReferenceType? elementRefType;
+
     /// <summary>
-    /// The type of elements.
+    /// The type of elements. For a WASM 3.0 long-form typed reference this reports
+    /// <see cref="ElementType.Reference"/>/<see cref="ElementType.NullableReference"/>; the heap-type detail is
+    /// available via <see cref="ElementRefType"/>. Setting this clears <see cref="ElementRefType"/>.
     /// </summary>
-    public ElementType ElementType { get; set; }
+    public ElementType ElementType
+    {
+        get => this.elementRefType is { } rt ? (ElementType)(sbyte)rt.ToValueType() : this.elementType;
+        set { this.elementType = value; this.elementRefType = null; }
+    }
+
+    /// <summary>
+    /// The full WASM 3.0 reference type when the element type is a long-form typed reference, otherwise null.
+    /// </summary>
+    public ReferenceType? ElementRefType
+    {
+        get => this.elementRefType;
+        set => this.elementRefType = value;
+    }
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+    private IList<Instruction>? initializerExpression;
+
+    /// <summary>
+    /// The WASM 3.0 table-with-initializer const expression (the <c>0x40 0x00</c> encoding), used to populate every
+    /// slot of the table at instantiation. Null for the classic encoding, in which case slots start as null references.
+    /// </summary>
+    public IList<Instruction>? InitializerExpression
+    {
+        get => this.initializerExpression;
+        set => this.initializerExpression = value;
+    }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private ResizableLimits? resizableLimits;
@@ -40,7 +73,7 @@ public class Table
     /// </summary>
     public Table()
     {
-        this.ElementType = ElementType.FunctionReference;
+        this.elementType = ElementType.FunctionReference;
     }
 
     /// <summary>
@@ -61,7 +94,27 @@ public class Table
     /// <exception cref="ArgumentNullException"><paramref name="reader"/> cannot be null.</exception>
     internal Table(Reader reader)
     {
-        this.ElementType = (ElementType)reader.ReadVarInt7();
+        // WASM 3.0 table-with-initializer: a leading 0x40 (s7 -0x40, impossible as a reftype) then 0x00 selects the
+        // form "0x40 0x00 tabletype constexpr". The classic encoding is just "elementtype limits".
+        var lead = reader.ReadVarInt7();
+        if (lead == -0x40)
+        {
+            _ = reader.ReadByte(); // 0x00 (reserved)
+            this.ReadTableType(reader, reader.ReadVarInt7());
+            this.initializerExpression = Instruction.ParseInitializerExpression(reader).ToList();
+        }
+        else
+        {
+            this.ReadTableType(reader, lead);
+        }
+    }
+
+    private void ReadTableType(Reader reader, sbyte lead)
+    {
+        var valueType = (WebAssemblyValueType)lead;
+        if (valueType is WebAssemblyValueType.Reference or WebAssemblyValueType.NullableReference)
+            this.elementRefType = ReferenceType.Parse(reader, lead);
+        this.elementType = (ElementType)lead;
         this.resizableLimits = new ResizableLimits(reader);
     }
 
@@ -73,7 +126,26 @@ public class Table
 
     internal void WriteTo(Writer writer)
     {
-        writer.WriteVar((sbyte)this.ElementType);
+        if (this.initializerExpression is { } init)
+        {
+            writer.Write((byte)0x40);
+            writer.Write((byte)0x00);
+            this.WriteTableType(writer);
+            foreach (var instruction in init)
+                instruction.WriteTo(writer);
+        }
+        else
+        {
+            this.WriteTableType(writer);
+        }
+    }
+
+    private void WriteTableType(Writer writer)
+    {
+        if (this.elementRefType is { } rt)
+            rt.WriteTo(writer);
+        else
+            writer.WriteVar((sbyte)this.elementType);
         this.ResizableLimits.WriteTo(writer);
     }
 }
