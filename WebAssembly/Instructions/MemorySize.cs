@@ -75,6 +75,13 @@ public class MemorySize : Instruction
         context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
         context.Emit(OpCodes.Div_Un);
 
-        context.Stack.Push(WebAssemblyValueType.Int32);
+        if (context.IsMemory64(this.MemoryIndex))
+        {
+            // memory64: the current page count is returned as an i64.
+            context.Emit(OpCodes.Conv_U8);
+            context.Stack.Push(WebAssemblyValueType.Int64);
+        }
+        else
+            context.Stack.Push(WebAssemblyValueType.Int32);
     }
 }

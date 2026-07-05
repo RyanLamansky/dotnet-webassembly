@@ -25,12 +25,7 @@ public class SpecTests
 
     /// <summary>Runs the align tests.</summary>
     [TestMethod]
-    public void SpecTest_align()
-        // 3.0 offset/alignment validation asserts — Part B.
-        => SpecTestRunner.Run("align", skip:
-        [
-        949, 1005,
-        ]);
+    public void SpecTest_align() => SpecTestRunner.Run("align");
 
     /// <summary>Runs the binary tests.</summary>
     [TestMethod]
@@ -269,14 +264,7 @@ public class SpecTests
 
     /// <summary>Runs the memory tests.</summary>
     [TestMethod]
-    public void SpecTest_memory()
-        // Phase 3 multi-memory validation is now green; the remaining skips declare a 32-bit memory with 2^32
-        // pages, which the reader silently truncates via varuint32 rather than rejecting. Detecting that overflow
-        // is entangled with reading memory sizes as varuint64 for memory64 — deferred to Phase 4.
-        => SpecTestRunner.Run("memory", skip:
-        [
-        78, 82, 86, 91, 95, 99,
-        ]);
+    public void SpecTest_memory() => SpecTestRunner.Run("memory");
 
     /// <summary>Runs the memory_grow tests.</summary>
     [TestMethod]
@@ -910,223 +898,103 @@ public class SpecTests
 
     /// <summary>Runs the memory64/address64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_address64() => SpecTestRunner.RunAllSkipped("memory64/address64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_address64() => SpecTestRunner.Run("memory64/address64");
 
     /// <summary>Runs the memory64/align64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_align64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/align64", skip:
-        [
-        3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 458, 802, 803, 804,
-         805, 807, 808, 809, 810, 811, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824, 825, 826,
-         828, 829, 830, 831, 832, 833, 834, 835, 836, 837, 838, 839, 840, 841, 842, 843, 844, 845, 846, 847,
-         848, 849, 850, 854, 864, 866, 869,
-        ]);
+    public void SpecTest_memory64_align64() => SpecTestRunner.Run("memory64/align64");
 
     /// <summary>Runs the memory64/binary_leb128_64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_binary_leb128_64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/binary_leb128_64", skip:
-        [
-        1,
-        ]);
+    public void SpecTest_memory64_binary_leb128_64() => SpecTestRunner.Run("memory64/binary_leb128_64");
 
     /// <summary>Runs the memory64/bulk64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_bulk64() => SpecTestRunner.RunAllSkipped("memory64/bulk64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_bulk64() => SpecTestRunner.Run("memory64/bulk64");
 
     /// <summary>Runs the memory64/call_indirect64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_call_indirect64() => SpecTestRunner.RunAllSkipped("memory64/call_indirect64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_call_indirect64() => SpecTestRunner.Run("memory64/call_indirect64");
 
     /// <summary>Runs the memory64/endianness64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_endianness64() => SpecTestRunner.RunAllSkipped("memory64/endianness64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_endianness64() => SpecTestRunner.Run("memory64/endianness64");
 
     /// <summary>Runs the memory64/float_memory64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_float_memory64() => SpecTestRunner.RunAllSkipped("memory64/float_memory64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_float_memory64() => SpecTestRunner.Run("memory64/float_memory64");
 
     /// <summary>Runs the memory64/load64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_load64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/load64", skip:
-        [
-        3, 161, 163, 164, 165, 167, 168, 169, 171, 173, 174, 175, 177, 178, 179, 181, 182, 183, 185, 186, 187,
-         188, 190, 191, 192, 194, 195, 196, 197, 198, 199, 201, 203, 204, 206, 208, 209, 211,
-        ]);
+    public void SpecTest_memory64_load64() => SpecTestRunner.Run("memory64/load64");
 
     /// <summary>Runs the memory64/memory64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_memory64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/memory64", skip:
-        [
-        8, 11, 12, 13, 14, 15, 16, 54, 58, 63, 67, 71, 159, 160, 162, 163, 164, 165, 167, 168, 169, 170, 172,
-         173, 174, 175, 176, 177, 178, 179, 181, 182, 183, 184, 185, 186, 188, 189, 190, 191, 192, 193, 195,
-         196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206,
-        ]);
+    public void SpecTest_memory64_memory64() => SpecTestRunner.Run("memory64/memory64");
 
     /// <summary>Runs the memory64/memory64-imports tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_memory64_imports()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/memory64-imports", skip:
-        [
-        53, 57, 61, 65, 155, 159, 163, 167,
-        ]);
+    public void SpecTest_memory64_memory64_imports() => SpecTestRunner.Run("memory64/memory64-imports");
 
     /// <summary>Runs the memory64/memory_copy64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_memory_copy64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/memory_copy64", skip:
-        [
-        6, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-         41, 42, 43, 44, 45, 46, 48, 57, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
-         77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 90, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109,
-         110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129,
-         130, 132, 141, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
-         160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 174, 183, 185, 186, 187, 188, 189,
-         190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
-         210, 211, 212, 213, 214, 216, 225, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-         240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 258, 267, 269,
-         270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289,
-         290, 291, 292, 293, 294, 295, 296, 297, 298, 300, 309, 311, 312, 313, 314, 315, 316, 317, 318, 319,
-         320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339,
-         340, 4316, 4322, 4763, 4780, 4782, 4784, 4786, 4789, 4806, 4808, 4810, 4812, 4815, 4819, 4821, 4825,
-         4827, 4831, 4833, 4837, 4839, 4857, 4859, 4861, 4863, 4867, 4869, 4873, 4875, 4879, 4881, 4885, 4887,
-         4891, 4893, 4897, 4899, 5115, 5117, 5119, 5121, 5123, 5125, 5127, 5129, 5131, 5133, 5135, 5137, 5139,
-         5141, 5143, 5145, 5147, 5149, 5151, 5153, 5155, 5157, 5159, 5161, 5163, 5165, 5167, 5169, 5171, 5173,
-         5175, 5177, 5179, 5181, 5183, 5185, 5187, 5189, 5191, 5193, 5195, 5197, 5199, 5201, 5203, 5205, 5207,
-         5209, 5211, 5213, 5215, 5217, 5219, 5221, 5223, 5225, 5227, 5229, 5231, 5233, 5235, 5237, 5239, 5241,
-         5243, 5245, 5247, 5249, 5251, 5253, 5255, 5257, 5259, 5261, 5263, 5265, 5267, 5269, 5271, 5273, 5275,
-         5277, 5279, 5281, 5283, 5285, 5287, 5289, 5291, 5293, 5295, 5297, 5299, 5301, 5303, 5305, 5307, 5309,
-         5311, 5313, 5315, 5317, 5319, 5321, 5323, 5325, 5327, 5329, 5331, 5333, 5335, 5337, 5339, 5341, 5343,
-         5345, 5347, 5349, 5351, 5353, 5355, 5357, 5359, 5361, 5363, 5365, 5367, 5369, 5371, 5373, 5375, 5377,
-         5379, 5381, 5383, 5385, 5387, 5389, 5391, 5393, 5395, 5397, 5399, 5401, 5403, 5405, 5407, 5409, 5411,
-         5413, 5415, 5417, 5419, 5421, 5423, 5425, 5427, 5429, 5431, 5433, 5435, 5437, 5439, 5441, 5443, 5445,
-         5447, 5449, 5451, 5453, 5455, 5457, 5459, 5461, 5463, 5465, 5467, 5469, 5471, 5473, 5475, 5477, 5479,
-         5481, 5483, 5485, 5487, 5489, 5491, 5493, 5495, 5497, 5499, 5501, 5503, 5505, 5507, 5509, 5511, 5513,
-         5515, 5517, 5519, 5521, 5523, 5525, 5527, 5529, 5531, 5533, 5535, 5537, 5539, 5541, 5543, 5545, 5547,
-         5549, 5551, 5553, 5555, 5557, 5559, 5561, 5563, 5565, 5567, 5569, 5571, 5573, 5575, 5577,
-        ]);
+    public void SpecTest_memory64_memory_copy64() => SpecTestRunner.Run("memory64/memory_copy64");
 
     /// <summary>Runs the memory64/memory_fill64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_memory_fill64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/memory_fill64", skip:
-        [
-        6, 22, 24, 26, 28, 44, 46, 62, 64, 80, 82, 84, 100, 102, 118, 120, 136, 138, 140, 142, 145, 162, 164,
-         166, 168, 170, 172, 175, 181, 621, 638, 641, 643, 660, 663, 665, 682, 685,
-        ]);
+    public void SpecTest_memory64_memory_fill64() => SpecTestRunner.Run("memory64/memory_fill64");
 
     /// <summary>Runs the memory64/memory_grow64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_memory_grow64() => SpecTestRunner.RunAllSkipped("memory64/memory_grow64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_memory_grow64() => SpecTestRunner.Run("memory64/memory_grow64");
 
     /// <summary>Runs the memory64/memory_init64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_memory_init64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/memory_init64", skip:
-        [
-        6, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-         43, 44, 45, 46, 47, 48, 50, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
-         81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 94, 105, 107, 108, 109, 110, 111, 112, 113, 114, 115,
-         116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135,
-         136, 138, 157, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
-         176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 211, 217, 219, 224, 227, 233, 240,
-         248, 253, 255, 260, 262, 267, 269, 274, 276, 283, 288, 290, 297, 304, 309, 312, 815, 833, 836, 838,
-         856, 859, 861, 879, 882, 884, 902, 905, 907, 925, 928, 930, 948, 951, 954,
-        ]);
+    public void SpecTest_memory64_memory_init64() => SpecTestRunner.Run("memory64/memory_init64");
 
     /// <summary>Runs the memory64/memory_redundancy64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_memory_redundancy64() => SpecTestRunner.RunAllSkipped("memory64/memory_redundancy64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_memory_redundancy64() => SpecTestRunner.Run("memory64/memory_redundancy64");
 
     /// <summary>Runs the memory64/memory_trap64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_memory_trap64() => SpecTestRunner.RunAllSkipped("memory64/memory_trap64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_memory_trap64() => SpecTestRunner.Run("memory64/memory_trap64");
 
     /// <summary>Runs the memory64/table64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_table64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/table64", skip:
-        [
-        9, 13,
-        ]);
+    public void SpecTest_memory64_table64() => SpecTestRunner.Run("memory64/table64");
 
     /// <summary>Runs the memory64/table_copy64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_table_copy64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/table_copy64", skip:
-        [
-        1671, 1694, 1696, 1719, 1721, 1744, 1746, 1769, 1771, 1796, 1821, 1844, 1846, 1871, 1894, 1896, 1921,
-         1944, 1946, 1969, 1971, 1994, 1996, 2019, 2021, 2044, 2046, 2071, 2096, 2119, 2121, 2146, 2169, 2171,
-         2196, 2219,
-        ]);
+    public void SpecTest_memory64_table_copy64() => SpecTestRunner.Run("memory64/table_copy64");
 
     /// <summary>Runs the memory64/table_copy_mixed tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_table_copy_mixed()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/table_copy_mixed", skip:
-        [
-        2, 30,
-        ]);
+    public void SpecTest_memory64_table_copy_mixed() => SpecTestRunner.Run("memory64/table_copy_mixed");
 
     /// <summary>Runs the memory64/table_fill64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_table_fill64() => SpecTestRunner.RunAllSkipped("memory64/table_fill64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_table_fill64() => SpecTestRunner.Run("memory64/table_fill64");
 
     /// <summary>Runs the memory64/table_get64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_table_get64() => SpecTestRunner.RunAllSkipped("memory64/table_get64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_table_get64() => SpecTestRunner.Run("memory64/table_get64");
 
     /// <summary>Runs the memory64/table_grow64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_table_grow64() => SpecTestRunner.RunAllSkipped("memory64/table_grow64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_table_grow64() => SpecTestRunner.Run("memory64/table_grow64");
 
     /// <summary>Runs the memory64/table_init64 tests.</summary>
     [TestMethod]
-    public void SpecTest_memory64_table_init64()
-        // memory64/table64 i64 addressing — Phase 4.
-        => SpecTestRunner.Run("memory64/table_init64", skip:
-        [
-        385, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431,
-         432, 433, 434, 435, 436, 437, 438, 439, 440, 441, 442, 444, 471, 472, 473, 474, 475, 476, 477, 478,
-         479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498,
-         499, 500, 501, 503, 538, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553,
-         554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568,
-        ]);
+    public void SpecTest_memory64_table_init64() => SpecTestRunner.Run("memory64/table_init64");
 
     /// <summary>Runs the memory64/table_set64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_table_set64() => SpecTestRunner.RunAllSkipped("memory64/table_set64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_table_set64() => SpecTestRunner.Run("memory64/table_set64");
 
     /// <summary>Runs the memory64/table_size64 tests.</summary>
     [TestMethod]
-    // Whole category deferred: memory64/table64 i64 addressing — Phase 4.
-    public void SpecTest_memory64_table_size64() => SpecTestRunner.RunAllSkipped("memory64/table_size64", "memory64/table64 i64 addressing — Phase 4");
+    public void SpecTest_memory64_table_size64() => SpecTestRunner.Run("memory64/table_size64");
 
 
     // ==== WASM 3.0 — Typed function references (Phase 5) ====

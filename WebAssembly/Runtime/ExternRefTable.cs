@@ -37,14 +37,37 @@ public class ExternRefTable : TableImport
         typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Grow))!);
 
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
-        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Fill))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Fill64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Fill))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(ulong)));
 
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(() =>
         typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
-        .First(m => m.GetParameters().Length == 4));
+        .First(m => m.GetParameters().Length == 4 && m.GetParameters()[1].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetween64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
+        .First(m => m.GetParameters().Length == 4 && m.GetParameters()[1].ParameterType == typeof(ulong)));
 
     internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(() =>
-        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(InitFromSegment))!);
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(InitFromSegment))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegment64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethods(nameof(InitFromSegment))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(ulong)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Grow64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Grow64))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Get64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Get64))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Set64Method = new(() =>
+        typeof(ExternRefTable).GetTypeInfo().GetDeclaredMethod(nameof(Set64))!);
 
     /// <summary>
     /// Always <see cref="ElementType.ExternRef"/>.
@@ -188,5 +211,93 @@ public class ExternRefTable : TableImport
             return;
         for (var i = 0u; i < length; i++)
             this.values[dst + i] = src![srcOffset + i];
+    }
+
+    // A table is bounded to under 2^31 entries, so any i64 (table64) index or length at or beyond the current
+    // length is out of range; these u64 counterparts validate at full width before narrowing to an array index,
+    // so a huge i64 traps rather than wrapping into a valid slot.
+
+    /// <summary>Reads element <paramref name="index"/> of a 64-bit (table64) table. Implements <c>table.get</c>.</summary>
+    /// <param name="index">The element index.</param>
+    /// <returns>The element at the index, which may be null.</returns>
+    /// <exception cref="TableAccessOutOfRangeException"><paramref name="index"/> falls outside the table.</exception>
+    public object? Get64(ulong index)
+    {
+        if (index >= (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(index, 1);
+        return this.values[(int)index];
+    }
+
+    /// <summary>Writes element <paramref name="index"/> of a 64-bit (table64) table. Implements <c>table.set</c>.</summary>
+    /// <param name="index">The element index.</param>
+    /// <param name="value">The value to store.</param>
+    /// <exception cref="TableAccessOutOfRangeException"><paramref name="index"/> falls outside the table.</exception>
+    public void Set64(ulong index, object? value)
+    {
+        if (index >= (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(index, 1);
+        this.values[(int)index] = value;
+    }
+
+    /// <summary>The table64 counterpart of <see cref="Grow(uint, object)"/>, taking a u64 delta and returning the
+    /// previous length or -1 on failure.</summary>
+    /// <param name="delta">The number of elements to add.</param>
+    /// <param name="value">The value to initialize new elements with.</param>
+    /// <returns>The previous size of the table, or -1 if the grow operation failed.</returns>
+    public long Grow64(ulong delta, object? value)
+    {
+        if (delta > int.MaxValue)
+            return -1;
+        var result = this.Grow((uint)delta, value);
+        return result == uint.MaxValue ? -1L : result;
+    }
+
+    /// <summary>The table64 counterpart of <see cref="Fill(uint, object, uint)"/>, taking a u64 destination and length.</summary>
+    /// <param name="dst">The destination index.</param>
+    /// <param name="value">The value to store.</param>
+    /// <param name="len">The number of elements to fill.</param>
+    /// <exception cref="TableAccessOutOfRangeException">The destination range falls out of bounds.</exception>
+    public void Fill(ulong dst, object? value, ulong len)
+    {
+        if (dst + len > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, len);
+        for (ulong i = 0; i < len; i++)
+            this.values[(int)(dst + i)] = value;
+    }
+
+    /// <summary>The table64 counterpart of <see cref="Copy(ExternRefTable, uint, uint, uint)"/>, taking u64 indices
+    /// and length. Either table may be 64-bit; a 32-bit side simply receives widened operands.</summary>
+    /// <param name="srcTable">The table read from.</param>
+    /// <param name="dst">The destination index within this table.</param>
+    /// <param name="src">The source index within <paramref name="srcTable"/>.</param>
+    /// <param name="len">The number of elements to copy.</param>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void Copy(ExternRefTable srcTable, ulong dst, ulong src, ulong len)
+    {
+        if (dst + len > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, len);
+        if (src + len > (ulong)srcTable.values.Length)
+            throw new TableAccessOutOfRangeException(src, len);
+        Array.Copy(srcTable.values, (int)src, this.values, (int)dst, (int)len);
+    }
+
+    /// <summary>The table64 counterpart of <see cref="InitFromSegment(uint, object[], uint, uint)"/>, taking a
+    /// u64 destination (the source segment index and length remain i32).</summary>
+    /// <param name="dst">The destination index within the table.</param>
+    /// <param name="src">The source element segment, or null if it has been dropped.</param>
+    /// <param name="srcOffset">The index within the source segment.</param>
+    /// <param name="length">The number of elements to copy.</param>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void InitFromSegment(ulong dst, object?[]? src, uint srcOffset, uint length)
+    {
+        var srcLength = src != null ? (uint)src.Length : 0u;
+        if (dst + length > (ulong)this.values.Length)
+            throw new TableAccessOutOfRangeException(dst, length);
+        if ((ulong)srcOffset + length > srcLength)
+            throw new TableAccessOutOfRangeException(srcOffset, length);
+        if (length == 0)
+            return;
+        for (var i = 0u; i < length; i++)
+            this.values[(int)dst + i] = src![srcOffset + i];
     }
 }

@@ -31,6 +31,7 @@ enum HelperMethod
     Int32RemainderSigned,
     Int64RemainderSigned,
     GrowMemory,
+    GrowMemory64,
     Int32TruncateSaturateFloat32Signed,
     Int32TruncateSaturateFloat32Unsigned,
     Int32TruncateSaturateFloat64Signed,

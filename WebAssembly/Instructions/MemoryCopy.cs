@@ -53,18 +53,36 @@ public class MemoryCopy : MiscellaneousInstruction
         var destinationMemory = context.ResolveMemory(this.DestinationMemoryIndex);
         var sourceMemory = context.ResolveMemory(this.SourceMemoryIndex);
 
+        var dst64 = context.IsMemory64(this.DestinationMemoryIndex);
+        var src64 = context.IsMemory64(this.SourceMemoryIndex);
+        // When either memory is 64-bit the whole operation runs through the u64 (memory64) path; a 32-bit side's
+        // operand is widened to u64. The length operand's type is the narrower of the two memories (per the spec):
+        // i64 only when both are 64-bit, else i32.
+        var useUlong = dst64 || src64;
+        var dstType = context.MemoryAddressType(this.DestinationMemoryIndex);
+        var srcType = context.MemoryAddressType(this.SourceMemoryIndex);
+        var lenType = dst64 && src64 ? WebAssemblyValueType.Int64 : WebAssemblyValueType.Int32;
+
         // Stack: dst src len → (nothing)
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, lenType); // len
+        context.PopStackNoReturn(this.OpCode, srcType); // src
+        context.PopStackNoReturn(this.OpCode, dstType); // dst
 
-        // Save the arguments to locals, then pass them to the copy helper in order.
-        var len = context.DeclareLocal(typeof(uint));
-        var src = context.DeclareLocal(typeof(uint));
-        var dst = context.DeclareLocal(typeof(uint));
+        // Save the arguments to locals, then pass them to the copy helper in order. Widen any i32 operand to u64
+        // (zero-extending) so the memory64 overloads' overflow-checked bounds tests see the true value.
+        var localType = useUlong ? typeof(ulong) : typeof(uint);
+        var len = context.DeclareLocal(localType);
+        var src = context.DeclareLocal(localType);
+        var dst = context.DeclareLocal(localType);
 
+        if (useUlong && lenType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, len);
+        if (useUlong && srcType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, src);
+        if (useUlong && dstType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, dst);
 
         if (this.DestinationMemoryIndex == this.SourceMemoryIndex)
@@ -75,7 +93,7 @@ public class MemoryCopy : MiscellaneousInstruction
             context.Emit(OpCodes.Ldloc, dst);
             context.Emit(OpCodes.Ldloc, src);
             context.Emit(OpCodes.Ldloc, len);
-            context.Emit(OpCodes.Call, UnmanagedMemory.CopyMethod);
+            context.Emit(OpCodes.Call, useUlong ? UnmanagedMemory.Copy64Method : UnmanagedMemory.CopyMethod);
         }
         else
         {
@@ -87,7 +105,7 @@ public class MemoryCopy : MiscellaneousInstruction
             context.Emit(OpCodes.Ldfld, sourceMemory);
             context.Emit(OpCodes.Ldloc, src);
             context.Emit(OpCodes.Ldloc, len);
-            context.Emit(OpCodes.Call, UnmanagedMemory.CopyBetweenMethod);
+            context.Emit(OpCodes.Call, useUlong ? UnmanagedMemory.CopyBetween64Method : UnmanagedMemory.CopyBetweenMethod);
         }
     }
 }

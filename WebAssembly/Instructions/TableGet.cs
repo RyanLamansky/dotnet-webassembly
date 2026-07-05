@@ -40,16 +40,20 @@ public class TableGet : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         var (table, isFunc) = context.ResolveTable(TableIndex);
+        var is64 = context.IsTable64(TableIndex);
 
-        context.PopStackNoReturn(OpCode, WebAssemblyValueType.Int32);
+        context.PopStackNoReturn(OpCode, context.TableIndexType(TableIndex));
         context.Stack.Push(isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef);
 
-        // IL stack on entry: [..., index:i32]  — store it, load table, reload index, call the indexer getter.
-        var idx = context.DeclareLocal(typeof(int));
+        // IL stack on entry: [..., index]  — store it, load table, reload index, call the indexer getter. table64
+        // uses the u64 Get64 helper, which traps for an index beyond the table (never wrapping a huge i64).
+        var idx = context.DeclareLocal(is64 ? typeof(ulong) : typeof(int));
         context.Emit(OpCodes.Stloc, idx);
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, table);
         context.Emit(OpCodes.Ldloc, idx);
-        context.Emit(OpCodes.Call, isFunc ? FunctionTable.IndexGetter : ExternRefTable.IndexGetter);
+        context.Emit(OpCodes.Call, is64
+            ? (isFunc ? FunctionTable.Get64Method : ExternRefTable.Get64Method)
+            : (isFunc ? FunctionTable.IndexGetter : ExternRefTable.IndexGetter));
     }
 }

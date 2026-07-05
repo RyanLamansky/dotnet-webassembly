@@ -45,10 +45,20 @@ public class TableCopy : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        var dst64 = context.IsTable64(DestinationTableIndex);
+        var src64 = context.IsTable64(SourceTableIndex);
+        // When either table is 64-bit the whole operation runs through the u64 (table64) path; a 32-bit side's
+        // operand is widened to u64. The length operand's type is the narrower of the two (per the spec): i64 only
+        // when both are 64-bit, else i32.
+        var useUlong = dst64 || src64;
+        var dstType = context.TableIndexType(DestinationTableIndex);
+        var srcType = context.TableIndexType(SourceTableIndex);
+        var lenType = dst64 && src64 ? WebAssemblyValueType.Int64 : WebAssemblyValueType.Int32;
+
         // Stack: dst src len → ()
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, lenType); // len
+        context.PopStackNoReturn(this.OpCode, srcType); // src
+        context.PopStackNoReturn(this.OpCode, dstType); // dst
 
         var (dstTable, dstIsFunc) = context.ResolveTable(DestinationTableIndex);
         var (srcTable, srcIsFunc) = context.ResolveTable(SourceTableIndex);
@@ -57,12 +67,20 @@ public class TableCopy : MiscellaneousInstruction
 
         var isFunc = dstIsFunc;
 
-        var len = context.DeclareLocal(typeof(uint));
-        var src = context.DeclareLocal(typeof(uint));
-        var dst = context.DeclareLocal(typeof(uint));
+        // Widen any i32 operand to u64 (zero-extending) so the table64 overloads' bounds tests see the true value.
+        var localType = useUlong ? typeof(ulong) : typeof(uint);
+        var len = context.DeclareLocal(localType);
+        var src = context.DeclareLocal(localType);
+        var dst = context.DeclareLocal(localType);
 
+        if (useUlong && lenType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, len);
+        if (useUlong && srcType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, src);
+        if (useUlong && dstType == WebAssemblyValueType.Int32)
+            context.Emit(OpCodes.Conv_U8);
         context.Emit(OpCodes.Stloc, dst);
 
         // this.dstTable.Copy(this.srcTable, dst, src, len)
@@ -73,6 +91,8 @@ public class TableCopy : MiscellaneousInstruction
         context.Emit(OpCodes.Ldloc, dst);
         context.Emit(OpCodes.Ldloc, src);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, isFunc ? FunctionTable.CopyBetweenMethod : ExternRefTable.CopyBetweenMethod);
+        context.Emit(OpCodes.Call, useUlong
+            ? (isFunc ? FunctionTable.CopyBetween64Method : ExternRefTable.CopyBetween64Method)
+            : (isFunc ? FunctionTable.CopyBetweenMethod : ExternRefTable.CopyBetweenMethod));
     }
 }

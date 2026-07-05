@@ -106,7 +106,9 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
 
         var stack = context.Stack;
 
-        context.PopStackNoReturn(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(WebAssemblyValueType.Int32), paramTypes.Length + 1);
+        // The element index on top of the stack is i64 for a table64 target, i32 otherwise.
+        var isTable64 = context.IsTable64(this.Table);
+        context.PopStackNoReturn(OpCode.CallIndirect, paramTypes.Cast<WebAssemblyValueType?>().Reverse().Prepend(context.TableIndexType(this.Table)), paramTypes.Length + 1);
 
         for (var i = 0; i < returnTypes.Length; i++)
             stack.Push(returnTypes[i]);
@@ -134,14 +136,15 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
                 $"🔁 {signature.TypeIndex}_{this.Table}",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 MultiValueHelper.ClrReturnType(returns),
-                [.. parms, typeof(uint), context.CheckedExportsBuilder]
+                // table64: the index argument is a u64, resolved with the trapping Get64 helper.
+                [.. parms, isTable64 ? typeof(ulong) : typeof(uint), context.CheckedExportsBuilder]
                 ));
 
             var il = remapper.GetILGenerator();
             il.EmitLoadArg(parms.Length + 1);
             il.Emit(OpCodes.Ldfld, context.GetTable(this.Table));
             il.EmitLoadArg(parms.Length);
-            il.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+            il.Emit(OpCodes.Call, isTable64 ? FunctionTable.Get64Method : FunctionTable.IndexGetter);
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);
 
             for (var k = 0; k < parms.Length; k++)

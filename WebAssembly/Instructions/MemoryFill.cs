@@ -44,15 +44,18 @@ public class MemoryFill : MiscellaneousInstruction
     {
         // Resolve the target memory up front so an out-of-range index traps with the spec "unknown memory" wording.
         var memory = context.ResolveMemory(this.MemoryIndex);
+        var is64 = context.IsMemory64(this.MemoryIndex);
+        var addrType = context.MemoryAddressType(this.MemoryIndex);
 
-        // Stack: dst val len → (nothing)
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
+        // Stack: dst val len → (nothing). For memory64 the destination and length are i64; the value stays i32.
+        context.PopStackNoReturn(this.OpCode, addrType); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // val
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, addrType); // dst
 
-        var len = context.DeclareLocal(typeof(uint));
+        var offsetType = is64 ? typeof(ulong) : typeof(uint);
+        var len = context.DeclareLocal(offsetType);
         var val = context.DeclareLocal(typeof(uint));
-        var dst = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(offsetType);
 
         context.Emit(OpCodes.Stloc, len);
         context.Emit(OpCodes.Stloc, val);
@@ -63,6 +66,6 @@ public class MemoryFill : MiscellaneousInstruction
         context.Emit(OpCodes.Ldloc, dst);
         context.Emit(OpCodes.Ldloc, val);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, UnmanagedMemory.FillMethod);
+        context.Emit(OpCodes.Call, is64 ? UnmanagedMemory.Fill64Method : UnmanagedMemory.FillMethod);
     }
 }

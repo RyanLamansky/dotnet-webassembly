@@ -25,10 +25,16 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         this.ValidateAlignment();
+        this.ValidateOffset(context);
 
-        context.PopStackNoReturn(this.OpCode, this.Type, WebAssemblyValueType.Int32);
+        var is64 = context.IsMemory64(this.MemoryIndex);
 
-        Int32Constant.Emit(context, (int)this.Offset);
+        context.PopStackNoReturn(this.OpCode, this.Type, context.MemoryAddressType(this.MemoryIndex));
+
+        if (is64)
+            context.Emit(OpCodes.Ldc_I8, unchecked((long)this.Offset64));
+        else
+            Int32Constant.Emit(context, (int)this.Offset);
         context.EmitLoadThis();
         context.Emit(OpCodes.Call, context.GetStoreHelper(this.MemoryIndex, this.StoreHelper, this.CreateStoreMethod));
     }
@@ -36,14 +42,17 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
     private MethodBuilder CreateStoreMethod(HelperMethod helper, CompilationContext context)
     {
         var memory = context.ResolveMemory(this.MemoryIndex);
+        // memory64: the address and offset are i64 (ulong); the range check called below is the memory64 variant,
+        // which combines them with overflow-checked u64 arithmetic and traps rather than wrapping.
+        var addressType = context.IsMemory64(this.MemoryIndex) ? typeof(ulong) : typeof(uint);
         var builder = context.CheckedExportsBuilder.DefineMethod(
             $"☣ {helper}" + (this.MemoryIndex == 0 ? "" : $" m{this.MemoryIndex}"),
             CompilationContext.HelperMethodAttributes,
             typeof(void),
             [
-                    typeof(uint), //Address
+                    addressType, //Address
 					this.Type.ToSystemType(), //Value
-					typeof(uint), //Offset
+					addressType, //Offset
 					context.CheckedExportsBuilder,
             ]
             );

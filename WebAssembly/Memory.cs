@@ -26,6 +26,16 @@ public class Memory
     }
 
     /// <summary>
+    /// When true, this is a 64-bit (memory64) linear memory whose accesses use i64 addresses; when false, a
+    /// 32-bit memory using i32 addresses. This is a convenience view of <see cref="WebAssembly.ResizableLimits.Is64Bit"/>.
+    /// </summary>
+    public bool Is64Bit
+    {
+        get => this.ResizableLimits.Is64Bit;
+        set => this.ResizableLimits.Is64Bit = value;
+    }
+
+    /// <summary>
     /// Creates a new <see cref="Memory"/> instance.
     /// </summary>
     public Memory()

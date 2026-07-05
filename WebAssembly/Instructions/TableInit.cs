@@ -45,10 +45,13 @@ public class TableInit : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        // Stack: dst src len → ()
+        var is64 = context.IsTable64(TableIndex);
+
+        // Stack: dst src len → (). table64: dst is i64; the source offset and length remain i32 (the source is an
+        // element segment, which is always 32-bit indexed).
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, context.TableIndexType(TableIndex)); // dst
 
         if (!context.ElementSegments.TryGetValue(SegmentIndex, out var segField)
             || !context.ElementSegmentTypes.TryGetValue(SegmentIndex, out var segElemType))
@@ -62,7 +65,7 @@ public class TableInit : MiscellaneousInstruction
 
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
-        var dst = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(is64 ? typeof(ulong) : typeof(uint));
 
         context.Emit(OpCodes.Stloc, len);
         context.Emit(OpCodes.Stloc, src);
@@ -76,6 +79,8 @@ public class TableInit : MiscellaneousInstruction
         context.Emit(OpCodes.Ldfld, segField);
         context.Emit(OpCodes.Ldloc, src);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, isFunc ? FunctionTable.InitFromSegmentMethod : ExternRefTable.InitFromSegmentMethod);
+        context.Emit(OpCodes.Call, is64
+            ? (isFunc ? FunctionTable.InitFromSegment64Method : ExternRefTable.InitFromSegment64Method)
+            : (isFunc ? FunctionTable.InitFromSegmentMethod : ExternRefTable.InitFromSegmentMethod));
     }
 }

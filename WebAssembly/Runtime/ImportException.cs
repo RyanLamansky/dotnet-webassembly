@@ -73,10 +73,16 @@ public class ImportException : RuntimeException
     /// <param name="expectedMinimum">The minimum number of pages the module declared.</param>
     /// <param name="expectedMaximum">The maximum number of pages the module declared; ignored when <paramref name="expectedHasMaximum"/> is false.</param>
     /// <param name="expectedHasMaximum">Whether the module declared a maximum.</param>
+    /// <param name="expectedIs64">Whether the module declared a 64-bit (memory64) memory.</param>
     /// <param name="module">The import's module name, for diagnostics.</param>
     /// <param name="field">The import's field name, for diagnostics.</param>
-    public static void ValidateMemory(UnmanagedMemory memory, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, string module, string field)
+    public static void ValidateMemory(UnmanagedMemory memory, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, bool expectedIs64, string module, string field)
     {
+        // A 64-bit (memory64) import is not satisfied by a 32-bit memory or vice versa; the address types must match.
+        if (memory.Is64Bit != expectedIs64)
+            throw new ImportException(
+                $"Import {module}::{field} expected a{(expectedIs64 ? " 64-bit" : " 32-bit")} memory but the supplied memory was {(memory.Is64Bit ? "64-bit" : "32-bit")}.");
+
         // The effective lower bound is the memory's current size, not its declared minimum: a memory grown
         // past its minimum satisfies an import that requires that larger size. UnmanagedMemory.Maximum is
         // always concrete (an unbounded memory reports the page cap), so a memory with no declared maximum
@@ -94,10 +100,16 @@ public class ImportException : RuntimeException
     /// <param name="expectedMinimum">The minimum number of entries the module declared.</param>
     /// <param name="expectedMaximum">The maximum number of entries the module declared; ignored when <paramref name="expectedHasMaximum"/> is false.</param>
     /// <param name="expectedHasMaximum">Whether the module declared a maximum.</param>
+    /// <param name="expectedIs64">Whether the module declared a 64-bit (table64) table.</param>
     /// <param name="module">The import's module name, for diagnostics.</param>
     /// <param name="field">The import's field name, for diagnostics.</param>
-    public static void ValidateTable(TableImport table, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, string module, string field)
+    public static void ValidateTable(TableImport table, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, bool expectedIs64, string module, string field)
     {
+        // A 64-bit (table64) import is not satisfied by a 32-bit table or vice versa; the index types must match.
+        if (table.Is64Bit != expectedIs64)
+            throw new ImportException(
+                $"Import {module}::{field} expected a{(expectedIs64 ? " 64-bit" : " 32-bit")} table but the supplied table was {(table.Is64Bit ? "64-bit" : "32-bit")}.");
+
         // As with memory, the effective lower bound is the table's current length, not its declared initial.
         // An unbounded supplied table can't satisfy a bounded import, hence the explicit null check.
         if (table.Length < expectedMinimum || (expectedHasMaximum && (table.Maximum == null || table.Maximum > expectedMaximum)))

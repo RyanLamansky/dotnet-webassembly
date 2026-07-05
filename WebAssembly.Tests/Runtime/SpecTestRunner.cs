@@ -101,6 +101,7 @@ static partial class SpecTestRunner
             { "spectest", "global_f32", new GlobalImport(() => 666.6F) },
             { "spectest", "global_f64", new GlobalImport(() => 666.6) },
             { "spectest", "table", new FunctionTable(10, 20) }, // Table.alloc (TableType ({min = 10l; max = Some 20l}, FuncRefType))
+            { "spectest", "table64", new FunctionTable(10, 20) { Is64Bit = true } }, // The table64 counterpart used by memory64/table64.wast.
             { "spectest", "memory", new MemoryImport(() => new UnmanagedMemory(1, 2)) }, // Memory.alloc (MemoryType {min = 1l; max = Some 2l})
         };
 
@@ -281,6 +282,9 @@ static partial class SpecTestRunner
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "alignment must not be larger than natural":
+                            // A 32-bit memory access whose memarg offset exceeds u32; the compiler rejects it because
+                            // the offset immediate is only u64-wide for a memory64 target.
+                            case "offset out of range":
                             case "global is immutable":
                             // A global.set (or other write) targeting an immutable global; the compiler rejects it
                             // because the global has no setter. wasm-tools emits this text as "immutable global".
@@ -385,6 +389,9 @@ static partial class SpecTestRunner
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "out of bounds table access":
+                            // wasm-tools emits the bare "out of bounds" for some memory64/table64 bulk traps; it
+                            // covers either a memory or a table access, so accept any of the range-trap types.
+                            case "out of bounds":
                                 try
                                 {
                                     trapExpected();
@@ -398,6 +405,10 @@ static partial class SpecTestRunner
                                     continue;
                                 }
                                 catch (MemoryAccessOutOfRangeException)
+                                {
+                                    continue;
+                                }
+                                catch (OverflowException)
                                 {
                                     continue;
                                 }

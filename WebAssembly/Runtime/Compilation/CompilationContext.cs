@@ -106,6 +106,15 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>Element type (funcref or externref) for each table, indexed by table index.</summary>
     public readonly List<ElementType> TableElementTypes = [];
 
+    /// <summary>Whether each table (indexed by table index) uses a 64-bit (i64) index type — WebAssembly 3.0 table64.</summary>
+    public readonly List<bool> TableIs64 = [];
+
+    /// <summary>Whether the table at <paramref name="tableIndex"/> uses i64 indexing (table64).</summary>
+    public bool IsTable64(uint tableIndex) => tableIndex < (uint)this.TableIs64.Count && this.TableIs64[(int)tableIndex];
+
+    /// <summary>The WebAssembly value type of the dynamic index operand for the table at <paramref name="tableIndex"/>.</summary>
+    public WebAssemblyValueType TableIndexType(uint tableIndex) => this.IsTable64(tableIndex) ? WebAssemblyValueType.Int64 : WebAssemblyValueType.Int32;
+
     /// <summary>
     /// The first table (index 0), or null if no table exists. Retained for the WASM 1.0 single-table paths
     /// (e.g. <c>call_indirect</c>); new code should index <see cref="Tables"/> directly.
@@ -197,6 +206,15 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// </summary>
     public readonly List<FieldBuilder> Memories = [];
 
+    /// <summary>Whether each memory (indexed by memory index) uses a 64-bit (i64) address type — WebAssembly 3.0 memory64.</summary>
+    public readonly List<bool> MemoryIs64 = [];
+
+    /// <summary>Whether the memory at <paramref name="memoryIndex"/> uses i64 addressing (memory64).</summary>
+    public bool IsMemory64(uint memoryIndex) => memoryIndex < (uint)this.MemoryIs64.Count && this.MemoryIs64[(int)memoryIndex];
+
+    /// <summary>The WebAssembly value type of the dynamic address operand for the memory at <paramref name="memoryIndex"/>.</summary>
+    public WebAssemblyValueType MemoryAddressType(uint memoryIndex) => this.IsMemory64(memoryIndex) ? WebAssemblyValueType.Int64 : WebAssemblyValueType.Int32;
+
     /// <summary>
     /// The first linear memory (index 0), or null if no memory exists. Retained for the single-memory paths; new
     /// code should resolve a specific memory with <see cref="ResolveMemory"/>.
@@ -229,7 +247,11 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             return existing;
 
         var memory = this.ResolveMemory(memoryIndex);
-        var builder = Instructions.MemoryImmediateInstruction.CreateRangeCheck(this, memory, size, memoryIndex);
+        // A memory64 range check takes an i64 (ulong) address and traps on 64-bit overflow; a 32-bit one takes a
+        // uint. Each memory is consistently one or the other, so keying by (index, size) alone stays unique.
+        var builder = this.IsMemory64(memoryIndex)
+            ? Instructions.MemoryImmediateInstruction.CreateRangeCheck64(this, memory, size, memoryIndex)
+            : Instructions.MemoryImmediateInstruction.CreateRangeCheck(this, memory, size, memoryIndex);
         this.rangeCheckHelpers.Add((memoryIndex, size), builder);
         return builder;
     }

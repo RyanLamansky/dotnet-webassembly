@@ -41,17 +41,19 @@ public class TableGrow : MiscellaneousInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         var (table, isFunc) = context.ResolveTable(TableIndex);
+        var is64 = context.IsTable64(TableIndex);
+        var indexType = context.TableIndexType(TableIndex);
 
-        // Stack: initValue delta → old-size
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // delta
+        // Stack: initValue delta → old-size. table64: delta and the returned old size (or -1) are i64.
+        context.PopStackNoReturn(this.OpCode, indexType); // delta
         context.PopStackNoReturn(this.OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef); // initValue
-        context.Stack.Push(WebAssemblyValueType.Int32);
+        context.Stack.Push(indexType);
 
-        // IL stack at entry: [..., initValue, delta:i32]
-        var delta = context.DeclareLocal(typeof(uint));
+        // IL stack at entry: [..., initValue, delta]
+        var delta = context.DeclareLocal(is64 ? typeof(ulong) : typeof(uint));
         if (isFunc)
         {
-            // FunctionTable.Grow(Delegate? initValue, uint delta)
+            // FunctionTable.Grow(Delegate? initValue, uint delta) / Grow64(Delegate? initValue, ulong delta)
             var initValue = context.DeclareLocal(typeof(Delegate));
             context.Emit(OpCodes.Stloc, delta);
             context.Emit(OpCodes.Castclass, typeof(Delegate));
@@ -61,11 +63,11 @@ public class TableGrow : MiscellaneousInstruction
             context.Emit(OpCodes.Ldfld, table);
             context.Emit(OpCodes.Ldloc, initValue);
             context.Emit(OpCodes.Ldloc, delta);
-            context.Emit(OpCodes.Call, FunctionTable.GrowWithValueMethod);
+            context.Emit(OpCodes.Call, is64 ? FunctionTable.Grow64Method : FunctionTable.GrowWithValueMethod);
         }
         else
         {
-            // ExternRefTable.Grow(uint delta, object? value)
+            // ExternRefTable.Grow(uint delta, object? value) / Grow64(ulong delta, object? value)
             var value = context.DeclareLocal(typeof(object));
             context.Emit(OpCodes.Stloc, delta);
             context.Emit(OpCodes.Stloc, value);
@@ -74,9 +76,11 @@ public class TableGrow : MiscellaneousInstruction
             context.Emit(OpCodes.Ldfld, table);
             context.Emit(OpCodes.Ldloc, delta);
             context.Emit(OpCodes.Ldloc, value);
-            context.Emit(OpCodes.Call, ExternRefTable.GrowMethod);
+            context.Emit(OpCodes.Call, is64 ? ExternRefTable.Grow64Method : ExternRefTable.GrowMethod);
         }
 
-        context.Emit(OpCodes.Conv_I4);
+        // The 64-bit helper already returns a signed i64; the 32-bit one returns a uint reinterpreted as i32.
+        if (!is64)
+            context.Emit(OpCodes.Conv_I4);
     }
 }

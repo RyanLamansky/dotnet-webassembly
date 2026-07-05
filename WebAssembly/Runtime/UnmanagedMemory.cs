@@ -16,14 +16,24 @@ public sealed class UnmanagedMemory : IDisposable
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredProperties.First(prop => prop.Name == nameof(Start)).GetMethod!);
     internal static readonly RegeneratingWeakReference<MethodInfo> GrowMethod = new(()
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(prop => prop.Name == nameof(Grow)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> Grow64Method = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(prop => prop.Name == nameof(Grow64)));
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyMethod = new(()
-        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy)));
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy) && m.GetParameters()[0].ParameterType == typeof(uint)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> Copy64Method = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy) && m.GetParameters()[0].ParameterType == typeof(ulong)));
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(()
-        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(CopyBetween)));
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(CopyBetween) && m.GetParameters()[1].ParameterType == typeof(uint)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetween64Method = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(CopyBetween) && m.GetParameters()[1].ParameterType == typeof(ulong)));
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(()
-        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill)));
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill) && m.GetParameters()[0].ParameterType == typeof(uint)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> Fill64Method = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill) && m.GetParameters()[0].ParameterType == typeof(ulong)));
     internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(()
-        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(InitFromSegment)));
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(InitFromSegment) && m.GetParameters()[0].ParameterType == typeof(uint)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegment64Method = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(InitFromSegment) && m.GetParameters()[0].ParameterType == typeof(ulong)));
 
     private bool disposed;
 
@@ -45,6 +55,12 @@ public sealed class UnmanagedMemory : IDisposable
 
         this.Grow(minimum);
     }
+
+    /// <summary>
+    /// When true, this is a 64-bit (memory64) memory addressed with i64; when false, a 32-bit memory addressed
+    /// with i32. An import declared with one address type is not satisfied by a memory of the other.
+    /// </summary>
+    public bool Is64Bit { get; set; }
 
     /// <summary>
     /// The initial size of memory in <see cref="Memory.PageSize"/> pages.
@@ -138,6 +154,23 @@ public sealed class UnmanagedMemory : IDisposable
     }
 
     /// <summary>
+    /// Grows a 64-bit (memory64) memory by <paramref name="delta"/> pages, returning the previous size in pages, or
+    /// -1 on failure. Implements <c>memory.grow</c> for a memory64. A delta beyond what the native buffer can hold
+    /// (always the case above <see cref="uint.MaxValue"/> pages) fails cleanly rather than corrupting memory.
+    /// </summary>
+    /// <param name="delta">The number of pages to grow by.</param>
+    /// <returns>The previous <see cref="Current"/> size in pages, or -1 on failure.</returns>
+    public long Grow64(ulong delta)
+    {
+        // The backing buffer is bounded to under 4 GiB, so any delta beyond a uint's worth of pages is unallocatable.
+        if (delta > uint.MaxValue)
+            return -1;
+
+        var result = this.Grow((uint)delta);
+        return result == unchecked((uint)-1) ? -1L : result;
+    }
+
+    /// <summary>
     /// Copies <paramref name="length"/> bytes from <paramref name="src"/> to <paramref name="dst"/> within this memory,
     /// handling overlapping regions correctly. Implements <c>memory.copy</c>.
     /// </summary>
@@ -156,6 +189,27 @@ public sealed class UnmanagedMemory : IDisposable
         if (length == 0)
             return;
         // byte* arithmetic zero-extends the uint offsets, staying correct above 2 GiB where a (int) cast would sign-extend.
+        Buffer.MemoryCopy((byte*)this.Start + src, (byte*)this.Start + dst, length, length);
+    }
+
+    /// <summary>
+    /// The memory64 counterpart of <see cref="Copy(uint, uint, uint)"/>: offsets and length are u64 and the range
+    /// checks trap (never wrap) when a region exceeds this memory's byte size or overflows 64-bit arithmetic.
+    /// </summary>
+    /// <param name="dst">The destination byte offset.</param>
+    /// <param name="src">The source byte offset.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of memory.</exception>
+    public unsafe void Copy(ulong dst, ulong src, ulong length)
+    {
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(src + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dst, length);
+        if (srcEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(src, length);
+        if (length == 0)
+            return;
         Buffer.MemoryCopy((byte*)this.Start + src, (byte*)this.Start + dst, length, length);
     }
 
@@ -181,6 +235,30 @@ public sealed class UnmanagedMemory : IDisposable
         if (length == 0)
             return;
         // Buffer.MemoryCopy is memmove-like, so a same-memory overlapping copy is handled correctly too.
+        Buffer.MemoryCopy((byte*)source.Start + src, (byte*)destination.Start + dst, length, length);
+    }
+
+    /// <summary>
+    /// The memory64 counterpart of <see cref="CopyBetween(UnmanagedMemory, uint, UnmanagedMemory, uint, uint)"/>:
+    /// offsets and length are u64 and the range checks trap (never wrap). Either memory may be 64-bit; a 32-bit
+    /// side simply receives a widened offset that is still bounds-checked against its own size.
+    /// </summary>
+    /// <param name="destination">The memory written to.</param>
+    /// <param name="dst">The destination byte offset within <paramref name="destination"/>.</param>
+    /// <param name="source">The memory read from.</param>
+    /// <param name="src">The source byte offset within <paramref name="source"/>.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of its memory.</exception>
+    public static unsafe void CopyBetween(UnmanagedMemory destination, ulong dst, UnmanagedMemory source, ulong src, ulong length)
+    {
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(src + length);
+        if (dstEnd > destination.Size)
+            throw new MemoryAccessOutOfRangeException(dst, length);
+        if (srcEnd > source.Size)
+            throw new MemoryAccessOutOfRangeException(src, length);
+        if (length == 0)
+            return;
         Buffer.MemoryCopy((byte*)source.Start + src, (byte*)destination.Start + dst, length, length);
     }
 
@@ -211,6 +289,30 @@ public sealed class UnmanagedMemory : IDisposable
     }
 
     /// <summary>
+    /// The memory64 counterpart of <see cref="InitFromSegment(uint, byte[], uint, uint)"/>: the destination offset is
+    /// u64 (the source segment index and length remain i32) and the destination range check traps (never wraps).
+    /// </summary>
+    /// <param name="dst">The destination byte offset within memory.</param>
+    /// <param name="src">The source data segment, or null if it has been dropped.</param>
+    /// <param name="srcOffset">The byte offset within the source segment.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of its bounds.</exception>
+    public unsafe void InitFromSegment(ulong dst, byte[]? src, uint srcOffset, uint length)
+    {
+        var srcLength = src != null ? (uint)src.Length : 0u;
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked((ulong)srcOffset + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dst, length);
+        if (srcEnd > srcLength)
+            throw new MemoryAccessOutOfRangeException(srcOffset, length);
+        if (length == 0)
+            return;
+        fixed (byte* pSrc = src)
+            Buffer.MemoryCopy(pSrc + srcOffset, (byte*)this.Start + dst, length, length);
+    }
+
+    /// <summary>
     /// Fills <paramref name="length"/> bytes starting at <paramref name="dst"/> with the low 8 bits of
     /// <paramref name="value"/>. Implements <c>memory.fill</c>.
     /// </summary>
@@ -228,6 +330,27 @@ public sealed class UnmanagedMemory : IDisposable
         var p = (byte*)this.Start + dst;
         var b = (byte)(value & 0xFF);
         for (uint i = 0; i < length; i++)
+            p[i] = b;
+    }
+
+    /// <summary>
+    /// The memory64 counterpart of <see cref="Fill(uint, uint, uint)"/>: the destination offset and length are u64
+    /// and the destination range check traps (never wraps).
+    /// </summary>
+    /// <param name="dst">The destination byte offset.</param>
+    /// <param name="value">The fill value; only the low 8 bits are used.</param>
+    /// <param name="length">The number of bytes to fill.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The destination range falls outside of memory.</exception>
+    public unsafe void Fill(ulong dst, uint value, ulong length)
+    {
+        var dstEnd = checked(dst + length);
+        if (dstEnd > this.Size)
+            throw new MemoryAccessOutOfRangeException(dst, length);
+        if (length == 0)
+            return;
+        var p = (byte*)this.Start + dst;
+        var b = (byte)(value & 0xFF);
+        for (ulong i = 0; i < length; i++)
             p[i] = b;
     }
 

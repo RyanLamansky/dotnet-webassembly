@@ -41,16 +41,19 @@ public class TableFill : MiscellaneousInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         var (table, isFunc) = context.ResolveTable(TableIndex);
+        var is64 = context.IsTable64(TableIndex);
+        var indexType = context.TableIndexType(TableIndex);
 
-        // Stack: dst val len → ()
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
+        // Stack: dst val len → (). table64: dst and len are i64; the value stays a ref.
+        context.PopStackNoReturn(this.OpCode, indexType); // len
         context.PopStackNoReturn(this.OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef); // value
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, indexType); // dst
 
-        // IL stack at entry: [..., dst:i32, value, len:i32]
-        var len = context.DeclareLocal(typeof(uint));
+        // IL stack at entry: [..., dst, value, len]
+        var offsetType = is64 ? typeof(ulong) : typeof(uint);
+        var len = context.DeclareLocal(offsetType);
         var value = context.DeclareLocal(isFunc ? typeof(Delegate) : typeof(object));
-        var dst = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(offsetType);
 
         context.Emit(OpCodes.Stloc, len);
         if (isFunc)
@@ -64,6 +67,8 @@ public class TableFill : MiscellaneousInstruction
         context.Emit(OpCodes.Ldloc, dst);
         context.Emit(OpCodes.Ldloc, value);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, isFunc ? FunctionTable.FillMethod : ExternRefTable.FillMethod);
+        context.Emit(OpCodes.Call, is64
+            ? (isFunc ? FunctionTable.Fill64Method : ExternRefTable.Fill64Method)
+            : (isFunc ? FunctionTable.FillMethod : ExternRefTable.FillMethod));
     }
 }

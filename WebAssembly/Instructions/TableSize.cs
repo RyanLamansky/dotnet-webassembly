@@ -41,12 +41,14 @@ public class TableSize : MiscellaneousInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         var (table, isFunc) = context.ResolveTable(TableIndex);
+        var is64 = context.IsTable64(TableIndex);
 
-        context.Stack.Push(WebAssemblyValueType.Int32);
+        context.Stack.Push(context.TableIndexType(TableIndex));
 
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, table);
         context.Emit(OpCodes.Call, isFunc ? FunctionTable.LengthGetter : ExternRefTable.LengthGetter);
-        context.Emit(OpCodes.Conv_I4);
+        // Length is a uint; table64 returns it as i64, a 32-bit table as i32.
+        context.Emit(is64 ? OpCodes.Conv_U8 : OpCodes.Conv_I4);
     }
 }

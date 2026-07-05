@@ -69,6 +69,37 @@ public class MemoryGrow : Instruction
 
     internal sealed override void Compile(CompilationContext context)
     {
+        if (context.IsMemory64(this.MemoryIndex))
+        {
+            // memory64: the delta and the returned previous size (or -1 on failure) are i64.
+            context.ValidateStack(OpCode.MemoryGrow, WebAssemblyValueType.Int64);
+
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
+            context.Emit(OpCodes.Call, context[HelperMethod.GrowMemory64, static (helper, c) =>
+            {
+                var builder = c.CheckedExportsBuilder.DefineMethod(
+                    "☣ GrowMemory64",
+                    CompilationContext.HelperMethodAttributes,
+                    typeof(long),
+                    [
+                            typeof(ulong), //Delta
+							typeof(UnmanagedMemory),
+                    ]
+                    );
+
+                var il = builder.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Call, UnmanagedMemory.Grow64Method);
+                il.Emit(OpCodes.Ret);
+
+                return builder;
+            }
+            ]);
+            return;
+        }
+
         //Assuming validation passes, the remaining type will be Int32.
         context.ValidateStack(OpCode.MemoryGrow, WebAssemblyValueType.Int32);
 

@@ -24,12 +24,25 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
     internal sealed override void Compile(CompilationContext context)
     {
         this.ValidateAlignment();
+        this.ValidateOffset(context);
 
         var stack = context.Stack;
 
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        var is64 = context.IsMemory64(this.MemoryIndex);
 
-        if (this.Offset != 0)
+        context.PopStackNoReturn(this.OpCode, context.MemoryAddressType(this.MemoryIndex));
+
+        if (is64)
+        {
+            // memory64: the address is i64 and the offset is added at 64-bit width, trapping (OverflowException)
+            // on u64 wrap. The range check then narrows the validated address to a native pointer.
+            if (this.Offset64 != 0)
+            {
+                context.Emit(OpCodes.Ldc_I8, unchecked((long)this.Offset64));
+                context.Emit(OpCodes.Add_Ovf_Un);
+            }
+        }
+        else if (this.Offset != 0)
         {
             Int32Constant.Emit(context, (int)this.Offset);
             context.Emit(OpCodes.Add_Ovf_Un);

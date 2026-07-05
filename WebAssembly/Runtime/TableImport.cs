@@ -26,6 +26,12 @@ public abstract class TableImport : RuntimeImport
     /// </summary>
     public abstract uint? Maximum { get; }
 
+    /// <summary>
+    /// When true, this is a 64-bit (table64) table indexed with i64; when false, a 32-bit table indexed with i32.
+    /// An import declared with one address type is not satisfied by a table of the other.
+    /// </summary>
+    public bool Is64Bit { get; set; }
+
     private protected TableImport()
     {
     }

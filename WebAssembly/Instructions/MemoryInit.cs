@@ -49,19 +49,21 @@ public class MemoryInit : MiscellaneousInstruction
     {
         // Resolve the target memory up front so an out-of-range index traps with the spec "unknown memory" wording.
         var memory = context.ResolveMemory(this.MemoryIndex);
+        var is64 = context.IsMemory64(this.MemoryIndex);
 
-        // Stack: dst src_offset len → (nothing)
+        // Stack: dst src_offset len → (nothing). For memory64 the destination is i64; the source offset and
+        // length remain i32 (the source is a data segment, which is always 32-bit indexed).
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src offset
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
+        context.PopStackNoReturn(this.OpCode, context.MemoryAddressType(this.MemoryIndex)); // dst
 
         if (!context.DataSegments.TryGetValue(SegmentIndex, out var segField))
             throw new ModuleLoadException($"memory.init: data segment {SegmentIndex} is not a passive segment or does not exist.", 0);
 
-        // IL stack on entry: [..., dst:i32, srcOffset:i32, len:i32]  (len on top)
+        // IL stack on entry: [..., dst, srcOffset:i32, len:i32]  (len on top)
         var len = context.DeclareLocal(typeof(uint));
         var srcOffset = context.DeclareLocal(typeof(uint));
-        var dst = context.DeclareLocal(typeof(uint));
+        var dst = context.DeclareLocal(is64 ? typeof(ulong) : typeof(uint));
 
         context.Emit(OpCodes.Stloc, len);
         context.Emit(OpCodes.Stloc, srcOffset);
@@ -75,6 +77,6 @@ public class MemoryInit : MiscellaneousInstruction
         context.Emit(OpCodes.Ldfld, segField);
         context.Emit(OpCodes.Ldloc, srcOffset);
         context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, UnmanagedMemory.InitFromSegmentMethod);
+        context.Emit(OpCodes.Call, is64 ? UnmanagedMemory.InitFromSegment64Method : UnmanagedMemory.InitFromSegmentMethod);
     }
 }

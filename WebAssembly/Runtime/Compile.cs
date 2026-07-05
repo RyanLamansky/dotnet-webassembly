@@ -215,6 +215,19 @@ public static class Compile
                 && parameters[1].ParameterType == typeof(uint);
         });
 
+    // The (ulong, ulong) counterpart, used to trap an out-of-bounds active data segment targeting a memory64.
+    static readonly ConstructorInfo MemoryAccessOutOfRangeException64Constructor =
+        typeof(MemoryAccessOutOfRangeException)
+        .GetTypeInfo()
+        .DeclaredConstructors
+        .First(c =>
+        {
+            var parameters = c.GetParameters();
+            return parameters.Length == 2
+                && parameters[0].ParameterType == typeof(ulong)
+                && parameters[1].ParameterType == typeof(ulong);
+        });
+
     const MethodAttributes ExportedFunctionAttributes =
         MethodAttributes.Public |
         MethodAttributes.Virtual |
@@ -481,16 +494,17 @@ public static class Compile
 
                             context.Tables.Add(tableField);
                             context.TableElementTypes.Add(elementType);
+                            context.TableIs64.Add(limits.Is64Bit);
 
                             // Retain the first funcref table for the WASM 1.0 single-table paths (call_indirect, active elements).
                             if (functionTable == null && elementType == ElementType.FunctionReference)
                                 functionTable = tableField;
 
                             instanceConstructorIL.EmitLoadArg(0);
-                            instanceConstructorIL.EmitLoadConstant(limits.Minimum);
-                            if (limits.Maximum.HasValue)
+                            instanceConstructorIL.EmitLoadConstant(limits.ClampedMinimum);
+                            if (limits.Maximum64.HasValue)
                             {
-                                instanceConstructorIL.EmitLoadConstant(limits.Maximum);
+                                instanceConstructorIL.EmitLoadConstant(limits.ClampedMaximum);
                                 instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?))
                                     .GetTypeInfo()
                                     .DeclaredConstructors
@@ -524,6 +538,9 @@ public static class Compile
                                     })
                                     .Single());
                             }
+                            // Record the index type on the table so an importer of this (exported) table can reject
+                            // an i32/i64 mismatch. Emitted only for table64, leaving 32-bit modules unchanged.
+                            EmitSetIs64(instanceConstructorIL, configuration, typeof(TableImport), limits.Is64Bit);
                             instanceConstructorIL.Emit(OpCodes.Stfld, tableField);
                         }
                     }
@@ -537,29 +554,35 @@ public static class Compile
                         for (var m = 0u; m < count; m++)
                         {
                             var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
-                            // A memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
-                            const uint memoryPagesLimit = 0x1_0000;
+                            var is64 = (setFlags & ResizableLimits.Flags.Is64Bit) != 0;
+                            // A 32-bit memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
+                            // A memory64 may declare up to 2^48 pages (its architectural limit), though the backing
+                            // store still bounds what can actually be allocated. Reading at 64-bit width lets a 32-bit
+                            // memory declaring 2^32 pages be rejected rather than silently truncated.
+                            var memoryPagesLimit = is64 ? 0x1_0000_0000_0000UL : 0x1_0000UL;
                             var preMinimumOffset = reader.Offset;
-                            memoryPagesMinimum = reader.ReadVarUInt32();
-                            if (memoryPagesMinimum > memoryPagesLimit)
-                                throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMinimumOffset);
+                            var declaredMinimum = reader.ReadVarUInt64();
+                            if (declaredMinimum > memoryPagesLimit)
+                                throw new ModuleLoadException($"Memory size minimum of {declaredMinimum} pages must be at most {memoryPagesLimit} pages.", preMinimumOffset);
+                            memoryPagesMinimum = (uint)Math.Min(declaredMinimum, uint.MaxValue / Memory.PageSize);
                             if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
                             {
                                 var preMaximumOffset = reader.Offset;
-                                var declaredMaximum = reader.ReadVarUInt32();
+                                var declaredMaximum = reader.ReadVarUInt64();
                                 if (declaredMaximum > memoryPagesLimit)
-                                    throw new ModuleLoadException($"Memory size maximum of {declaredMaximum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMaximumOffset);
-                                if (declaredMaximum < memoryPagesMinimum)
-                                    throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} must not be greater than maximum of {declaredMaximum}.", preMaximumOffset);
+                                    throw new ModuleLoadException($"Memory size maximum of {declaredMaximum} pages must be at most {memoryPagesLimit} pages.", preMaximumOffset);
+                                if (declaredMaximum < declaredMinimum)
+                                    throw new ModuleLoadException($"Memory size minimum of {declaredMinimum} must not be greater than maximum of {declaredMaximum}.", preMaximumOffset);
                                 // The backing store addresses memory with a uint, one byte short of a full 4GiB, so the
                                 // last allocatable page is clamped off even though the larger value validates per spec.
-                                memoryPagesMaximum = Math.Min(declaredMaximum, uint.MaxValue / Memory.PageSize);
+                                memoryPagesMaximum = (uint)Math.Min(declaredMaximum, uint.MaxValue / Memory.PageSize);
                             }
                             else
                                 memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
 
                             var memoryField = CreateMemoryField(exportsBuilder, configuration, context.Memories.Count);
                             context.Memories.Add(memoryField);
+                            context.MemoryIs64.Add(is64);
                             definedMemories.Add(memoryField);
                             memory ??= memoryField;
 
@@ -580,6 +603,10 @@ public static class Compile
                                     parms[0].ParameterType == configuration.NeutralizeType(typeof(uint)) &&
                                     parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
                             }).First());
+
+                            // Record the address type on the memory so an importer of this (exported) memory can
+                            // reject an i32/i64 mismatch. Emitted only for memory64, leaving 32-bit modules unchanged.
+                            EmitSetIs64(instanceConstructorIL, configuration, typeof(UnmanagedMemory), is64);
 
                             instanceConstructorIL.Emit(OpCodes.Stfld, memoryField);
                         }
@@ -877,6 +904,7 @@ public static class Compile
 
                         context.Tables.Add(tableField);
                         context.TableElementTypes.Add(elementType);
+                        context.TableIs64.Add(limits.Is64Bit);
                         if (functionTable == null && elementType == ElementType.FunctionReference)
                             functionTable = tableField;
 
@@ -891,9 +919,10 @@ public static class Compile
                         // Confirm the supplied table's limits satisfy the declaration (element type was
                         // already verified by the cast above).
                         instanceConstructorIL.Emit(OpCodes.Dup);
-                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.Minimum);
-                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.Maximum ?? 0));
-                        instanceConstructorIL.Emit(limits.Maximum.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.ClampedMinimum);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.ClampedMaximum ?? 0));
+                        instanceConstructorIL.Emit(limits.Maximum64.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(limits.Is64Bit ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateTableImport);
@@ -906,6 +935,15 @@ public static class Compile
                         // WebAssembly 3.0 permits multiple memories; each imported memory gets its own backing
                         // field, appended to the context's memory list ahead of any module-defined memories.
                         var limits = new ResizableLimits(reader);
+
+                        // An imported memory's declared size must satisfy the same page limits as a defined one:
+                        // 65536 pages for i32, 2^48 for memory64. This is a decode/validation-time check independent
+                        // of whether an actual memory is later supplied.
+                        var importMemoryPagesLimit = limits.Is64Bit ? 0x1_0000_0000_0000UL : 0x1_0000UL;
+                        if (limits.Minimum64 > importMemoryPagesLimit)
+                            throw new ModuleLoadException($"Memory size minimum of {limits.Minimum64} pages must be at most {importMemoryPagesLimit} pages.", reader.Offset);
+                        if (limits.Maximum64 > importMemoryPagesLimit)
+                            throw new ModuleLoadException($"Memory size maximum of {limits.Maximum64} pages must be at most {importMemoryPagesLimit} pages.", reader.Offset);
 
                         var typedDelegate = typeof(Func<UnmanagedMemory>);
                         var delField = $"➡ {moduleName}::{fieldName}";
@@ -943,6 +981,7 @@ public static class Compile
 
                         var memoryField = CreateMemoryField(exportsBuilder, configuration, context.Memories.Count);
                         context.Memories.Add(memoryField);
+                        context.MemoryIs64.Add(limits.Is64Bit);
                         memory ??= memoryField;
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -950,9 +989,10 @@ public static class Compile
 
                         // Confirm the supplied memory's limits satisfy the declaration before storing it.
                         instanceConstructorIL.Emit(OpCodes.Dup);
-                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.Minimum);
-                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.Maximum ?? 0));
-                        instanceConstructorIL.Emit(limits.Maximum.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)limits.ClampedMinimum);
+                        instanceConstructorIL.Emit(OpCodes.Ldc_I4, (int)(limits.ClampedMaximum ?? 0));
+                        instanceConstructorIL.Emit(limits.Maximum64.HasValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                        instanceConstructorIL.Emit(limits.Is64Bit ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateMemoryImport);
@@ -1486,8 +1526,8 @@ public static class Compile
         // An active segment's offset is a constant expression compiled into the instance constructor, so it
         // can be a global.get of an imported global as well as an i32.const. The result is held in this local.
         context.Reset(instanceConstructorIL, Signature.Empty, Signature.Empty.RawParameterTypes);
-        var offsetBlock = new Instructions.Block(BlockType.Int32);
         var offsetLocal = instanceConstructorIL.DeclareLocal(typeof(uint));
+        LocalBuilder? offsetLocal64 = null;
 
         for (var i = 0u; i < count; i++)
         {
@@ -1527,9 +1567,14 @@ public static class Compile
                 if (tableElemType != elemType)
                     throw new ModuleLoadException($"Element segment type {elemType} does not match table {tableIndex} type {tableElemType}.", 0);
 
-                // Offset is a constant expression (i32.const or global.get of an imported immutable i32 global),
-                // compiled into the constructor and left in offsetLocal.
-                offsetBlock.Compile(context);
+                // For a table64 destination the offset constant expression is an i64; hold it in a ulong local and
+                // run the fits check in 64-bit. A 32-bit table keeps the original i32/uint path.
+                var tableIs64 = context.IsTable64(tableIndex);
+                var localOffset = tableIs64 ? (offsetLocal64 ??= instanceConstructorIL.DeclareLocal(typeof(ulong))) : offsetLocal;
+
+                // Offset is a constant expression (i32/i64.const or global.get of an imported immutable global),
+                // compiled into the constructor and left in localOffset.
+                new Instructions.Block(tableIs64 ? BlockType.Int64 : BlockType.Int32).Compile(context);
                 context.ConstantExpression = true;
                 // By section order all globals are declared before element segments, so any immutable global is in scope.
                 context.ConstantExpressionGlobalBound = context.Globals?.Length ?? 0;
@@ -1541,7 +1586,7 @@ public static class Compile
                 context.ConstantExpression = false;
                 context.Stack.Pop();
                 context.BlockContexts.Remove(context.Depth.Count);
-                instanceConstructorIL.Emit(OpCodes.Stloc, offsetLocal);
+                instanceConstructorIL.Emit(OpCodes.Stloc, localOffset);
 
                 var isFunc = tableElemType == ElementType.FunctionReference;
                 var tableType = isFunc ? typeof(FunctionTable) : typeof(ExternRefTable);
@@ -1561,12 +1606,14 @@ public static class Compile
                 instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
                 instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
                 instanceConstructorIL.Emit(OpCodes.Conv_U8);
-                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
-                instanceConstructorIL.Emit(OpCodes.Conv_U8);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, localOffset);
+                instanceConstructorIL.Emit(OpCodes.Conv_U8); // No-op for an already-i64 (table64) offset; widens a u32 one.
                 instanceConstructorIL.Emit(OpCodes.Ldc_I8, (long)entryCount);
                 instanceConstructorIL.Emit(OpCodes.Add);
                 instanceConstructorIL.Emit(OpCodes.Bge_Un, fits);
-                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, localOffset);
+                if (tableIs64)
+                    instanceConstructorIL.Emit(OpCodes.Conv_U4); // The exception reports a 32-bit index; the value was out of range anyway.
                 instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
                 instanceConstructorIL.Emit(OpCodes.Call, lengthGetter);
                 instanceConstructorIL.Emit(OpCodes.Newobj, typeof(TableAccessOutOfRangeException)
@@ -1583,9 +1630,17 @@ public static class Compile
                 for (var j = 0; j < entryCount; j++)
                 {
                     instanceConstructorIL.Emit(OpCodes.Ldloc, localTable);
-                    instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+                    instanceConstructorIL.Emit(OpCodes.Ldloc, localOffset);
                     instanceConstructorIL.Emit(OpCodes.Ldc_I4, j);
-                    instanceConstructorIL.Emit(OpCodes.Add);
+                    if (tableIs64)
+                    {
+                        // offset (i64, already validated to fit) + j, narrowed to the int index the setter takes.
+                        instanceConstructorIL.Emit(OpCodes.Conv_I8);
+                        instanceConstructorIL.Emit(OpCodes.Add);
+                        instanceConstructorIL.Emit(OpCodes.Conv_I4);
+                    }
+                    else
+                        instanceConstructorIL.Emit(OpCodes.Add);
                     if (usesInitExprs)
                         EmitElementRefValue(instanceConstructorIL, context, element.InitExprs[j]);
                     else
@@ -1702,9 +1757,9 @@ public static class Compile
             Signature.Empty,
             Signature.Empty.RawParameterTypes
             );
-        var block = new Instructions.Block(BlockType.Int32);
 
         var address = instanceConstructorIL.DeclareLocal(typeof(uint));
+        LocalBuilder? address64 = null;
 
         for (var i = 0u; i < count; i++)
         {
@@ -1730,8 +1785,13 @@ public static class Compile
                     ? "Active data segment cannot be used unless a memory section is defined."
                     : $"unknown memory {memoryIndex}", startingOffset);
             var targetMemory = context.Memories[(int)memoryIndex];
+            // For a memory64 target the offset constant expression is an i64; hold it in a ulong local and run the
+            // bounds check in 64-bit arithmetic. A 32-bit target keeps the original i32/uint path.
+            var is64 = context.IsMemory64(memoryIndex);
+            var offsetLocal = is64 ? (address64 ??= instanceConstructorIL.DeclareLocal(typeof(ulong))) : address;
 
-            block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
+            // Prevents "end" instruction of the initializer expression from becoming a return.
+            new Instructions.Block(is64 ? BlockType.Int64 : BlockType.Int32).Compile(context);
             context.ConstantExpression = true;
             // By section order all globals are declared before data segments, so any immutable global is in scope.
             context.ConstantExpressionGlobalBound = context.Globals?.Length ?? 0;
@@ -1743,7 +1803,7 @@ public static class Compile
             context.ConstantExpression = false;
             context.Stack.Pop();
             context.BlockContexts.Remove(context.Depth.Count);
-            instanceConstructorIL.Emit(OpCodes.Stloc, address);
+            instanceConstructorIL.Emit(OpCodes.Stloc, offsetLocal);
 
             var data = reader.ReadBytes(reader.ReadVarUInt32());
 
@@ -1755,14 +1815,25 @@ public static class Compile
                 // too strict here (offset == size is in bounds for an empty segment), so check the boundary
                 // directly and trap with the same exception type the runtime raises for memory accesses.
                 var inBounds = instanceConstructorIL.DefineLabel();
-                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
                 instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                 instanceConstructorIL.Emit(OpCodes.Ldfld, targetMemory);
                 instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
+                if (is64)
+                    instanceConstructorIL.Emit(OpCodes.Conv_U8); // Compare the u64 offset against the widened size.
                 instanceConstructorIL.Emit(OpCodes.Ble_Un_S, inBounds);
-                instanceConstructorIL.Emit(OpCodes.Ldloc, address);
-                instanceConstructorIL.Emit(OpCodes.Ldc_I4_0);
-                instanceConstructorIL.Emit(OpCodes.Newobj, MemoryAccessOutOfRangeExceptionConstructor);
+                instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+                if (is64)
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldc_I4_0);
+                    instanceConstructorIL.Emit(OpCodes.Conv_U8);
+                    instanceConstructorIL.Emit(OpCodes.Newobj, MemoryAccessOutOfRangeException64Constructor);
+                }
+                else
+                {
+                    instanceConstructorIL.Emit(OpCodes.Ldc_I4_0);
+                    instanceConstructorIL.Emit(OpCodes.Newobj, MemoryAccessOutOfRangeExceptionConstructor);
+                }
                 instanceConstructorIL.Emit(OpCodes.Throw);
                 instanceConstructorIL.MarkLabel(inBounds);
                 continue;
@@ -1771,8 +1842,14 @@ public static class Compile
             //Ensure sufficient memory is allocated, error if max is exceeded. RangeCheck8 validates that the
             //last written byte (address + data.Length - 1) is accessible, which permits a segment that exactly
             //fills memory to the page boundary.
-            instanceConstructorIL.Emit(OpCodes.Ldloc, address);
-            instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length - 1);
+            instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
+            if (is64)
+            {
+                instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length - 1);
+                instanceConstructorIL.Emit(OpCodes.Conv_U8);
+            }
+            else
+                instanceConstructorIL.Emit(OpCodes.Ldc_I4, data.Length - 1);
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
@@ -1788,7 +1865,7 @@ public static class Compile
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
             instanceConstructorIL.Emit(OpCodes.Ldfld, targetMemory);
             instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-            instanceConstructorIL.Emit(OpCodes.Ldloc, address);
+            instanceConstructorIL.Emit(OpCodes.Ldloc, offsetLocal);
             instanceConstructorIL.Emit(OpCodes.Conv_U); // Zero-extend the offset; Conv_I would sign-extend an offset >= 2^31 into a wild pointer.
             instanceConstructorIL.Emit(OpCodes.Add_Ovf_Un);
 
@@ -1837,6 +1914,22 @@ public static class Compile
             "☣ FunctionTable",
             configuration.NeutralizeType(typeof(FunctionTable)),
             FieldAttributes.Private | FieldAttributes.InitOnly);
+
+    // Emits `dup; ldc.i4.1; callvirt set_Is64Bit` on the object at the top of the stack (a UnmanagedMemory or a
+    // TableImport), recording its 64-bit address type. Only emitted when is64 is true, so 32-bit modules — which
+    // leave the property at its default false — produce byte-identical IL to before.
+    static void EmitSetIs64(ILGenerator il, CompilerConfiguration configuration, Type declaringType, bool is64)
+    {
+        if (!is64)
+            return;
+        var setter = configuration.NeutralizeType(declaringType)
+            .GetTypeInfo()
+            .GetDeclaredProperty(nameof(UnmanagedMemory.Is64Bit))!
+            .SetMethod!;
+        il.Emit(OpCodes.Dup);
+        il.Emit(OpCodes.Ldc_I4_1);
+        il.Emit(OpCodes.Callvirt, setter);
+    }
 
     static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder, CompilerConfiguration configuration, int memoryIndex)
         => exportsBuilder.DefineField(

@@ -51,9 +51,21 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
     public Options Flags { get; set; }
 
     /// <summary>
-    /// The index within linear memory for the access operation.
+    /// The static offset added to the dynamic address for the access operation. This is the 32-bit view; for a
+    /// 64-bit (memory64) access whose offset can exceed <see cref="uint.MaxValue"/>, use <see cref="Offset64"/>.
     /// </summary>
-    public uint Offset { get; set; }
+    /// <exception cref="OverflowException">The value exceeds <see cref="uint.MaxValue"/>; read <see cref="Offset64"/> instead.</exception>
+    public uint Offset
+    {
+        get => checked((uint)this.Offset64);
+        set => this.Offset64 = value;
+    }
+
+    /// <summary>
+    /// The static offset added to the dynamic address, at full 64-bit width (the memarg offset immediate is a
+    /// <c>varuint64</c> for a memory64 access). For a 32-bit access this holds the same value as <see cref="Offset"/>.
+    /// </summary>
+    public ulong Offset64 { get; set; }
 
     /// <summary>
     /// The linear memory targeted by this access (WebAssembly 3.0 multiple memories); 0 for the default memory.
@@ -75,7 +87,9 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
             flags &= ~MemoryIndexFlag;
         }
         Flags = (Options)flags;
-        Offset = reader.ReadVarUInt32();
+        // The memarg offset is a varuint64 for memory64; reading at full width also accepts the i32 encoding
+        // unchanged (a 32-bit value is a prefix of the 64-bit LEB128).
+        this.Offset64 = reader.ReadVarUInt64();
     }
 
     internal sealed override void WriteTo(Writer writer)
@@ -90,7 +104,9 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         {
             writer.WriteVar((uint)this.Flags);
         }
-        writer.WriteVar(this.Offset);
+        // A value that fits in 32 bits encodes identically as a u32 or u64 LEB128, so a 32-bit access round-trips
+        // byte-for-byte through the ulong path.
+        writer.WriteVar(this.Offset64);
     }
 
     /// <inheritdoc/>
@@ -112,7 +128,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         other != null
         && other.OpCode == this.OpCode
         && other.Flags == this.Flags
-        && other.Offset == this.Offset
+        && other.Offset64 == this.Offset64
         && other.MemoryIndex == this.MemoryIndex
         ;
 
@@ -120,7 +136,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, (int)this.Offset, (int)this.MemoryIndex);
+    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, this.Offset64.GetHashCode(), (int)this.MemoryIndex);
 
     private protected abstract WebAssemblyValueType Type { get; }
 
@@ -136,6 +152,18 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
     {
         if ((uint)this.Flags >= 32 || (1u << (int)this.Flags) > this.Size)
             throw new CompilerException($"Alignment of 2^{(uint)this.Flags} for {this.OpCode} must not be larger than the natural {this.Size}-byte alignment.");
+    }
+
+    /// <summary>
+    /// Validates the memarg offset immediate against the target memory's address type. For a 32-bit memory the
+    /// offset must fit in a <see cref="uint"/>; a memory64 accepts the full <c>varuint64</c> range. Throws
+    /// <see cref="CompilerException"/> when a 32-bit access declares an offset above <see cref="uint.MaxValue"/>,
+    /// matching the spec's "offset out of range" validation error.
+    /// </summary>
+    private protected void ValidateOffset(CompilationContext context)
+    {
+        if (!context.IsMemory64(this.MemoryIndex) && this.Offset64 > uint.MaxValue)
+            throw new CompilerException($"Offset of {this.Offset64} for {this.OpCode} is out of range for a 32-bit memory (must be at most {uint.MaxValue}).");
     }
 
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
@@ -209,6 +237,73 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
         // This range check runs once per memory access inside tight loops; forcing inlining lets the surrounding
         // loop hoist the bounds check and reuse the base pointer (measured ~4.5x on a memory read-modify-write loop).
+        builder.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
+        return builder;
+    }
+
+    /// <summary>
+    /// Builds the bounds-check helper for a 64-bit (memory64) memory. The dynamic address is an i64 (ulong); the
+    /// effective end (address + access size) is computed in 64-bit unsigned arithmetic and traps on u64 overflow
+    /// (<see cref="OverflowException"/>) or when it exceeds the memory's current byte size — it never wraps or
+    /// truncates. Because <see cref="Runtime.UnmanagedMemory"/> is bounded to under 4 GiB, any address at or
+    /// above 2^32 is necessarily out of range and traps here. Reached through
+    /// <see cref="CompilationContext.GetRangeCheck"/> for a memory64 target.
+    /// </summary>
+    internal static MethodBuilder CreateRangeCheck64(CompilationContext context, FieldInfo memory, byte size, uint memoryIndex)
+    {
+        var builder = context.CheckedExportsBuilder.DefineMethod(
+            $"☣ Range Check 64 {size}" + (memoryIndex == 0 ? "" : $" m{memoryIndex}"),
+            CompilationContext.HelperMethodAttributes,
+            typeof(UIntPtr),
+            [typeof(ulong), context.CheckedExportsBuilder]
+            );
+        var il = builder.GetILGenerator();
+
+        static void EmitSize(ILGenerator il, byte size)
+        {
+            if (size <= 8)
+                il.Emit(size switch
+                {
+                    1 => OpCodes.Ldc_I4_1,
+                    2 => OpCodes.Ldc_I4_2,
+                    4 => OpCodes.Ldc_I4_4,
+                    _ => OpCodes.Ldc_I4_8,
+                });
+            else
+                il.Emit(OpCodes.Ldc_I4_S, (sbyte)size);
+            il.Emit(OpCodes.Conv_U8); // Widen the access size to u64 to combine with the i64 address.
+        }
+
+        // Size (uint) widened to u64.
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Ldfld, memory);
+        il.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
+        il.Emit(OpCodes.Conv_U8);
+        // address + size, overflow-checked in u64 (a wrap here is an out-of-bounds access, surfaced as OverflowException).
+        il.Emit(OpCodes.Ldarg_0);
+        EmitSize(il, size);
+        il.Emit(OpCodes.Add_Ovf_Un);
+        var outOfRange = il.DefineLabel();
+        il.Emit(OpCodes.Blt_Un, outOfRange); // Size < address + size → out of range.
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Conv_U); // Narrow the validated (< 4 GiB) address to a native unsigned int.
+        il.Emit(OpCodes.Ret);
+        il.MarkLabel(outOfRange);
+        il.Emit(OpCodes.Ldarg_0);
+        EmitSize(il, size);
+        il.Emit(OpCodes.Newobj, typeof(MemoryAccessOutOfRangeException)
+            .GetTypeInfo()
+            .DeclaredConstructors
+            .First(c =>
+            {
+                var parms = c.GetParameters();
+                return parms.Length == 2
+                && parms[0].ParameterType == typeof(ulong)
+                && parms[1].ParameterType == typeof(ulong)
+                ;
+            }));
+        il.Emit(OpCodes.Throw);
+
         builder.SetImplementationFlags(MethodImplAttributes.AggressiveInlining);
         return builder;
     }

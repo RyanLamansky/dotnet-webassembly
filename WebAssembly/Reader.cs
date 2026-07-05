@@ -55,6 +55,27 @@ internal sealed class Reader(Stream input) : IDisposable
         return result;
     }
 
+    public ulong ReadVarUInt64()
+    {
+        var result = 0ul;
+        var shift = 0;
+        var initialOffset = this.Offset;
+        while (true)
+        {
+            ulong value = this.ReadByte();
+            // A 64-bit LEB128 spans at most 10 bytes; the 10th byte contributes only its lowest bit (shift 63).
+            // Beyond that the value cannot fit in 64 bits, so reject rather than silently wrapping.
+            if (shift >= 64 || (shift == 63 && (value & 0x7E) != 0))
+                throw new ModuleLoadException("Invalid LEB128 sequence: value exceeds 64 bits.", initialOffset);
+            result |= (value & 0x7F) << shift;
+            if ((value & 0x80) == 0)
+                break;
+            shift += 7;
+        }
+
+        return result;
+    }
+
     public int ReadVarInt32()
     {
         var result = 0;

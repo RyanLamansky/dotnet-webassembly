@@ -49,14 +49,37 @@ public class FunctionTable : TableImport
         );
 
     internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(() =>
-        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(InitFromSegment))!);
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(InitFromSegment))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegment64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(InitFromSegment))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(ulong)));
 
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(() =>
-        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Fill))!);
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Fill))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Fill64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Fill))
+        .First(m => m.GetParameters()[0].ParameterType == typeof(ulong)));
 
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(() =>
         typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
-        .First(m => m.GetParameters().Length == 4));
+        .First(m => m.GetParameters().Length == 4 && m.GetParameters()[1].ParameterType == typeof(uint)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetween64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethods(nameof(Copy))
+        .First(m => m.GetParameters().Length == 4 && m.GetParameters()[1].ParameterType == typeof(ulong)));
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Grow64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Grow64))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Get64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Get64))!);
+
+    internal static readonly RegeneratingWeakReference<MethodInfo> Set64Method = new(() =>
+        typeof(FunctionTable).GetTypeInfo().GetDeclaredMethod(nameof(Set64))!);
 
     /// <summary>
     /// Always <see cref="ElementType.FunctionReference"/>.
@@ -241,5 +264,87 @@ public class FunctionTable : TableImport
             throw new TableAccessOutOfRangeException(dst, length);
         for (var i = 0u; i < length; i++)
             this.delegates[dst + i] = value;
+    }
+
+    // A table is bounded to under 2^31 entries, so any i64 (table64) index or length at or beyond the current
+    // length is out of range; these u64 counterparts validate at full width before narrowing to an array index,
+    // so a huge i64 traps rather than wrapping into a valid slot.
+
+    /// <summary>Reads element <paramref name="index"/> of a 64-bit (table64) table. Implements <c>table.get</c>.</summary>
+    /// <param name="index">The element index.</param>
+    /// <returns>The element at the index.</returns>
+    /// <exception cref="TableAccessOutOfRangeException"><paramref name="index"/> falls outside the table.</exception>
+    public Delegate? Get64(ulong index)
+    {
+        if (index >= this.Length)
+            throw new TableAccessOutOfRangeException(index, 1);
+        return this.delegates[(int)index];
+    }
+
+    /// <summary>Writes element <paramref name="index"/> of a 64-bit (table64) table. Implements <c>table.set</c>.</summary>
+    /// <param name="index">The element index.</param>
+    /// <param name="value">The value to store.</param>
+    /// <exception cref="TableAccessOutOfRangeException"><paramref name="index"/> falls outside the table.</exception>
+    public void Set64(ulong index, Delegate? value)
+    {
+        if (index >= this.Length)
+            throw new TableAccessOutOfRangeException(index, 1);
+        this.delegates[(int)index] = value;
+    }
+
+    /// <summary>The memory64 (table64) counterpart of <see cref="Grow(Delegate, uint)"/>, taking a u64 delta and
+    /// returning the previous length or -1 on failure.</summary>
+    /// <param name="initValue">The value to initialize new table slots with (may be null).</param>
+    /// <param name="number">The number of elements to grow the table by.</param>
+    /// <returns>The previous length of the table, or -1 if growth fails.</returns>
+    public long Grow64(Delegate? initValue, ulong number)
+    {
+        if (number > int.MaxValue)
+            return -1;
+        var result = this.Grow(initValue, (uint)number);
+        return result == uint.MaxValue ? -1L : result;
+    }
+
+    /// <summary>The table64 counterpart of <see cref="InitFromSegment(uint, Delegate[], uint, uint)"/>, taking a
+    /// u64 destination (the source segment index and length remain i32).</summary>
+    /// <param name="dst">The destination index within the table.</param>
+    /// <param name="src">The source element segment, or null if it has been dropped.</param>
+    /// <param name="srcOffset">The index within the source segment.</param>
+    /// <param name="length">The number of elements to copy.</param>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void InitFromSegment(ulong dst, Delegate?[]? src, uint srcOffset, uint length)
+    {
+        var srcLength = src != null ? (uint)src.Length : 0u;
+        if (dst + length > this.Length)
+            throw new TableAccessOutOfRangeException(dst, length);
+        if ((ulong)srcOffset + length > srcLength)
+            throw new TableAccessOutOfRangeException(srcOffset, length);
+        if (length == 0)
+            return;
+        for (var i = 0u; i < length; i++)
+            this.delegates[(int)dst + i] = src![srcOffset + i];
+    }
+
+    /// <summary>The table64 counterpart of <see cref="Copy(FunctionTable, uint, uint, uint)"/>, taking u64 indices
+    /// and length. Either table may be 64-bit; a 32-bit side simply receives widened operands.</summary>
+    /// <param name="srcTable">The table read from.</param>
+    /// <param name="dstIndex">The destination index within this table.</param>
+    /// <param name="srcIndex">The source index within <paramref name="srcTable"/>.</param>
+    /// <param name="length">The number of elements to copy.</param>
+    /// <exception cref="TableAccessOutOfRangeException">The source or destination range falls out of bounds.</exception>
+    public void Copy(FunctionTable srcTable, ulong dstIndex, ulong srcIndex, ulong length)
+    {
+        if (dstIndex + length > this.Length)
+            throw new TableAccessOutOfRangeException(dstIndex, length);
+        if (srcIndex + length > srcTable.Length)
+            throw new TableAccessOutOfRangeException(srcIndex, length);
+        if (length == 0)
+            return;
+        if (ReferenceEquals(this, srcTable) && dstIndex > srcIndex)
+            for (var i = length; i > 0; i--)
+                this.delegates[(int)(dstIndex + i - 1)] = srcTable.delegates[(int)(srcIndex + i - 1)];
+        else
+            for (var i = 0ul; i < length; i++)
+                this.delegates[(int)(dstIndex + i)] = srcTable.delegates[(int)(srcIndex + i)];
     }
 }

@@ -40,14 +40,16 @@ public class TableSet : Instruction
     internal sealed override void Compile(CompilationContext context)
     {
         var (table, isFunc) = context.ResolveTable(TableIndex);
+        var is64 = context.IsTable64(TableIndex);
 
-        // Tracked stack: [..., index:i32, ref] — pop ref (top) then index.
+        // Tracked stack: [..., index, ref] — pop ref (top) then index.
         context.PopStackNoReturn(OpCode, isFunc ? WebAssemblyValueType.FuncRef : WebAssemblyValueType.ExternRef);
-        context.PopStackNoReturn(OpCode, WebAssemblyValueType.Int32);
+        context.PopStackNoReturn(OpCode, context.TableIndexType(TableIndex));
 
-        // IL eval stack at entry: [..., index:i32, ref]  (ref is on top).
+        // IL eval stack at entry: [..., index, ref]  (ref is on top). table64 uses the u64 Set64 helper, which
+        // traps for an index beyond the table (never wrapping a huge i64).
         var val = context.DeclareLocal(typeof(object));
-        var idx = context.DeclareLocal(typeof(int));
+        var idx = context.DeclareLocal(is64 ? typeof(ulong) : typeof(int));
 
         context.Emit(OpCodes.Stloc, val);
         context.Emit(OpCodes.Stloc, idx);
@@ -59,6 +61,8 @@ public class TableSet : Instruction
         if (isFunc)
             context.Emit(OpCodes.Castclass, typeof(System.Delegate));
 
-        context.Emit(OpCodes.Call, isFunc ? FunctionTable.IndexSetter : ExternRefTable.IndexSetter);
+        context.Emit(OpCodes.Call, is64
+            ? (isFunc ? FunctionTable.Set64Method : ExternRefTable.Set64Method)
+            : (isFunc ? FunctionTable.IndexSetter : ExternRefTable.IndexSetter));
     }
 }
