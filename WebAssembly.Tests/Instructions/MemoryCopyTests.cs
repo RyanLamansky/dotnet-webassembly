@@ -57,8 +57,7 @@ public class MemoryCopyTests
     }
 
     /// <summary>
-    /// A non-zero source or destination memory index (multi-memory is not supported) is permitted in the object
-    /// model but must be rejected by the compiler.
+    /// A source or destination memory index that refers to a memory that does not exist is rejected by the compiler.
     /// </summary>
     [TestMethod]
     [DataRow(true, false)]

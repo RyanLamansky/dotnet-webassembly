@@ -30,9 +30,10 @@ public abstract class SimdMemoryLaneInstruction : SimdMemoryImmediateInstruction
         && instruction.SimdOpCode == this.SimdOpCode
         && instruction.Flags == this.Flags
         && instruction.Offset == this.Offset
+        && instruction.MemoryIndex == this.MemoryIndex
         && instruction.LaneIndex == this.LaneIndex;
 
     /// <inheritdoc/>
     public override int GetHashCode() =>
-        HashCode.Combine(HashCode.Combine((int)this.SimdOpCode, (int)this.Flags, (int)this.Offset), (int)this.LaneIndex);
+        HashCode.Combine((int)this.SimdOpCode, (int)this.Flags, (int)this.Offset, (int)this.MemoryIndex, (int)this.LaneIndex);
 }

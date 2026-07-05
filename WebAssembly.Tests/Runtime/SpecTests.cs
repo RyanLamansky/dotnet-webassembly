@@ -270,10 +270,12 @@ public class SpecTests
     /// <summary>Runs the memory tests.</summary>
     [TestMethod]
     public void SpecTest_memory()
-        // 3.0 memory validation / multi-memory asserts — Phases 3, 4.
+        // Phase 3 multi-memory validation is now green; the remaining skips declare a 32-bit memory with 2^32
+        // pages, which the reader silently truncates via varuint32 rather than rejecting. Detecting that overflow
+        // is entangled with reading memory sizes as varuint64 for memory64 — deferred to Phase 4.
         => SpecTestRunner.Run("memory", skip:
         [
-        8, 53, 57, 61, 65, 69, 73, 78, 82, 86, 91, 95, 99,
+        78, 82, 86, 91, 95, 99,
         ]);
 
     /// <summary>Runs the memory_grow tests.</summary>
@@ -673,8 +675,7 @@ public class SpecTests
 
     /// <summary>Runs the simd/simd_memory-multi tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories in SIMD — Phase 3.
-    public void SpecTest_simd_memory_multi() => SpecTestRunner.RunAllSkipped("simd/simd_memory-multi", "multiple memories in SIMD — Phase 3");
+    public void SpecTest_simd_memory_multi() => SpecTestRunner.Run("simd/simd_memory-multi");
 
     /// <summary>Runs the simd/simd_select tests.</summary>
     [TestMethod]
@@ -734,191 +735,138 @@ public class SpecTests
 
     /// <summary>Runs the multi-memory/address0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_address0() => SpecTestRunner.RunAllSkipped("multi-memory/address0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_address0() => SpecTestRunner.Run("multi-memory/address0");
 
     /// <summary>Runs the multi-memory/address1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_address1() => SpecTestRunner.RunAllSkipped("multi-memory/address1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_address1() => SpecTestRunner.Run("multi-memory/address1");
 
     /// <summary>Runs the multi-memory/align0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_align0() => SpecTestRunner.RunAllSkipped("multi-memory/align0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_align0() => SpecTestRunner.Run("multi-memory/align0");
 
     /// <summary>Runs the multi-memory/binary0 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_binary0()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/binary0", skip:
-        [
-        2, 8, 16, 26, 36,
-        ]);
+        => SpecTestRunner.Run("multi-memory/binary0");
 
     /// <summary>Runs the multi-memory/data0 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_data0()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/data0", skip:
-        [
-        5, 43,
-        ]);
+        => SpecTestRunner.Run("multi-memory/data0");
 
     /// <summary>Runs the multi-memory/data1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_data1() => SpecTestRunner.RunAllSkipped("multi-memory/data1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_data1() => SpecTestRunner.Run("multi-memory/data1");
 
     /// <summary>Runs the multi-memory/data_drop0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_data_drop0() => SpecTestRunner.RunAllSkipped("multi-memory/data_drop0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_data_drop0() => SpecTestRunner.Run("multi-memory/data_drop0");
 
     /// <summary>Runs the multi-memory/exports0 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_exports0()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/exports0", skip:
-        [
-        5, 6, 32, 40,
-        ]);
+        => SpecTestRunner.Run("multi-memory/exports0");
 
     /// <summary>Runs the multi-memory/float_exprs0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_float_exprs0() => SpecTestRunner.RunAllSkipped("multi-memory/float_exprs0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_float_exprs0() => SpecTestRunner.Run("multi-memory/float_exprs0");
 
     /// <summary>Runs the multi-memory/float_exprs1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_float_exprs1() => SpecTestRunner.RunAllSkipped("multi-memory/float_exprs1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_float_exprs1() => SpecTestRunner.Run("multi-memory/float_exprs1");
 
     /// <summary>Runs the multi-memory/float_memory0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_float_memory0() => SpecTestRunner.RunAllSkipped("multi-memory/float_memory0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_float_memory0() => SpecTestRunner.Run("multi-memory/float_memory0");
 
     /// <summary>Runs the multi-memory/imports0 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_imports0()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/imports0", skip:
-        [
-        1, 18,
-        ]);
+        => SpecTestRunner.Run("multi-memory/imports0");
 
     /// <summary>Runs the multi-memory/imports1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_imports1() => SpecTestRunner.RunAllSkipped("multi-memory/imports1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_imports1() => SpecTestRunner.Run("multi-memory/imports1");
 
     /// <summary>Runs the multi-memory/imports2 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_imports2()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/imports2", skip:
-        [
-        1, 7, 9, 17, 18, 19, 20, 33, 39,
-        ]);
+        => SpecTestRunner.Run("multi-memory/imports2");
 
     /// <summary>Runs the multi-memory/imports3 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_imports3() => SpecTestRunner.RunAllSkipped("multi-memory/imports3", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_imports3() => SpecTestRunner.Run("multi-memory/imports3");
 
     /// <summary>Runs the multi-memory/imports4 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_imports4() => SpecTestRunner.RunAllSkipped("multi-memory/imports4", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_imports4() => SpecTestRunner.Run("multi-memory/imports4");
 
     /// <summary>Runs the multi-memory/linking0 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_linking0()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/linking0", skip:
-        [
-        17, 31, 42,
-        ]);
+        => SpecTestRunner.Run("multi-memory/linking0");
 
     /// <summary>Runs the multi-memory/linking1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_linking1() => SpecTestRunner.RunAllSkipped("multi-memory/linking1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_linking1() => SpecTestRunner.Run("multi-memory/linking1");
 
     /// <summary>Runs the multi-memory/linking2 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_linking2() => SpecTestRunner.RunAllSkipped("multi-memory/linking2", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_linking2() => SpecTestRunner.Run("multi-memory/linking2");
 
     /// <summary>Runs the multi-memory/linking3 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_linking3()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/linking3", skip:
-        [
-        1, 12, 23, 28, 36, 37, 40, 49,
-        ]);
+        => SpecTestRunner.Run("multi-memory/linking3");
 
     /// <summary>Runs the multi-memory/load0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_load0() => SpecTestRunner.RunAllSkipped("multi-memory/load0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_load0() => SpecTestRunner.Run("multi-memory/load0");
 
     /// <summary>Runs the multi-memory/load1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_load1() => SpecTestRunner.RunAllSkipped("multi-memory/load1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_load1() => SpecTestRunner.Run("multi-memory/load1");
 
     /// <summary>Runs the multi-memory/load2 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_load2() => SpecTestRunner.RunAllSkipped("multi-memory/load2", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_load2() => SpecTestRunner.Run("multi-memory/load2");
 
     /// <summary>Runs the multi-memory/memory_copy0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_copy0() => SpecTestRunner.RunAllSkipped("multi-memory/memory_copy0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_copy0() => SpecTestRunner.Run("multi-memory/memory_copy0");
 
     /// <summary>Runs the multi-memory/memory_copy1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_copy1() => SpecTestRunner.RunAllSkipped("multi-memory/memory_copy1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_copy1() => SpecTestRunner.Run("multi-memory/memory_copy1");
 
     /// <summary>Runs the multi-memory/memory_fill0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_fill0() => SpecTestRunner.RunAllSkipped("multi-memory/memory_fill0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_fill0() => SpecTestRunner.Run("multi-memory/memory_fill0");
 
     /// <summary>Runs the multi-memory/memory_grow tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_grow() => SpecTestRunner.RunAllSkipped("multi-memory/memory_grow", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_grow() => SpecTestRunner.Run("multi-memory/memory_grow");
 
     /// <summary>Runs the multi-memory/memory_init0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_init0() => SpecTestRunner.RunAllSkipped("multi-memory/memory_init0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_init0() => SpecTestRunner.Run("multi-memory/memory_init0");
 
     /// <summary>Runs the multi-memory/memory-multi tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_multi() => SpecTestRunner.RunAllSkipped("multi-memory/memory-multi", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_multi() => SpecTestRunner.Run("multi-memory/memory-multi");
 
     /// <summary>Runs the multi-memory/memory_size0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_size0() => SpecTestRunner.RunAllSkipped("multi-memory/memory_size0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_size0() => SpecTestRunner.Run("multi-memory/memory_size0");
 
     /// <summary>Runs the multi-memory/memory_size1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_size1() => SpecTestRunner.RunAllSkipped("multi-memory/memory_size1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_size1() => SpecTestRunner.Run("multi-memory/memory_size1");
 
     /// <summary>Runs the multi-memory/memory_size2 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_size2() => SpecTestRunner.RunAllSkipped("multi-memory/memory_size2", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_size2() => SpecTestRunner.Run("multi-memory/memory_size2");
 
     /// <summary>Runs the multi-memory/memory_size3 tests.</summary>
     [TestMethod]
@@ -926,47 +874,36 @@ public class SpecTests
 
     /// <summary>Runs the multi-memory/memory_size_import tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_size_import() => SpecTestRunner.RunAllSkipped("multi-memory/memory_size_import", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_size_import() => SpecTestRunner.Run("multi-memory/memory_size_import");
 
     /// <summary>Runs the multi-memory/memory_trap0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_trap0() => SpecTestRunner.RunAllSkipped("multi-memory/memory_trap0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_trap0() => SpecTestRunner.Run("multi-memory/memory_trap0");
 
     /// <summary>Runs the multi-memory/memory_trap1 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_memory_trap1() => SpecTestRunner.RunAllSkipped("multi-memory/memory_trap1", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_memory_trap1() => SpecTestRunner.Run("multi-memory/memory_trap1");
 
     /// <summary>Runs the multi-memory/start0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_start0() => SpecTestRunner.RunAllSkipped("multi-memory/start0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_start0() => SpecTestRunner.Run("multi-memory/start0");
 
     /// <summary>Runs the multi-memory/store0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_store0() => SpecTestRunner.RunAllSkipped("multi-memory/store0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_store0() => SpecTestRunner.Run("multi-memory/store0");
 
     /// <summary>Runs the multi-memory/store1 tests.</summary>
     [TestMethod]
     public void SpecTest_multimemory_store1()
-        // multiple memories — Phase 3.
-        => SpecTestRunner.Run("multi-memory/store1", skip:
-        [
-        30, 49, 50, 51, 52,
-        ]);
+        => SpecTestRunner.Run("multi-memory/store1");
 
     /// <summary>Runs the multi-memory/store2 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_store2() => SpecTestRunner.RunAllSkipped("multi-memory/store2", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_store2() => SpecTestRunner.Run("multi-memory/store2");
 
     /// <summary>Runs the multi-memory/traps0 tests.</summary>
     [TestMethod]
-    // Whole category deferred: multiple memories — Phase 3.
-    public void SpecTest_multimemory_traps0() => SpecTestRunner.RunAllSkipped("multi-memory/traps0", "multiple memories — Phase 3");
+    public void SpecTest_multimemory_traps0() => SpecTestRunner.Run("multi-memory/traps0");
 
 
     // ==== WASM 3.0 — 64-bit address space: memory64 / table64 (Phase 4) ====

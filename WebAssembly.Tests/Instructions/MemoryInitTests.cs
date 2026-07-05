@@ -81,8 +81,7 @@ public class MemoryInitTests
     }
 
     /// <summary>
-    /// A non-zero memory index (multi-memory is not supported) is permitted in the object model but must be
-    /// rejected by the compiler.
+    /// A memory index that refers to a memory that does not exist is rejected by the compiler.
     /// </summary>
     [TestMethod]
     public void MemoryInit_NonZeroMemoryIndex_RejectedByCompiler()

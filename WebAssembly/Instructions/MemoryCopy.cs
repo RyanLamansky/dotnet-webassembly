@@ -14,14 +14,12 @@ public class MemoryCopy : MiscellaneousInstruction
     public sealed override MiscellaneousOpCode MiscellaneousOpCode => MiscellaneousOpCode.MemoryCopy;
 
     /// <summary>
-    /// The destination memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
-    /// requires 0 because multiple memories are not supported.
+    /// The destination memory index (WebAssembly 3.0 multiple memories), encoded as a <c>varuint32</c>; 0 for the default memory.
     /// </summary>
     public uint DestinationMemoryIndex { get; set; }
 
     /// <summary>
-    /// The source memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
-    /// requires 0 because multiple memories are not supported.
+    /// The source memory index (WebAssembly 3.0 multiple memories), encoded as a <c>varuint32</c>; 0 for the default memory.
     /// </summary>
     public uint SourceMemoryIndex { get; set; }
 
@@ -51,15 +49,16 @@ public class MemoryCopy : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (DestinationMemoryIndex != 0 || SourceMemoryIndex != 0)
-            throw new ModuleLoadException($"memory.copy: only memory index 0 is supported, found destination {DestinationMemoryIndex} and source {SourceMemoryIndex}.", 0);
+        // Resolve both memories up front so an out-of-range index traps with the spec "unknown memory" wording.
+        var destinationMemory = context.ResolveMemory(this.DestinationMemoryIndex);
+        var sourceMemory = context.ResolveMemory(this.SourceMemoryIndex);
 
         // Stack: dst src len → (nothing)
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // src
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // dst
 
-        // Save the arguments to locals, then pass them to UnmanagedMemory.Copy in order.
+        // Save the arguments to locals, then pass them to the copy helper in order.
         var len = context.DeclareLocal(typeof(uint));
         var src = context.DeclareLocal(typeof(uint));
         var dst = context.DeclareLocal(typeof(uint));
@@ -68,11 +67,27 @@ public class MemoryCopy : MiscellaneousInstruction
         context.Emit(OpCodes.Stloc, src);
         context.Emit(OpCodes.Stloc, dst);
 
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.CheckedMemory);
-        context.Emit(OpCodes.Ldloc, dst);
-        context.Emit(OpCodes.Ldloc, src);
-        context.Emit(OpCodes.Ldloc, len);
-        context.Emit(OpCodes.Call, UnmanagedMemory.CopyMethod);
+        if (this.DestinationMemoryIndex == this.SourceMemoryIndex)
+        {
+            // Within a single memory: this.memory.Copy(dst, src, len)
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, destinationMemory);
+            context.Emit(OpCodes.Ldloc, dst);
+            context.Emit(OpCodes.Ldloc, src);
+            context.Emit(OpCodes.Ldloc, len);
+            context.Emit(OpCodes.Call, UnmanagedMemory.CopyMethod);
+        }
+        else
+        {
+            // Across two memories: UnmanagedMemory.CopyBetween(dstMem, dst, srcMem, src, len)
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, destinationMemory);
+            context.Emit(OpCodes.Ldloc, dst);
+            context.EmitLoadThis();
+            context.Emit(OpCodes.Ldfld, sourceMemory);
+            context.Emit(OpCodes.Ldloc, src);
+            context.Emit(OpCodes.Ldloc, len);
+            context.Emit(OpCodes.Call, UnmanagedMemory.CopyBetweenMethod);
+        }
     }
 }

@@ -133,15 +133,21 @@ For every new instruction, remember the established five-touch pattern (see `CLA
 - Risk: medium — IL `tail.` has constraints (no byref/stack args left); the verifier may reject some shapes.
       No shape required deferral: the arguments are value types / delegates / the exports instance (never byrefs), and function bodies have no protected regions, so `tail.` is accepted everywhere here.
 
-### Phase 3 — Multiple memories  *(medium, plumbing)*
+### Phase 3 — Multiple memories  *(medium, plumbing)*  — **Done**
 
-- [ ] Remove the single-memory guards in `Compile.cs`: the section-count check (~line 535, "Multiple memory values are not supported"), the import-vs-defined check (~line 538), and the duplicate-import check (~line 900).
-- [ ] Plumb a **memory index** through every memory instruction. The memarg encoding now uses a flag bit to signal a non-zero memory index; update the memarg reader/writer and every load/store/`memory.*` instruction.
-- [ ] `memory.copy` gains *two* memory indices (dst, src); `memory.init` gains a memory index alongside the data index; `memory.size` / `memory.grow` / `memory.fill` each take a memory index.
-- [ ] Compilation context must hold an array of memory fields/instances instead of a single `memory`.
-- [ ] Data segments carry a target memory index.
-- [ ] Categories: `multi-memory/*`, plus memory-index lines currently skipped in `memory`, `binary`.
-- Risk: medium — broad but mechanical. The `UnmanagedMemory` type itself is unchanged; only selection-by-index is new.
+- [x] Remove the single-memory guards in `Compile.cs`: the section-count check, the import-vs-defined check, and the duplicate-import check.
+      Done: the Memory section now loops over the declared count, and each memory import appends to the memory list, so both accept any number of memories.
+- [x] Plumb a **memory index** through every memory instruction. The memarg encoding uses bit 6 (0x40) of the alignment/flags LEB to signal a following memory-index `varuint32`; the reader/writer of both `MemoryImmediateInstruction` (scalar loads/stores) and `SimdMemoryImmediateInstruction` (v128 loads/stores) now handle it.
+      Verified empirically with `wasm-tools dump`: memory 0 emits `28 02 08` (no flag bit); memory 1 emits `28 42 01 08` (flags | 0x40, index, offset). When the index is 0 the writer emits the pre-3.0 minimal encoding, so existing modules round-trip byte-identically (asserted in `MultiMemoryTests`).
+- [x] `memory.copy` gains *two* memory indices (dst, src); `memory.init` gains a memory index alongside the data index; `memory.size` / `memory.grow` / `memory.fill` each take a memory index.
+      All five object-model classes already carried the immediates; the compiler now honors them. Verified order for `memory.copy`: `fc 0a <dst> <src>` — destination first, source second. A cross-memory copy uses a new `UnmanagedMemory.CopyBetween` static helper; a same-index copy keeps the existing instance `Copy` (byte-identical codegen).
+- [x] Compilation context holds a list of memory fields instead of a single `memory`.
+      Done: `CompilationContext.Memories` (imported first, then defined, in index order), with `ResolveMemory(index)` throwing the spec's `unknown memory N` for out-of-range indices, plus per-(index,size) range-check and per-(index,helper) store-helper caches so each memory's bounds check / store writes through its own field. Disposal was moved out of the Memory section into a single deferred `Dispose` that releases every module-defined memory (imported ones are owned by their provider).
+- [x] Data segments carry a target memory index.
+      Done: the Data section reads the kind-2 explicit memidx (kind 0 targets memory 0) and initializes against the resolved memory; out-of-range indices trap with `unknown memory N`.
+- [x] Categories: `multi-memory/*` (all 41 green, zero skips), `simd/simd_memory-multi` (green), and the `memory` category's `memory size` asserts (green after the runner learned the shorter wasm-tools text).
+      Surprise: the `memory` category's line-8 anonymous `module_definition` tripped a harness null-key bug (fixed: anonymous definitions are compiled for validation but not registered). The remaining `memory` skips (78/82/86/91/95/99) declare a 32-bit memory with 2^32 pages, which the `varuint32` reader silently truncates rather than rejecting — detecting that overflow is entangled with reading memory sizes as `varuint64` for memory64, so it is deferred to Phase 4 (an experimental `ReadVarUInt32` overflow guard regressed `align` and `memory64/*`, which legitimately rely on the truncating read, and was reverted). No memory-index skips remained in `binary`.
+- Risk: medium — broad but mechanical. The `UnmanagedMemory` type itself is unchanged apart from the additive cross-memory `CopyBetween`; only selection-by-index is new.
 
 ### Phase 4 — 64-bit address space (memory64 / table64)  *(medium-large)*
 

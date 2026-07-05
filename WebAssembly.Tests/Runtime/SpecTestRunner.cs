@@ -160,7 +160,12 @@ static partial class SpecTestRunner
                         // Compile once; instantiation is deferred to the matching module_instance commands.
                         var defPath = Path.Combine(pathBase, definition.LoadFilename);
                         Assert.IsNotNull(Module.ReadFromBinary(defPath)); // Ensure the module parser can read it.
-                        moduleDefinitions[definition.name] = Compile.FromBinary<TExports>(defPath);
+                        var definitionCreator = Compile.FromBinary<TExports>(defPath);
+                        // An anonymous definition (no name) is a standalone validation check with no later
+                        // module_instance to reference it; compiling it above is the whole test, so don't try to
+                        // register it under a null key.
+                        if (definition.name != null)
+                            moduleDefinitions[definition.name] = definitionCreator;
                         continue;
                     case ModuleInstance instance:
                         Assert.IsTrue(moduleDefinitions.TryGetValue(instance.module, out var creator),
@@ -292,6 +297,9 @@ static partial class SpecTestRunner
                             case "multiple memories":
                             case "size minimum must not be greater than maximum":
                             case "memory size must be at most 65536 pages (4GiB)":
+                            // wasm-tools emits the shorter "memory size" for an over-limit memory min/max; the
+                            // compiler rejects it with a ModuleLoadException naming the page limit.
+                            case "memory size":
                             case "unknown label":
                             case "unknown type":
                             case "unknown data segment":

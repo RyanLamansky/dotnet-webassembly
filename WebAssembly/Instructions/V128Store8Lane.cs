@@ -38,10 +38,10 @@ public class V128Store8Lane : SimdMemoryLaneInstruction
         }
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context[HelperMethod.RangeCheck8, MemoryImmediateInstruction.CreateRangeCheck]);
+        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 1));
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.CheckedMemory);
+        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
         context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         context.Emit(OpCodes.Add);
 

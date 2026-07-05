@@ -326,6 +326,8 @@ public static class Compile
             exportContainer);
         MethodBuilder? importedMemoryProvider = null;
         FieldBuilder? memory = null;
+        // Module-defined (not imported) memory fields, in index order; each is disposed when the instance is disposed.
+        var definedMemories = new List<FieldBuilder>();
 
         ILGenerator instanceConstructorIL;
         {
@@ -529,83 +531,58 @@ public static class Compile
 
                 case Section.Memory:
                     {
-                        var preCountOffset = reader.Offset;
+                        // WebAssembly 3.0 permits more than one memory; each entry is appended to the context's
+                        // memory list (after any imported memories) so instructions can select it by index.
                         var count = reader.ReadVarUInt32();
-                        if (count > 1)
-                            throw new ModuleLoadException("Multiple memory values are not supported.", preCountOffset);
-
-                        if (count != 0 && memory != null)
-                            throw new ModuleLoadException("Memory already provided via import, multiple memory values are not supported.", preCountOffset);
-
-                        if (count == 0)
-                            break; // An empty memory section is valid and defines no memory.
-
-                        var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
-                        // A memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
-                        const uint memoryPagesLimit = 0x1_0000;
-                        var preMinimumOffset = reader.Offset;
-                        memoryPagesMinimum = reader.ReadVarUInt32();
-                        if (memoryPagesMinimum > memoryPagesLimit)
-                            throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMinimumOffset);
-                        if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
+                        for (var m = 0u; m < count; m++)
                         {
-                            var preMaximumOffset = reader.Offset;
-                            var declaredMaximum = reader.ReadVarUInt32();
-                            if (declaredMaximum > memoryPagesLimit)
-                                throw new ModuleLoadException($"Memory size maximum of {declaredMaximum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMaximumOffset);
-                            if (declaredMaximum < memoryPagesMinimum)
-                                throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} must not be greater than maximum of {declaredMaximum}.", preMaximumOffset);
-                            // The backing store addresses memory with a uint, one byte short of a full 4GiB, so the
-                            // last allocatable page is clamped off even though the larger value validates per spec.
-                            memoryPagesMaximum = Math.Min(declaredMaximum, uint.MaxValue / Memory.PageSize);
+                            var setFlags = (ResizableLimits.Flags)reader.ReadVarUInt32();
+                            // A memory's size in pages must fit in 4GiB: at most 65536 pages of 64KiB each.
+                            const uint memoryPagesLimit = 0x1_0000;
+                            var preMinimumOffset = reader.Offset;
+                            memoryPagesMinimum = reader.ReadVarUInt32();
+                            if (memoryPagesMinimum > memoryPagesLimit)
+                                throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMinimumOffset);
+                            if ((setFlags & ResizableLimits.Flags.Maximum) != 0)
+                            {
+                                var preMaximumOffset = reader.Offset;
+                                var declaredMaximum = reader.ReadVarUInt32();
+                                if (declaredMaximum > memoryPagesLimit)
+                                    throw new ModuleLoadException($"Memory size maximum of {declaredMaximum} pages must be at most {memoryPagesLimit} pages (4GiB).", preMaximumOffset);
+                                if (declaredMaximum < memoryPagesMinimum)
+                                    throw new ModuleLoadException($"Memory size minimum of {memoryPagesMinimum} must not be greater than maximum of {declaredMaximum}.", preMaximumOffset);
+                                // The backing store addresses memory with a uint, one byte short of a full 4GiB, so the
+                                // last allocatable page is clamped off even though the larger value validates per spec.
+                                memoryPagesMaximum = Math.Min(declaredMaximum, uint.MaxValue / Memory.PageSize);
+                            }
+                            else
+                                memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
+
+                            var memoryField = CreateMemoryField(exportsBuilder, configuration, context.Memories.Count);
+                            context.Memories.Add(memoryField);
+                            definedMemories.Add(memoryField);
+                            memory ??= memoryField;
+
+                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                            Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
+                            Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
+                            instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?)).GetTypeInfo().DeclaredConstructors.Where(info =>
+                            {
+                                var parms = info.GetParameters();
+                                return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
+                            }).First());
+
+                            instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(UnmanagedMemory)).GetTypeInfo().DeclaredConstructors.Where(info =>
+                            {
+                                var parms = info.GetParameters();
+                                return
+                                    parms.Length == 2 &&
+                                    parms[0].ParameterType == configuration.NeutralizeType(typeof(uint)) &&
+                                    parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
+                            }).First());
+
+                            instanceConstructorIL.Emit(OpCodes.Stfld, memoryField);
                         }
-                        else
-                            memoryPagesMaximum = uint.MaxValue / Memory.PageSize;
-
-                        memory = context.Memory = CreateMemoryField(exportsBuilder, configuration);
-
-                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                        Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMinimum);
-                        Instructions.Int32Constant.Emit(instanceConstructorIL, (int)memoryPagesMaximum);
-                        instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(uint?)).GetTypeInfo().DeclaredConstructors.Where(info =>
-                        {
-                            var parms = info.GetParameters();
-                            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(uint));
-                        }).First());
-
-                        instanceConstructorIL.Emit(OpCodes.Newobj, configuration.NeutralizeType(typeof(UnmanagedMemory)).GetTypeInfo().DeclaredConstructors.Where(info =>
-                        {
-                            var parms = info.GetParameters();
-                            return
-                                parms.Length == 2 &&
-                                parms[0].ParameterType == configuration.NeutralizeType(typeof(uint)) &&
-                                parms[1].ParameterType == configuration.NeutralizeType(typeof(uint?));
-                        }).First());
-
-                        instanceConstructorIL.Emit(OpCodes.Stfld, memory);
-
-                        exportsBuilder.AddInterfaceImplementation(configuration.NeutralizeType(typeof(IDisposable)));
-
-                        var dispose = exportsBuilder.DefineMethod(
-                            "Dispose",
-                            MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
-                            CallingConventions.HasThis,
-                            configuration.NeutralizeType(typeof(void)),
-                            emptyTypes
-                            );
-
-                        var disposeIL = dispose.GetILGenerator();
-                        disposeIL.Emit(OpCodes.Ldarg_0);
-                        disposeIL.Emit(OpCodes.Ldfld, memory);
-                        disposeIL.Emit(OpCodes.Call, configuration.NeutralizeType(typeof(UnmanagedMemory))
-                            .GetTypeInfo()
-                            .DeclaredMethods
-                            .Where(info =>
-                            info.ReturnType == configuration.NeutralizeType(typeof(void))
-                            && info.GetParameters().Length == 0
-                            && info.Name == nameof(UnmanagedMemory.Dispose))
-                            .First());
-                        disposeIL.Emit(OpCodes.Ret);
                     }
                     break;
 
@@ -615,7 +592,7 @@ public static class Compile
                     break;
 
                 case Section.Export:
-                    exportedFunctions = SectionExport(reader, context, exportsBuilder, emptyTypes, memory, globals, configuration);
+                    exportedFunctions = SectionExport(reader, context, exportsBuilder, emptyTypes, globals, configuration);
                     // Exported functions are implicitly declared as referenceable by ref.func.
                     foreach (var exported in exportedFunctions)
                         context.DeclaredFunctionReferences.Add(exported.Value);
@@ -656,7 +633,7 @@ public static class Compile
                     break;
 
                 case Section.Data:
-                    SectionData(reader, context, memory, instanceConstructorIL, exportsBuilder, declaredDataCount);
+                    SectionData(reader, context, instanceConstructorIL, exportsBuilder, declaredDataCount);
                     break;
 
                 default:
@@ -665,6 +642,38 @@ public static class Compile
 
             preSectionOffset = reader.Offset;
             previousSection = (Section)id;
+        }
+
+        // Module-defined memories own unmanaged buffers; a single Dispose releases every one of them. Imported
+        // memories are owned by their provider and are not disposed here.
+        if (definedMemories.Count != 0)
+        {
+            exportsBuilder.AddInterfaceImplementation(configuration.NeutralizeType(typeof(IDisposable)));
+
+            var dispose = exportsBuilder.DefineMethod(
+                "Dispose",
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+                CallingConventions.HasThis,
+                configuration.NeutralizeType(typeof(void)),
+                emptyTypes
+                );
+
+            var disposeMethod = configuration.NeutralizeType(typeof(UnmanagedMemory))
+                .GetTypeInfo()
+                .DeclaredMethods
+                .First(info =>
+                    info.ReturnType == configuration.NeutralizeType(typeof(void))
+                    && info.GetParameters().Length == 0
+                    && info.Name == nameof(UnmanagedMemory.Dispose));
+
+            var disposeIL = dispose.GetILGenerator();
+            foreach (var definedMemory in definedMemories)
+            {
+                disposeIL.Emit(OpCodes.Ldarg_0);
+                disposeIL.Emit(OpCodes.Ldfld, definedMemory);
+                disposeIL.Emit(OpCodes.Call, disposeMethod);
+            }
+            disposeIL.Emit(OpCodes.Ret);
         }
 
         if (exportedFunctions != null && exportedFunctions.Length != 0)
@@ -894,11 +903,8 @@ public static class Compile
                     break;
                 case ExternalKind.Memory:
                     {
-                        // At most one memory is supported; a second memory import (or an import plus a
-                        // defined memory) is rejected, mirroring the Memory section's own guard.
-                        if (memory != null)
-                            throw new ModuleLoadException("Memory already provided, multiple memories are not supported.", preKindOffset);
-
+                        // WebAssembly 3.0 permits multiple memories; each imported memory gets its own backing
+                        // field, appended to the context's memory list ahead of any module-defined memories.
                         var limits = new ResizableLimits(reader);
 
                         var typedDelegate = typeof(Func<UnmanagedMemory>);
@@ -935,7 +941,9 @@ public static class Compile
                         ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
-                        memory = context.Memory = CreateMemoryField(exportsBuilder, configuration);
+                        var memoryField = CreateMemoryField(exportsBuilder, configuration, context.Memories.Count);
+                        context.Memories.Add(memoryField);
+                        memory ??= memoryField;
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Ldarg_0);
                         instanceConstructorIL.Emit(OpCodes.Call, importedMemoryProvider);
@@ -949,7 +957,7 @@ public static class Compile
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateMemoryImport);
 
-                        instanceConstructorIL.Emit(OpCodes.Stfld, memory);
+                        instanceConstructorIL.Emit(OpCodes.Stfld, memoryField);
                     }
                     break;
                 case ExternalKind.Global:
@@ -1206,7 +1214,6 @@ public static class Compile
         CompilationContext context,
         TypeBuilder exportsBuilder,
         Type[] emptyTypes,
-        FieldBuilder? memory,
         GlobalInfo[]? globals,
         CompilerConfiguration configuration)
     {
@@ -1263,12 +1270,11 @@ public static class Compile
                     }
                     break;
                 case ExternalKind.Memory:
-                    if (index != 0)
-                        throw new ModuleLoadException($"Exported memory must be of index 0, found {index}.", preIndexOffset);
-                    if (memory == null)
-                        throw new CompilerException("Cannot export linear memory when linear memory is not defined.");
+                    if (index >= (uint)context.Memories.Count)
+                        throw new ModuleLoadException($"Exported memory index {index} exceeds the {context.Memories.Count} memory(ies) defined or imported.", preIndexOffset);
 
                     {
+                        var memoryField = context.Memories[(int)index];
                         var memoryGetter = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
@@ -1277,7 +1283,7 @@ public static class Compile
                             );
                         var getterIL = memoryGetter.GetILGenerator();
                         getterIL.Emit(OpCodes.Ldarg_0);
-                        getterIL.Emit(OpCodes.Ldfld, memory);
+                        getterIL.Emit(OpCodes.Ldfld, memoryField);
                         getterIL.Emit(OpCodes.Ret);
 
                         var memoryProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes);
@@ -1683,7 +1689,7 @@ public static class Compile
         }
     }
 
-    static void SectionData(Reader reader, CompilationContext context, FieldBuilder? memory, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder, uint? declaredDataCount)
+    static void SectionData(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder, uint? declaredDataCount)
     {
         var count = reader.ReadVarUInt32();
 
@@ -1711,21 +1717,19 @@ public static class Compile
                 continue;
             }
 
-            // Kind 2 is active with an explicit memory index; only memory 0 is currently valid.
+            // Kind 2 is active with an explicit memory index (WebAssembly 3.0 multiple memories); kind 0 targets memory 0.
+            var memoryIndex = 0u;
             if (kind == 2)
-            {
-                var memoryIndex = reader.ReadVarUInt32();
-                if (memoryIndex != 0)
-                    throw new ModuleLoadException($"Data memory index must be 0, found {memoryIndex}.", startingOffset);
-            }
+                memoryIndex = reader.ReadVarUInt32();
             else if (kind != 0)
-            {
                 throw new ModuleLoadException($"Data segment kind must be 0, 1, or 2, found {kind}.", startingOffset);
-            }
 
-            // Active data segments (kind 0 or 2) require a memory.
-            if (memory == null)
-                throw new ModuleLoadException("Active data segment cannot be used unless a memory section is defined.", startingOffset);
+            // Active data segments (kind 0 or 2) require the target memory to exist.
+            if (memoryIndex >= (uint)context.Memories.Count)
+                throw new ModuleLoadException(context.Memories.Count == 0
+                    ? "Active data segment cannot be used unless a memory section is defined."
+                    : $"unknown memory {memoryIndex}", startingOffset);
+            var targetMemory = context.Memories[(int)memoryIndex];
 
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             context.ConstantExpression = true;
@@ -1753,7 +1757,7 @@ public static class Compile
                 var inBounds = instanceConstructorIL.DefineLabel();
                 instanceConstructorIL.Emit(OpCodes.Ldloc, address);
                 instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-                instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
+                instanceConstructorIL.Emit(OpCodes.Ldfld, targetMemory);
                 instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
                 instanceConstructorIL.Emit(OpCodes.Ble_Un_S, inBounds);
                 instanceConstructorIL.Emit(OpCodes.Ldloc, address);
@@ -1773,7 +1777,7 @@ public static class Compile
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
 
-            instanceConstructorIL.Emit(OpCodes.Call, context[HelperMethod.RangeCheck8, Instructions.MemoryImmediateInstruction.CreateRangeCheck]);
+            instanceConstructorIL.Emit(OpCodes.Call, context.GetRangeCheck(memoryIndex, 1));
             instanceConstructorIL.Emit(OpCodes.Pop);
 
             if (data.Length > 0x3f0000) //Limitation of DefineInitializedData, can be corrected by splitting the data.
@@ -1782,7 +1786,7 @@ public static class Compile
             var field = exportsBuilder.DefineInitializedData($"☣ Data {i}", data, FieldAttributes.Assembly | FieldAttributes.InitOnly);
 
             instanceConstructorIL.Emit(OpCodes.Ldarg_0);
-            instanceConstructorIL.Emit(OpCodes.Ldfld, memory);
+            instanceConstructorIL.Emit(OpCodes.Ldfld, targetMemory);
             instanceConstructorIL.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
             instanceConstructorIL.Emit(OpCodes.Ldloc, address);
             instanceConstructorIL.Emit(OpCodes.Conv_U); // Zero-extend the offset; Conv_I would sign-extend an offset >= 2^31 into a wild pointer.
@@ -1834,9 +1838,9 @@ public static class Compile
             configuration.NeutralizeType(typeof(FunctionTable)),
             FieldAttributes.Private | FieldAttributes.InitOnly);
 
-    static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder, CompilerConfiguration configuration)
+    static FieldBuilder CreateMemoryField(TypeBuilder exportsBuilder, CompilerConfiguration configuration, int memoryIndex)
         => exportsBuilder.DefineField(
-            "☣ Memory",
+            memoryIndex == 0 ? "☣ Memory" : $"☣ Memory {memoryIndex}",
             configuration.NeutralizeType(typeof(UnmanagedMemory)),
             PrivateReadonlyField);
 }

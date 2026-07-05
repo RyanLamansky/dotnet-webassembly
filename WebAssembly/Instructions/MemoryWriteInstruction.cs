@@ -30,15 +30,14 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
 
         Int32Constant.Emit(context, (int)this.Offset);
         context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context[this.StoreHelper, this.CreateStoreMethod]);
+        context.Emit(OpCodes.Call, context.GetStoreHelper(this.MemoryIndex, this.StoreHelper, this.CreateStoreMethod));
     }
 
     private MethodBuilder CreateStoreMethod(HelperMethod helper, CompilationContext context)
     {
-        var memory = context.Memory ??
-            throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
+        var memory = context.ResolveMemory(this.MemoryIndex);
         var builder = context.CheckedExportsBuilder.DefineMethod(
-            $"☣ {helper}",
+            $"☣ {helper}" + (this.MemoryIndex == 0 ? "" : $" m{this.MemoryIndex}"),
             CompilationContext.HelperMethodAttributes,
             typeof(void),
             [
@@ -54,7 +53,7 @@ public abstract class MemoryWriteInstruction : MemoryImmediateInstruction
         il.Emit(OpCodes.Ldarg_2);
         il.Emit(OpCodes.Add_Ovf_Un);
         il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);
+        il.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, this.Size));
         il.Emit(OpCodes.Ldarg_3);
         il.Emit(OpCodes.Ldfld, memory);
         il.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);

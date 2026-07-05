@@ -17,8 +17,7 @@ public class MemoryInit : MiscellaneousInstruction
     public uint SegmentIndex { get; set; }
 
     /// <summary>
-    /// The target memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
-    /// requires 0 because multiple memories are not supported.
+    /// The target memory index (WebAssembly 3.0 multiple memories), encoded as a <c>varuint32</c>; 0 for the default memory.
     /// </summary>
     public uint MemoryIndex { get; set; }
 
@@ -48,8 +47,8 @@ public class MemoryInit : MiscellaneousInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (MemoryIndex != 0)
-            throw new ModuleLoadException($"memory.init: only memory index 0 is supported, found {MemoryIndex}.", 0);
+        // Resolve the target memory up front so an out-of-range index traps with the spec "unknown memory" wording.
+        var memory = context.ResolveMemory(this.MemoryIndex);
 
         // Stack: dst src_offset len → (nothing)
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // len
@@ -70,7 +69,7 @@ public class MemoryInit : MiscellaneousInstruction
 
         // Call: this.memory.InitFromSegment(dst, this.segField, srcOffset, len)
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.CheckedMemory);
+        context.Emit(OpCodes.Ldfld, memory);
         context.Emit(OpCodes.Ldloc, dst);
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, segField);

@@ -190,7 +190,66 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public Signature? Signature;
 
-    public FieldBuilder? Memory;
+    /// <summary>
+    /// Backing fields for linear memories, in index order (imported memories first, then module-defined ones),
+    /// mirroring <see cref="Tables"/>. WebAssembly 3.0's multiple-memories feature permits more than one; a
+    /// single-memory module simply has one entry.
+    /// </summary>
+    public readonly List<FieldBuilder> Memories = [];
+
+    /// <summary>
+    /// The first linear memory (index 0), or null if no memory exists. Retained for the single-memory paths; new
+    /// code should resolve a specific memory with <see cref="ResolveMemory"/>.
+    /// </summary>
+    public FieldBuilder? Memory => this.Memories.Count > 0 ? this.Memories[0] : null;
+
+    /// <summary>
+    /// Validates a memory index for a memory instruction and resolves its backing field, throwing
+    /// <see cref="ModuleLoadException"/> with the spec's "unknown memory" wording when out of range.
+    /// </summary>
+    public FieldBuilder ResolveMemory(uint memoryIndex)
+    {
+        if (memoryIndex >= (uint)this.Memories.Count)
+            throw new ModuleLoadException($"unknown memory {memoryIndex}", 0);
+        return this.Memories[(int)memoryIndex];
+    }
+
+    // Range-check helpers are generated per (memory index, access size) so each memory's bounds check references
+    // its own backing field. Keyed jointly because the same size against different memories needs distinct helpers.
+    private readonly Dictionary<(uint memoryIndex, byte size), MethodInfo> rangeCheckHelpers = [];
+
+    /// <summary>
+    /// Returns (creating on first use) the bounds-check helper for the given memory index and access size in bytes.
+    /// The helper validates <c>address</c> against that memory's current size and returns the address widened to a
+    /// native unsigned integer, or throws <see cref="MemoryAccessOutOfRangeException"/> when out of range.
+    /// </summary>
+    public MethodInfo GetRangeCheck(uint memoryIndex, byte size)
+    {
+        if (this.rangeCheckHelpers.TryGetValue((memoryIndex, size), out var existing))
+            return existing;
+
+        var memory = this.ResolveMemory(memoryIndex);
+        var builder = Instructions.MemoryImmediateInstruction.CreateRangeCheck(this, memory, size, memoryIndex);
+        this.rangeCheckHelpers.Add((memoryIndex, size), builder);
+        return builder;
+    }
+
+    // Store helpers are likewise generated per (memory index, helper kind) so each writes through its own memory.
+    private readonly Dictionary<(uint memoryIndex, HelperMethod helper), MethodInfo> storeHelpers = [];
+
+    /// <summary>
+    /// Returns (creating on first use) the store helper for the given memory index and <paramref name="helper"/>
+    /// kind, using <paramref name="creator"/> to build it the first time.
+    /// </summary>
+    public MethodInfo GetStoreHelper(uint memoryIndex, HelperMethod helper, Func<HelperMethod, CompilationContext, MethodBuilder> creator)
+    {
+        if (this.storeHelpers.TryGetValue((memoryIndex, helper), out var existing))
+            return existing;
+
+        var builder = creator(helper, this);
+        this.storeHelpers.Add((memoryIndex, helper), builder);
+        return builder;
+    }
 
     /// <summary>
     /// Maps a data segment index to the <see cref="byte"/> array field that backs it, used by
@@ -235,7 +294,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public Signature[] CheckedTypes => Types ?? throw new InvalidOperationException();
 
-    public FieldBuilder CheckedMemory => Memory ?? throw new InvalidOperationException();
+    public FieldBuilder CheckedMemory => this.Memory ?? throw new InvalidOperationException();
 
     public TypeBuilder CheckedExportsBuilder
     {

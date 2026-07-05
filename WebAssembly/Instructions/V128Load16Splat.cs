@@ -33,10 +33,10 @@ public class V128Load16Splat : SimdMemoryImmediateInstruction
         }
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context[HelperMethod.RangeCheck16, MemoryImmediateInstruction.CreateRangeCheck]);
+        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 2));
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.CheckedMemory);
+        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
         context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         context.Emit(OpCodes.Add);
 

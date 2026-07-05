@@ -18,6 +18,8 @@ public sealed class UnmanagedMemory : IDisposable
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(prop => prop.Name == nameof(Grow)));
     internal static readonly RegeneratingWeakReference<MethodInfo> CopyMethod = new(()
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Copy)));
+    internal static readonly RegeneratingWeakReference<MethodInfo> CopyBetweenMethod = new(()
+        => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(CopyBetween)));
     internal static readonly RegeneratingWeakReference<MethodInfo> FillMethod = new(()
         => typeof(UnmanagedMemory).GetTypeInfo().DeclaredMethods.First(m => m.Name == nameof(Fill)));
     internal static readonly RegeneratingWeakReference<MethodInfo> InitFromSegmentMethod = new(()
@@ -155,6 +157,31 @@ public sealed class UnmanagedMemory : IDisposable
             return;
         // byte* arithmetic zero-extends the uint offsets, staying correct above 2 GiB where a (int) cast would sign-extend.
         Buffer.MemoryCopy((byte*)this.Start + src, (byte*)this.Start + dst, length, length);
+    }
+
+    /// <summary>
+    /// Copies <paramref name="length"/> bytes from <paramref name="source"/> at <paramref name="src"/> into
+    /// <paramref name="destination"/> at <paramref name="dst"/>. Implements <c>memory.copy</c> across two
+    /// (possibly distinct) WebAssembly 3.0 memories; the same instance may be passed for both.
+    /// </summary>
+    /// <param name="destination">The memory written to.</param>
+    /// <param name="dst">The destination byte offset within <paramref name="destination"/>.</param>
+    /// <param name="source">The memory read from.</param>
+    /// <param name="src">The source byte offset within <paramref name="source"/>.</param>
+    /// <param name="length">The number of bytes to copy.</param>
+    /// <exception cref="MemoryAccessOutOfRangeException">The source or destination range falls outside of its memory.</exception>
+    public static unsafe void CopyBetween(UnmanagedMemory destination, uint dst, UnmanagedMemory source, uint src, uint length)
+    {
+        var dstEnd = checked(dst + length);
+        var srcEnd = checked(src + length);
+        if (dstEnd > destination.Size)
+            throw new MemoryAccessOutOfRangeException(dstEnd, destination.Size);
+        if (srcEnd > source.Size)
+            throw new MemoryAccessOutOfRangeException(srcEnd, source.Size);
+        if (length == 0)
+            return;
+        // Buffer.MemoryCopy is memmove-like, so a same-memory overlapping copy is handled correctly too.
+        Buffer.MemoryCopy((byte*)source.Start + src, (byte*)destination.Start + dst, length, length);
     }
 
     /// <summary>

@@ -17,8 +17,7 @@ public class MemorySize : Instruction
     public sealed override OpCode OpCode => OpCode.MemorySize;
 
     /// <summary>
-    /// The target memory index, encoded as a <c>varuint32</c>. The object model is permissive; the compiler
-    /// requires 0 because multiple memories are not supported.
+    /// The target memory index (WebAssembly 3.0 multiple memories), encoded as a <c>varuint32</c>; 0 for the default memory.
     /// </summary>
     public uint MemoryIndex { get; set; }
 
@@ -70,14 +69,8 @@ public class MemorySize : Instruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        if (MemoryIndex != 0)
-            throw new ModuleLoadException($"memory.size: only memory index 0 is supported, found {MemoryIndex}.", 0);
-
-        if (context.Memory == null)
-            throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
-
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.Memory);
+        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
         context.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
         context.Emit(OpCodes.Ldc_I4, Memory.PageSize);
         context.Emit(OpCodes.Div_Un);

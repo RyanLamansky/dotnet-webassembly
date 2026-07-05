@@ -40,6 +40,12 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
     }
 
     /// <summary>
+    /// The bit in the alignment/flags field that signals an explicit <see cref="MemoryIndex"/> immediate follows
+    /// (WebAssembly 3.0 multiple-memories encoding).
+    /// </summary>
+    private const uint MemoryIndexFlag = 0x40;
+
+    /// <summary>
     /// A bitfield which currently contains the alignment in the least significant bits, encoded as log2(alignment).
     /// </summary>
     public Options Flags { get; set; }
@@ -49,20 +55,41 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
     /// </summary>
     public uint Offset { get; set; }
 
+    /// <summary>
+    /// The linear memory targeted by this access (WebAssembly 3.0 multiple memories); 0 for the default memory.
+    /// A non-zero value is encoded by setting bit 6 of the alignment/flags field, followed by the index as a
+    /// <c>varuint32</c>; index 0 uses the pre-3.0 minimal encoding so existing modules round-trip unchanged.
+    /// </summary>
+    public uint MemoryIndex { get; set; }
+
     private protected MemoryImmediateInstruction()
     {
     }
 
     private protected MemoryImmediateInstruction(Reader reader)
     {
-        Flags = (Options)reader.ReadVarUInt32();
+        var flags = reader.ReadVarUInt32();
+        if ((flags & MemoryIndexFlag) != 0)
+        {
+            this.MemoryIndex = reader.ReadVarUInt32();
+            flags &= ~MemoryIndexFlag;
+        }
+        Flags = (Options)flags;
         Offset = reader.ReadVarUInt32();
     }
 
     internal sealed override void WriteTo(Writer writer)
     {
         writer.Write((byte)this.OpCode);
-        writer.WriteVar((uint)this.Flags);
+        if (this.MemoryIndex != 0)
+        {
+            writer.WriteVar((uint)this.Flags | MemoryIndexFlag);
+            writer.WriteVar(this.MemoryIndex);
+        }
+        else
+        {
+            writer.WriteVar((uint)this.Flags);
+        }
         writer.WriteVar(this.Offset);
     }
 
@@ -86,13 +113,14 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         && other.OpCode == this.OpCode
         && other.Flags == this.Flags
         && other.Offset == this.Offset
+        && other.MemoryIndex == this.MemoryIndex
         ;
 
     /// <summary>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, (int)this.Offset);
+    public override int GetHashCode() => HashCode.Combine((int)this.OpCode, (int)this.Flags, (int)this.Offset, (int)this.MemoryIndex);
 
     private protected abstract WebAssemblyValueType Type { get; }
 
@@ -112,43 +140,25 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
 
     private protected abstract System.Reflection.Emit.OpCode EmittedOpCode { get; }
 
-    private protected HelperMethod RangeCheckHelper => this.Size switch
-    {
-        1 => HelperMethod.RangeCheck8,
-        2 => HelperMethod.RangeCheck16,
-        4 => HelperMethod.RangeCheck32,
-        8 => HelperMethod.RangeCheck64,
-        _ => throw new InvalidOperationException(),// Shouldn't be possible.
-    };
-
     private protected void EmitRangeCheck(CompilationContext context)
     {
         context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context[this.RangeCheckHelper, CreateRangeCheck]);
+        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, this.Size));
     }
 
-    internal static MethodBuilder CreateRangeCheck(HelperMethod helper, CompilationContext context)
+    /// <summary>
+    /// Builds the bounds-check helper for a specific memory field and access size. Callers reach this through
+    /// <see cref="CompilationContext.GetRangeCheck"/>, which caches one helper per (memory index, size).
+    /// </summary>
+    internal static MethodBuilder CreateRangeCheck(CompilationContext context, FieldInfo memory, byte size, uint memoryIndex)
     {
-        if (context.Memory == null)
-            throw new CompilerException("Cannot use instructions that depend on linear memory when linear memory is not defined.");
-
-        byte size = helper switch
-        {
-            HelperMethod.RangeCheck8 => 1,
-            HelperMethod.RangeCheck16 => 2,
-            HelperMethod.RangeCheck32 => 4,
-            HelperMethod.RangeCheck64 => 8,
-            HelperMethod.RangeCheck128 => 16,
-            _ => throw new InvalidOperationException(), // Shouldn't be possible.
-        };
-
         // Returns the validated address widened to a native unsigned integer. Callers add this directly to the
         // base pointer (UnmanagedMemory.Start), so it must be zero-extended: a plain 32-bit address would be
         // sign-extended by the IL `add`, corrupting any access at an offset >= 2^31 (reachable once linear
         // memory grows past 2 GiB). Returning native-unsigned-int and emitting Conv_U below keeps the widening
         // in one place for every scalar and SIMD load/store path.
         var builder = context.CheckedExportsBuilder.DefineMethod(
-            $"☣ Range Check {size}",
+            $"☣ Range Check {size}" + (memoryIndex == 0 ? "" : $" m{memoryIndex}"),
             CompilationContext.HelperMethodAttributes,
             typeof(UIntPtr),
             [typeof(uint), context.CheckedExportsBuilder]
@@ -171,7 +181,7 @@ public abstract class MemoryImmediateInstruction : Instruction, IEquatable<Memor
         }
 
         il.Emit(OpCodes.Ldarg_1);
-        il.Emit(OpCodes.Ldfld, context.Memory);
+        il.Emit(OpCodes.Ldfld, memory);
         il.Emit(OpCodes.Call, UnmanagedMemory.SizeGetter);
         il.Emit(OpCodes.Ldarg_0);
         EmitSize(il, size);

@@ -38,7 +38,7 @@ public abstract class MemoryReadInstruction : MemoryImmediateInstruction
         this.EmitRangeCheck(context);
 
         context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.CheckedMemory);
+        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
         context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
         context.Emit(OpCodes.Add);
 
