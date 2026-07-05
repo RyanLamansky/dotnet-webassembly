@@ -65,7 +65,17 @@ public abstract class BlockTypeInstruction : Instruction
         }
     }
 
-    internal sealed override void WriteTo(Writer writer)
+    internal override void WriteTo(Writer writer)
+    {
+        this.WriteBlockTypeHeaderTo(writer);
+    }
+
+    /// <summary>
+    /// Emits the opcode byte followed by the block-type immediate (the multi-value type index, an inline
+    /// reference type, or the inline value type). <see cref="TryTable"/> reuses this before appending its catch
+    /// vector.
+    /// </summary>
+    private protected void WriteBlockTypeHeaderTo(Writer writer)
     {
         writer.Write((byte)this.OpCode);
         if (this.TypeIndex.HasValue)

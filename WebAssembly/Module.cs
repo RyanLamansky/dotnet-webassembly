@@ -103,6 +103,19 @@ public class Module
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
+    private IList<Tag>? tags;
+
+    /// <summary>
+    /// Exception tags defined within the assembly (WASM 3.0 exception handling).
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Value cannot be set to null.</exception>
+    public IList<Tag> Tags
+    {
+        get => this.tags ??= [];
+        set => this.tags = value ?? throw new ArgumentNullException(nameof(value));
+    }
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private IList<Global>? globals;
 
     /// <summary>
@@ -291,6 +304,16 @@ public class Module
 
                             for (var i = 0; i < count; i++)
                                 memories.Add(new Memory(reader));
+                        }
+                        break;
+
+                    case Section.Tag: //Exception tag declarations
+                        {
+                            var count = reader.ReadVarUInt32();
+                            var tags = module.tags = new List<Tag>(checked((int)count));
+
+                            for (var i = 0; i < count; i++)
+                                tags.Add(new Tag(reader));
                         }
                         break;
 
@@ -507,6 +530,17 @@ public class Module
             });
         }
         WriteCustomSection(buffer, writer, Section.Memory, customSectionsByPrecedingSection);
+
+        if (this.tags != null)
+        {
+            WriteSection(buffer, writer, Section.Tag, sectionWriter =>
+            {
+                sectionWriter.WriteVar((uint)this.tags.Count);
+                foreach (var tag in this.tags)
+                    tag.WriteTo(sectionWriter);
+            });
+        }
+        WriteCustomSection(buffer, writer, Section.Tag, customSectionsByPrecedingSection);
 
         if (this.globals != null)
         {

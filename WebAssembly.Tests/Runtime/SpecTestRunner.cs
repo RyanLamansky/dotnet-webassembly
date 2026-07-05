@@ -252,6 +252,9 @@ static partial class SpecTestRunner
                         switch (assert.text)
                         {
                             case "type mismatch":
+                            // WASM 3.0 sometimes prefixes the detail ("type mismatch: instruction requires [i32] but
+                            // stack has …"); a catch-clause subtype mismatch in try_table surfaces this form.
+                            case var tmm when tmm.StartsWith("type mismatch", StringComparison.Ordinal):
                                 try
                                 {
                                     trapExpected();
@@ -309,6 +312,10 @@ static partial class SpecTestRunner
                             // point (WebAssembly 3.0 definite-assignment); the compiler rejects it at validation.
                             case "uninitialized local":
                             case "unknown type":
+                            // WASM 3.0 exception handling: a tag whose referenced type has non-empty results, or a
+                            // catch clause / throw naming a tag index the module doesn't define.
+                            case "non-empty tag result type":
+                            case var utag when utag.StartsWith("unknown tag", StringComparison.Ordinal):
                             case "unknown data segment":
                             case "unknown data segment 1":
                             case "start function":
@@ -499,10 +506,31 @@ static partial class SpecTestRunner
                     case AssertMalformed assert:
                         continue; // Not writing a WAT parser.
                     case AssertException assert:
-                        // WASM 3.0 exception handling (Phase 6) is not implemented. Surface as a
-                        // failure so it flows through the normal per-line skip mechanism (the
-                        // exceptions/* categories are wholesale-skipped for now) rather than crashing.
-                        throw new AssertFailedException($"{command.line}: assert_exception requires exception handling (Phase 6), not yet implemented.");
+                        // WASM 3.0 exception handling: the action must throw a WebAssemblyException (any tag). A trap,
+                        // any other exception, or a normal return fails the assertion. The command carries no expected
+                        // tag, so there is nothing further to check.
+                        GetMethod(assert.action, out methodInfo, out obj);
+                        try
+                        {
+                            assert.action.Call(methodInfo, obj);
+                        }
+                        catch (TargetInvocationException x) when (x.InnerException is WebAssembly.Runtime.WebAssemblyException)
+                        {
+                            continue;
+                        }
+                        catch (WebAssembly.Runtime.WebAssemblyException)
+                        {
+                            continue;
+                        }
+                        catch (TargetInvocationException x) when (x.InnerException != null)
+                        {
+                            throw new AssertFailedException($"{command.line}: expected a WebAssembly exception but the action threw {x.InnerException.GetType().Name}.");
+                        }
+                        catch (Exception x)
+                        {
+                            throw new AssertFailedException($"{command.line}: expected a WebAssembly exception but the action threw {x.GetType().Name}.");
+                        }
+                        throw new AssertFailedException($"{command.line}: expected a WebAssembly exception but the action returned normally.");
                     case AssertExhaustion assert:
                         // "call stack exhausted" is the only text the spec suite emits here, and it's
                         // auto-skipped at the top of the loop (a real StackOverflowException would crash
@@ -539,6 +567,8 @@ static partial class SpecTestRunner
                                 continue;
                             case "unknown import":
                             case "incompatible import type":
+                            // wasm-tools emits the shorter "incompatible import" for a tag-signature mismatch.
+                            case "incompatible import":
                                 Assert.ThrowsExactly<ImportException>(trapExpected, $"{command.line}");
                                 continue;
                             default:

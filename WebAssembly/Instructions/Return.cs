@@ -29,6 +29,29 @@ public class Return : SimpleInstruction
         var returnsLength = returns.Length;
         var stackCount = stack.Count;
 
+        // Inside a protected region a `ret` is illegal IL: instead stash the results into the function block's result
+        // locals (which CompileFunctionEnd reloads) and `leave` to the function-end label, which sits outside every
+        // region. A single `leave` clears the physical stack and exits all enclosing regions.
+        if (context.InProtectedRegion)
+        {
+            var functionBlock = context.BlockContexts[1];
+            if (returnsLength == 1)
+            {
+                context.PopStackNoReturn(OpCode.Return, returns[0]);
+                context.Emit(OpCodes.Stloc, functionBlock.ResultLocal ??= context.DeclareLocal(returns[0].ToSystemType()));
+            }
+            else if (returnsLength > 1)
+            {
+                context.PopStackNoReturn(OpCode.Return, returns.Select(t => (ValType?)t).Reverse(), returnsLength);
+                functionBlock.ResultLocals ??= context.DeclareResultLocals(returns);
+                BranchHelper.StashResults(context, functionBlock.ResultLocals);
+            }
+
+            context.Emit(OpCodes.Leave, context.Labels[0]);
+            context.MarkUnreachable(functionWide: true);
+            return;
+        }
+
         if (returnsLength <= 1)
         {
             if (stackCount > returnsLength)

@@ -135,6 +135,14 @@ public abstract class Instruction : IEquatable<Instruction>
 
                 case OpCode.Else: yield return new Else(); break;
 
+                case OpCode.TryTable:
+                    yield return new TryTable(reader);
+                    depth++;
+                    break;
+
+                case OpCode.Throw: yield return new Throw(reader); break;
+                case OpCode.ThrowRef: yield return new ThrowRef(); break;
+
                 case OpCode.End:
                     yield return new End();
                     Assert(depth > 0);

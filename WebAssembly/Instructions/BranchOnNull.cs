@@ -90,8 +90,7 @@ public class BranchOnNull : Instruction, IEquatable<BranchOnNull>
         context.Emit(OpCodes.Dup);
         context.Emit(OpCodes.Brtrue, fall);
         context.Emit(OpCodes.Pop); // Discard the null reference before branching.
-        BranchHelper.EmitReachableBranch(context, OpCode.BranchOnNull, checked((int)this.Index), blockType, targetBlockContext, isLoop, branchTypes);
-        context.Emit(OpCodes.Br, label);
+        BranchHelper.EmitBranchTransfer(context, OpCode.BranchOnNull, checked((int)this.Index), blockType, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
 
         context.MarkLabel(fall);
         context.Stack.Push(fallThrough); // Fall-through: the non-null reference remains.

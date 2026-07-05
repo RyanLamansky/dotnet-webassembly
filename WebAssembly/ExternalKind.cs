@@ -24,4 +24,9 @@ public enum ExternalKind : byte
     /// A global import or definition.
     /// </summary>
     Global = 3,
+
+    /// <summary>
+    /// An exception tag import or definition (WASM 3.0 exception handling).
+    /// </summary>
+    Tag = 4,
 }

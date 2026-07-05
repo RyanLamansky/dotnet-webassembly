@@ -33,6 +33,14 @@ public class End : SimpleInstruction
             return;
         }
 
+        // A try_table with catch clauses installs a protected region; its end runs the exception-handling epilogue.
+        // A catchless try_table pushed no region and falls through to the ordinary block-end handling below.
+        if (context.Regions.Count > 0 && context.Regions[^1].DepthKey == context.Depth.Count)
+        {
+            TryTable.CompileRegionEnd(context, context.Regions[^1]);
+            return;
+        }
+
         var blockContext = context.BlockContexts[context.Depth.Count];
 
         // Local initializations performed inside this block do not survive its end (WebAssembly 3.0

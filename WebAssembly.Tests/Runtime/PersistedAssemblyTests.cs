@@ -85,5 +85,55 @@ public class PersistedAssemblyTests
         Assert.IsNotNull(memory, "Expected an exported 'mem' property on the generated type.");
         Assert.IsNotNull(memory.GetValue(instance), "The exported memory should be instantiated.");
     }
+
+    /// <summary>
+    /// A module that defines a tag, throws it, and catches it in a try_table survives the WASM-to-DLL path,
+    /// exercising the <see cref="ExceptionTag"/>/<see cref="WebAssemblyException"/> type references and the
+    /// filter/handler IL under the persisted <c>NeutralizeType</c> mapping.
+    /// </summary>
+    [TestMethod]
+    public void PersistedAssembly_TagThrowCatch_RoundTrip()
+    {
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType()); // 0: () -> ()
+        module.Types.Add(new WebAssemblyType
+        {
+            Parameters = [WebAssemblyValueType.Int32],
+            Returns = [WebAssemblyValueType.Int32],
+        }); // 1: (i32) -> (i32)
+        module.Tags.Add(new Tag(0));
+        module.Functions.Add(new Function { Type = 1 });
+        module.Exports.Add(new Export { Name = "f", Index = 0 });
+
+        var tryTable = new TryTable(BlockType.Int32);
+        tryTable.Catches.Add(new CatchClause(CatchKind.Catch, 0, tag: 0));
+
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new Block(BlockType.Empty),
+                    tryTable,
+                        new LocalGet(0),
+                        new Int32EqualZero(),
+                        new If(BlockType.Empty),
+                            new Throw(0),
+                        new End(),
+                        new Int32Constant(42),
+                    new End(),
+                    new Return(),
+                new End(),
+                new Int32Constant(23),
+                new End(),
+            ],
+        });
+
+        var (type, instance) = CompileLoadAndInstantiate(module, out _);
+
+        var f = type.GetMethod("f");
+        Assert.IsNotNull(f);
+        Assert.AreEqual(42, f.Invoke(instance, [1]), "No throw: the try body's result flows out.");
+        Assert.AreEqual(23, f.Invoke(instance, [0]), "Throw caught: control reaches the catch label.");
+    }
 }
 #endif

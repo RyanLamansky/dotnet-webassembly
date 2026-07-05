@@ -47,6 +47,18 @@ public enum OpCode : byte
     Else = 0x05,
 
     /// <summary>
+    /// Throw an exception with the operands of a given tag (WASM 3.0 exception handling).
+    /// </summary>
+    [OpCodeCharacteristics("throw")]
+    Throw = 0x08,
+
+    /// <summary>
+    /// Re-throw an exception reference from the stack (WASM 3.0 exception handling).
+    /// </summary>
+    [OpCodeCharacteristics("throw_ref")]
+    ThrowRef = 0x0a,
+
+    /// <summary>
     /// An instruction that marks the end of a block, loop, if, or function.
     /// </summary>
     [OpCodeCharacteristics("end")]
@@ -129,6 +141,12 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("select_with_type")]
     SelectWithType = 0x1c,
+
+    /// <summary>
+    /// A block that installs exception handlers (catch clauses) over its body (WASM 3.0 exception handling).
+    /// </summary>
+    [OpCodeCharacteristics("try_table")]
+    TryTable = 0x1f,
 
     /// <summary>
     /// Read the current value of a local variable.

@@ -99,6 +99,30 @@ public class ReturnCall : Instruction, IEquatable<ReturnCall>
 
         var target = context.CheckedMethods[this.Index];
 
+        // Inside a protected region a `tail.` is illegal IL, and the frame must be replaced before the call so the
+        // callee's throw escapes the enclosing try_table. Spill the arguments (no beneath-pops — the leave clears the
+        // stack), then `leave` to a per-callsite trampoline emitted after the body's final ret, outside every region,
+        // where the unchanged tail-call sequence is legal.
+        if (context.InProtectedRegion)
+        {
+            var spilled = TailCallHelper.SpillOperands(context, paramTypes, stackCountBefore, discardBeneath: false);
+            var stub = context.DefineLabel();
+            context.PendingFunctionStubs.Add(stubContext =>
+            {
+                stubContext.MarkLabel(stub);
+                foreach (var local in spilled)
+                    stubContext.Emit(OpCodes.Ldloc, local);
+                if (target is MethodBuilder)
+                    stubContext.EmitLoadThis();
+                stubContext.Emit(OpCodes.Tailcall);
+                stubContext.Emit(OpCodes.Call, target);
+                stubContext.Emit(OpCodes.Ret);
+            });
+            context.Emit(OpCodes.Leave, stub);
+            context.MarkUnreachable(functionWide: true);
+            return;
+        }
+
         // Clear any operand-stack values below the arguments so only the arguments remain (an IL tail-call requirement),
         // then reload the arguments in call order.
         var argLocals = TailCallHelper.SpillOperands(context, paramTypes, stackCountBefore);

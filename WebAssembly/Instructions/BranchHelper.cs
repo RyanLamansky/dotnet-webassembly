@@ -132,6 +132,76 @@ static class BranchHelper
     }
 
     /// <summary>
+    /// The single choke point for a reachable WASM branch's control transfer (<see cref="Branch"/>,
+    /// <see cref="BranchOnNull"/>, <see cref="BranchOnNonNull"/>). When the target lies within the current protected
+    /// region — always the case for a module without exception handling — this is the byte-identical existing
+    /// emission (<see cref="EmitReachableBranch"/> then <c>br</c>). Otherwise it ferries the carried values and emits
+    /// a single <c>leave</c> to the crossed region's exit stub (or its resume point for the region's own end).
+    /// </summary>
+    public static void EmitBranchTransfer(CompilationContext context, OpCode opCode, int index, BlockTypeInstruction blockType, int targetDepthKey, BlockContext targetBlockContext, bool isLoop, ValType[] branchTypes, Label label)
+    {
+        var region = context.CrossingRegion(targetDepthKey);
+        if (region == null)
+        {
+            EmitReachableBranch(context, opCode, index, blockType, targetBlockContext, isLoop, branchTypes);
+            context.Emit(OpCodes.Br, label);
+            return;
+        }
+
+        // Crossing a region: ferry carried values into locals (never discarding intermediates — leave clears the
+        // physical stack), then leave to the region's resume point (own end) or an exit stub (an outer target).
+        var ownEnd = region.DepthKey == targetDepthKey;
+        ProtectedRegion.ExitStub? stub = ownEnd
+            ? null
+            : context.GetOrCreateExitStub(region, targetDepthKey, label, targetBlockContext.InitialStackSize, isLoop, branchTypes);
+
+        if (branchTypes.Length > 0)
+        {
+            ValidateBranchTypes(context, opCode, branchTypes, targetBlockContext);
+            if (!isLoop)
+            {
+                targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);
+                StashResults(context, targetBlockContext.ResultLocals);
+            }
+            else
+            {
+                StashResults(context, stub!.CarriedLocals!);
+            }
+        }
+        else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+        {
+            context.ValidateStack(opCode, expectedType);
+            context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(index, expectedType));
+        }
+
+        context.Emit(OpCodes.Leave, ownEnd ? region.EhEndLabel : stub!.StubLabel);
+    }
+
+    /// <summary>
+    /// The dead-code counterpart to <see cref="EmitBranchTransfer"/>: no values are ferried, but a branch inside a
+    /// protected region must still be structurally valid IL, so a crossing branch emits <c>leave</c> (to the region's
+    /// resume point or exit stub) rather than an illegal <c>br</c> across the region boundary.
+    /// </summary>
+    public static void EmitDeadBranchTransfer(CompilationContext context, int targetDepthKey, BlockContext targetBlockContext, bool isLoop, ValType[] branchTypes, Label label)
+    {
+        var region = context.CrossingRegion(targetDepthKey);
+        if (region == null)
+        {
+            context.Emit(OpCodes.Br, label);
+            return;
+        }
+
+        if (region.DepthKey == targetDepthKey)
+        {
+            context.Emit(OpCodes.Leave, region.EhEndLabel);
+            return;
+        }
+
+        var stub = context.GetOrCreateExitStub(region, targetDepthKey, label, targetBlockContext.InitialStackSize, isLoop, branchTypes);
+        context.Emit(OpCodes.Leave, stub.StubLabel);
+    }
+
+    /// <summary>
     /// In unreachable code a branch emits no IL but still type-checks the program, leaving the abstract stack as it
     /// found it.
     /// </summary>

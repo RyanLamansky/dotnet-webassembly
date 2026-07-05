@@ -74,6 +74,13 @@ public class BranchIf : Instruction
         var isLoop = blockType.OpCode == OpCode.Loop;
         var branchTypes = BranchHelper.BranchTypes(context, targetDepthKey, targetBlockContext, isLoop);
 
+        if (isReachable && context.CrossingRegion(targetDepthKey) != null)
+        {
+            EmitCrossing(context, this.OpCode, checked((int)this.Index), blockType, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
+            context.MarkReachable();
+            return;
+        }
+
         if (isReachable)
         {
             if (branchTypes.Length > 0)
@@ -161,12 +168,63 @@ public class BranchIf : Instruction
         else
         {
             BranchHelper.ValidateUnreachable(context, this.OpCode, blockType, branchTypes, isLoop, targetBlockContext);
-            context.Emit(OpCodes.Brtrue, label);
+            if (context.CrossingRegion(targetDepthKey) != null)
+                BranchHelper.EmitDeadBranchTransfer(context, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
+            else
+                context.Emit(OpCodes.Brtrue, label);
         }
 
         // Code after a conditional branch is reachable only when the branch itself was reachable.
         if (isReachable)
             context.MarkReachable();
+    }
+
+    // A conditional branch that crosses one or more protected regions: the taken path must leave (not br) to the
+    // crossed region's exit stub or resume point, so the brtrue/brfalse fast paths fall back to the long shape
+    // (save condition, ferry carried values, brfalse skip, leave, skip: reload for fall-through).
+    private static void EmitCrossing(CompilationContext context, OpCode opCode, int index, BlockTypeInstruction blockType, int targetDepthKey, BlockContext targetBlockContext, bool isLoop, ValType[] branchTypes, Label label)
+    {
+        var region = context.CrossingRegion(targetDepthKey)!;
+        var ownEnd = region.DepthKey == targetDepthKey;
+        var stub = ownEnd ? null : context.GetOrCreateExitStub(region, targetDepthKey, label, targetBlockContext.InitialStackSize, isLoop, branchTypes);
+        var leaveTarget = ownEnd ? region.EhEndLabel : stub!.StubLabel;
+
+        var conditionLocal = context.DeclareLocal(typeof(int));
+        var skipTaken = context.DefineLabel();
+
+        if (branchTypes.Length > 0)
+        {
+            BranchHelper.ValidateBranchTypes(context, opCode, branchTypes, targetBlockContext);
+            context.Emit(OpCodes.Stloc, conditionLocal);
+            var carried = isLoop ? stub!.CarriedLocals! : (targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes));
+            BranchHelper.StashResults(context, carried);
+            context.Emit(OpCodes.Ldloc, conditionLocal);
+            context.Emit(OpCodes.Brfalse, skipTaken);
+            context.Emit(OpCodes.Leave, leaveTarget);
+            context.MarkLabel(skipTaken);
+            BranchHelper.ReloadResults(context, carried);
+        }
+        else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+        {
+            context.ValidateStack(opCode, expectedType);
+            var resultLocal = context.GetOrCreateResultLocal(index, expectedType);
+            context.Emit(OpCodes.Stloc, conditionLocal);
+            context.Emit(OpCodes.Dup);
+            context.Emit(OpCodes.Stloc, resultLocal);
+            context.Emit(OpCodes.Ldloc, conditionLocal);
+            context.Emit(OpCodes.Brfalse, skipTaken);
+            context.Emit(OpCodes.Pop); // Discard the duplicate left when taking the branch.
+            context.Emit(OpCodes.Leave, leaveTarget);
+            context.MarkLabel(skipTaken);
+        }
+        else
+        {
+            context.Emit(OpCodes.Stloc, conditionLocal);
+            context.Emit(OpCodes.Ldloc, conditionLocal);
+            context.Emit(OpCodes.Brfalse, skipTaken);
+            context.Emit(OpCodes.Leave, leaveTarget);
+            context.MarkLabel(skipTaken);
+        }
     }
 
     /// <summary>

@@ -54,9 +54,8 @@ public abstract class RuntimeImport
             {
                 case ExternalKind.Function:
                     {
-                        var method = member as MethodInfo;
-                        if (method == null)
-                            continue; // TODO: Throw an exception for mismatch.
+                        if (member is not MethodInfo method)
+                            throw new ArgumentException($"Function export '{native.Name}' must be a method, but {member.Name} is a {member.MemberType}.", nameof(exports));
 
                         yield return (native.Name, new FunctionImport(GetDelegate(method)));
                     }
@@ -64,16 +63,14 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Table:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
+                        if (member is not PropertyInfo property)
+                            throw new ArgumentException($"Table export '{native.Name}' must be a property, but {member.Name} is a {member.MemberType}.", nameof(exports));
 
-                        var getter = property.GetGetMethod();
-                        if (getter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                        var getter = property.GetGetMethod()
+                            ?? throw new ArgumentException($"Table export '{native.Name}' requires a public getter on {member.Name}.", nameof(exports));
 
                         if (getter.Invoke(exports, []) is not TableImport table)
-                            continue; // TODO: Throw an exception for missing result.
+                            throw new ArgumentException($"Table export '{native.Name}' must return a non-null {nameof(TableImport)} from {member.Name}.", nameof(exports));
 
                         table.Descriptor = native.Descriptor;
                         yield return (native.Name, table);
@@ -82,13 +79,11 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Memory:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
+                        if (member is not PropertyInfo property)
+                            throw new ArgumentException($"Memory export '{native.Name}' must be a property, but {member.Name} is a {member.MemberType}.", nameof(exports));
 
-                        var getter = property.GetGetMethod();
-                        if (getter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                        var getter = property.GetGetMethod()
+                            ?? throw new ArgumentException($"Memory export '{native.Name}' requires a public getter on {member.Name}.", nameof(exports));
 
                         yield return (
                             native.Name,
@@ -99,13 +94,11 @@ public abstract class RuntimeImport
 
                 case ExternalKind.Global:
                     {
-                        var property = member as PropertyInfo;
-                        if (property == null)
-                            continue; // TODO: Throw an exception for mismatch.
+                        if (member is not PropertyInfo property)
+                            throw new ArgumentException($"Global export '{native.Name}' must be a property, but {member.Name} is a {member.MemberType}.", nameof(exports));
 
-                        var rawGetter = property.GetGetMethod();
-                        if (rawGetter == null)
-                            continue; // TODO: Throw an exception for missing getter.
+                        var rawGetter = property.GetGetMethod()
+                            ?? throw new ArgumentException($"Global export '{native.Name}' requires a public getter on {member.Name}.", nameof(exports));
 
                         var rawSetter = property.GetSetMethod();
 
@@ -115,9 +108,25 @@ public abstract class RuntimeImport
                         yield return (native.Name, new GlobalImport(getter, setter) { Descriptor = native.Descriptor });
                     }
                     continue;
+
+                case ExternalKind.Tag:
+                    {
+                        if (member is not PropertyInfo property)
+                            throw new ArgumentException($"Tag export '{native.Name}' must be a property, but {member.Name} is a {member.MemberType}.", nameof(exports));
+
+                        var getter = property.GetGetMethod()
+                            ?? throw new ArgumentException($"Tag export '{native.Name}' requires a public getter on {member.Name}.", nameof(exports));
+
+                        if (getter.Invoke(exports, []) is not ExceptionTag tag)
+                            throw new ArgumentException($"Tag export '{native.Name}' must return a non-null {nameof(ExceptionTag)} from {member.Name}.", nameof(exports));
+
+                        tag.Descriptor = native.Descriptor;
+                        yield return (native.Name, tag);
+                    }
+                    continue;
             }
 
-            // TODO: Throw an exception if no case is hit.
+            throw new ArgumentException($"Export '{native.Name}' on member {member.Name} has unsupported kind {native.Kind}.", nameof(exports));
         }
     }
 }

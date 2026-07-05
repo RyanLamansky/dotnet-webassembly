@@ -93,10 +93,19 @@ static class BlockTypeExtensions
                 valueType = WebAssemblyValueType.V128;
                 break;
             case BlockType.FuncRef:
-                valueType = WebAssemblyValueType.FuncRef;
-                break;
             case BlockType.ExternRef:
-                valueType = WebAssemblyValueType.ExternRef;
+            case BlockType.AnyRef:
+            case BlockType.EqRef:
+            case BlockType.I31Ref:
+            case BlockType.StructRef:
+            case BlockType.ArrayRef:
+            case BlockType.NoneRef:
+            case BlockType.NoFuncRef:
+            case BlockType.NoExternRef:
+            case BlockType.ExnRef:
+            case BlockType.NoExnRef:
+                // Every abstract-heap-type shorthand shares its s7 encoding with the matching value type.
+                valueType = (WebAssemblyValueType)(sbyte)blockType;
                 break;
         }
 

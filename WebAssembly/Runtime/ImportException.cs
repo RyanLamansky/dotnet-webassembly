@@ -185,4 +185,28 @@ public class ImportException : RuntimeException
             throw new ImportException(
                 $"Import {module}::{field} expected a table of at least {expectedMinimum} entr{(expectedMinimum == 1 ? "y" : "ies")}{(expectedHasMaximum ? $" and at most {expectedMaximum}" : "")} but the supplied table had a range of [{table.Length}, {(object?)table.Maximum ?? "unbounded"}].");
     }
+
+    /// <summary>
+    /// Throws an <see cref="ImportException"/> if a supplied exception-tag import's signature does not match what the
+    /// importing module declared, otherwise returns the resolved <see cref="ExceptionTag"/> (which preserves the tag's
+    /// per-instance identity across linking). Tag-import matching is invariant: when both the supplied tag and the
+    /// declaration carry a closed structural descriptor, they must be equal; when either is absent (a host-supplied
+    /// tag), the match is accepted (the CLR cast already confirmed the kind).
+    /// </summary>
+    /// <param name="import">The resolved tag import.</param>
+    /// <param name="expectedDescriptor">The declared exception signature's closed structural descriptor, or null.</param>
+    /// <param name="module">The import's module name, for diagnostics.</param>
+    /// <param name="field">The import's field name, for diagnostics.</param>
+    /// <returns>The resolved <see cref="ExceptionTag"/>.</returns>
+    public static ExceptionTag ValidateTag(TagImport import, string? expectedDescriptor, string module, string field)
+    {
+        if (import is not ExceptionTag tag)
+            throw new ImportException($"Import {module}::{field} expected an exception tag but the supplied import was {import?.GetType().Name ?? "null"}.");
+
+        if (tag.Descriptor is { } suppliedDescriptor && expectedDescriptor is not null && suppliedDescriptor != expectedDescriptor)
+            throw new ImportException(
+                $"Import {module}::{field} expected a tag of signature {expectedDescriptor} but the supplied tag had signature {suppliedDescriptor}. incompatible import");
+
+        return tag;
+    }
 }

@@ -189,14 +189,28 @@ See `Wasm3Phase5Design.md`'s Implementation notes (M5.4/M5.5) for the per-milest
 
 ### Phase 6 — Exception handling  *(medium)*
 
-- [ ] New **Tag section** + object model `Tag` type (a tag references a function-type as its exception signature). Add `Tags` to `Module`, an `ExternalKind.Tag` for imports/exports, and reader/writer support.
-- [ ] Instructions: `throw`, `throw_ref`, and the 3.0 `try_table` block (with `catch` / `catch_ref` / `catch_all` / `catch_all_ref` clauses). Implement the **new** `try_table` model, not the legacy `try/catch/delegate` exception proposal.
-- [ ] Map WASM exceptions onto .NET exceptions: a thrown tag becomes a CLR exception carrying the tag identity + operands; `try_table` emits IL `try`/`catch` that filters by tag and re-pushes operands or rethrows.
-- [ ] `throw_ref` / `catch_ref` need a first-class `exnref` value type.
-- [ ] Interaction with Phase 2: ECMA-335 forbids the IL `tail.` prefix inside a protected region, so `return_call`/`return_call_indirect` occurring inside a `try_table` block need a fallback (plain call + ret, surrendering the constant-stack guarantee, or restructuring to exit the `try` first).
-- [ ] Harness: implement the `assert_exception` command in `SpecTestRunner` (see A3) — the exceptions fixtures are the only users.
-- [ ] Categories: `exceptions/*` (`tag`, `throw`, `throw_ref`, `try_table`).
-- Risk: medium — .NET EH is a good fit, but matching trap-vs-exception semantics and stack unwinding precisely takes care.
+> Full design (encodings, trap taxonomy, try_table IL mapping, milestones M6.1–M6.5, ranked risks): [Wasm3Phase6Design.md](Wasm3Phase6Design.md), produced and reviewed 2026-07-05.
+
+**Progress: Phase 6 is complete.** M6.1–M6.5 are all done, gated green (Debug+Release, net8/9/10, 0 failures).
+Object model, byte-identical parsing, runtime tags + linking + harness, `throw`/`throw_ref`, and the full `try_table` core (region records, branch rewiring, filter/handler/exit-stub epilogue, tail-call trampolines) are done.
+`imports` and `exceptions/{throw,throw_ref,try_table}` are fully green; `exceptions/tag` is Inconclusive with exactly its three Phase 8 lines (30/40/49, rec-group type identity).
+See `Wasm3Phase6Design.md`'s Implementation notes (M6.1–M6.5) for detail.
+
+- [x] New **Tag section** + object model `Tag` type (a tag references a function-type as its exception signature). Add `Tags` to `Module`, an `ExternalKind.Tag` for imports/exports, and reader/writer support.
+      Done (M6.1): `Section.Tag = 13` (BinaryOrder 6, between Memory and Global), `Tag`, `Import.Tag`, `Module.Tags`, `ExternalKind.Tag`, all byte-identically round-tripped.
+- [x] Instructions: `throw`, `throw_ref`, and the 3.0 `try_table` block (with `catch` / `catch_ref` / `catch_all` / `catch_all_ref` clauses). Implement the **new** `try_table` model, not the legacy `try/catch/delegate` exception proposal.
+      Done: object model + parse/write + `throw`/`throw_ref` compile (M6.1/M6.3) and the full `TryTable.Compile`/`CompileRegionEnd` (M6.4). `CatchClause`/`CatchKind` model all four clause kinds.
+- [x] Map WASM exceptions onto .NET exceptions: a thrown tag becomes a CLR exception carrying the tag identity + operands; `try_table` emits IL `try`/`catch` that filters by tag and re-pushes operands or rethrows.
+      Done: `throw` → `WebAssemblyException(ExceptionTag, object[])` (M6.3); `try_table` compiles to `BeginExceptionBlock` + one `BeginExceptFilterBlock`/`BeginCatchBlock` per clause, the filter an `isinst WebAssemblyException` + reference-identity tag `ceq` (traps unwind through every filter, `catch_all` included), the handler unpacking operands into the label's ferry locals and `leave`-ing to it (M6.4).
+- [x] `throw_ref` / `catch_ref` need a first-class `exnref` value type.
+      Done: exnref is the `WebAssemblyException` object typed `object` on the CLR stack (Phase 5 already parses/defaults exn/noexn); `throw_ref` compiled in M6.3.
+- [x] Interaction with Phase 2: ECMA-335 forbids the IL `tail.` prefix inside a protected region, and the fixtures prove the naive fallback (plain call inside the try) is semantically wrong — a tail call replaces the frame, so the callee's throw must NOT be caught by the enclosing `try_table` (`try_table.1` asserts this).
+      Done (M6.4): a `return_call`/`return_call_indirect`/`return_call_ref` inside a region spills its operands and `leave`s to a per-callsite trampoline emitted (via `PendingFunctionStubs`) after the body's final `ret`, outside all protected regions, which performs the unchanged `tail.` sequence. The post-`ret` trampoline was JIT-accepted on all six framework×config cells (no fallback needed); the 5,000,000-deep proof runs in constant stack and the tail-called callee's throw escapes — spec semantics and the constant-stack guarantee both kept.
+- [x] Harness: implement the `assert_exception` command in `SpecTestRunner` (see A3) — the exceptions fixtures are the only users.
+      Done (M6.2): passes iff the action throws a `WebAssemblyException`; plus the new `assert_invalid`/`assert_unlinkable` text mappings.
+- [x] Categories: `exceptions/*` (`tag`, `throw`, `throw_ref`, `try_table`).
+      Done: `imports`, `exceptions/throw`, `exceptions/throw_ref`, and `exceptions/try_table` are fully green; `exceptions/tag` is Inconclusive with exactly its three Phase 8 rec-group lines (30/40/49).
+- Risk: medium — resolved. .NET EH proved a good fit: `isinst WebAssemblyException` in every filter is the whole trap-vs-exception boundary (traps unwind through `catch_all`), and the physical-vs-model stack arithmetic (entry spill, exit-stub reload extents, skipped intermediate-discards on `leave` paths) held across the RISK-2 shapes (value below the try, multi-region crossing, loop back-edge crossing) without restructuring block compilation.
 
 ### Phase 7 — Relaxed SIMD  *(small-medium)*
 

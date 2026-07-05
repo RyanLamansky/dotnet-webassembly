@@ -47,6 +47,8 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
         this.LoopLabels.Clear();
         this.Stack.Clear();
         this.BlockContexts.Clear();
+        this.Regions.Clear();
+        this.PendingFunctionStubs.Clear();
         this.BlockContexts.Add(this.Depth.Count, new BlockContext());
 
         this.Labels.Add(0, generator.DefineLabel());
@@ -203,6 +205,82 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
             throw new ModuleLoadException($"Table index {tableIndex} out of range (only {this.Tables.Count} tables defined).", 0);
         return (this.Tables[(int)tableIndex], this.IsFuncTable(tableIndex));
     }
+
+    /// <summary>
+    /// Exception-tag backing fields (WASM 3.0 exception handling), indexed by tag index: imported tags first, then
+    /// module-defined tags. Each field holds an <see cref="ExceptionTag"/> — the unique reference-identity object
+    /// that gives the tag its per-instance identity.
+    /// </summary>
+    public readonly List<FieldBuilder> Tags = [];
+
+    /// <summary>The exception signature (a function type with empty results) of each tag, parallel to <see cref="Tags"/>.</summary>
+    public readonly List<Signature> TagSignatures = [];
+
+    /// <summary>Gets the backing field for the tag at <paramref name="tagIndex"/>, throwing when out of range.</summary>
+    public FieldBuilder GetTag(uint tagIndex)
+    {
+        if (tagIndex >= (uint)this.Tags.Count)
+            throw new ModuleLoadException($"unknown tag {tagIndex}: the module defines only {this.Tags.Count} tag(s).", 0);
+        return this.Tags[(int)tagIndex];
+    }
+
+    /// <summary>
+    /// The stack of live protected regions (WASM 3.0 <c>try_table</c>), outermost first. Empty for every module
+    /// without exception handling, keeping the branch fast path (<see cref="Instructions.BranchHelper"/>) byte-identical.
+    /// </summary>
+    public readonly List<ProtectedRegion> Regions = [];
+
+    /// <summary>Whether the code being compiled is inside at least one protected region (an IL <c>tail.</c> is illegal there).</summary>
+    public bool InProtectedRegion => this.Regions.Count > 0;
+
+    /// <summary>The physical IL-stack floor: the innermost live region's <see cref="ProtectedRegion.Floor"/>, or 0 with no region.</summary>
+    public int PhysicalFloor => this.Regions.Count > 0 ? this.Regions[^1].Floor : 0;
+
+    /// <summary>
+    /// Deferred trampolines emitted by <c>SectionCode</c> after a function body's final <c>ret</c> — outside every
+    /// (now-closed) protected region, where an IL <c>tail.</c> is legal — for tail calls made inside a region.
+    /// Cleared per function in <see cref="Reset"/>.
+    /// </summary>
+    public readonly List<Action<CompilationContext>> PendingFunctionStubs = [];
+
+    /// <summary>
+    /// The outermost live protected region whose block-depth key is at least <paramref name="targetDepthKey"/> — the
+    /// region a branch to that target must <c>leave</c> — or null when the branch stays within the current region (the
+    /// byte-identical fast path: a plain <c>br</c>).
+    /// </summary>
+    public ProtectedRegion? CrossingRegion(int targetDepthKey)
+    {
+        foreach (var region in this.Regions) // Outermost first.
+        {
+            if (region.DepthKey >= targetDepthKey)
+                return region;
+        }
+        return null;
+    }
+
+    /// <summary>Returns (creating on first use) <paramref name="region"/>'s exit stub for the given branch target.</summary>
+    public ProtectedRegion.ExitStub GetOrCreateExitStub(ProtectedRegion region, int targetDepthKey, Label targetLabel, int targetBaseline, bool isLoop, ValType[] branchTypes)
+    {
+        if (!region.ExitStubs.TryGetValue(targetDepthKey, out var stub))
+        {
+            var carried = isLoop && branchTypes.Length > 0 ? this.DeclareResultLocals(branchTypes) : null;
+            stub = new ProtectedRegion.ExitStub(this.DefineLabel(), targetDepthKey, targetLabel, targetBaseline, isLoop, carried);
+            region.ExitStubs.Add(targetDepthKey, stub);
+        }
+        return stub;
+    }
+
+    /// <summary>Begins an exception-handling block, returning its leave target (the post-block resume point).</summary>
+    public Label BeginExceptionBlock() => CheckedGenerator.BeginExceptionBlock();
+
+    /// <summary>Begins the filter of the current exception block; filter IL leaves an int32 (1 = handle) on the stack.</summary>
+    public void BeginExceptFilterBlock() => CheckedGenerator.BeginExceptFilterBlock();
+
+    /// <summary>Begins the handler for the preceding filter (emitting the <c>endfilter</c>).</summary>
+    public void BeginCatchBlock() => CheckedGenerator.BeginCatchBlock(null);
+
+    /// <summary>Ends the current exception-handling block, marking its resume point.</summary>
+    public void EndExceptionBlock() => CheckedGenerator.EndExceptionBlock();
 
     /// <summary>Per-function reference delegates, used by <c>ref.func</c>. Assigned during compilation.</summary>
     public FieldBuilder? FunctionReferences;

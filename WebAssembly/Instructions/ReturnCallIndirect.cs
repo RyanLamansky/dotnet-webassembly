@@ -131,6 +131,32 @@ public class ReturnCallIndirect : Instruction, IEquatable<ReturnCallIndirect>
         var operandTypes = new ValType[paramTypes.Length + 1];
         Array.Copy(paramTypes, operandTypes, paramTypes.Length);
         operandTypes[paramTypes.Length] = WebAssemblyValueType.Int32;
+
+        // Inside a protected region: spill (no beneath-pops — the leave clears the stack) and defer the resolution and
+        // tail call to a per-callsite trampoline emitted after the body's final ret, outside every region.
+        if (context.InProtectedRegion)
+        {
+            var spilled = TailCallHelper.SpillOperands(context, operandTypes, stackCountBefore, discardBeneath: false);
+            var stub = context.DefineLabel();
+            context.PendingFunctionStubs.Add(stubContext =>
+            {
+                stubContext.MarkLabel(stub);
+                stubContext.EmitLoadThis();
+                stubContext.Emit(OpCodes.Ldfld, tableField);
+                stubContext.Emit(OpCodes.Ldloc, spilled[paramTypes.Length]);
+                stubContext.Emit(OpCodes.Call, FunctionTable.IndexGetter);
+                stubContext.Emit(OpCodes.Castclass, invoker.DeclaringType!);
+                for (var i = 0; i < paramTypes.Length; i++)
+                    stubContext.Emit(OpCodes.Ldloc, spilled[i]);
+                stubContext.Emit(OpCodes.Tailcall);
+                stubContext.Emit(OpCodes.Call, invoker);
+                stubContext.Emit(OpCodes.Ret);
+            });
+            context.Emit(OpCodes.Leave, stub);
+            context.MarkUnreachable(functionWide: true);
+            return;
+        }
+
         var locals = TailCallHelper.SpillOperands(context, operandTypes, stackCountBefore);
         var indexLocal = locals[paramTypes.Length];
 

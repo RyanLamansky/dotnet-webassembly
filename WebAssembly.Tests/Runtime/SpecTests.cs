@@ -192,11 +192,9 @@ public class SpecTests
     /// <summary>Runs the imports tests.</summary>
     [TestMethod]
     public void SpecTest_imports()
-        // 3.0 imports (tag/exception external kind, typed refs) — Phases 5, 6.
-        => SpecTestRunner.Run("imports", skip:
-        [
-        3, 19, 35, 97, 98, 128, 129, 130, 131, 132, 133, 134, 240, 244, 248, 252, 256, 291, 292, 293,
-        ]);
+        // 3.0 imports (tag/exception external kind) fully supported (Phase 6 M6.2): tag section, tag import/export,
+        // cross-module tag identity, and tag-signature link validation — the whole former skip list is now green.
+        => SpecTestRunner.Run("imports");
 
     /// <summary>Runs the inline-module tests.</summary>
     [TestMethod]
@@ -1010,23 +1008,25 @@ public class SpecTests
 
     /// <summary>Runs the exceptions/tag tests.</summary>
     [TestMethod]
-    // Whole category deferred: exception handling (try_table/throw/tag) — Phase 6.
-    public void SpecTest_exceptions_tag() => SpecTestRunner.RunAllSkipped("exceptions/tag", "exception handling (try_table/throw/tag) — Phase 6");
+    public void SpecTest_exceptions_tag()
+        // Tag section + tag import/export are supported (Phase 6). Lines 30/40/49 stay skipped: the modules at 30/40
+        // define their exception type inside a (rec …) group, which both parse paths reject until Phase 8 (GC
+        // rec-group type identity), and the assert_unlinkable at 49 imports one of those rec-group tags, so it fails
+        // to load with a rec-group error before its import mismatch can be observed. The category stays Inconclusive
+        // by design until Phase 8.
+        => SpecTestRunner.Run("exceptions/tag", skip: [30, 40, 49]);
 
     /// <summary>Runs the exceptions/throw tests.</summary>
     [TestMethod]
-    // Whole category deferred: exception handling (try_table/throw/tag) — Phase 6.
-    public void SpecTest_exceptions_throw() => SpecTestRunner.RunAllSkipped("exceptions/throw", "exception handling (try_table/throw/tag) — Phase 6");
+    public void SpecTest_exceptions_throw() => SpecTestRunner.Run("exceptions/throw");
 
     /// <summary>Runs the exceptions/throw_ref tests.</summary>
     [TestMethod]
-    // Whole category deferred: exception handling (try_table/throw/tag) — Phase 6.
-    public void SpecTest_exceptions_throw_ref() => SpecTestRunner.RunAllSkipped("exceptions/throw_ref", "exception handling (try_table/throw/tag) — Phase 6");
+    public void SpecTest_exceptions_throw_ref() => SpecTestRunner.Run("exceptions/throw_ref");
 
     /// <summary>Runs the exceptions/try_table tests.</summary>
     [TestMethod]
-    // Whole category deferred: exception handling (try_table/throw/tag) — Phase 6.
-    public void SpecTest_exceptions_try_table() => SpecTestRunner.RunAllSkipped("exceptions/try_table", "exception handling (try_table/throw/tag) — Phase 6");
+    public void SpecTest_exceptions_try_table() => SpecTestRunner.Run("exceptions/try_table");
 
 
     // ==== WASM 3.0 — Relaxed SIMD (Phase 7) ====

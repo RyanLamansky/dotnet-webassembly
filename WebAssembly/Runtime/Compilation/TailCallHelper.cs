@@ -21,7 +21,12 @@ internal static class TailCallHelper
     /// <param name="types">The operand types, in operand (bottom-to-top) order.</param>
     /// <param name="stackCountBefore">The evaluation-stack depth before the operands were consumed.</param>
     /// <returns>The spilled operands as locals, in operand order.</returns>
-    public static LocalBuilder[] SpillOperands(CompilationContext context, ReadOnlySpan<ValType> types, int stackCountBefore)
+    /// <param name="discardBeneath">
+    /// When true (the default), pops the values remaining beneath the operands. A tail call inside a protected region
+    /// leaves instead of returning, and the <c>leave</c> clears the physical stack for free, so those pops are skipped
+    /// (some of the beneath-values may also sit below the physical floor and must not be popped).
+    /// </param>
+    public static LocalBuilder[] SpillOperands(CompilationContext context, ReadOnlySpan<ValType> types, int stackCountBefore, bool discardBeneath = true)
     {
         var locals = new LocalBuilder[types.Length];
         for (var i = types.Length - 1; i >= 0; i--)
@@ -30,8 +35,11 @@ internal static class TailCallHelper
             context.Emit(OpCodes.Stloc, locals[i]);
         }
 
-        for (var i = 0; i < stackCountBefore - types.Length; i++)
-            context.Emit(OpCodes.Pop);
+        if (discardBeneath)
+        {
+            for (var i = 0; i < stackCountBefore - types.Length; i++)
+                context.Emit(OpCodes.Pop);
+        }
 
         return locals;
     }

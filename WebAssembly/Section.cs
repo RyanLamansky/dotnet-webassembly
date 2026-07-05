@@ -59,11 +59,16 @@ public enum Section : byte
     /// Optional segment which indicates the number of sata segments
     /// </summary>
     DataCount,
+    /// <summary>
+    /// Exception tag declarations (WASM 3.0 exception handling). Positioned between the Memory and Global sections
+    /// in the binary layout despite its higher numeric ID.
+    /// </summary>
+    Tag = 13,
 }
 
 static class SectionExtensions
 {
-    public static bool IsValid(this Section section) => section <= Section.DataCount;
+    public static bool IsValid(this Section section) => section <= Section.Tag;
 
     extension(Section section)
     {
@@ -81,13 +86,14 @@ static class SectionExtensions
             Section.Function => 3,
             Section.Table => 4,
             Section.Memory => 5,
-            Section.Global => 6,
-            Section.Export => 7,
-            Section.Start => 8,
-            Section.Element => 9,
-            Section.DataCount => 10,
-            Section.Code => 11,
-            Section.Data => 12,
+            Section.Tag => 6,
+            Section.Global => 7,
+            Section.Export => 8,
+            Section.Start => 9,
+            Section.Element => 10,
+            Section.DataCount => 11,
+            Section.Code => 12,
+            Section.Data => 13,
             _ => (int)section,
         };
     }

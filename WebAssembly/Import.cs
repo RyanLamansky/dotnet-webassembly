@@ -99,6 +99,11 @@ public abstract class Import
                 Module = module,
                 Field = field,
             },
+            ExternalKind.Tag => new Tag(reader)
+            {
+                Module = module,
+                Field = field,
+            },
             _ => throw new ModuleLoadException($"Imported external kind of {kind} is not recognized.", initialOffset),
         };
     }
@@ -345,6 +350,64 @@ public abstract class Import
             else
                 writer.WriteVar((sbyte)this.contentType);
             writer.WriteVar(this.IsMutable ? 1u : 0);
+        }
+    }
+
+    /// <summary>
+    /// Describes an imported exception tag (WASM 3.0 exception handling).
+    /// </summary>
+    public class Tag : Import
+    {
+        /// <summary>
+        /// Always <see cref="ExternalKind.Tag"/>.
+        /// </summary>
+        public sealed override ExternalKind Kind => ExternalKind.Tag;
+
+        /// <summary>
+        /// The index within the module's types that describes the exception signature (a function type with empty results).
+        /// </summary>
+        public uint TypeIndex { get; set; }
+
+        /// <summary>
+        /// Creates a new <see cref="Tag"/> instance.
+        /// </summary>
+        public Tag()
+        {
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Tag"/> instance with the provided parameters.
+        /// </summary>
+        /// <param name="module">The module portion of the name.</param>
+        /// <param name="field">The field portion of the name.</param>
+        /// <param name="typeIndex">The index within the module's types that describes the exception signature.</param>
+        public Tag(string module, string field, uint typeIndex = 0)
+            : base(module, field)
+        {
+            this.TypeIndex = typeIndex;
+        }
+
+        internal Tag(Reader reader)
+        {
+            var attribute = reader.ReadByte();
+            if (attribute != 0x00)
+                throw new ModuleLoadException($"Unsupported tag attribute 0x{attribute:X2}; only 0x00 (exception) is defined.", reader.Offset);
+
+            this.TypeIndex = reader.ReadVarUInt32();
+        }
+
+        /// <summary>
+        /// Expresses the value of this instance as a string.
+        /// </summary>
+        /// <returns>A string representation of this instance.</returns>
+        public override string ToString() => $"{base.ToString()} ({nameof(Tag)} {TypeIndex}";
+
+        internal sealed override void WriteTo(Writer writer)
+        {
+            base.WriteTo(writer);
+            writer.Write((byte)ExternalKind.Tag);
+            writer.Write((byte)0x00);
+            writer.WriteVar(this.TypeIndex);
         }
     }
 }

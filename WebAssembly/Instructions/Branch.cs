@@ -82,14 +82,13 @@ public class Branch : Instruction
 
         if (!context.IsUnreachable)
         {
-            BranchHelper.EmitReachableBranch(context, this.OpCode, checked((int)this.Index), blockType, targetBlockContext, isLoop, branchTypes);
+            BranchHelper.EmitBranchTransfer(context, this.OpCode, checked((int)this.Index), blockType, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
         }
         else
         {
             BranchHelper.ValidateUnreachable(context, this.OpCode, blockType, branchTypes, isLoop, targetBlockContext);
+            BranchHelper.EmitDeadBranchTransfer(context, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
         }
-
-        context.Emit(OpCodes.Br, label);
 
         //Mark the subsequent code within this block is unreachable
         context.MarkUnreachable();

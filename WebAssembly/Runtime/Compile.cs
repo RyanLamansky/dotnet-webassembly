@@ -345,6 +345,19 @@ public static class Compile
     static readonly MethodInfo ValidateMemoryImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemory))!;
     static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable),
         [typeof(TableImport), typeof(uint), typeof(uint), typeof(bool), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
+    static readonly MethodInfo ValidateTagImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTag))!;
+
+    // The ExceptionTag(string descriptor) constructor, resolved through NeutralizeType so the persisted-assembly path
+    // references the right (mirrored) type.
+    static ConstructorInfo ExceptionTagConstructor(CompilerConfiguration configuration) =>
+        configuration.NeutralizeType(typeof(ExceptionTag))
+        .GetTypeInfo()
+        .DeclaredConstructors
+        .First(c =>
+        {
+            var parms = c.GetParameters();
+            return parms.Length == 1 && parms[0].ParameterType == configuration.NeutralizeType(typeof(string));
+        });
 
     // Pushes a closed structural descriptor argument for the descriptor-aware Validate* overloads: the string when
     // the import is reference-typed, or null (which keeps the coarse CLR-type fallback in force) when it is numeric.
@@ -737,6 +750,35 @@ public static class Compile
                             EmitSetIs64(instanceConstructorIL, configuration, typeof(UnmanagedMemory), is64);
 
                             instanceConstructorIL.Emit(OpCodes.Stfld, memoryField);
+                        }
+                    }
+                    break;
+
+                case Section.Tag:
+                    {
+                        // Exception tags (WASM 3.0). Each defined tag becomes an ExceptionTag field with fresh
+                        // per-instantiation identity (newobj in the constructor), appended after any imported tags.
+                        var count = reader.ReadVarUInt32();
+                        var tagClrType = configuration.NeutralizeType(typeof(ExceptionTag));
+                        for (var t = 0u; t < count; t++)
+                        {
+                            var preTagOffset = reader.Offset;
+                            var tag = new Tag(reader);
+                            if (signatures == null || tag.TypeIndex >= signatures.Length)
+                                throw new ModuleLoadException($"unknown type {tag.TypeIndex}: the module defines only {signatures?.Length ?? 0} type(s).", preTagOffset);
+                            var signature = signatures[tag.TypeIndex];
+                            if (signature.RawReturnTypes.Length != 0)
+                                throw new ModuleLoadException($"non-empty tag result type: tag references type {tag.TypeIndex} which has {signature.RawReturnTypes.Length} result(s).", preTagOffset);
+
+                            var descriptor = WasmTypeDescriptor.RenderTagSignature(signature, signatures);
+                            var tagField = exportsBuilder.DefineField($"☢ Tag{context.Tags.Count}", tagClrType, PrivateReadonlyField);
+                            context.Tags.Add(tagField);
+                            context.TagSignatures.Add(signature);
+
+                            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                            instanceConstructorIL.Emit(OpCodes.Ldstr, descriptor);
+                            instanceConstructorIL.Emit(OpCodes.Newobj, ExceptionTagConstructor(configuration));
+                            instanceConstructorIL.Emit(OpCodes.Stfld, tagField);
                         }
                     }
                     break;
@@ -1228,6 +1270,43 @@ public static class Compile
                         globalImports.Add(new GlobalInfo(contentValType, true, getterInvoker, setterInvoker));
                     }
                     break;
+                case ExternalKind.Tag:
+                    {
+                        // WASM 3.0 exception-tag import. Its attribute byte must be 0 (exception); its signature must
+                        // have empty results. The same ExceptionTag object is stored so cross-module tag identity is
+                        // preserved by reference.
+                        var attribute = reader.ReadByte();
+                        if (attribute != 0x00)
+                            throw new ModuleLoadException($"Unsupported tag attribute 0x{attribute:X2}; only 0x00 (exception) is defined.", reader.Offset);
+                        var preTagTypeOffset = reader.Offset;
+                        var tagTypeIndex = reader.ReadVarUInt32();
+                        if (signatures == null || tagTypeIndex >= signatures.Length)
+                            throw new ModuleLoadException($"unknown type {tagTypeIndex}: the module defines only {signatures?.Length ?? 0} type(s).", preTagTypeOffset);
+                        var tagSignature = signatures[tagTypeIndex];
+                        if (tagSignature.RawReturnTypes.Length != 0)
+                            throw new ModuleLoadException($"non-empty tag result type: tag references type {tagTypeIndex} which has {tagSignature.RawReturnTypes.Length} result(s).", preTagTypeOffset);
+
+                        var tagClrType = configuration.NeutralizeType(typeof(ExceptionTag));
+                        var tagField = exportsBuilder.DefineField($"☢ Tag{context.Tags.Count}", tagClrType, PrivateReadonlyField);
+                        context.Tags.Add(tagField);
+                        context.TagSignatures.Add(tagSignature);
+
+                        instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+                        instanceConstructorIL.Emit(OpCodes.Ldarg_1);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                        instanceConstructorIL.Emit(OpCodes.Callvirt, importFinderInvoke);
+
+                        ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(TagImport)), configuration);
+
+                        EmitDescriptor(instanceConstructorIL, WasmTypeDescriptor.RenderTagSignature(tagSignature, signatures));
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                        instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                        instanceConstructorIL.Emit(OpCodes.Call, ValidateTagImport);
+
+                        instanceConstructorIL.Emit(OpCodes.Stfld, tagField);
+                    }
+                    break;
                 default:
                     throw new ModuleLoadException($"{moduleName}::{fieldName} imported external kind of {kind} is not recognized.", preKindOffset);
             }
@@ -1523,6 +1602,35 @@ public static class Compile
 
                             property.SetSetMethod(wrappedSet);
                         }
+                    }
+                    break;
+                case ExternalKind.Tag:
+                    if (index >= (uint)context.Tags.Count)
+                        throw new ModuleLoadException($"Exported tag index {index} exceeds the {context.Tags.Count} tag(s) defined or imported.", preIndexOffset);
+
+                    {
+                        var tagField = context.Tags[(int)index];
+                        var tagClrType = configuration.NeutralizeType(typeof(ExceptionTag));
+                        var tagGetter = exportsBuilder.DefineMethod("get_" + memberName,
+                            exportedPropertyAttributes,
+                            CallingConventions.HasThis,
+                            tagClrType,
+                            emptyTypes
+                            );
+                        var getterIL = tagGetter.GetILGenerator();
+                        getterIL.Emit(OpCodes.Ldarg_0);
+                        getterIL.Emit(OpCodes.Ldfld, tagField);
+                        getterIL.Emit(OpCodes.Ret);
+
+                        var tagProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, tagClrType, emptyTypes);
+                        // The attribute must sit on the property: RuntimeImport.FromCompiledExports looks up tag exports
+                        // by PropertyInfo when re-importing (register "test" then import test.tag) into another instance.
+#if NET9_0_OR_GREATER
+                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
+#endif
+                        tagProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Tag, name,
+                            WasmTypeDescriptor.RenderTagSignature(context.TagSignatures[(int)index], context.Types)));
+                        tagProperty.SetGetMethod(tagGetter);
                     }
                     break;
                 default:
@@ -1915,6 +2023,12 @@ public static class Compile
                 instruction.Compile(context);
                 context.Previous = instruction.OpCode;
             }
+
+            // Emit any deferred tail-call trampolines after the body's final ret — outside every (now-closed)
+            // protected region, where the IL `tail.` prefix is legal.
+            foreach (var stub in context.PendingFunctionStubs)
+                stub(context);
+            context.PendingFunctionStubs.Clear();
 
             if (reader.Offset - startingOffset != byteLength)
                 throw new ModuleLoadException($"Instruction sequence reader ended after reading {reader.Offset - startingOffset} characters, expected {byteLength}.", reader.Offset);

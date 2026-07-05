@@ -104,8 +104,7 @@ public class BranchOnNonNull : Instruction, IEquatable<BranchOnNonNull>
         var nullLabel = context.DefineLabel();
         context.Emit(OpCodes.Dup);
         context.Emit(OpCodes.Brfalse, nullLabel);
-        BranchHelper.EmitReachableBranch(context, OpCode.BranchOnNonNull, checked((int)this.Index), blockType, targetBlockContext, isLoop, branchTypes);
-        context.Emit(OpCodes.Br, label);
+        BranchHelper.EmitBranchTransfer(context, OpCode.BranchOnNonNull, checked((int)this.Index), blockType, targetDepthKey, targetBlockContext, isLoop, branchTypes, label);
 
         context.MarkLabel(nullLabel);
         context.Emit(OpCodes.Pop); // Discard the null reference on the fall-through.

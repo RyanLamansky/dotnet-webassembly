@@ -231,7 +231,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             int IntermediateCount(int distance) =>
                 context.Stack.Count - context.BlockContexts[context.Depth.Count - distance].InitialStackSize - defaultBranchTypes.Length;
 
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, IntermediateCount, tempLocals, defaultBranchTypes.Length);
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, IntermediateCount, tempLocals, defaultBranchTypes.Length, defaultBranchTypes);
 
             context.MarkUnreachable();
             return;
@@ -259,14 +259,14 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
             context.Emit(OpCodes.Pop); // Drop the result value now stashed in the result locals.
 
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0);
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0, Array.Empty<ValType>());
         }
         else
         {
             // Void: dispatch, popping each target's intermediates before jumping.
             var indexLocal = context.DeclareLocal(typeof(int));
             context.Emit(OpCodes.Stloc, indexLocal);
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0);
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0, Array.Empty<ValType>());
         }
 
         //Mark the subsequent code within this block is unreachable
@@ -285,13 +285,68 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         uint blockDepth,
         Func<int, int> intermediateCount,
         LocalBuilder[]? loopTempLocals,
-        int branchTypeCount)
+        int branchTypeCount,
+        ValType[] branchTypes)
     {
         var allDistances = labelDistances.Append(defaultDistance);
-        var minIntermediate = allDistances.Select(intermediateCount).Min();
-        var uniform = labelDistances.All(d => intermediateCount(d) == intermediateCount(defaultDistance));
 
         Label RealLabel(int distance) => context.Labels[blockDepth - (uint)distance - 1];
+        int TargetDepthKey(int distance) => context.Depth.Count - distance;
+        bool IsLoop(int distance) => context.Depth.ElementAt(distance).OpCode == OpCode.Loop;
+
+        // When a target leaves one or more protected regions the shared pre-discard and the direct switch are unsafe
+        // (a leave clears the physical stack, and some intermediates sit below the physical floor); fall back to a
+        // per-target trampoline that leaves crossing targets and discards-and-branches the rest.
+        if (allDistances.Any(d => context.CrossingRegion(TargetDepthKey(d)) != null))
+        {
+            context.Emit(OpCodes.Ldloc, indexLocal);
+            var crossTrampolines = labelDistances.Select(_ => context.DefineLabel()).ToArray();
+            var crossDefault = context.DefineLabel();
+            context.Emit(OpCodes.Switch, crossTrampolines);
+            context.Emit(OpCodes.Br, crossDefault);
+
+            void EmitCrossingTrampoline(int distance, Label trampoline)
+            {
+                context.MarkLabel(trampoline);
+                var targetDepthKey = TargetDepthKey(distance);
+                var region = context.CrossingRegion(targetDepthKey);
+                if (region == null)
+                {
+                    BranchHelper.DiscardIntermediates(context, intermediateCount(distance));
+                    if (loopTempLocals != null && IsLoop(distance))
+                        BranchHelper.ReloadResults(context, loopTempLocals);
+                    context.Emit(OpCodes.Br, RealLabel(distance));
+                    return;
+                }
+
+                if (region.DepthKey == targetDepthKey)
+                {
+                    context.Emit(OpCodes.Leave, region.EhEndLabel);
+                    return;
+                }
+
+                var isLoop = IsLoop(distance);
+                var targetBaseline = context.BlockContexts[targetDepthKey].InitialStackSize;
+                var stub = context.GetOrCreateExitStub(region, targetDepthKey, RealLabel(distance), targetBaseline, isLoop, branchTypes);
+                if (isLoop && loopTempLocals != null && stub.CarriedLocals != null)
+                {
+                    for (var i = 0; i < stub.CarriedLocals.Length; i++)
+                    {
+                        context.Emit(OpCodes.Ldloc, loopTempLocals[i]);
+                        context.Emit(OpCodes.Stloc, stub.CarriedLocals[i]);
+                    }
+                }
+                context.Emit(OpCodes.Leave, stub.StubLabel);
+            }
+
+            for (var ti = 0; ti < labelDistances.Count; ti++)
+                EmitCrossingTrampoline(labelDistances[ti], crossTrampolines[ti]);
+            EmitCrossingTrampoline(defaultDistance, crossDefault);
+            return;
+        }
+
+        var minIntermediate = allDistances.Select(intermediateCount).Min();
+        var uniform = labelDistances.All(d => intermediateCount(d) == intermediateCount(defaultDistance));
 
         if (uniform && loopTempLocals == null)
         {
