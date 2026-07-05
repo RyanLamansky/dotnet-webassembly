@@ -89,20 +89,17 @@ public class SpecTests
     /// <summary>Runs the data tests.</summary>
     [TestMethod]
     public void SpecTest_data()
-        // extended constant expressions — Phase 1.
-        => SpecTestRunner.Run("data", skip:
-        [
-        89, 90, 178, 183, 188, 195,
-        ]);
+        // Extended constant expressions (Phase 1) now compile, so the whole category passes.
+        => SpecTestRunner.Run("data");
 
     /// <summary>Runs the elem tests.</summary>
     [TestMethod]
     public void SpecTest_elem()
-        // extended-const offsets / typed elem segments — Phases 1, 5.
+        // Extended-const offsets (Phase 1) now pass; the remaining lines use typed-ref element types and the
+        // 3.0 table-with-initializer encoding — Phase 5.
         => SpecTestRunner.Run("elem", skip:
         [
-        87, 178, 182, 315, 448, 453, 465, 470, 482, 487, 499, 504, 539, 544, 556, 561, 573, 578, 1057, 1065,
-         1066, 1068, 1076, 1077, 1079, 1087, 1088, 1092, 1109, 1110,
+        87, 315, 448, 453, 465, 470, 482, 487, 499, 504, 539, 544, 556, 561, 573, 578,
         ]);
 
     /// <summary>Runs the endianness tests.</summary>
@@ -188,13 +185,11 @@ public class SpecTests
     /// <summary>Runs the global tests.</summary>
     [TestMethod]
     public void SpecTest_global()
-        // extended constant expressions — Phase 1.
+        // Extended constant expressions (Phase 1) now compile. The remaining lines exercise the 3.0
+        // table-with-initializer encoding (global.50.wasm and its get-elem/get-data queries) — Phase 5.
         => SpecTestRunner.Run("global", skip:
         [
-        3, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 217, 218, 219, 220, 222, 223, 225, 226,
-         228, 229, 230, 231, 233, 234, 235, 237, 238, 239, 240, 241, 243, 244, 245, 247, 248, 249, 251, 252,
-         253, 255, 256, 258, 259, 261, 262, 263, 265, 266, 267, 268, 270, 272, 273, 274, 276, 277, 278, 280,
-         281, 282, 285, 290, 373, 374, 634, 659, 660, 661, 663, 664,
+        634, 659, 660, 661, 663, 664,
         ]);
 
     /// <summary>Runs the i32 tests.</summary>
@@ -345,7 +340,7 @@ public class SpecTests
     /// <summary>Runs the table tests.</summary>
     [TestMethod]
     public void SpecTest_table()
-        // 3.0 tables (typed-ref elements, extended-const init) — Phases 1, 5.
+        // 3.0 tables: typed-ref element types and the table-with-initializer encoding — Phase 5.
         => SpecTestRunner.Run("table", skip:
         [
         9, 14, 19, 20, 21, 86, 93, 112, 113, 114, 115, 116,
@@ -715,23 +710,14 @@ public class SpecTests
     /// <summary>Runs the return_call tests.</summary>
     [TestMethod]
     public void SpecTest_return_call()
-        // tail calls — Phase 2.
-        => SpecTestRunner.Run("return_call", skip:
-        [
-        3, 96, 97, 98, 99, 101, 102, 103, 104, 106, 107, 108, 109, 111, 112, 113, 115, 119, 120, 121, 123, 124,
-         125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 170, 175,
-        ]);
+        // Tail calls (Phase 2) are implemented; the whole category passes.
+        => SpecTestRunner.Run("return_call");
 
     /// <summary>Runs the return_call_indirect tests.</summary>
     [TestMethod]
     public void SpecTest_return_call_indirect()
-        // tail calls — Phase 2.
-        => SpecTestRunner.Run("return_call_indirect", skip:
-        [
-        3, 239, 240, 241, 242, 244, 246, 247, 248, 249, 251, 252, 253, 254, 256, 257, 258, 259, 260, 261, 262,
-         263, 264, 266, 267, 268, 269, 270, 271, 273, 274, 275, 277, 278, 279, 280, 282, 283, 284, 285, 286,
-         287, 288, 289, 290, 291, 292, 293, 295, 296, 468, 474,
-        ]);
+        // Tail calls (Phase 2) are implemented; the whole category passes.
+        => SpecTestRunner.Run("return_call_indirect");
 
     /// <summary>Runs the return_call_ref tests.</summary>
     [TestMethod]

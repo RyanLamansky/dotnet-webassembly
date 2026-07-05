@@ -40,13 +40,14 @@ public class GlobalGet : VariableAccessInstruction
         if (context.Globals == null)
             throw new CompilerException("Can't use GetGlobal without a global section or global imports.");
 
-        if (context.ConstantExpression && this.Index >= (uint)context.ImportedGlobals)
+        if (context.ConstantExpression && this.Index >= (uint)context.ConstantExpressionGlobalBound)
         {
-            // In a constant (initializer/offset) expression, global.get is in scope only for imported
-            // globals — those occupy indices below ImportedGlobals. Referencing a module-defined global
-            // (or an out-of-range index) is "unknown global" per the spec's constant-expression context.
+            // In a constant (initializer/offset) expression, global.get is in scope only for previously-declared
+            // globals — WebAssembly 3.0's extended-const proposal lifted the old imports-only restriction to allow
+            // any earlier immutable global (imported or module-defined). Referencing a not-yet-declared global (or
+            // an out-of-range index) is "unknown global" per the spec's constant-expression context.
             throw new ModuleLoadException(
-                $"global.get in a constant expression may only reference an imported global; index {this.Index} is out of that range.",
+                $"global.get in a constant expression may only reference a previously-declared global; index {this.Index} is out of that range.",
                 0);
         }
 

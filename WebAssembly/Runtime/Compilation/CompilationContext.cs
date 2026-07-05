@@ -78,10 +78,20 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     /// <summary>
     /// True while compiling a constant expression — a global/data/element initializer or offset. In that
-    /// context the spec restricts <c>global.get</c> to imported, immutable globals; <see cref="Instructions.GlobalGet"/>
-    /// enforces that only when this is set, leaving ordinary function bodies unrestricted.
+    /// context the spec restricts <c>global.get</c> to previously-declared immutable globals;
+    /// <see cref="Instructions.GlobalGet"/> enforces that only when this is set, leaving ordinary function
+    /// bodies unrestricted.
     /// </summary>
     public bool ConstantExpression;
+
+    /// <summary>
+    /// The exclusive upper bound on a valid <c>global.get</c> index within the current constant expression.
+    /// WebAssembly 3.0's extended-const proposal allows a constant expression to reference any previously-declared
+    /// immutable global (imported or module-defined), so this is set to the count of globals visible at that point:
+    /// <see cref="ImportedGlobals"/> plus the module-defined globals already fully declared. Only consulted while
+    /// <see cref="ConstantExpression"/> is set.
+    /// </summary>
+    public int ConstantExpressionGlobalBound;
 
     public readonly Dictionary<uint, MethodInfo> DelegateInvokersByTypeIndex = [];
 

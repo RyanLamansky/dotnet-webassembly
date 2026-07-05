@@ -63,7 +63,9 @@ public abstract class Instruction : IEquatable<Instruction>
     {
         ArgumentNullException.ThrowIfNull(reader, nameof(reader));
 
-        //As of the initial version, the set of operations valid for initializer expressions is extremely limited.
+        // The set of operations valid for initializer (constant) expressions is restricted. WebAssembly 3.0's
+        // extended-const proposal widens it to include i32/i64 add/sub/mul (in addition to the constants,
+        // global.get, and reference forms); global.get validation itself lives in GlobalGet.Compile.
         while (true)
         {
             var initialOffset = reader.Offset;
@@ -76,6 +78,12 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Int64Constant: yield return new Int64Constant(reader); break;
                 case OpCode.Float32Constant: yield return new Float32Constant(reader); break;
                 case OpCode.Float64Constant: yield return new Float64Constant(reader); break;
+                case OpCode.Int32Add: yield return new Int32Add(); break;
+                case OpCode.Int32Subtract: yield return new Int32Subtract(); break;
+                case OpCode.Int32Multiply: yield return new Int32Multiply(); break;
+                case OpCode.Int64Add: yield return new Int64Add(); break;
+                case OpCode.Int64Subtract: yield return new Int64Subtract(); break;
+                case OpCode.Int64Multiply: yield return new Int64Multiply(); break;
                 case OpCode.RefNull: yield return new RefNull(reader); break;
                 case OpCode.RefFunc: yield return new RefFunc(reader); break;
                 case OpCode.SimdOperationPrefix:
@@ -140,6 +148,8 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Return: yield return new Return(); break;
                 case OpCode.Call: yield return new Call(reader); break;
                 case OpCode.CallIndirect: yield return new CallIndirect(reader); break;
+                case OpCode.ReturnCall: yield return new ReturnCall(reader); break;
+                case OpCode.ReturnCallIndirect: yield return new ReturnCallIndirect(reader); break;
                 case OpCode.Drop: yield return new Drop(); break;
                 case OpCode.Select: yield return new Select(); break;
                 case OpCode.SelectWithType: yield return new SelectWithType(reader); break;

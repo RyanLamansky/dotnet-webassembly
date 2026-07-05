@@ -277,6 +277,9 @@ static partial class SpecTestRunner
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "alignment must not be larger than natural":
                             case "global is immutable":
+                            // A global.set (or other write) targeting an immutable global; the compiler rejects it
+                            // because the global has no setter. wasm-tools emits this text as "immutable global".
+                            case "immutable global":
                                 Assert.ThrowsExactly<CompilerException>(trapExpected, $"{command.line}");
                                 continue;
                             // "unknown memory" suffixed with the offending index ("unknown memory 0/1"), e.g. an

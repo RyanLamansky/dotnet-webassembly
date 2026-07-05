@@ -89,6 +89,18 @@ public enum OpCode : byte
     CallIndirect = 0x11,
 
     /// <summary>
+    /// Tail-call a function directly, replacing the current call frame (WASM 3.0 tail calls).
+    /// </summary>
+    [OpCodeCharacteristics("return_call")]
+    ReturnCall = 0x12,
+
+    /// <summary>
+    /// Tail-call a function indirectly, replacing the current call frame (WASM 3.0 tail calls).
+    /// </summary>
+    [OpCodeCharacteristics("return_call_indirect")]
+    ReturnCallIndirect = 0x13,
+
+    /// <summary>
     /// A unary operator that discards the value of its operand.
     /// </summary>
     [OpCodeCharacteristics("drop")]

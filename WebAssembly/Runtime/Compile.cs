@@ -1096,6 +1096,10 @@ public static class Compile
             var contentType = (WebAssemblyValueType)reader.ReadVarInt7();
             var isMutable = reader.ReadVarUInt1() == 1;
 
+            // A global initializer (a constant expression) may reference any previously-declared immutable global:
+            // the imported globals plus the module-defined globals already processed in earlier iterations.
+            context.ConstantExpressionGlobalBound = importedGlobals + i;
+
             // The getter always takes the exports instance as its (only) argument, even for an immutable
             // global whose value is a plain constant. An immutable initializer may itself be `global.get`
             // of an imported global, which needs the instance to reach that import's backing delegate;
@@ -1521,6 +1525,8 @@ public static class Compile
                 // compiled into the constructor and left in offsetLocal.
                 offsetBlock.Compile(context);
                 context.ConstantExpression = true;
+                // By section order all globals are declared before element segments, so any immutable global is in scope.
+                context.ConstantExpressionGlobalBound = context.Globals?.Length ?? 0;
                 foreach (var instruction in element.InitializerExpression)
                 {
                     instruction.Compile(context);
@@ -1723,6 +1729,8 @@ public static class Compile
 
             block.Compile(context); //Prevents "end" instruction of the initializer expression from becoming a return.
             context.ConstantExpression = true;
+            // By section order all globals are declared before data segments, so any immutable global is in scope.
+            context.ConstantExpressionGlobalBound = context.Globals?.Length ?? 0;
             foreach (var instruction in Instruction.ParseInitializerExpression(reader))
             {
                 instruction.Compile(context);

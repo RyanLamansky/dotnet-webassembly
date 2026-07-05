@@ -111,19 +111,27 @@ For every new instruction, remember the established five-touch pattern (see `CLA
 
 ### Phase 1 — Extended constant expressions  *(small, self-contained)*
 
-- [ ] Allow `i32/i64 add/sub/mul` inside initializer expressions, and widen `global.get` to any **previously declared** immutable global — 3.0 (via the GC proposal) lifted the old imports-only restriction.
-- [ ] Extend the **initializer-expression parser** in `Instruction.cs` (the second, restricted `switch`) to accept these opcodes.
-- [ ] Ensure constant-expression evaluation (globals, element/data offsets) folds the arithmetic at instantiation.
-- [ ] Categories: `const`-adjacent init-expr cases; assorted lines currently skipped across `global`, `elem`, `data`.
+- [x] Allow `i32/i64 add/sub/mul` inside initializer expressions, and widen `global.get` to any **previously declared** immutable global — 3.0 (via the GC proposal) lifted the old imports-only restriction.
+      Done: `GlobalGet.Compile` now bounds the index by `CompilationContext.ConstantExpressionGlobalBound` (imported + already-declared module globals) and still rejects mutable targets.
+- [x] Extend the **initializer-expression parser** in `Instruction.cs` (the second, restricted `switch`) to accept these opcodes.
+      Done: the six arithmetic opcodes were added to `ParseInitializerExpression`.
+- [x] Ensure constant-expression evaluation (globals, element/data offsets) folds the arithmetic at instantiation.
+      No folding needed — initializers already compile straight to IL (arithmetic emits unchecked `add`/`sub`/`mul`), so the value is computed in the instance constructor / getter at instantiation.
+- [x] Categories: `const`-adjacent init-expr cases; assorted lines currently skipped across `global`, `elem`, `data`.
+      Done: `data` and `const` are fully green; `global`, `elem`, `table` lost their Phase-1 skips (their remaining skips are all Phase 5: typed-ref element/global types and the 3.0 table-with-initializer encoding, flag `0x40` / `0x64`). Added a runner case for the `immutable global` assert_invalid text.
 - Risk: low. No new runtime concepts.
 
 ### Phase 2 — Tail calls  *(small)*
 
-- [ ] New instructions: `return_call`, `return_call_indirect` (and later `return_call_ref` once typed refs land in Phase 5).
-- [ ] Emit the IL `tail.` prefix before the `call` / `calli`, honoring the stack-shape rules; validate caller/callee signature compatibility.
-- [ ] Verify the CLR actually performs the tail call (or accept best-effort) — confirm deep-recursion fixtures don't stack-overflow.
-- [ ] Categories: `tail_call` (return_call_ref portion deferred to Phase 4).
+- [x] New instructions: `return_call` (0x12), `return_call_indirect` (0x13). `return_call_ref` stays deferred to Phase 5.
+      Done: `Instructions/ReturnCall.cs` and `Instructions/ReturnCallIndirect.cs`, with opcode enum entries and parse dispatch.
+- [x] Emit the IL `tail.` prefix before the `call` / `calli`, honoring the stack-shape rules; validate caller/callee signature compatibility.
+      Done: `TailCallHelper.SpillOperands` spills the arguments into locals and pops any operand-stack values beneath them so the CLR stack holds exactly the arguments, then `tail.` + `call`/direct-delegate-`call` + `ret` is emitted. `return_call_indirect` tail-calls the resolved delegate's `Invoke` directly (not via the shared remapper) so no intermediate frame survives. Result types must exactly equal the enclosing function's, else a `type mismatch` (ModuleLoadException).
+- [x] Verify the CLR actually performs the tail call (or accept best-effort) — confirm deep-recursion fixtures don't stack-overflow.
+      Done: `ReturnCallTests` / `ReturnCallIndirectTests` each run 5,000,000-deep mutual recursion; both pass on net8.0, net9.0, and net10.0 in Debug and Release. The CLR honors the explicit `tail.` (helper-based when needed) in every shape here.
+- [x] Categories: `return_call` and `return_call_indirect` are fully green (no skips). `return_call_ref` stays Phase 5.
 - Risk: medium — IL `tail.` has constraints (no byref/stack args left); the verifier may reject some shapes.
+      No shape required deferral: the arguments are value types / delegates / the exports instance (never byrefs), and function bodies have no protected regions, so `tail.` is accepted everywhere here.
 
 ### Phase 3 — Multiple memories  *(medium, plumbing)*
 
@@ -161,6 +169,7 @@ For every new instruction, remember the established five-touch pattern (see `CLA
 - [ ] Instructions: `throw`, `throw_ref`, and the 3.0 `try_table` block (with `catch` / `catch_ref` / `catch_all` / `catch_all_ref` clauses). Implement the **new** `try_table` model, not the legacy `try/catch/delegate` exception proposal.
 - [ ] Map WASM exceptions onto .NET exceptions: a thrown tag becomes a CLR exception carrying the tag identity + operands; `try_table` emits IL `try`/`catch` that filters by tag and re-pushes operands or rethrows.
 - [ ] `throw_ref` / `catch_ref` need a first-class `exnref` value type.
+- [ ] Interaction with Phase 2: ECMA-335 forbids the IL `tail.` prefix inside a protected region, so `return_call`/`return_call_indirect` occurring inside a `try_table` block need a fallback (plain call + ret, surrendering the constant-stack guarantee, or restructuring to exit the `try` first).
 - [ ] Harness: implement the `assert_exception` command in `SpecTestRunner` (see A3) — the exceptions fixtures are the only users.
 - [ ] Categories: `exceptions/*` (`tag`, `throw`, `throw_ref`, `try_table`).
 - Risk: medium — .NET EH is a good fit, but matching trap-vs-exception semantics and stack unwinding precisely takes care.
@@ -192,7 +201,7 @@ For every new instruction, remember the established five-touch pattern (see `CLA
 ## Suggested milestones
 
 1. **M0 — Harness** (Part A): regenerate fixtures, re-curate, everything new lands as Inconclusive/red. No behavior change yet.
-2. **M1 — Quick wins**: Phase 1 (extended const) + Phase 2 (tail calls).
+2. **M1 — Quick wins**: Phase 1 (extended const) + Phase 2 (tail calls). **Done** — `data`, `const`, `return_call`, `return_call_indirect` are green; net8/9/10 × Debug/Release all pass with zero failures.
 3. **M2 — Memory**: Phase 3 (multi-memory) + Phase 4 (memory64).
 4. **M3 — References**: Phase 5 (typed refs) + Phase 6 (exceptions) + Phase 7 (relaxed SIMD).
 5. **M4 — GC**: Phase 8, on a branch.
@@ -205,7 +214,7 @@ Each milestone ends with both Debug **and** Release green (CI runs both; conditi
 - **Reference-type representation** (Phases 5/8): the flat `WebAssemblyValueType : sbyte` enum cannot encode `(ref null? $typeidx)`. A richer type is a prerequisite and ripples through validation, signatures, imports/exports, and `ToSystemType`. Design it once, up front.
 - **64-bit addressing vs. .NET buffers** (Phase 4): a memory declared `i64` is still bounded by managed memory; ensure out-of-range 64-bit addresses **trap** rather than silently truncating.
 - **GC runtime model** (Phase 8): per-WASM-type generated CLR types vs. a generic boxed representation — a fork in the road that determines the whole phase's shape. Prototype both before committing.
-- **Tail-call verifiability** (Phase 2): confirm the IL `tail.` prefix passes the verifier for `call_indirect`/`call_ref` shapes on all target frameworks (net8/net9).
+- **Tail-call verifiability** (Phase 2): **resolved for `return_call`/`return_call_indirect`.** The IL `tail.` prefix is accepted and honored (no stack growth over 5,000,000-deep mutual recursion) on net8/net9/net10 in Debug and Release. `return_call_indirect` tail-calls the resolved delegate's `Invoke` directly rather than through the shared `call_indirect` remapper, which would otherwise add a surviving frame per hop. The `call_ref` shape remains to be confirmed when Phase 5 lands.
 - **`ref.eq` vs boxed `i31`** (Phase 8): `i31ref`s with equal values must compare equal under `ref.eq`, but boxed ints compare by reference identity.
   The `ref.eq` lowering must special-case i31 (value comparison), or the i31 representation must intern.
 - **Structural type identity across instances** (Phase 8): `type-canon` / `type-equivalence` / the linking tests require structurally-equivalent rec groups to be *the same* type across module boundaries (`call_indirect`, `ref.cast` between linked modules).
