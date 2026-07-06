@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int8x16AvgrUnsigned : SimdBinaryV128Instruction
     public Int8x16AvgrUnsigned() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) { var r = new byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)((a.GetElement(i) + b.GetElement(i) + 1) >> 1); return Vector128.Create(r); }
+    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) { Span<byte> r = stackalloc byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)((a.GetElement(i) + b.GetElement(i) + 1) >> 1); return Vector128.Create(r); }
 }

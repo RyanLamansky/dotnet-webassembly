@@ -32,10 +32,14 @@ using System.Runtime.InteropServices;
 // --------------------------------------------------
 // These two pins are NOT independent. wasm-tools has to be new enough to parse every .wast
 // syntax the spec commit uses; the spec commit's scope determines which features end up in the
-// regenerated test data. SpecCommit is pinned to the `wg-3.0` tag — the Working Group's
-// ratified-3.0 snapshot (2025-09-26) — which bounds scope to exactly-ratified 3.0. `main` has
-// kept moving since (post-3.0 drift), so prefer the tag unless a specific upstream test fix is
-// needed. Verified 2026-07-04: wasm-tools v1.252.0 cleanly converts the suite at this pin.
+// regenerated test data. SpecCommit was pinned to the `wg-3.0` tag — the Working Group's
+// ratified-3.0 snapshot (2025-09-26), which bounds scope to exactly-ratified 3.0 — and has since
+// moved just past it to pick up upstream test-coverage improvements. Every test-suite commit between
+// the tag and the current pin was verified to be a pure ratified-3.0 coverage addition (e.g.
+// {data,elem}.drop) with zero post-3.0 feature leakage, so scope is unchanged. `main` has kept
+// moving beyond this (post-3.0 drift), so stay at or below this pin unless a specific later upstream
+// test fix is verified 3.0-clean. Verified 2026-07-06: wasm-tools v1.252.0 cleanly converts the
+// suite at this pin.
 //
 // Two reasons to bump SpecCommit:
 //   (a) Pick up 3.0-era refinements upstream has made since this pin. Prefer a later tag (or the
@@ -58,7 +62,7 @@ using System.Runtime.InteropServices;
 //    edits shifted line numbers.
 // =========================================================================================
 
-const string SpecCommit = "9d36019973201a19f9c9ebb0f10828b2fe2374aa"; // 2025-09-26, wg-3.0 tag (ratified 3.0)
+const string SpecCommit = "a05043b5afe432cac0f635bd7c5f20b6c9b325a5"; // 2026-05-26, just past wg-3.0 (ratified-3.0-clean test-coverage improvements)
 const string SpecRepoUrl = "https://github.com/WebAssembly/spec.git";
 const string WasmToolsVersion = "1.252.0";
 

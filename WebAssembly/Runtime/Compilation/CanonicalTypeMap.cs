@@ -150,6 +150,32 @@ internal sealed class CanonicalTypeMap
         return new CanonicalTypeMap(canonicalId, kind, supertype, descriptor);
     }
 
+    /// <summary>
+    /// The closed, module-independent descriptor the general renderer produces for a standalone tag signature: a
+    /// single-member final recursion group whose sole member is a final function with no supertype, the given
+    /// value-type parameters, and empty results. A host <see cref="Runtime.ExceptionTag"/> and a compiled module's tag
+    /// definition both render through this, so their descriptors are byte-identical and link across the boundary. The
+    /// <c>RenderStandaloneTagDescriptor</c> drift-guard test pins it to <see cref="Build"/>'s general rendering.
+    /// </summary>
+    /// <param name="parameterTypes">The value types of the tag's operands.</param>
+    /// <returns>The closed structural descriptor.</returns>
+    public static string RenderStandaloneTagDescriptor(IEnumerable<WebAssemblyValueType> parameterTypes)
+    {
+        var builder = new StringBuilder();
+        builder.Append("G1[f<>fn(");
+        var first = true;
+        foreach (var type in parameterTypes)
+        {
+            if (!first)
+                builder.Append(',');
+            first = false;
+            builder.Append('v').Append((sbyte)type);
+        }
+
+        builder.Append(")->()]#0");
+        return builder.ToString();
+    }
+
     private static string RenderGroup(IReadOnlyList<WebAssemblyType> types, int start, int memberCount, string[] groupDescriptorByIndex, int[] posInGroup)
     {
         var builder = new StringBuilder();

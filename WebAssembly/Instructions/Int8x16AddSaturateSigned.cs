@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -14,7 +15,7 @@ public class Int8x16AddSaturateSigned : SimdBinaryV128Instruction
     /// <summary>The runtime implementation invoked by compiled code.</summary>
     public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b)
     {
-        var r = new sbyte[16];
+        Span<sbyte> r = stackalloc sbyte[16];
         for (var i = 0; i < 16; i++) { var v = a.AsSByte().GetElement(i) + b.AsSByte().GetElement(i); r[i] = v < -128 ? (sbyte)-128 : v > 127 ? (sbyte)127 : (sbyte)v; }
         return Vector128.Create(r).AsByte();
     }

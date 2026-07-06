@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 
 namespace WebAssembly.Runtime.Compilation;
 
@@ -162,7 +161,7 @@ internal sealed class GCTypeEmitter
     private void DefineStruct(CompilerConfiguration configuration, TypeBuilder builder, EmittedType emitted, EmittedType? baseEmitted, WebAssemblyType source)
     {
         var baseFields = baseEmitted?.Fields ?? [];
-        var declared = source.Fields ?? (IList<StructField>)[];
+        var declared = source.Fields ?? [];
         var fields = new GCField[declared.Count];
 
         for (var i = 0; i < declared.Count; i++)

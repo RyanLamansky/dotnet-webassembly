@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -24,21 +23,10 @@ public class V128Load8Splat : SimdMemoryImmediateInstruction
     {
         if (this.Flags > 0)
             throw new Runtime.CompilerException("alignment must not be larger than natural");
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        this.ValidateOffset(context);
+        context.PopStackNoReturn(this.OpCode, context.MemoryAddressType(this.MemoryIndex));
 
-        if (this.Offset != 0)
-        {
-            Int32Constant.Emit(context, (int)this.Offset);
-            context.Emit(OpCodes.Add_Ovf_Un);
-        }
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 1));
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
-        context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-        context.Emit(OpCodes.Add);
+        this.EmitAddressComputation(context, 1);
 
         context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
 

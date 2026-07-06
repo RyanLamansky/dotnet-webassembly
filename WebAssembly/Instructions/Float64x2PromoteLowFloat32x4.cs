@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Float64x2PromoteLowFloat32x4 : SimdUnaryV128Instruction
     public Float64x2PromoteLowFloat32x4() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new double[2]; r[0] = a.AsSingle().GetElement(0); r[1] = a.AsSingle().GetElement(1); return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<double> r = stackalloc double[2]; r[0] = a.AsSingle().GetElement(0); r[1] = a.AsSingle().GetElement(1); return Vector128.Create(r).AsByte(); }
 }

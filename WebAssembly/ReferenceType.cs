@@ -92,7 +92,7 @@ public readonly struct ReferenceType : IEquatable<ReferenceType>
     /// </summary>
     internal void WriteTo(Writer writer)
     {
-        writer.WriteVar((int)(sbyte)(this.IsNullable
+        writer.WriteVar((sbyte)(this.IsNullable
             ? WebAssemblyValueType.NullableReference
             : WebAssemblyValueType.Reference));
         writer.WriteHeapType(this.HeapType, this.TypeIndex);

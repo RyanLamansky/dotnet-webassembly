@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int32x4TruncSatFloat32x4Unsigned : SimdUnaryV128Instruction
     public Int32x4TruncSatFloat32x4Unsigned() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new uint[4]; for (var i = 0; i < 4; i++) { var f = a.AsSingle().GetElement(i); r[i] = float.IsNaN(f) || f < 0 ? 0u : f >= 4294967295f ? uint.MaxValue : (uint)f; } return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<uint> r = stackalloc uint[4]; for (var i = 0; i < 4; i++) { var f = a.AsSingle().GetElement(i); r[i] = float.IsNaN(f) || f < 0 ? 0u : f >= 4294967295f ? uint.MaxValue : (uint)f; } return Vector128.Create(r).AsByte(); }
 }

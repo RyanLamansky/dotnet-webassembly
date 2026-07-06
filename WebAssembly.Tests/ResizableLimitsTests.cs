@@ -52,8 +52,8 @@ public class ResizableLimitsTests
     public void ResizableLimits_NullMaximum_Preserved()
     {
         var limits = new ResizableLimits(1);
-        Assert.IsNull((object?)limits.Maximum);
-        Assert.IsNull((object?)limits.Maximum64);
+        Assert.IsNull(limits.Maximum);
+        Assert.IsNull(limits.Maximum64);
 
         limits.Maximum64 = 9;
         Assert.AreEqual(9u, limits.Maximum);

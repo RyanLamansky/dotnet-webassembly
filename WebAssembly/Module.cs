@@ -541,7 +541,7 @@ public class Module
                         // member count, or explicitly-marked singletons, carry the 0x4E marker.
                         if (group.IsExplicit || groupTypes.Count != 1)
                         {
-                            sectionWriter.WriteVar((sbyte)CompositeTypeReader.RecursionGroupForm);
+                            sectionWriter.WriteVar(CompositeTypeReader.RecursionGroupForm);
                             sectionWriter.WriteVar((uint)groupTypes.Count);
                         }
 

@@ -6,7 +6,7 @@ using WebAssembly.Instructions;
 namespace WebAssembly;
 
 /// <summary>
-/// Phase 6 (M6.1) object-model and byte-identical round-trip tests for WASM 3.0 exception handling
+/// Object-model and byte-identical round-trip tests for WASM 3.0 exception handling
 /// (Tag section, tag import/export, throw/throw_ref/try_table with all catch kinds).
 /// </summary>
 [TestClass]
@@ -37,13 +37,17 @@ public class ExceptionModelTests
 
     /// <summary>
     /// Each fixture exercises one or more new WASM 3.0 exception-handling encodings; all must re-emit byte-for-byte.
-    /// (tag.4-6 use rec groups — Phase 8 — and are excluded here.)
+    /// (tag.4-7 reference tags through recursion groups, which round-trip like any other rec-group type.)
     /// </summary>
     [TestMethod]
     [DataRow("exceptions/tag/tag.0")]           // tag section + type with params
     [DataRow("exceptions/tag/tag.1")]
     [DataRow("exceptions/tag/tag.2")]           // assert_invalid non-empty tag result (parses, fails at validation)
     [DataRow("exceptions/tag/tag.3")]
+    [DataRow("exceptions/tag/tag.4")]
+    [DataRow("exceptions/tag/tag.5")]
+    [DataRow("exceptions/tag/tag.6")]
+    [DataRow("exceptions/tag/tag.7")]
     [DataRow("exceptions/throw/throw.0")]       // throw 0x08 + tagidx
     [DataRow("exceptions/throw/throw.1")]
     [DataRow("exceptions/throw/throw.2")]

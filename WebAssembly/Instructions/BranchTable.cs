@@ -151,7 +151,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
                 // Validate the single carried value against the default label's type *non-destructively*, keeping
                 // the actual (possibly more specific) type on the stack so the per-label "meet" checks below see
                 // it rather than the default label's (wider) type — WebAssembly 3.0 subtyping.
-                BranchHelper.ValidateBranchTypes(context, this.OpCode, defaultBranchTypes, context.BlockContexts[context.Depth.Count - checked((int)this.DefaultLabel)]);
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, defaultBranchTypes);
             }
             else
             {
@@ -183,7 +183,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             }
 
             if (isReachable && labelBranchTypes.Length > 0)
-                BranchHelper.ValidateBranchTypes(context, this.OpCode, labelBranchTypes, context.BlockContexts[context.Depth.Count - checked((int)label)]);
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, labelBranchTypes);
         }
 
         var blockDepth = checked((uint)context.Depth.Count);
@@ -206,7 +206,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             // Multi-value: validate the results, spill them to temporaries, copy into every (non-loop) target's
             // result locals, then dispatch through per-target trampolines that discard each target's own
             // intermediates (and, for a loop, reload the carried values as the back-edge).
-            BranchHelper.ValidateBranchTypes(context, this.OpCode, defaultBranchTypes, context.BlockContexts[context.Depth.Count - defaultDistance]);
+            BranchHelper.ValidateBranchTypes(context, this.OpCode, defaultBranchTypes);
 
             var indexLocal = context.DeclareLocal(typeof(int));
             context.Emit(OpCodes.Stloc, indexLocal);
@@ -231,7 +231,7 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
             int IntermediateCount(int distance) =>
                 context.Stack.Count - context.BlockContexts[context.Depth.Count - distance].InitialStackSize - defaultBranchTypes.Length;
 
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, IntermediateCount, tempLocals, defaultBranchTypes.Length, defaultBranchTypes);
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, IntermediateCount, tempLocals, defaultBranchTypes);
 
             context.MarkUnreachable();
             return;
@@ -259,14 +259,14 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
 
             context.Emit(OpCodes.Pop); // Drop the result value now stashed in the result locals.
 
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0, Array.Empty<ValType>());
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, Array.Empty<ValType>());
         }
         else
         {
             // Void: dispatch, popping each target's intermediates before jumping.
             var indexLocal = context.DeclareLocal(typeof(int));
             context.Emit(OpCodes.Stloc, indexLocal);
-            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, 0, Array.Empty<ValType>());
+            EmitTrampolineSwitch(context, indexLocal, labelDistances, defaultDistance, blockDepth, SingleIntermediateCount, null, Array.Empty<ValType>());
         }
 
         //Mark the subsequent code within this block is unreachable
@@ -285,7 +285,6 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
         uint blockDepth,
         Func<int, int> intermediateCount,
         LocalBuilder[]? loopTempLocals,
-        int branchTypeCount,
         ValType[] branchTypes)
     {
         var allDistances = labelDistances.Append(defaultDistance);

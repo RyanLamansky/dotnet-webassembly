@@ -1,6 +1,4 @@
-using System;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -44,5 +42,5 @@ public abstract class SimdReplaceLaneInstruction : SimdInstruction
     }
 
     /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)SimdOpCode, (int)LaneIndex);
+    public override int GetHashCode() => HashCode.Combine((int)SimdOpCode, LaneIndex);
 }

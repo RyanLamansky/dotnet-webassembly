@@ -239,7 +239,7 @@ public class Element
                 break;
 
             case ElementKind.PassiveFunctionIndices:
-                writer.Write((byte)0x00);
+                writer.Write(0x00);
                 this.WriteFuncIndices(writer);
                 break;
 
@@ -247,12 +247,12 @@ public class Element
                 writer.WriteVar(this.Index);
                 foreach (var instruction in this.InitializerExpression)
                     instruction.WriteTo(writer);
-                writer.Write((byte)0x00);
+                writer.Write(0x00);
                 this.WriteFuncIndices(writer);
                 break;
 
             case ElementKind.DeclarativeFunctionIndices:
-                writer.Write((byte)0x00);
+                writer.Write(0x00);
                 this.WriteFuncIndices(writer);
                 break;
 

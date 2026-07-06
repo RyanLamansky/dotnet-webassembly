@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -26,24 +25,13 @@ public class V128Store16Lane : SimdMemoryLaneInstruction
             throw new Runtime.CompilerException("alignment must not be larger than natural");
         if (this.LaneIndex >= 8)
             throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for V128Store16Lane (max 7).");
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
+        this.ValidateOffset(context);
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, context.MemoryAddressType(this.MemoryIndex));
 
         var vecLocal = context.DeclareLocal(typeof(Vector128<byte>));
         context.Emit(OpCodes.Stloc, vecLocal);
 
-        if (this.Offset != 0)
-        {
-            Int32Constant.Emit(context, (int)this.Offset);
-            context.Emit(OpCodes.Add_Ovf_Un);
-        }
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 2));
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
-        context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-        context.Emit(OpCodes.Add);
+        this.EmitAddressComputation(context, 2);
 
         context.Emit(OpCodes.Ldloc, vecLocal);
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);
@@ -51,5 +39,6 @@ public class V128Store16Lane : SimdMemoryLaneInstruction
     }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static unsafe void Execute(IntPtr ptr, Vector128<byte> vec, int lane) { var v=(ushort)(ushort)vec.AsInt16().GetElement(lane); var p=(byte*)ptr; p[0]=(byte)v; p[1]=(byte)(v>>8); }
+
+    public static unsafe void Execute(IntPtr ptr, Vector128<byte> vec, int lane) { var v = (ushort)vec.AsInt16().GetElement(lane); var p = (byte*)ptr; p[0] = (byte)v; p[1] = (byte)(v >> 8); }
 }

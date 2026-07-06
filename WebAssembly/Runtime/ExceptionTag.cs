@@ -1,4 +1,4 @@
-using System.Linq;
+using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Runtime;
 
@@ -39,20 +39,11 @@ public sealed class ExceptionTag : TagImport
         this.Descriptor = descriptor;
     }
 
-    private static string RenderDescriptor(WebAssemblyValueType[] parameterTypes)
-    {
-        static string Name(WebAssemblyValueType type) => type switch
-        {
-            WebAssemblyValueType.Int32 => "i32",
-            WebAssemblyValueType.Int64 => "i64",
-            WebAssemblyValueType.Float32 => "f32",
-            WebAssemblyValueType.Float64 => "f64",
-            WebAssemblyValueType.V128 => "v128",
-            _ => type.ToString(),
-        };
-
-        return $"func({string.Join(",", parameterTypes.Select(Name))})->()";
-    }
+    // Render the host tag's operand types to the same module-independent canonical descriptor the compiler produces for
+    // a standalone tag type, so a host tag links to a compiled module that declares the structurally-equal tag. The
+    // single rendering lives on CanonicalTypeMap so the two paths can never drift.
+    private static string RenderDescriptor(WebAssemblyValueType[] parameterTypes) =>
+        CanonicalTypeMap.RenderStandaloneTagDescriptor(parameterTypes);
 
     /// <summary>
     /// Expresses the value of this instance as a string.

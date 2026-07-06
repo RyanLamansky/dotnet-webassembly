@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int8x16Popcnt : SimdUnaryV128Instruction
     public Int8x16Popcnt() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)System.Numerics.BitOperations.PopCount(a.GetElement(i)); return Vector128.Create(r); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<byte> r = stackalloc byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)System.Numerics.BitOperations.PopCount(a.GetElement(i)); return Vector128.Create(r); }
 }

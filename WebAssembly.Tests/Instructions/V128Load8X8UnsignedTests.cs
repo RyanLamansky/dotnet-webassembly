@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -56,6 +55,6 @@ public class V128Load8X8UnsignedTests
         var values = new byte[] { 0, 1, 127, 128, 200, 255, 42, 100 };
         var compiled = BuildModule(values).ToInstance<V128Load8X8UnsignedExport>();
         for (var i = 0; i < 8; i++)
-            Assert.AreEqual((int)values[i], compiled.Exports.GetLane(i), $"Lane {i}");
+            Assert.AreEqual(values[i], compiled.Exports.GetLane(i), $"Lane {i}");
     }
 }

@@ -32,7 +32,7 @@ static partial class SpecTestRunner
     public static void Run(string category, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
     {
         var parts = category.Split('/');
-        Run<object>(Path.Combine(["Runtime", "SpecTestData", ..parts]), parts[^1] + ".json", skip, unsupported, onFailure: null);
+        Run<object>(Path.Combine(["Runtime", "SpecTestData", .. parts]), parts[^1] + ".json", skip, unsupported, onFailure: null);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ static partial class SpecTestRunner
         // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
         var imports = new ImportDictionary
         {
-            { "spectest", "print", new FunctionImport((Action)(() => { })) },
+            { "spectest", "print", new FunctionImport(() => { }) },
             { "spectest", "print_i32", new FunctionImport((Action<int>)(i => { })) },
             { "spectest", "print_i64", new FunctionImport((Action<long>)(i => { })) },
             { "spectest", "print_i32_f32", new FunctionImport((Action<int, float>)((i, f) => { })) },
@@ -292,12 +292,16 @@ static partial class SpecTestRunner
                             case "uninitialized local":
                             case "unknown type":
                             // WASM 3.0 garbage collection: struct.set targeting an immutable field is rejected at
-                            // validation because the emitted field is written only through struct.new.
+                            // validation because the emitted field is written only through struct.new. wasm-tools
+                            // (newer upstream) phrases this as "immutable field".
                             case "field is immutable":
+                            case "immutable field":
                             // WASM 3.0 garbage collection arrays: array.set/fill/copy/init_* on an immutable array,
                             // array.new_data/init_data on a reference element, and array.copy with an unassignable
-                            // source element are all rejected at validation.
+                            // source element are all rejected at validation. wasm-tools (newer upstream) phrases the
+                            // immutability case as "immutable array".
                             case "array is immutable":
+                            case "immutable array":
                             case "array type is not numeric or vector":
                             case "array types do not match":
                             // WASM 3.0 garbage collection: an illegal declared subtype — a final or out-of-range

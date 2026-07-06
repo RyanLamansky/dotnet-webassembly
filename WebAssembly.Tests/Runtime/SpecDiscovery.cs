@@ -17,7 +17,7 @@ namespace WebAssembly.Runtime;
 /// <item>Run <c>Tools/RefreshSpecTests</c> to regenerate <c>SpecTestData/</c>.</item>
 /// <item>Add or remove <see cref="IgnoreAttribute"/> on whole categories that gained or lost
 /// .json files in the refresh.</item>
-/// <item>Remove <see cref="IgnoreAttribute"/> from <see cref="DiscoverAllFailures"/> and run
+/// <item>Restore the commented-out <c>[TestMethod]</c> on <see cref="DiscoverAllFailures"/> and run
 /// only this test:
 /// <c>dotnet test ... --filter FullyQualifiedName~SpecDiscovery</c>.
 /// It walks <c>SpecTestData/</c>, runs every category through <see cref="SpecTestRunner.Discover"/>
@@ -25,8 +25,9 @@ namespace WebAssembly.Runtime;
 /// report to <c>{tempPath}/spec-discovery.txt</c>.</item>
 /// <item>Use that report to author per-test skip predicates: one <c>HashSet&lt;uint&gt;</c> per
 /// method body in <see cref="SpecTests"/>, with a comment summarizing the failure categories.</item>
-/// <item>Restore the <see cref="IgnoreAttribute"/> here. The full SpecTests suite should be
-/// green: every previously-failing category Inconclusive (some-skipped) or Passed.</item>
+/// <item>Comment the <c>[TestMethod]</c> back out here so the suite reports fully green with
+/// no skips. The full SpecTests suite should be green: every previously-failing category
+/// Inconclusive (some-skipped) or Passed.</item>
 /// </list>
 /// </remarks>
 [TestClass]
@@ -40,8 +41,7 @@ public class SpecDiscovery
     private static readonly HashSet<string> categoryExcludes = [];
 
     /// <summary>Walks SpecTestData/ and writes a failure report to the OS temp dir.</summary>
-    [TestMethod]
-    [Ignore("Maintenance helper. Remove [Ignore] manually when refreshing skip predicates.")]
+    //[TestMethod] // Maintenance helper: uncomment to run manually when refreshing skip predicates.
     public void DiscoverAllFailures()
     {
         var dataRoot = Path.Combine("Runtime", "SpecTestData");

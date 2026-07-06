@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int32x4ExtaddPairwiseInt16x8Signed : SimdUnaryV128Instruction
     public Int32x4ExtaddPairwiseInt16x8Signed() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new int[4]; for (var i = 0; i < 4; i++) r[i] = a.AsInt16().GetElement(i*2) + a.AsInt16().GetElement(i*2+1); return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<int> r = stackalloc int[4]; for (var i = 0; i < 4; i++) r[i] = a.AsInt16().GetElement(i * 2) + a.AsInt16().GetElement(i * 2 + 1); return Vector128.Create(r).AsByte(); }
 }

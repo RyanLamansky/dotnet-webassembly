@@ -62,9 +62,9 @@ public class V128Const : SimdInstruction, IEquatable<V128Const>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        var h = HashCode.Combine((int)SimdOpCode, (int)Value[0], (int)Value[1]);
+        var h = HashCode.Combine((int)SimdOpCode, Value[0], Value[1]);
         for (var i = 2; i < 16; i++)
-            h = HashCode.Combine(h, (int)Value[i]);
+            h = HashCode.Combine(h, Value[i]);
         return h;
     }
 }

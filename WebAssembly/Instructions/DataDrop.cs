@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 

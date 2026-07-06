@@ -21,6 +21,6 @@ public class Float32x4RelaxedMultiplyAdd : SimdTernaryV128Instruction
         Span<float> r = stackalloc float[4];
         for (var i = 0; i < 4; i++)
             r[i] = MathF.FusedMultiplyAdd(fa.GetElement(i), fb.GetElement(i), fc.GetElement(i));
-        return Vector128.Create((ReadOnlySpan<float>)r).AsByte();
+        return Vector128.Create(r).AsByte();
     }
 }

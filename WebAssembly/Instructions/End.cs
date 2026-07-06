@@ -67,7 +67,7 @@ public class End : SimpleInstruction
                 // path below already does this via ValidateStack; a multi-value or synthesized-single-reference block
                 // signature must do so here — e.g. a br_on_cast fall-through leaving a nullable residual where the
                 // block declares a non-null reference result).
-                BranchHelper.ValidateBranchTypes(context, OpCode.End, returns, blockContext);
+                BranchHelper.ValidateBranchTypes(context, OpCode.End, returns);
 
                 blockContext.ResultLocals ??= context.DeclareResultLocals(returns);
                 BranchHelper.StashResults(context, blockContext.ResultLocals);

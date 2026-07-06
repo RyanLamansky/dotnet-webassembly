@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.Intrinsics;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -26,24 +25,13 @@ public class V128Store8Lane : SimdMemoryLaneInstruction
             throw new Runtime.CompilerException("alignment must not be larger than natural");
         if (this.LaneIndex >= 16)
             throw new Runtime.CompilerException($"Lane index {LaneIndex} is out of range for V128Store8Lane (max 15).");
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, WebAssemblyValueType.Int32);
+        this.ValidateOffset(context);
+        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.V128, context.MemoryAddressType(this.MemoryIndex));
 
         var vecLocal = context.DeclareLocal(typeof(Vector128<byte>));
         context.Emit(OpCodes.Stloc, vecLocal);
 
-        if (this.Offset != 0)
-        {
-            Int32Constant.Emit(context, (int)this.Offset);
-            context.Emit(OpCodes.Add_Ovf_Un);
-        }
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 1));
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
-        context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-        context.Emit(OpCodes.Add);
+        this.EmitAddressComputation(context, 1);
 
         context.Emit(OpCodes.Ldloc, vecLocal);
         context.Emit(OpCodes.Ldc_I4, (int)LaneIndex);

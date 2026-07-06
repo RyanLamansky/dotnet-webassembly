@@ -789,16 +789,16 @@ public enum SimdOpCode : uint
     Int8x16RelaxedSwizzle = 0x100,
     /// <summary>Relaxed truncate f32x4 to i32x4, signed (deterministic profile equals i32x4.trunc_sat_f32x4_s).</summary>
     [OpCodeCharacteristics("i32x4.relaxed_trunc_f32x4_s")]
-    Int32x4RelaxedTruncFloat32x4Signed = 0x101,
+    Int32x4RelaxedTruncateFloat32x4Signed = 0x101,
     /// <summary>Relaxed truncate f32x4 to i32x4, unsigned (deterministic profile equals i32x4.trunc_sat_f32x4_u).</summary>
     [OpCodeCharacteristics("i32x4.relaxed_trunc_f32x4_u")]
-    Int32x4RelaxedTruncFloat32x4Unsigned = 0x102,
+    Int32x4RelaxedTruncateFloat32x4Unsigned = 0x102,
     /// <summary>Relaxed truncate f64x2 to i32x4, signed (deterministic profile equals i32x4.trunc_sat_f64x2_s_zero).</summary>
     [OpCodeCharacteristics("i32x4.relaxed_trunc_f64x2_s_zero")]
-    Int32x4RelaxedTruncFloat64x2SignedZero = 0x103,
+    Int32x4RelaxedTruncateFloat64x2SignedZero = 0x103,
     /// <summary>Relaxed truncate f64x2 to i32x4, unsigned (deterministic profile equals i32x4.trunc_sat_f64x2_u_zero).</summary>
     [OpCodeCharacteristics("i32x4.relaxed_trunc_f64x2_u_zero")]
-    Int32x4RelaxedTruncFloat64x2UnsignedZero = 0x104,
+    Int32x4RelaxedTruncateFloat64x2UnsignedZero = 0x104,
     /// <summary>f32x4 fused multiply-add (a*b + c, single rounding).</summary>
     [OpCodeCharacteristics("f32x4.relaxed_madd")]
     Float32x4RelaxedMultiplyAdd = 0x105,
@@ -825,16 +825,16 @@ public enum SimdOpCode : uint
     Int64x2RelaxedLaneselect = 0x10C,
     /// <summary>Relaxed f32x4 min (deterministic profile equals f32x4.min).</summary>
     [OpCodeCharacteristics("f32x4.relaxed_min")]
-    Float32x4RelaxedMin = 0x10D,
+    Float32x4RelaxedMinimum = 0x10D,
     /// <summary>Relaxed f32x4 max (deterministic profile equals f32x4.max).</summary>
     [OpCodeCharacteristics("f32x4.relaxed_max")]
-    Float32x4RelaxedMax = 0x10E,
+    Float32x4RelaxedMaximum = 0x10E,
     /// <summary>Relaxed f64x2 min (deterministic profile equals f64x2.min).</summary>
     [OpCodeCharacteristics("f64x2.relaxed_min")]
-    Float64x2RelaxedMin = 0x10F,
+    Float64x2RelaxedMinimum = 0x10F,
     /// <summary>Relaxed f64x2 max (deterministic profile equals f64x2.max).</summary>
     [OpCodeCharacteristics("f64x2.relaxed_max")]
-    Float64x2RelaxedMax = 0x110,
+    Float64x2RelaxedMaximum = 0x110,
     /// <summary>Relaxed i16x8 Q15 multiply (deterministic profile equals i16x8.q15mulr_sat_s).</summary>
     [OpCodeCharacteristics("i16x8.relaxed_q15mulr_s")]
     Int16x8RelaxedQ15MulrSigned = 0x111,

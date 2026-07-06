@@ -128,8 +128,8 @@ public class Table
     {
         if (this.initializerExpression is { } init)
         {
-            writer.Write((byte)0x40);
-            writer.Write((byte)0x00);
+            writer.Write(0x40);
+            writer.Write(0x00);
             this.WriteTableType(writer);
             foreach (var instruction in init)
                 instruction.WriteTo(writer);

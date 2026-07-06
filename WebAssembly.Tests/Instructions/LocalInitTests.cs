@@ -3,11 +3,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace WebAssembly.Instructions;
 
 /// <summary>
-/// Phase 5 (M5.3) definite-assignment validation for non-defaultable (non-nullable reference) locals.
+/// Definite-assignment validation for non-defaultable (non-nullable reference) locals.
 /// Each test builds a function with a non-nullable <c>(ref func)</c> parameter (always initialized) and one
 /// non-nullable <c>(ref func)</c> local (initially uninitialized), then compiles it to exercise one of the
-/// seven <c>local_init</c> fixture shapes. Block/if results are kept empty so nothing here depends on the
-/// inline-reference block-result support that lands in M5.4.
+/// seven <c>local_init</c> fixture shapes. Block/if results are kept empty so nothing here depends on
+/// inline-reference block-result support.
 /// </summary>
 [TestClass]
 public class LocalInitTests

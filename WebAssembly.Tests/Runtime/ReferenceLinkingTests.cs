@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
 using WebAssembly.Instructions;
 
 namespace WebAssembly.Runtime;
@@ -125,5 +124,73 @@ public class ReferenceLinkingTests
         };
 
         Assert.IsNotNull(module.ToInstance<object>(imports));
+    }
+
+    // An exporting module whose immutable global "g" is a nullable structref (an abstract GC heap type), initialized
+    // with ref.null struct.
+    static object ExportedStructRefGlobalInstance()
+    {
+        var module = new Module();
+        module.Globals.Add(new Global
+        {
+            ContentRefType = new ReferenceType(WebAssemblyHeapType.Struct, isNullable: true),
+            IsMutable = false,
+            InitializerExpression = new Instruction[]
+            {
+                new RefNull(WebAssemblyHeapType.Struct),
+                new End(),
+            },
+        });
+        module.Exports.Add(new Export { Name = "g", Kind = ExternalKind.Global, Index = 0 });
+        return module.ToInstance<object>().Exports;
+    }
+
+    /// <summary>
+    /// An immutable <c>structref</c> global export satisfies an abstract <c>anyref</c> import: <c>struct</c> is a
+    /// subtype of <c>any</c> in the GC hierarchy, exercising the abstract-heap arm of the descriptor subtype check.
+    /// </summary>
+    [TestMethod]
+    public void GlobalImport_ImmutableStructAsAnyref_Succeeds()
+    {
+        var module = new Module();
+        module.Imports.Add(new Import.Global
+        {
+            Module = "M",
+            Field = "g",
+            ContentRefType = new ReferenceType(WebAssemblyHeapType.Any, isNullable: true),
+            IsMutable = false,
+        });
+
+        Assert.IsNotNull(module.ToInstance<object>(FromExports(ExportedStructRefGlobalInstance())));
+    }
+
+    // An exporting module that defines and exports an (unpopulated) table "t" whose element type is a concrete
+    // function reference (ref null $0), where $0 is the given signature.
+    static object ExportedTypedFuncTableInstance(WebAssemblyType signature)
+    {
+        var module = new Module();
+        module.Types.Add(signature); // $0
+        var table = new Table(1, 1) { ElementRefType = new ReferenceType(0u, isNullable: true) };
+        module.Tables.Add(table);
+        module.Exports.Add(new Export("t", 0, ExternalKind.Table));
+        return module.ToInstance<object>().Exports;
+    }
+
+    /// <summary>
+    /// A table whose concrete function-reference element type differs structurally from the import's declared element
+    /// type is rejected — the closed descriptor comparison (invariant for tables) sees the difference the coarse CLR
+    /// <see cref="FunctionTable"/> check cannot.
+    /// </summary>
+    [TestMethod]
+    public void TableImport_ElementDescriptorMismatch_Throws()
+    {
+        // Provider element (ref null (i32) -> ()) versus importer element (ref null (i64) -> ()).
+        var importer = new Module();
+        importer.Types.Add(new WebAssemblyType { Parameters = [WebAssemblyValueType.Int64] }); // $0 = (i64) -> ()
+        var def = new Table(1, 1) { ElementRefType = new ReferenceType(0u, isNullable: true) };
+        importer.Imports.Add(new Import.Table("M", "t", def));
+
+        var provider = ExportedTypedFuncTableInstance(new WebAssemblyType { Parameters = [WebAssemblyValueType.Int32] });
+        Assert.ThrowsExactly<ImportException>(() => importer.ToInstance<object>(FromExports(provider)));
     }
 }

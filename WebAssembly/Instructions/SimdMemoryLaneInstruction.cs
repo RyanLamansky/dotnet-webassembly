@@ -29,11 +29,11 @@ public abstract class SimdMemoryLaneInstruction : SimdMemoryImmediateInstruction
         other is SimdMemoryLaneInstruction instruction
         && instruction.SimdOpCode == this.SimdOpCode
         && instruction.Flags == this.Flags
-        && instruction.Offset == this.Offset
+        && instruction.Offset64 == this.Offset64
         && instruction.MemoryIndex == this.MemoryIndex
         && instruction.LaneIndex == this.LaneIndex;
 
     /// <inheritdoc/>
     public override int GetHashCode() =>
-        HashCode.Combine((int)this.SimdOpCode, (int)this.Flags, (int)this.Offset, (int)this.MemoryIndex, (int)this.LaneIndex);
+        HashCode.Combine((int)this.SimdOpCode, (int)this.Flags, this.Offset64.GetHashCode(), (int)this.MemoryIndex, LaneIndex);
 }

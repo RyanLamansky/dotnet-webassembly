@@ -15,7 +15,7 @@ public class Float32x4Nearest : SimdUnaryV128Instruction
     /// <summary>The runtime implementation invoked by compiled code.</summary>
     public static Vector128<byte> Execute(Vector128<byte> a)
     {
-        var r = new float[4];
+        Span<float> r = stackalloc float[4];
         for (var i = 0; i < 4; i++) r[i] = MathF.Round(a.AsSingle().GetElement(i), MidpointRounding.ToEven);
         return Vector128.Create(r).AsByte();
     }

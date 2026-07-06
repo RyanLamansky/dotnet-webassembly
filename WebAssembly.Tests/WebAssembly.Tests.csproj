@@ -12,6 +12,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Samples\*" />
     <Compile Include="..\WebAssembly\RegeneratingWeakReference.cs" Link="RegeneratingWeakReference.cs" />
+    <Compile Include="..\WebAssembly\Runtime\Compilation\CanonicalTypeMap.cs" Link="CanonicalTypeMap.cs" />
   </ItemGroup>
 
   <ItemGroup>

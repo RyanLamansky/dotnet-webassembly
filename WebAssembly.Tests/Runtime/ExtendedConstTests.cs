@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using WebAssembly.Instructions;
 
 namespace WebAssembly.Runtime;

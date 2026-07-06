@@ -266,7 +266,7 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
         var hasSuperTypes = this.SuperTypes is { Count: > 0 };
         if (!this.IsFinal || hasSuperTypes)
         {
-            writer.WriteVar((sbyte)(this.IsFinal ? CompositeTypeReader.SubFinalForm : CompositeTypeReader.SubForm));
+            writer.WriteVar(this.IsFinal ? CompositeTypeReader.SubFinalForm : CompositeTypeReader.SubForm);
             var superTypes = this.SuperTypes;
             writer.WriteVar((uint)(superTypes?.Count ?? 0));
             if (superTypes != null)
@@ -313,10 +313,10 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
         switch (field.Packed)
         {
             case PackedType.I8:
-                writer.WriteVar((sbyte)CompositeTypeReader.PackedI8Form);
+                writer.WriteVar(CompositeTypeReader.PackedI8Form);
                 break;
             case PackedType.I16:
-                writer.WriteVar((sbyte)CompositeTypeReader.PackedI16Form);
+                writer.WriteVar(CompositeTypeReader.PackedI16Form);
                 break;
             default:
                 if (field.StorageRefType is { } refType)

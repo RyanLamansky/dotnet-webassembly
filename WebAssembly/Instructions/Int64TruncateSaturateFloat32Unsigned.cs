@@ -30,7 +30,7 @@ public class Int64TruncateSaturateFloat32Unsigned : TruncateSaturateInstruction
 
     private protected override void EmitLoadFloatMaxValue(ILGenerator il)
     {
-        il.Emit(OpCodes.Ldc_R4, (float)ulong.MaxValue);
+        il.Emit(OpCodes.Ldc_R4, ulong.MaxValue);
     }
 
     private protected override void EmitLoadIntegerMaxValue(ILGenerator il)

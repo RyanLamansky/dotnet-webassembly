@@ -111,21 +111,19 @@ public class FunctionBody : IEquatable<FunctionBody>
         if (other == null)
             return false;
 
-        using (var items = this.Code.GetEnumerator())
-        using (var others = this.Code.GetEnumerator())
+        using var items = this.Code.GetEnumerator();
+        using var others = this.Code.GetEnumerator();
+        bool itemMoved, othersMoved;
+        while ((itemMoved = items.MoveNext()) & (othersMoved = others.MoveNext()))
         {
-            bool itemMoved, othersMoved;
-            while ((itemMoved = items.MoveNext()) & (othersMoved = others.MoveNext()))
-            {
-                if (itemMoved & !othersMoved)
-                    return false;
+            if (itemMoved & !othersMoved)
+                return false;
 
-                if (!items.Current.Equals(others.Current))
-                    return false;
-            }
-
-            return !itemMoved && !othersMoved;
+            if (!items.Current.Equals(others.Current))
+                return false;
         }
+
+        return !itemMoved && !othersMoved;
     }
 
     internal void WriteTo(Writer writer, byte[] buffer)

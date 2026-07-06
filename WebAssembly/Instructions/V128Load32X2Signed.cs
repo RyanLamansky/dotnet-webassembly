@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Reflection.Emit;
-using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -26,21 +25,10 @@ public class V128Load32X2Signed : SimdMemoryImmediateInstruction
     {
         if (this.Flags > 3)
             throw new Runtime.CompilerException("alignment must not be larger than natural");
-        context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32);
+        this.ValidateOffset(context);
+        context.PopStackNoReturn(this.OpCode, context.MemoryAddressType(this.MemoryIndex));
 
-        if (this.Offset != 0)
-        {
-            Int32Constant.Emit(context, (int)this.Offset);
-            context.Emit(OpCodes.Add_Ovf_Un);
-        }
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Call, context.GetRangeCheck(this.MemoryIndex, 8));
-
-        context.EmitLoadThis();
-        context.Emit(OpCodes.Ldfld, context.ResolveMemory(this.MemoryIndex));
-        context.Emit(OpCodes.Call, UnmanagedMemory.StartGetter);
-        context.Emit(OpCodes.Add);
+        this.EmitAddressComputation(context, 8);
 
         context.Emit(OpCodes.Call, ExecuteMethod(this.GetType()));
 
@@ -59,7 +47,7 @@ public class V128Load32X2Signed : SimdMemoryImmediateInstruction
 
         var p = (byte*)ptr;
         Span<long> r = stackalloc long[2];
-        for (var i = 0; i < 2; i++) r[i] = (int)(p[i * 4] | (p[i * 4 + 1] << 8) | (p[i * 4 + 2] << 16) | (p[i * 4 + 3] << 24));
+        for (var i = 0; i < 2; i++) r[i] = p[i * 4] | (p[i * 4 + 1] << 8) | (p[i * 4 + 2] << 16) | (p[i * 4 + 3] << 24);
         return Vector128.Create(r[0], r[1]).AsByte();
     }
 }

@@ -505,7 +505,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// Whether <paramref name="actual"/> is a subtype of <paramref name="expected"/> under the WebAssembly 3.0
     /// lattice (equality for numerics). Consults the module's type section for concrete-index references.
     /// </summary>
-    public bool IsSubtype(ValType actual, ValType expected) => TypeAlgebra.IsSubtype(actual, expected, this.Types, this.CanonicalTypes);
+    public bool IsSubtype(ValType actual, ValType expected) => TypeAlgebra.IsSubtype(actual, expected, this.CanonicalTypes);
 
     /// <summary>
     /// The CLR type used to represent a value of <paramref name="type"/> at runtime, resolving concrete GC

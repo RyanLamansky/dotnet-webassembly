@@ -29,6 +29,6 @@ public class Int16x8RelaxedDotInt8x16Int7x16Signed : SimdBinaryV128Instruction
                 + sa.GetElement(2 * i + 1) * sb.GetElement(2 * i + 1);
             r[i] = sum > 32767 ? (short)32767 : sum < -32768 ? (short)-32768 : (short)sum;
         }
-        return Vector128.Create((ReadOnlySpan<short>)r).AsByte();
+        return Vector128.Create(r).AsByte();
     }
 }

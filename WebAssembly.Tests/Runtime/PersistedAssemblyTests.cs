@@ -140,7 +140,7 @@ public class PersistedAssemblyTests
     /// A module that allocates a garbage-collected struct, downcasts it through the abstract and concrete
     /// <c>ref.cast</c> forms, and reads a field survives the WASM-to-DLL path. This exercises the emitted GC class,
     /// its parameterless constructor, and the <see cref="WebAssemblyStructObject"/>/<see cref="WebAssemblyI31"/> references under
-    /// the persisted <c>NeutralizeType</c> mapping (the M8.6 cast lowering).
+    /// the persisted <c>NeutralizeType</c> mapping (the cast lowering).
     /// </summary>
     [TestMethod]
     public void PersistedAssembly_StructCast_RoundTrip()

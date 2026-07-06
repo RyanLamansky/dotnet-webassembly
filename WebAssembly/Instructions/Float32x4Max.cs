@@ -1,5 +1,7 @@
 using System.Runtime.Intrinsics;
-using WebAssembly.Runtime;
+#if !NET9_0_OR_GREATER
+using WebAssembly.Runtime; // FloatHelper, used only by the pre-net9 software fallback below.
+#endif
 
 namespace WebAssembly.Instructions;
 
@@ -18,7 +20,7 @@ public class Float32x4Max : SimdBinaryV128Instruction
 #if NET9_0_OR_GREATER
         return Vector128.Max(a.AsSingle(), b.AsSingle()).AsByte();
 #else
-        var r = new float[4];
+        System.Span<float> r = stackalloc float[4];
         var sa = a.AsSingle(); var sb = b.AsSingle();
         for (var i = 0; i < 4; i++)
         {

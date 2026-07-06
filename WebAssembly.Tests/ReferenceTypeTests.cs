@@ -6,7 +6,7 @@ using WebAssembly.Instructions;
 namespace WebAssembly;
 
 /// <summary>
-/// Phase 5 (M5.1) representation and byte-identical round-trip tests for WASM 3.0 typed function references.
+/// Representation and byte-identical round-trip tests for WASM 3.0 typed function references.
 /// </summary>
 [TestClass]
 public class ReferenceTypeTests
@@ -196,8 +196,8 @@ public class ReferenceTypeTests
     }
 
     /// <summary>
-    /// A type-section entry whose form byte is <c>0x5F</c> (struct) is a WASM 3.0 GC composite type, parsed since
-    /// Phase 8 (M8.1) and surfaced through the object model with a byte-identical round-trip.
+    /// A type-section entry whose form byte is <c>0x5F</c> (struct) is a WASM 3.0 GC composite type, parsed and
+    /// surfaced through the object model with a byte-identical round-trip.
     /// </summary>
     [TestMethod]
     public void ReferenceType_CompositeTypeForm_StructParsed()

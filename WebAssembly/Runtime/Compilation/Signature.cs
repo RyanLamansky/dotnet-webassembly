@@ -3,7 +3,7 @@ using System.Text;
 
 namespace WebAssembly.Runtime.Compilation;
 
-internal sealed class Signature : IEquatable<WebAssemblyType>
+internal sealed class Signature
 {
     public readonly uint TypeIndex;
     public readonly Type[] ParameterTypes;
@@ -89,38 +89,6 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
             var canonical = rawReturns[i] = ValType.FromValueType(sourceReturns[i], type.GetReturnRefType(i));
             returns[i] = configuration.NeutralizeType(canonical.ToSystemType(indexedKinds));
         }
-    }
-
-    public bool Equals(WebAssemblyType? other)
-    {
-        if (other == null)
-            return false;
-
-        var thisReturns = this.RawReturnTypes;
-        var otherReturns = other.Returns;
-
-        if (thisReturns.Length != otherReturns.Count)
-            return false;
-
-        var thisParameters = this.RawParameterTypes;
-        var otherParameters = other.Parameters;
-
-        if (thisParameters.Length != otherParameters.Count)
-            return false;
-
-        for (var i = 0; i < thisReturns.Length; i++)
-        {
-            if (thisReturns[i].ToNarrow() != otherReturns[i])
-                return false;
-        }
-
-        for (var i = 0; i < thisParameters.Length; i++)
-        {
-            if (thisParameters[i].ToNarrow() != otherParameters[i])
-                return false;
-        }
-
-        return true;
     }
 
     public override string ToString()

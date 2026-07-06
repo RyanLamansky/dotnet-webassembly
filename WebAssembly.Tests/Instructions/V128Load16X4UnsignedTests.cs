@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -56,6 +55,6 @@ public class V128Load16X4UnsignedTests
         var values = new ushort[] { 0, 1, 32768, 65535 };
         var compiled = BuildModule(values).ToInstance<V128Load16X4UnsignedExport>();
         for (var i = 0; i < 4; i++)
-            Assert.AreEqual((int)values[i], compiled.Exports.GetLane(i), $"Lane {i}");
+            Assert.AreEqual(values[i], compiled.Exports.GetLane(i), $"Lane {i}");
     }
 }

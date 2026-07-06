@@ -190,8 +190,8 @@ public static class WebAssemblyGC
     public static T[] NewArrayFromData<T>(byte[]? data, uint offset, uint count) where T : struct
     {
         var length = (uint)(data?.Length ?? 0);
-        var byteCount = (ulong)count * (ulong)Unsafe.SizeOf<T>();
-        if ((ulong)offset + byteCount > length)
+        var byteCount = count * (ulong)Unsafe.SizeOf<T>();
+        if (offset + byteCount > length)
             throw new MemoryAccessOutOfRangeException(offset, length);
 
         var result = new T[count];
@@ -216,8 +216,8 @@ public static class WebAssemblyGC
             throw new IndexOutOfRangeException("out of bounds array access");
 
         var length = (uint)(data?.Length ?? 0);
-        var byteCount = (ulong)count * (ulong)Unsafe.SizeOf<T>();
-        if ((ulong)offset + byteCount > length)
+        var byteCount = count * (ulong)Unsafe.SizeOf<T>();
+        if (offset + byteCount > length)
             throw new MemoryAccessOutOfRangeException(offset, length);
 
         if (count != 0)

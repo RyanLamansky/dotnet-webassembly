@@ -15,7 +15,7 @@ Execution is not an interpreter: WASM instructions are emitted as .NET IL via `S
 - Execution targets ratified WASM **3.0** (released 2025-09-17) — extended constant expressions, tail calls, multiple memories, 64-bit address space (memory64 / table64), typed function references, exception handling (the `try_table` model), relaxed SIMD (deterministic profile), and garbage collection (struct / array / i31) — on top of the earlier 2.0 feature set (bulk memory, reference types, fixed-width SIMD, multi-value, typed `select`).
   Spec compliance is strong: every ratified-3.0 spec-suite category runs green.
   The only intentional exclusions are the seven `float_exprs` NaN-folding lines marked `unsupported` in `SpecTests.cs` (the JIT folds `x±0` / `x*1` so a signaling NaN is never quieted), and they keep the category green rather than deferring it.
-  This library targets the **deterministic profile**; that stance is documented in `docs/Wasm3Plan.md`.
+  This library targets the **deterministic profile**: float operations follow IEEE-754 via the CLR, relaxed-SIMD instructions implement the spec's deterministic defaults, and NaN payload bit patterns are the only known divergence.
   Post-3.0 proposals (custom page sizes, wide arithmetic, JS string builtins, …) aren't covered.
 - `WebAssembly.Module` is the object-model root for reading, writing, and modifying.
   It exposes typed section collections — `Types`, `Imports`, `Functions`, `Tables`, `Memories`, `Globals`, `Exports`, `Elements`, `Codes`, `Data`, `CustomSections` — with `ReadFromBinary()` / `WriteToBinary()` for serialization.
@@ -36,7 +36,7 @@ Execution is not an interpreter: WASM instructions are emitted as .NET IL via `S
 | `WebAssembly.Tests/Runtime/SpecTestData/` | **Generated** spec-suite fixtures (`.wasm` + `.json`). Do not hand-edit. |
 | `Tools/RefreshSpecTests/` | Tool that regenerates `SpecTestData/` from the upstream WebAssembly spec suite. |
 | `Examples/` | Standalone runnable samples (`RunExisting`, `GenerateClassFromWasm`, `ReadMeSample`). |
-| `docs/` | Long-form docs: `BreakingChanges.md` (breaking-change log), `Wasm3Plan.md` (the completed 2.0→3.0 upgrade plan), and the `Wasm3Phase*Design.md` historical design records for the larger phases. |
+| `docs/` | `BreakingChanges.md`, the breaking-change log. |
 
 ## Build & test
 
@@ -93,6 +93,28 @@ A new or modified instruction touches several coordinated places:
 When emitting IL by hand, study `CompilationContext` and `ILGeneratorExtensions` first.
 Stack validation is mandatory and the spec tests will catch mismatches.
 
+## Load-bearing runtime mechanisms (WASM 3.0)
+
+The non-obvious design decisions behind the 3.0 features; each is easy to subtly break if you don't know why it exists.
+
+- **Canonical type identity** — `Runtime/Compilation/CanonicalTypeMap` canonicalizes the type section once per compilation (iso-recursive, rec-group by rec-group, De Bruijn positions for intra-group references).
+  Its `Descriptor` strings are module-independent, so string equality doubles as the **cross-module import-matching currency** for tags, globals, tables, and functions.
+  `ExceptionTag` renders host-side descriptors through the shared `CanonicalTypeMap` helper — never render that grammar by hand; two independent renderers once drifted and silently broke all parameterized host-tag imports.
+- **Funcref identity** — funcrefs are arity-shaped CLR `Delegate`s, so canonical function-type identity lives in a `ConditionalWeakTable` registry in `WebAssemblyGC`, populated wherever WASM-typed delegates are born (ref.func / element segments / globals / imports / export relinking).
+  `call_indirect` and concrete-func-index casts consult it via tokens interned once at instantiation into the per-instance `FuncTypeTokens` array — never re-intern per call.
+  Unregistered (host-created) delegates deliberately fall back to CLR-shape acceptance so embeddings don't break.
+- **GC objects** — one emitted CLR class per *canonical* struct/array id, with declared WASM subtyping as CLR inheritance, so `ref.cast`/`ref.test` lower to `castclass`/`isinst`.
+  Hierarchy: `WebAssemblyGCObject` (= the `eq` type) over `WebAssemblyStructObject` / `WebAssemblyArrayObject` / `WebAssemblyI31`.
+  GC reference slots (stack, locals, fields) are uniformly `object` (`Delegate` for the func hierarchy); the concrete emitted class is applied only at use sites via `castclass`.
+  `ref.eq` lowers to `WebAssemblyGC.RefEqual`, not `ceq`, because equal-payload `WebAssemblyI31` boxes must compare equal.
+  Array types are wrapper classes (not bare CLR arrays) because element mutability is part of canonical identity.
+- **Exceptions** — WASM exceptions are `WebAssemblyException`, and only compiled throw instructions create that type, so a single `isinst` filter cleanly separates WASM exceptions from CLR-native traps in `try_table` handlers.
+  Tag identity is `ExceptionTag` reference identity in-process, plus canonical-descriptor matching for cross-module imports.
+- **Tail calls** — the IL `tail.` prefix (guaranteed since .NET Core 3.0).
+  ECMA-335 forbids `tail.` inside protected regions, so a `return_call*` inside a `try_table` spills its operands, `leave`s to a per-callsite trampoline emitted after the function's final `ret`, and tail-calls from there — preserving both catchability and constant stack.
+- **memory64** — `UnmanagedMemory` stays under 4 GiB; 64-bit accesses compute the effective address in overflow-checked u64, so anything ≥ 2³² necessarily trap-checks rather than wrapping.
+  Wide/narrow API pattern: `ulong` storage (`Offset64`, `Minimum64`, …) with the pre-existing `uint` members as `checked` narrowing views.
+
 ## Spec tests
 
 `WebAssembly.Tests/Runtime/SpecTests.cs` is **hand-curated**, one `[TestMethod]` per spec category, each calling `SpecTestRunner.Run(...)` with optional per-line predicates.
@@ -121,3 +143,9 @@ After a refresh you must re-curate `SpecTests.cs` by hand (line numbers and cate
 
 - Don't edit anything under `bin/`, `obj/`, `TestResults/`, or `SpecTestData/` — all generated.
 - The library has no runtime third-party dependencies at all (only SourceLink, for packaging).
+- **Anything the emitted assembly calls must be `public`**: generated code lives in a separate, non-friend, unsigned assembly (no `InternalsVisibleTo` on the strong-named library), so runtime helpers (`WebAssemblyGC`, the SIMD `Execute` methods, `ImportException.Validate*`, the GC object base classes) are public by necessity, not as invitation.
+- **Adding an overload to a method resolved by `GetMethod(nameof(...))`** (e.g. `Compile`'s static `Validate*Import` fields) requires giving that resolution site an explicit parameter-type list, or every compilation dies at static-init with `AmbiguousMatchException` — and a plain library build won't catch it, only the test suite will.
+- **Changing the signature of a public member that emitted IL calls** breaks persisted DLLs produced by earlier versions, whose call sites bake in the exact signature; add the new shape as an overload and keep the old one as a forwarder (see `ImportException.ValidateMemory`/`ValidateTable`).
+- **Hot paths must not allocate**: `HotPathAllocationGuardTests` scans the IL of every SIMD `Execute` method and the per-call `WebAssemblyGC` helpers and fails on `newarr`/`box`/reference-type `newobj`; use `stackalloc` for temporary buffers.
+- **Opcode-enum naming is locked by tests**: `OpCodeTests` derives each member name from its native WASM name for all four opcode enums; `simdReleasedExemptions` there documents the WASM 2.0-era deviations retained for binary compatibility (a candidate list for a future breaking-change release).
+- When bumping the spec-test pins, `SpecCommit` and `WasmToolsVersion` move together — mismatches surface as per-file conversion failures in the refresh run.

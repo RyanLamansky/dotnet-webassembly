@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace WebAssembly;
+﻿namespace WebAssembly;
 
 /// <summary>
 /// The standard section identifiers.

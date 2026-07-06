@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebAssembly.Runtime;
 using System;
 
 namespace WebAssembly.Instructions;
@@ -49,6 +48,6 @@ public class Float64x2SplatTests
         var compiled = BuildModule().ToInstance<Float64x2SplatExport>();
         // 1.0 in IEEE 754 double little-endian = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x3F]
         var bits = BitConverter.GetBytes(1.0);
-        Assert.AreEqual((int)bits[0], compiled.Exports.GetFirstByte(1.0));
+        Assert.AreEqual(bits[0], compiled.Exports.GetFirstByte(1.0));
     }
 }

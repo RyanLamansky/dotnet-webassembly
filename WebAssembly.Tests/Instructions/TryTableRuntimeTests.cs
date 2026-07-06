@@ -1,12 +1,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Reflection;
 using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
 /// <summary>
-/// Phase 6 (M6.4) runtime tests for <see cref="TryTable"/> compilation.
+/// Runtime tests for <see cref="TryTable"/> compilation.
 /// </summary>
 [TestClass]
 public class TryTableRuntimeTests

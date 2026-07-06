@@ -25,6 +25,6 @@ public class Int64ExtendInt32UnsignedTests
         Assert.AreEqual(0x00000000ffffd8f0, exports.Test(-10000));
         Assert.AreEqual(0xffffffff, exports.Test(-1));
         Assert.AreEqual(0x000000007fffffff, exports.Test(0x7fffffff));
-        Assert.AreEqual(unchecked((long)0x0000000080000000), exports.Test(unchecked((int)0x80000000)));
+        Assert.AreEqual(unchecked(0x0000000080000000), exports.Test(unchecked((int)0x80000000)));
     }
 }

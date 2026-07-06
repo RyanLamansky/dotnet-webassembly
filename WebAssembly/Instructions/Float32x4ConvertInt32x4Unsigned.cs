@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Float32x4ConvertInt32x4Unsigned : SimdUnaryV128Instruction
     public Float32x4ConvertInt32x4Unsigned() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new float[4]; for (var i = 0; i < 4; i++) r[i] = a.AsUInt32().GetElement(i); return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<float> r = stackalloc float[4]; for (var i = 0; i < 4; i++) r[i] = a.AsUInt32().GetElement(i); return Vector128.Create(r).AsByte(); }
 }

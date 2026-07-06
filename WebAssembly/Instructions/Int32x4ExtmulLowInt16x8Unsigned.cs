@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int32x4ExtmulLowInt16x8Unsigned : SimdBinaryV128Instruction
     public Int32x4ExtmulLowInt16x8Unsigned() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) { var r = new uint[4]; for (var i = 0; i < 4; i++) r[i] = (uint)(a.AsUInt16().GetElement(i) * b.AsUInt16().GetElement(i)); return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b) { Span<uint> r = stackalloc uint[4]; for (var i = 0; i < 4; i++) r[i] = (uint)(a.AsUInt16().GetElement(i) * b.AsUInt16().GetElement(i)); return Vector128.Create(r).AsByte(); }
 }

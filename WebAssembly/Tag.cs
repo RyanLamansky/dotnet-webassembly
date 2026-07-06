@@ -68,7 +68,7 @@ public class Tag
 
     internal void WriteTo(Writer writer)
     {
-        writer.Write((byte)0x00);
+        writer.Write(0x00);
         writer.WriteVar(this.TypeIndex);
     }
 }

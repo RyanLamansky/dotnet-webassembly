@@ -11,7 +11,7 @@ public abstract class NullaryGCInstruction : GCInstruction
     {
     }
 
-    private protected NullaryGCInstruction(Reader reader)
+    private protected NullaryGCInstruction(Reader _)
     {
     }
 

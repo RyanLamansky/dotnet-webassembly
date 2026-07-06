@@ -406,7 +406,7 @@ public abstract class Import
         {
             base.WriteTo(writer);
             writer.Write((byte)ExternalKind.Tag);
-            writer.Write((byte)0x00);
+            writer.Write(0x00);
             writer.WriteVar(this.TypeIndex);
         }
     }

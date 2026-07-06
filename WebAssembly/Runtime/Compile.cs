@@ -203,51 +203,51 @@ public static class Compile
         switch (sub.Form)
         {
             case FunctionType.Struct:
-            {
-                var subFields = sub.Fields ?? [];
-                var superFields = super.Fields ?? [];
-                if (subFields.Count < superFields.Count)
-                    return false; // Width subtyping: a subtype may only add trailing fields.
-                for (var k = 0; k < superFields.Count; k++)
                 {
-                    if (!IsValidFieldSubtype(subFields[k], superFields[k], context))
-                        return false;
-                }
+                    var subFields = sub.Fields ?? [];
+                    var superFields = super.Fields ?? [];
+                    if (subFields.Count < superFields.Count)
+                        return false; // Width subtyping: a subtype may only add trailing fields.
+                    for (var k = 0; k < superFields.Count; k++)
+                    {
+                        if (!IsValidFieldSubtype(subFields[k], superFields[k], context))
+                            return false;
+                    }
 
-                return true;
-            }
+                    return true;
+                }
 
             case FunctionType.Array:
-            {
-                var subElement = sub.Fields is { Count: > 0 } sa ? sa[0] : null;
-                var superElement = super.Fields is { Count: > 0 } pa ? pa[0] : null;
-                return subElement is not null && superElement is not null
-                    && IsValidFieldSubtype(subElement, superElement, context);
-            }
+                {
+                    var subElement = sub.Fields is { Count: > 0 } sa ? sa[0] : null;
+                    var superElement = super.Fields is { Count: > 0 } pa ? pa[0] : null;
+                    return subElement is not null && superElement is not null
+                        && IsValidFieldSubtype(subElement, superElement, context);
+                }
 
             default:
-            {
-                // Function subtyping requires equal arity; params are contravariant, results covariant.
-                if (sub.Parameters.Count != super.Parameters.Count || sub.Returns.Count != super.Returns.Count)
-                    return false;
-                for (var k = 0; k < sub.Parameters.Count; k++)
                 {
-                    var subParam = ValType.FromValueType(sub.Parameters[k], sub.GetParameterRefType(k));
-                    var superParam = ValType.FromValueType(super.Parameters[k], super.GetParameterRefType(k));
-                    if (!context.IsSubtype(superParam, subParam)) // contravariant
+                    // Function subtyping requires equal arity; params are contravariant, results covariant.
+                    if (sub.Parameters.Count != super.Parameters.Count || sub.Returns.Count != super.Returns.Count)
                         return false;
-                }
+                    for (var k = 0; k < sub.Parameters.Count; k++)
+                    {
+                        var subParam = ValType.FromValueType(sub.Parameters[k], sub.GetParameterRefType(k));
+                        var superParam = ValType.FromValueType(super.Parameters[k], super.GetParameterRefType(k));
+                        if (!context.IsSubtype(superParam, subParam)) // contravariant
+                            return false;
+                    }
 
-                for (var k = 0; k < sub.Returns.Count; k++)
-                {
-                    var subReturn = ValType.FromValueType(sub.Returns[k], sub.GetReturnRefType(k));
-                    var superReturn = ValType.FromValueType(super.Returns[k], super.GetReturnRefType(k));
-                    if (!context.IsSubtype(subReturn, superReturn)) // covariant
-                        return false;
-                }
+                    for (var k = 0; k < sub.Returns.Count; k++)
+                    {
+                        var subReturn = ValType.FromValueType(sub.Returns[k], sub.GetReturnRefType(k));
+                        var superReturn = ValType.FromValueType(super.Returns[k], super.GetReturnRefType(k));
+                        if (!context.IsSubtype(subReturn, superReturn)) // covariant
+                            return false;
+                    }
 
-                return true;
-            }
+                    return true;
+                }
         }
     }
 
@@ -418,7 +418,8 @@ public static class Compile
     // public API compatibility); the extra string? carries the declaration's closed structural descriptor.
     static readonly MethodInfo ValidateGlobalImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateGlobal),
         [typeof(GlobalImport), typeof(WebAssemblyValueType), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
-    static readonly MethodInfo ValidateMemoryImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemory))!;
+    static readonly MethodInfo ValidateMemoryImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateMemory),
+        [typeof(UnmanagedMemory), typeof(uint), typeof(uint), typeof(bool), typeof(bool), typeof(string), typeof(string)])!;
     static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable),
         [typeof(TableImport), typeof(uint), typeof(uint), typeof(bool), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
     static readonly MethodInfo ValidateTagImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTag))!;
@@ -446,15 +447,13 @@ public static class Compile
             il.Emit(OpCodes.Ldstr, descriptor);
     }
 
-    // The closed structural descriptor used to match an exception tag across a module boundary. When the module's
-    // iso-recursive canonicalization is available it renders the tag type's whole recursion group (in De Bruijn form)
-    // plus the type's position, so tags whose signatures are structurally identical but live in differently-shaped
-    // recursion groups — or at different positions of the same group — are correctly distinguished (WebAssembly 3.0
-    // GC rec-group identity). Otherwise it falls back to the func-signature rendering.
-    static string RenderTagDescriptor(CompilationContext context, Signature signature, Signature[]? signatures) =>
-        context.CanonicalTypes is { } map && signature.TypeIndex < (uint)map.Descriptor.Length
-            ? map.Descriptor[signature.TypeIndex]
-            : WasmTypeDescriptor.RenderTagSignature(signature, signatures);
+    // The closed structural descriptor used to match an exception tag across a module boundary: the tag type's whole
+    // recursion group rendered in De Bruijn form (WebAssembly 3.0 GC rec-group identity) plus the type's position, so
+    // tags whose signatures are structurally identical but live in differently-shaped recursion groups — or at
+    // different positions of the same group — are correctly distinguished. A tag always references a type-section
+    // entry, so the canonical map is always built and the tag's type index always in range.
+    static string RenderTagDescriptor(CompilationContext context, Signature signature) =>
+        context.CanonicalTypes!.Descriptor[signature.TypeIndex];
 
     // The (offset, length) constructor used to trap an out-of-bounds active data segment, matching the
     // exception the runtime's RangeCheck helpers throw for ordinary memory accesses.
@@ -948,7 +947,7 @@ public static class Compile
                             if (signature.RawReturnTypes.Length != 0)
                                 throw new ModuleLoadException($"non-empty tag result type: tag references type {tag.TypeIndex} which has {signature.RawReturnTypes.Length} result(s).", preTagOffset);
 
-                            var descriptor = RenderTagDescriptor(context, signature, signatures);
+                            var descriptor = RenderTagDescriptor(context, signature);
                             var tagField = exportsBuilder.DefineField($"☢ Tag{context.Tags.Count}", tagClrType, PrivateReadonlyField);
                             context.Tags.Add(tagField);
                             context.TagSignatures.Add(signature);
@@ -981,7 +980,7 @@ public static class Compile
 
                 case Section.Element:
                     EnsureFunctionReferences(); // Element initializers reference functions via FunctionReferences.
-                    SectionElement(reader, context, instanceConstructorIL, functionSignatures, internalFunctions, configuration, exportsBuilder);
+                    SectionElement(reader, context, instanceConstructorIL, exportsBuilder);
                     break;
 
                 case Section.Code:
@@ -1523,7 +1522,7 @@ public static class Compile
 
                         ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(TagImport)), configuration);
 
-                        EmitDescriptor(instanceConstructorIL, RenderTagDescriptor(context, tagSignature, signatures));
+                        EmitDescriptor(instanceConstructorIL, RenderTagDescriptor(context, tagSignature));
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateTagImport);
@@ -1870,7 +1869,7 @@ public static class Compile
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
                         tagProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Tag, name,
-                            RenderTagDescriptor(context, context.TagSignatures[(int)index], context.Types)));
+                            RenderTagDescriptor(context, context.TagSignatures[(int)index])));
                         tagProperty.SetGetMethod(tagGetter);
                     }
                     break;
@@ -2012,26 +2011,26 @@ public static class Compile
                 produced = ValType.RefIndexed(false, structNewDefault.Type);
                 break;
             case Instructions.RefFunc refFunc when initExpr.Count == 2:
-            {
-                var sigs = context.CheckedFunctionSignatures;
-                if (refFunc.Index >= (uint)sigs.Length)
-                    throw new ModuleLoadException($"unknown function {refFunc.Index}: the module declares only {sigs.Length} function(s).", 0);
-                produced = ValType.RefIndexed(false, sigs[refFunc.Index].TypeIndex); // (ref $sig(f))
-                break;
-            }
+                {
+                    var sigs = context.CheckedFunctionSignatures;
+                    if (refFunc.Index >= (uint)sigs.Length)
+                        throw new ModuleLoadException($"unknown function {refFunc.Index}: the module declares only {sigs.Length} function(s).", 0);
+                    produced = ValType.RefIndexed(false, sigs[refFunc.Index].TypeIndex); // (ref $sig(f))
+                    break;
+                }
             case Instructions.RefNull refNull when initExpr.Count == 2:
                 produced = refNull.TypeIndex is { } idx
                     ? ValType.RefIndexed(true, idx)
                     : ValType.Ref(true, refNull.HeapType ?? WebAssemblyHeapType.Func);
                 break;
             case Instructions.GlobalGet globalGet when initExpr.Count == 2:
-            {
-                var globals = context.Globals ?? [];
-                if (globalGet.Index >= (uint)globals.Length)
-                    throw new ModuleLoadException($"unknown global {globalGet.Index}.", 0);
-                produced = globals[globalGet.Index].Type;
-                break;
-            }
+                {
+                    var globals = context.Globals ?? [];
+                    if (globalGet.Index >= (uint)globals.Length)
+                        throw new ModuleLoadException($"unknown global {globalGet.Index}.", 0);
+                    produced = globals[globalGet.Index].Type;
+                    break;
+                }
             default:
                 throw new ModuleLoadException($"Element initializer expression ({initExpr[^2].OpCode}) is not a supported constant reference expression.", 0);
         }
@@ -2124,7 +2123,7 @@ public static class Compile
         context.ConstantExpression = false;
     }
 
-    static void SectionElement(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+    static void SectionElement(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, TypeBuilder exportsBuilder)
     {
         var count = reader.ReadVarUInt32();
 

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int8x16ShiftRightUnsigned : SimdShiftInstruction
     public Int8x16ShiftRightUnsigned() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a, int shift) { shift &= 7; var r = new byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)(a.GetElement(i) >> shift); return Vector128.Create(r); }
+    public static Vector128<byte> Execute(Vector128<byte> a, int shift) { shift &= 7; Span<byte> r = stackalloc byte[16]; for (var i = 0; i < 16; i++) r[i] = (byte)(a.GetElement(i) >> shift); return Vector128.Create(r); }
 }

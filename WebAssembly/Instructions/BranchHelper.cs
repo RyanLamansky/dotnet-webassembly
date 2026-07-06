@@ -95,7 +95,7 @@ static class BranchHelper
     /// Validates, without popping, that the top of the evaluation stack holds <paramref name="branchTypes"/> (the
     /// last type on top), and that they sit above the target block's baseline.
     /// </summary>
-    public static void ValidateBranchTypes(CompilationContext context, OpCode opCode, ValType[] branchTypes, BlockContext targetBlockContext)
+    public static void ValidateBranchTypes(CompilationContext context, OpCode opCode, ValType[] branchTypes)
     {
         // The carried values must be available above the *current* control frame's baseline — a branch cannot
         // reach values hidden beneath the innermost enclosing block, even when the target is an outer block whose
@@ -126,7 +126,7 @@ static class BranchHelper
     {
         if (branchTypes.Length > 0)
         {
-            ValidateBranchTypes(context, opCode, branchTypes, targetBlockContext);
+            ValidateBranchTypes(context, opCode, branchTypes);
 
             var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize - branchTypes.Length;
 
@@ -185,7 +185,7 @@ static class BranchHelper
 
         if (branchTypes.Length > 0)
         {
-            ValidateBranchTypes(context, opCode, branchTypes, targetBlockContext);
+            ValidateBranchTypes(context, opCode, branchTypes);
             if (!isLoop)
             {
                 targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes);

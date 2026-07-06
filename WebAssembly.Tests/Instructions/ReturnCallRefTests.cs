@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using WebAssembly.Runtime;
 
 namespace WebAssembly.Instructions;
 
@@ -64,12 +63,79 @@ public class ReturnCallRefTests
 
     /// <summary>
     /// Proves the CLR performs a real tail call: five million mutual-recursion frames would overflow the stack
-    /// if the <c>tail.</c> prefix were not honored (Phase 5 risk trigger — must hold on every framework × config).
+    /// if the <c>tail.</c> prefix were not honored (must hold on every framework × config).
     /// </summary>
     [TestMethod]
     public void ReturnCallRef_DeepRecursion_DoesNotOverflow()
     {
         var exports = CreateMutualRecursionModule().ToInstance<CompilerTestBase<int>>().Exports;
+        Assert.AreEqual(42, exports.Test(5_000_000));
+    }
+
+    // As CreateMutualRecursionModule, but each return_call_ref sits inside a try_table (catch_all) nested in a block,
+    // so the tail call is emitted from within a protected region — the spill + post-body trampoline path in
+    // ReturnCallRef (context.InProtectedRegion). The frame is still replaced, so deep recursion stays constant-stack.
+    private static Module CreateMutualRecursionInTryTableModule()
+    {
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType
+        {
+            Parameters = [WebAssemblyValueType.Int32],
+            Returns = [WebAssemblyValueType.Int32],
+        });
+        module.Functions.Add(new Function(0));
+        module.Functions.Add(new Function(0));
+        module.Exports.Add(new Export(nameof(CompilerTestBase<int>.Test), 0));
+
+        var declared = new Element { Kind = ElementKind.DeclarativeFunctionIndices };
+        declared.Elements.Add(0);
+        declared.Elements.Add(1);
+        module.Elements.Add(declared);
+
+        static FunctionBody Body(uint otherFunction)
+        {
+            var tryTable = new TryTable(BlockType.Empty);
+            tryTable.Catches.Add(new CatchClause(CatchKind.CatchAll, 0)); // -> the enclosing block
+
+            // if (n == 0) return 42; else { block { try_table (catch_all) { return_call_ref (ref.func other)(n-1) } } 42 }
+            return new FunctionBody(
+                new LocalGet(0), new Int32EqualZero(), new If(BlockType.Int32),
+                    new Int32Constant(42),
+                new Else(),
+                    new Block(BlockType.Empty),
+                        tryTable,
+                            new LocalGet(0), new Int32Constant(1), new Int32Subtract(),
+                            new RefFunc(otherFunction), new ReturnCallRef(0),
+                        new End(), // end try_table
+                    new End(), // end block
+                    new Int32Constant(42), // unreachable fallback: supplies the else result type
+                new End(),
+                new End());
+        }
+
+        module.Codes.Add(Body(1)); // func0 tail-calls func1
+        module.Codes.Add(Body(0)); // func1 tail-calls func0
+        return module;
+    }
+
+    /// <summary>A <see cref="ReturnCallRef"/> nested in a try_table returns the correct result through the region.</summary>
+    [TestMethod]
+    public void ReturnCallRef_InTryTable_Compiled()
+    {
+        var exports = CreateMutualRecursionInTryTableModule().ToInstance<CompilerTestBase<int>>().Exports;
+        Assert.AreEqual(42, exports.Test(0));
+        Assert.AreEqual(42, exports.Test(1));
+        Assert.AreEqual(42, exports.Test(11));
+    }
+
+    /// <summary>
+    /// The tail call inside the protected region still replaces the frame: five million mutual-recursion frames
+    /// through the try_table trampoline must not overflow the stack.
+    /// </summary>
+    [TestMethod]
+    public void ReturnCallRef_InTryTable_DeepRecursion_DoesNotOverflow()
+    {
+        var exports = CreateMutualRecursionInTryTableModule().ToInstance<CompilerTestBase<int>>().Exports;
         Assert.AreEqual(42, exports.Test(5_000_000));
     }
 

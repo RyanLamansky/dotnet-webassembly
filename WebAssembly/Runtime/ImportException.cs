@@ -106,6 +106,20 @@ public class ImportException : RuntimeException
     /// <summary>
     /// Throws an <see cref="ImportException"/> if a supplied memory's limits are not compatible with what the
     /// importing module declared (the memory must be at least as large as required and no larger than allowed).
+    /// The memory is validated as 32-bit; assemblies emitted before memory64 support call this overload.
+    /// </summary>
+    /// <param name="memory">The resolved memory.</param>
+    /// <param name="expectedMinimum">The minimum number of pages the module declared.</param>
+    /// <param name="expectedMaximum">The maximum number of pages the module declared; ignored when <paramref name="expectedHasMaximum"/> is false.</param>
+    /// <param name="expectedHasMaximum">Whether the module declared a maximum.</param>
+    /// <param name="module">The import's module name, for diagnostics.</param>
+    /// <param name="field">The import's field name, for diagnostics.</param>
+    public static void ValidateMemory(UnmanagedMemory memory, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, string module, string field)
+        => ValidateMemory(memory, expectedMinimum, expectedMaximum, expectedHasMaximum, false, module, field);
+
+    /// <summary>
+    /// Throws an <see cref="ImportException"/> if a supplied memory's limits are not compatible with what the
+    /// importing module declared (the memory must be at least as large as required and no larger than allowed).
     /// </summary>
     /// <param name="memory">The resolved memory.</param>
     /// <param name="expectedMinimum">The minimum number of pages the module declared.</param>
@@ -129,6 +143,20 @@ public class ImportException : RuntimeException
             throw new ImportException(
                 $"Import {module}::{field} expected a memory of at least {expectedMinimum} page(s){(expectedHasMaximum ? $" and at most {expectedMaximum}" : "")} but the supplied memory had a range of [{memory.Current}, {memory.Maximum}].");
     }
+
+    /// <summary>
+    /// Throws an <see cref="ImportException"/> if a supplied table's limits are not compatible with what the
+    /// importing module declared. The element type is assumed already verified by the caller's type cast.
+    /// The table is validated as 32-bit; assemblies emitted before table64 support call this overload.
+    /// </summary>
+    /// <param name="table">The resolved table.</param>
+    /// <param name="expectedMinimum">The minimum number of entries the module declared.</param>
+    /// <param name="expectedMaximum">The maximum number of entries the module declared; ignored when <paramref name="expectedHasMaximum"/> is false.</param>
+    /// <param name="expectedHasMaximum">Whether the module declared a maximum.</param>
+    /// <param name="module">The import's module name, for diagnostics.</param>
+    /// <param name="field">The import's field name, for diagnostics.</param>
+    public static void ValidateTable(TableImport table, uint expectedMinimum, uint expectedMaximum, bool expectedHasMaximum, string module, string field)
+        => ValidateTable(table, expectedMinimum, expectedMaximum, expectedHasMaximum, false, module, field);
 
     /// <summary>
     /// Throws an <see cref="ImportException"/> if a supplied table's limits are not compatible with what the

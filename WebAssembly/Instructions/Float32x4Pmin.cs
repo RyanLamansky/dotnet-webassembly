@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -14,7 +15,7 @@ public class Float32x4Pmin : SimdBinaryV128Instruction
     /// <summary>The runtime implementation invoked by compiled code.</summary>
     public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b)
     {
-        var r = new float[4];
+        Span<float> r = stackalloc float[4];
         for (var i = 0; i < 4; i++) { var ai = a.AsSingle().GetElement(i); var bi = b.AsSingle().GetElement(i); r[i] = bi < ai ? bi : ai; }
         return Vector128.Create(r).AsByte();
     }

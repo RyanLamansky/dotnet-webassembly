@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime.Compilation;
 
@@ -85,7 +84,7 @@ public class BranchIf : Instruction
         {
             if (branchTypes.Length > 0)
             {
-                BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes, targetBlockContext);
+                BranchHelper.ValidateBranchTypes(context, this.OpCode, branchTypes);
 
                 var discardCount = context.Stack.Count - targetBlockContext.InitialStackSize - branchTypes.Length;
 
@@ -194,7 +193,7 @@ public class BranchIf : Instruction
 
         if (branchTypes.Length > 0)
         {
-            BranchHelper.ValidateBranchTypes(context, opCode, branchTypes, targetBlockContext);
+            BranchHelper.ValidateBranchTypes(context, opCode, branchTypes);
             context.Emit(OpCodes.Stloc, conditionLocal);
             var carried = isLoop ? stub!.CarriedLocals! : (targetBlockContext.ResultLocals ??= context.DeclareResultLocals(branchTypes));
             BranchHelper.StashResults(context, carried);

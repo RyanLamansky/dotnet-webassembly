@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -12,5 +13,5 @@ public class Int32x4TruncSatFloat64x2SignedZero : SimdUnaryV128Instruction
     public Int32x4TruncSatFloat64x2SignedZero() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static Vector128<byte> Execute(Vector128<byte> a) { var r = new int[4]; for (var i = 0; i < 2; i++) { var f = a.AsDouble().GetElement(i); r[i] = double.IsNaN(f) ? 0 : f >= 2147483647d ? int.MaxValue : f <= -2147483648d ? int.MinValue : (int)f; } return Vector128.Create(r).AsByte(); }
+    public static Vector128<byte> Execute(Vector128<byte> a) { Span<int> r = stackalloc int[4]; for (var i = 0; i < 2; i++) { var f = a.AsDouble().GetElement(i); r[i] = double.IsNaN(f) ? 0 : f >= 2147483647d ? int.MaxValue : f <= -2147483648d ? int.MinValue : (int)f; } return Vector128.Create(r).AsByte(); }
 }

@@ -62,27 +62,6 @@ internal static class WasmTypeDescriptor
         return HeapSubtype(subHeap, superHeap);
     }
 
-    /// <summary>
-    /// Renders an exception tag's signature (<paramref name="tag"/>, a function type with empty results) to its
-    /// canonical descriptor string <c>func(&lt;params&gt;)-&gt;()</c>, expanding any concrete-index reference parameters
-    /// structurally. Two independently-compiled modules with structurally-equal tag signatures render identically, so
-    /// tag-import matching reduces to string equality.
-    /// </summary>
-    public static string RenderTagSignature(Signature tag, Signature[]? types)
-    {
-        var builder = new StringBuilder();
-        builder.Append("func(");
-        for (var i = 0; i < tag.RawParameterTypes.Length; i++)
-        {
-            if (i != 0)
-                builder.Append(',');
-            AppendValue(builder, tag.RawParameterTypes[i], types, null);
-        }
-
-        builder.Append(")->()");
-        return builder.ToString();
-    }
-
     private static void AppendValue(StringBuilder builder, ValType type, Signature[]? types, List<uint>? path)
     {
         if (!type.IsReference)

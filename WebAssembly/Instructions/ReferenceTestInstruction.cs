@@ -1,4 +1,3 @@
-using System;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;

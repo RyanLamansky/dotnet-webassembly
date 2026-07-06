@@ -112,9 +112,9 @@ public class Int8x16Shuffle : SimdInstruction, IEquatable<Int8x16Shuffle>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        var h = HashCode.Combine((int)SimdOpCode, (int)Indices[0], (int)Indices[1]);
+        var h = HashCode.Combine((int)SimdOpCode, Indices[0], Indices[1]);
         for (var i = 2; i < 16; i++)
-            h = HashCode.Combine(h, (int)Indices[i]);
+            h = HashCode.Combine(h, Indices[i]);
         return h;
     }
 }

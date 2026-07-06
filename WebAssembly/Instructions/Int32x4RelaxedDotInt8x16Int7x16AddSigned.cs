@@ -25,6 +25,6 @@ public class Int32x4RelaxedDotInt8x16Int7x16AddSigned : SimdTernaryV128Instructi
         Span<int> r = stackalloc int[4];
         for (var k = 0; k < 4; k++)
             r[k] = unchecked(dot.GetElement(2 * k) + dot.GetElement(2 * k + 1) + ci.GetElement(k));
-        return Vector128.Create((ReadOnlySpan<int>)r).AsByte();
+        return Vector128.Create(r).AsByte();
     }
 }

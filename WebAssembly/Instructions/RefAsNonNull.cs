@@ -42,7 +42,7 @@ public class RefAsNonNull : SimpleInstruction
         }
         else
         {
-            context.Stack.Push((ValType?)null); // Unknown (unreachable code) stays unknown.
+            context.Stack.Push(null); // Unknown (unreachable code) stays unknown.
         }
 
         // In unreachable code this is validation only; a dead `dup` on a provably-empty IL stack is worth avoiding.

@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -112,7 +110,7 @@ public abstract class BranchCastInstruction : GCInstruction
 
     /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(
-        (int)this.GCOpCode, (int)this.CastFlags, (int)this.Index,
+        (int)this.GCOpCode, CastFlags, (int)this.Index,
         HashCode.Combine((int)(this.fromHeapType ?? 0), (int)(this.fromTypeIndex ?? uint.MaxValue)),
         HashCode.Combine((int)(this.toHeapType ?? 0), (int)(this.toTypeIndex ?? uint.MaxValue)));
 

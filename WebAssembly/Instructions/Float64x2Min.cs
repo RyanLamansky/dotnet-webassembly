@@ -1,5 +1,7 @@
 using System.Runtime.Intrinsics;
-using WebAssembly.Runtime;
+#if !NET9_0_OR_GREATER
+using WebAssembly.Runtime; // FloatHelper, used only by the pre-net9 software fallback below.
+#endif
 
 namespace WebAssembly.Instructions;
 
@@ -18,7 +20,7 @@ public class Float64x2Min : SimdBinaryV128Instruction
 #if NET9_0_OR_GREATER
         return Vector128.Min(a.AsDouble(), b.AsDouble()).AsByte();
 #else
-        var r = new double[2];
+        System.Span<double> r = stackalloc double[2];
         var sa = a.AsDouble(); var sb = b.AsDouble();
         for (var i = 0; i < 2; i++)
         {

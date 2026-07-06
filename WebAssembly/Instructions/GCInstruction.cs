@@ -1,5 +1,3 @@
-using WebAssembly.Runtime.Compilation;
-
 namespace WebAssembly.Instructions;
 
 /// <summary>

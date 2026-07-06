@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Intrinsics;
 
 namespace WebAssembly.Instructions;
@@ -14,7 +15,7 @@ public class Float64x2Pmax : SimdBinaryV128Instruction
     /// <summary>The runtime implementation invoked by compiled code.</summary>
     public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b)
     {
-        var r = new double[2];
+        Span<double> r = stackalloc double[2];
         for (var i = 0; i < 2; i++) { var ai = a.AsDouble().GetElement(i); var bi = b.AsDouble().GetElement(i); r[i] = bi > ai ? bi : ai; }
         return Vector128.Create(r).AsByte();
     }

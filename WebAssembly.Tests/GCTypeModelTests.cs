@@ -6,7 +6,7 @@ using System.Linq;
 namespace WebAssembly;
 
 /// <summary>
-/// Phase 8 (M8.1) object-model and byte-identical round-trip tests for the WASM 3.0 garbage-collection type section
+/// Object-model and byte-identical round-trip tests for the WASM 3.0 garbage-collection type section
 /// (recursion groups, sub/final types, struct/array composites, packed fields).  Every parseable <c>.wasm</c> under
 /// the GC and structural-type fixture directories must re-emit byte-for-byte through
 /// <see cref="Module.ReadFromBinary(System.IO.Stream)"/> / <see cref="Module.WriteToBinary(System.IO.Stream)"/>.
@@ -54,9 +54,9 @@ public class GCTypeModelTests
     /// <summary>
     /// Every GC/structural-type fixture round-trips byte-identically at the object-model level, including the GC
     /// instruction bodies (the <c>0xFB</c> prefix and <c>ref.eq</c> <c>0xD3</c>), which the parser reads in full.
-    /// The one remaining gap is a GC constant (<c>array.new_data</c> / <c>array.new_elem</c>) inside an initializer
-    /// expression, which the parser rejects; a fixture that hits it is required to fail with exactly that signature
-    /// (so a real regression still fails, and the round-trip assertion engages automatically once it is supported).
+    /// Spec-invalid fixtures that place non-constant GC instructions in initializer expressions are correctly
+    /// rejected at parse; those must fail with exactly that rejection signature, so any other parse failure
+    /// still fails the test.
     /// </summary>
     /// <param name="path">The fixture path.</param>
     [TestMethod]

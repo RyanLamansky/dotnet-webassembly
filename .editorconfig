@@ -20,3 +20,37 @@ csharp_style_var_elsewhere = true
 dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
 dotnet_style_prefer_conditional_expression_over_return = true:suggestion
 dotnet_style_require_accessibility_modifiers = always:suggestion
+
+# === Analysis rules raised from the `suggestion` baseline to `warning` (= build error under TreatWarningsAsErrors). ===
+# The base above keeps every other analyzer at `suggestion`; the rules below are promoted individually so the
+# signal-to-noise stays high. AnalysisMode is deliberately left at `Recommended` (not `All`): a full-`All` sweep is
+# dominated by rules that fight this codebase's design (CA2227 settable object-model collections, CA1062 null-guards
+# on internal IL plumbing, CA1032/CA1008/CA1028 exception/enum shape), so it is not enabled.
+
+# Raised after a codebase-wide cleanup, 2026-07 (each had real findings that were fixed):
+dotnet_diagnostic.IDE0004.severity = warning   # Unnecessary cast.
+dotnet_diagnostic.IDE0005.severity = warning   # Unnecessary using directive (needs GenerateDocumentationFile, already on).
+dotnet_diagnostic.IDE0060.severity = warning   # Unused parameter.
+dotnet_diagnostic.IDE0063.severity = warning   # Use simple `using` statement.
+
+# Guardrails: no findings at promotion time, raised to lock the clean state in and catch regressions.
+dotnet_diagnostic.IDE0035.severity = warning   # Unreachable code.
+dotnet_diagnostic.IDE0044.severity = warning   # Make field readonly.
+dotnet_diagnostic.IDE0051.severity = warning   # Remove unused private member.
+dotnet_diagnostic.IDE0052.severity = warning   # Remove unread private member.
+dotnet_diagnostic.IDE0059.severity = warning   # Unnecessary value assignment.
+dotnet_diagnostic.IDE0062.severity = warning   # Make local function static.
+dotnet_diagnostic.IDE0161.severity = warning   # File-scoped namespace (matches csharp_style_namespace_declarations).
+dotnet_diagnostic.IDE0250.severity = warning   # Make struct readonly.
+dotnet_diagnostic.IDE0251.severity = warning   # Make member readonly.
+dotnet_diagnostic.CA1805.severity = warning    # Do not initialize unnecessarily.
+dotnet_diagnostic.CA1825.severity = warning    # Avoid zero-length array allocations.
+dotnet_diagnostic.CA1826.severity = warning    # Use property instead of Enumerable method.
+dotnet_diagnostic.CA1854.severity = warning    # Prefer TryGetValue over ContainsKey+indexer.
+dotnet_diagnostic.CA1859.severity = warning    # Use concrete types for improved performance.
+dotnet_diagnostic.CA1860.severity = warning    # Prefer Length/Count over Any().
+dotnet_diagnostic.CA1861.severity = warning    # Avoid constant arrays as arguments.
+
+# CA1822 (member can be static) is intentionally NOT raised: its only finding is the commented-out MSTest
+# maintenance helper SpecDiscovery.DiscoverAllFailures, which must stay an instance method to be re-enabled as a
+# [TestMethod]; the library itself is already clean, so the guardrail's marginal value doesn't justify that friction.
