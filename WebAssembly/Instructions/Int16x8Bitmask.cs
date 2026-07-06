@@ -12,5 +12,5 @@ public class Int16x8Bitmask : SimdV128ToI32Instruction
     public Int16x8Bitmask() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static int Execute(Vector128<byte> a) { var r = 0; for (var i = 0; i < 8; i++) if ((a.AsUInt16().GetElement(i) >> 15) != 0) r |= 1 << i; return r; }
+    public static int Execute(Vector128<byte> a) => (int)a.AsUInt16().ExtractMostSignificantBits();
 }

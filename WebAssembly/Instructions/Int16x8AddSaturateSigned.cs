@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 
 namespace WebAssembly.Instructions;
 
@@ -15,6 +17,11 @@ public class Int16x8AddSaturateSigned : SimdBinaryV128Instruction
     /// <summary>The runtime implementation invoked by compiled code.</summary>
     public static Vector128<byte> Execute(Vector128<byte> a, Vector128<byte> b)
     {
+        if (Sse2.IsSupported)
+            return Sse2.AddSaturate(a.AsInt16(), b.AsInt16()).AsByte();
+        if (AdvSimd.IsSupported)
+            return AdvSimd.AddSaturate(a.AsInt16(), b.AsInt16()).AsByte();
+
         Span<short> r = stackalloc short[8];
         for (var i = 0; i < 8; i++) { var v = a.AsInt16().GetElement(i) + b.AsInt16().GetElement(i); r[i] = v < -32768 ? (short)-32768 : v > 32767 ? (short)32767 : (short)v; }
         return Vector128.Create(r).AsByte();

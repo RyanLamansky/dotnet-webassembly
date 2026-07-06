@@ -55,8 +55,9 @@ CI (`.github/workflows/dotnetcore.yml`) builds **and** tests in **both Debug and
 If you change anything platform- or `#if`-conditional, validate both configurations locally before assuming green.
 
 Target frameworks:
-- Library `WebAssembly.csproj`: `net8.0;net9.0` (net8.0 is the LTS baseline; .NET Standard 2.0 was dropped in 2.0.0).
-- Tests: `net8.0;net9.0;net10.0`.
+- Library `WebAssembly.csproj`: `net8.0;net9.0` (net8.0 is the oldest supported baseline; .NET Standard 2.0 was dropped in 2.0.0; net8/net9 both leave support around Nov 2026).
+  A net10.0 target is added only when the code actually uses a .NET 10 API behind `#if NET10_0_OR_GREATER` — an extra target with no conditional code is identical IL and pure package weight (net10 runtimes get the net9 asset and all the JIT uplift regardless).
+- Tests: `net8.0;net9.0;net10.0` (the net10 cell exercises the newest-asset-on-newest-runtime pairing users actually get).
 
 ## Conventions
 
@@ -72,7 +73,7 @@ Target frameworks:
   C# 14 / `LangVersion=14.0`.
 - The assembly is strong-name signed (`WebAssembly.snk`), but there is **no** `InternalsVisibleTo`, so the test project sees only the public API.
   When a test genuinely needs an `internal` helper, the csproj links that source file directly (e.g. `<Compile Include="..\WebAssembly\RegeneratingWeakReference.cs">`); internal types like `Signature`, `Reader`, and `Writer` are otherwise unreachable from tests.
-- Multi-targeting is now just net8 vs net9: guard net9-only APIs with `#if NET9_0_OR_GREATER` and provide a net8 fallback.
+- Multi-targeting has one conditional split, net8 vs net9+: guard net9-plus APIs with `#if NET9_0_OR_GREATER` (which is also true on net10) and provide a net8 fallback.
   The only remaining conditional symbols are `NET9_0_OR_GREATER` and `DEBUG`; the old netstandard2.0/netcoreapp3.0 fallbacks were removed when .NET Standard 2.0 was dropped.
 - Prefer `Module` when creating unit tests against well-formed WASMs to preserve human readability.
   - No restrictions on using byte arrays, hex, or other WASM representations for throwaway work.

@@ -12,5 +12,5 @@ public class Int64x2Bitmask : SimdV128ToI32Instruction
     public Int64x2Bitmask() { }
 
     /// <summary>The runtime implementation invoked by compiled code.</summary>
-    public static int Execute(Vector128<byte> a) { var r = 0; for (var i = 0; i < 2; i++) if (((ulong)a.AsInt64().GetElement(i) >> 63) != 0) r |= 1 << i; return r; }
+    public static int Execute(Vector128<byte> a) => (int)a.AsUInt64().ExtractMostSignificantBits();
 }

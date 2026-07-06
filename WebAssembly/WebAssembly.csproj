@@ -8,7 +8,7 @@
     <Description>Create, read, modify, write and execute WebAssembly (WASM) files using pure 100% .NET.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Full support for creation, modification, execution, and conversion of WASM 2.0 files.</PackageReleaseNotes>
+    <PackageReleaseNotes>Full support for creation, modification, execution, and conversion of WASM 3.0 files.</PackageReleaseNotes>
     <PackageProjectUrl>https://github.com/RyanLamansky/dotnet-webassembly</PackageProjectUrl>
     <Copyright>Copyright © Ryan Lamansky. All rights reserved.</Copyright>
     <PackageTags>WebAssembly WASM JIT</PackageTags>
@@ -34,7 +34,6 @@
   <ItemGroup>
     <None Include="../LICENSE" Pack="true" PackagePath="LICENSE" />
     <None Include="../README.md" Pack="true" PackagePath="/"/>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
