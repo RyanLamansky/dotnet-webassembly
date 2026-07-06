@@ -50,6 +50,15 @@ public class Module
         set => this.types = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    /// <summary>
+    /// The recursion-group grouping of <see cref="Types"/> (WASM 3.0 garbage collection), or null when the module
+    /// uses no recursion groups or garbage-collection composite types (in which case <see cref="Types"/> is the sole,
+    /// flat representation and is written using the pre-3.0 encoding).  When non-null this is a parallel view over the
+    /// same <see cref="WebAssemblyType"/> instances as <see cref="Types"/>, preserving the on-the-wire grouping so it
+    /// can be reproduced exactly; it drives serialization.
+    /// </summary>
+    public IList<RecursionGroup>? RecursionGroups { get; set; }
+
     [DebuggerBrowsable(DebuggerBrowsableState.Never)] //Wrapped by a property
     private IList<Import>? imports;
 
@@ -257,13 +266,52 @@ public class Module
                         }
                         continue; //Skip normal post-section logic since this isn't a real section.
 
-                    case Section.Type: //Function signature declarations
+                    case Section.Type: //Composite type declarations (recursion groups of sub/composite types)
                         {
-                            var count = reader.ReadVarUInt32();
-                            var types = module.types = new List<WebAssemblyType>(checked((int)count));
+                            var groupCount = reader.ReadVarUInt32();
+                            var types = module.types = new List<WebAssemblyType>(checked((int)groupCount));
+                            var groups = new List<RecursionGroup>(checked((int)groupCount));
+                            var needsRecursionView = false;
 
-                            for (var i = 0; i < count; i++)
-                                types.Add(new WebAssemblyType(reader));
+                            for (var g = 0; g < groupCount; g++)
+                            {
+                                var lead = reader.ReadVarInt7();
+                                var group = new RecursionGroup();
+
+                                if (lead == CompositeTypeReader.RecursionGroupForm)
+                                {
+                                    needsRecursionView = true;
+                                    group.IsExplicit = true;
+
+                                    var subCount = checked((int)reader.ReadVarUInt32());
+                                    for (var s = 0; s < subCount; s++)
+                                    {
+                                        var subLead = reader.ReadVarInt7();
+                                        var type = CompositeTypeReader.ReadSubType(reader, subLead);
+                                        types.Add(type);
+                                        group.Types.Add(type);
+                                    }
+                                }
+                                else
+                                {
+                                    var type = CompositeTypeReader.ReadSubType(reader, lead);
+                                    types.Add(type);
+                                    group.Types.Add(type);
+                                }
+
+                                foreach (var type in group.Types)
+                                {
+                                    if (type.Form != FunctionType.Function || !type.IsFinal || type.SuperTypes is { Count: > 0 })
+                                        needsRecursionView = true;
+                                }
+
+                                groups.Add(group);
+                            }
+
+                            // Only surface the recursion-group view (which drives 3.0 emission) when the module uses a
+                            // feature the pre-3.0 flat encoding cannot reproduce byte-for-byte; otherwise leave it null
+                            // so pure function-type modules round-trip through the untouched pre-3.0 path.
+                            module.RecursionGroups = needsRecursionView ? groups : null;
                         }
                         break;
 
@@ -480,9 +528,33 @@ public class Module
         {
             WriteSection(buffer, writer, Section.Type, sectionWriter =>
             {
-                sectionWriter.WriteVar((uint)this.types.Count);
-                foreach (var type in this.types)
-                    type.WriteTo(sectionWriter);
+                var recursionGroups = this.RecursionGroups;
+                if (recursionGroups != null)
+                {
+                    // 3.0 emission: the top-level count is the number of recursion groups.
+                    sectionWriter.WriteVar((uint)recursionGroups.Count);
+                    foreach (var group in recursionGroups)
+                    {
+                        var groupTypes = group.Types;
+
+                        // A singleton group may be emitted as a bare implicit group (shorthand); groups with any other
+                        // member count, or explicitly-marked singletons, carry the 0x4E marker.
+                        if (group.IsExplicit || groupTypes.Count != 1)
+                        {
+                            sectionWriter.WriteVar((sbyte)CompositeTypeReader.RecursionGroupForm);
+                            sectionWriter.WriteVar((uint)groupTypes.Count);
+                        }
+
+                        foreach (var type in groupTypes)
+                            type.WriteTo(sectionWriter);
+                    }
+                }
+                else
+                {
+                    sectionWriter.WriteVar((uint)this.types.Count);
+                    foreach (var type in this.types)
+                        type.WriteTo(sectionWriter);
+                }
             });
         }
         WriteCustomSection(buffer, writer, Section.Type, customSectionsByPrecedingSection);

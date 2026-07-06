@@ -63,6 +63,7 @@ public class OpCodeTests
                 { "const", "Constant" },
                 { "misc", "MiscellaneousOperationPrefix" },
                 { "simd", "SimdOperationPrefix" },
+                { "gc", "GCPrefix" },
             };
 
         foreach (var kv in opCodeCharacteristicsByOpCode)

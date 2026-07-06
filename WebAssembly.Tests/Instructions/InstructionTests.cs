@@ -39,7 +39,7 @@ public class InstructionTests
     {
         var mismatch = string.Join(", ",
             InstructionTypes
-            .Where(x => !x.IsSubclassOf(typeof(MiscellaneousInstruction)) && !x.IsSubclassOf(typeof(SimdInstruction)))
+            .Where(x => !x.IsSubclassOf(typeof(MiscellaneousInstruction)) && !x.IsSubclassOf(typeof(SimdInstruction)) && !x.IsSubclassOf(typeof(GCInstruction)))
             .Select(type => (
             OpCode: ((Instruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).OpCode.ToString(),
             TypeName: type.Name
@@ -49,6 +49,26 @@ public class InstructionTests
             );
 
         Assert.AreEqual("", mismatch, "Instructions whose name do not match their opcode found.");
+    }
+
+    /// <summary>
+    /// Ensures that WebAssembly 3.0 garbage-collection instruction names match their GC opcode name.
+    /// </summary>
+    [TestMethod]
+    public void Instruction_NameMatchesGCOpcode()
+    {
+        var mismatch = string.Join(", ",
+            InstructionTypes
+                .Where(x => x.IsSubclassOf(typeof(GCInstruction)))
+                .Select(type => (
+                    GCOpCode: ((GCInstruction)type.GetConstructor(System.Type.EmptyTypes)!.Invoke(null)).GCOpCode.ToString(),
+                    TypeName: type.Name
+                ))
+                .Where(result => result.GCOpCode != result.TypeName)
+                .Select(result => result.TypeName)
+        );
+
+        Assert.AreEqual("", mismatch, "Instructions whose name do not match their GC opcode found.");
     }
 
     /// <summary>

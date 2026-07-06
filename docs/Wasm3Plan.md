@@ -19,7 +19,7 @@ The official feature list, and how each maps onto this library's "emit .NET IL v
 | Exception handling (`try_table` model) | Yes | Maps onto .NET exceptions; new section + opcodes. |
 | Relaxed SIMD | Yes | ~12 opcodes; we implement the deterministic default. |
 | Garbage collection (struct/array/i31) | Yes | By far the largest; depends on typed references. |
-| Deterministic profile | Partial / stance | Not an opcode set — a semantics commitment. We document which profile we honor (see below). |
+| Deterministic profile | Yes / stance | Not an opcode set — a semantics commitment. Documented and honored: IEEE-754 floats via the CLR, deterministic relaxed-SIMD defaults, with the `float_exprs` JIT-folding NaN caveats called out (see below). |
 | Custom annotation syntax | No | Text-format only; this library is binary-focused and has no `.wat` parser. |
 | JS string builtins | No | Host/JS integration with no meaning under .NET. Out of scope (matches the "no accessories" stance). |
 
@@ -231,17 +231,24 @@ See `Wasm3Phase7Design.md`'s Implementation notes for the opcode verification, t
 
 ### Phase 8 — Garbage collection  *(largest; depends on Phase 5)*
 
-- [ ] Type section overhaul: composite types (`func` | `struct` | `array`), **recursion groups**, explicit `sub`/`sub final` subtyping. This restructures `WebAssemblyType` / `FunctionType` reading and writing.
-- [ ] Heap types `any`/`eq`/`i31`/`struct`/`array`/`none` and their value-type encodings (built on Phase 5's `ReferenceType`).
-- [ ] Instructions: `struct.new`/`struct.new_default`/`struct.get`(`_s`/`_u`)/`struct.set`; `array.new`/`array.new_default`/`array.new_fixed`/`array.new_data`/`array.new_elem`/`array.get`(`_s`/`_u`)/`array.set`/`array.len`/`array.fill`/`array.copy`/`array.init_*`; `ref.test`/`ref.cast` (nullable + non-nullable); `ref.i31`/`i31.get_s`/`i31.get_u`; `any.convert_extern`/`extern.convert_any`.
-- [ ] .NET mapping — the central design question: represent WASM structs/arrays as runtime-generated .NET types (one CLR type per WASM struct/array, leaning on the GC we already get for free), with `ref.cast`/`ref.test` lowering to `castclass`/`isinst`. `i31` packs into a tagged reference or boxed int. Field/element access becomes `ldfld`/`stfld`/`ldelem`/`stelem`.
-- [ ] Categories: `gc/*` (`struct`, `array`, `i31`, `ref_test`, `ref_cast`, `type-subtyping`, …).
-- Risk: high — both the type algebra and the runtime representation are large. Sequence it last and consider a feature branch (per the maintainer's "iterate complex changes in a branch" preference).
+> Full design (verified encodings, canonicalization, CLR representation, milestones M8.1–M8.7): [Wasm3Phase8Design.md](Wasm3Phase8Design.md).
+
+- [x] Type section overhaul: composite types (`func` | `struct` | `array`), **recursion groups**, explicit `sub`/`sub final` subtyping. This restructures `WebAssemblyType` / `FunctionType` reading and writing. (M8.1: byte-identical round-trip, rec-group scoping.)
+- [x] Heap types `any`/`eq`/`i31`/`struct`/`array`/`none` and their value-type encodings (built on Phase 5's `ReferenceType`). (M8.1.)
+- [x] Instructions: `struct.new`/`struct.new_default`/`struct.get`(`_s`/`_u`)/`struct.set`; `array.new`/`array.new_default`/`array.new_fixed`/`array.new_data`/`array.new_elem`/`array.get`(`_s`/`_u`)/`array.set`/`array.len`/`array.fill`/`array.copy`/`array.init_*`; `ref.test`/`ref.cast` (nullable + non-nullable); `ref.i31`/`i31.get_s`/`i31.get_u`; `any.convert_extern`/`extern.convert_any`. (Structs M8.3, arrays M8.4, i31/`ref.eq` M8.5, casts/`br_on_cast`/conversions M8.6.)
+- [x] .NET mapping — the central design question: represent WASM structs/arrays as runtime-generated .NET types (one CLR type per canonical WASM struct/array, leaning on the GC we already get for free), with `ref.cast`/`ref.test` lowering to `castclass`/`isinst`. `i31` is a `WasmI31` object (value-comparing `ref.eq`). Field/element access becomes `ldfld`/`stfld`/`ldelem`/`stelem`. (M8.2 canonicalization, M8.3 emission.)
+- [x] Categories: every `gc/*` category — `struct`, `array`, `i31`, `ref_test`, `ref_cast`, `br_on_cast`/`br_on_cast_fail`, `extern`, `ref_eq`, `array_*`, `binary-gc`, and `type-subtyping` — plus `type-canon`, `type-equivalence`, and `type-rec` are all fully green. `gc/array`'s `array.8` closed by routing the general constant-expression compiler into the element-segment item path (M8.7); `type-subtyping` and `type-rec` 149/157/183/192 closed by runtime function-type identity (M8.8, design §10) — a per-delegate canonical-ancestry registry that makes `call_indirect`, concrete-func-index `ref.cast`/`ref.test`, and function-import linking exact rather than arity-shaped.
+- Risk: high — both the type algebra and the runtime representation are large. Delivered on `main` across M8.1–M8.8 (net8/9/10 × Debug/Release, zero failures); no GC gaps remain — the only skipped test in the whole suite is the always-ignored `DiscoverAllFailures` diagnostic helper.
 
 ### Cross-cutting — Deterministic profile (stance, not a phase)
 
-- [ ] Document that this library targets the **deterministic profile**: float ops already follow IEEE-754 via the CLR, relaxed-SIMD ops take their deterministic default (Phase 7), and NaN-payload edge cases remain the known `float_exprs` exceptions.
-- [ ] Note the existing non-determinism caveats already captured in `SpecTests.cs` (JIT folding of `x±0`/`x*1`) so the profile claim is honest.
+- [x] This library targets the **deterministic profile**.
+  Float operations follow IEEE-754 via the CLR (the same arithmetic the JIT emits for `float`/`double`), so the ratified `f32`/`f64` suites pass under the runner's NaN-canonicalization tolerance.
+  Every relaxed-SIMD operation takes its deterministic default lowering (Phase 7): most `relaxed_*` ops delegate to their non-relaxed twin, `relaxed_madd`/`relaxed_nmadd` use the correctly-rounded portable scalar `Math.FusedMultiplyAdd`, and the relaxed dot products have explicit per-lane implementations — so results are reproducible across hosts rather than implementation-defined.
+  The one honest exception is NaN-payload bit patterns under the JIT's identity-op folding (below).
+- [x] Non-determinism caveats are captured as `unsupported` (intentional avoidance) lines in `SpecTests.cs`, so the profile claim stays honest.
+  `float_exprs` lines 2403/2405/2407/2409/2411/2413/2415 are the `no_fold` assertions for `x±0`, `x*1`, `x/1`, and `demote(promote(x))`: the spec requires these identities are *not* folded (so a signaling-NaN operand is quieted by the real operation), but the .NET JIT folds them and leaves the sNaN unquieted.
+  These cannot reasonably be fixed under the CLR execution model and do not affect normal execution, so they are marked `unsupported` and leave the category green.
 
 ---
 

@@ -150,6 +150,21 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
             il.Emit(OpCodes.Ldfld, context.GetTable(this.Table));
             il.EmitLoadArg(parms.Length);
             il.Emit(OpCodes.Call, isTable64 ? FunctionTable.Get64Method : FunctionTable.IndexGetter);
+
+            // WebAssembly 3.0 GC (design §10): guard the arity castclass with the canonical function-type check.
+            // Two canonically-distinct func types can share a CLR delegate shape (differently-shaped rec groups, or
+            // (ref $a)/(ref $b) params both lowering to object), so the castclass alone would wrongly succeed; the
+            // guard traps ("indirect call type mismatch") when the selected function's registered canonical type is
+            // not a subtype of this call's declared type. A null or unregistered (host) delegate is left to the
+            // castclass and the subsequent invoke.
+            if (context.CanonicalTypes is { } map && this.Type < (uint)map.Descriptor.Length)
+            {
+                il.Emit(OpCodes.Dup);
+                il.Emit(OpCodes.Ldstr, map.Descriptor[this.Type]);
+                il.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WebAssembly.Runtime.WasmGC))
+                    .GetMethod(nameof(WebAssembly.Runtime.WasmGC.CheckIndirectCallType))!);
+            }
+
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);
 
             for (var k = 0; k < parms.Length; k++)

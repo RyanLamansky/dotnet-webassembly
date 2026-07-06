@@ -684,12 +684,9 @@ public class SpecTests
     /// <summary>Runs the return_call_ref tests.</summary>
     [TestMethod]
     public void SpecTest_return_call_ref()
-        // return_call_ref (typed refs + tail calls) — Phase 5.
-        => SpecTestRunner.Run("return_call_ref", skip:
-        [
-        3, 168, 169, 170, 171, 173, 174, 175, 176, 178, 179, 180, 181, 183, 185, 186, 187, 189, 193, 194, 195,
-         197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 213, 299, 306, 308, 319, 321, 334,
-        ]);
+        // return_call_ref (typed refs + tail calls) — Phase 5. The former skip list was stale: a fresh SpecDiscovery
+        // (Phase 8 M8.1) reports 0 failures, so the whole category passes and the list was removed.
+        => SpecTestRunner.Run("return_call_ref");
 
 
     // ==== WASM 3.0 — Multiple memories (Phase 3) ====
@@ -1009,12 +1006,11 @@ public class SpecTests
     /// <summary>Runs the exceptions/tag tests.</summary>
     [TestMethod]
     public void SpecTest_exceptions_tag()
-        // Tag section + tag import/export are supported (Phase 6). Lines 30/40/49 stay skipped: the modules at 30/40
-        // define their exception type inside a (rec …) group, which both parse paths reject until Phase 8 (GC
-        // rec-group type identity), and the assert_unlinkable at 49 imports one of those rec-group tags, so it fails
-        // to load with a rec-group error before its import mismatch can be observed. The category stays Inconclusive
-        // by design until Phase 8.
-        => SpecTestRunner.Run("exceptions/tag", skip: [30, 40, 49]);
+        // Tag section + tag import/export are supported (Phase 6). Rec-group tag type parsing landed in Phase 8 (M8.1);
+        // the iso-recursive canonical tag descriptor (M8.2) now distinguishes a rec-group tag by its group structure
+        // and member position, so lines 49/60 (assert_unlinkable importing a tag whose type is a different rec-group
+        // member than the exporter's) are correctly rejected. The whole category passes.
+        => SpecTestRunner.Run("exceptions/tag");
 
     /// <summary>Runs the exceptions/throw tests.</summary>
     [TestMethod]
@@ -1064,38 +1060,31 @@ public class SpecTests
 
     /// <summary>Runs the gc/array tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array() => SpecTestRunner.RunAllSkipped("gc/array", "GC types — Phase 8");
+    public void SpecTest_gc_array() => SpecTestRunner.Run("gc/array");
 
     /// <summary>Runs the gc/array_copy tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_copy() => SpecTestRunner.RunAllSkipped("gc/array_copy", "GC types — Phase 8");
+    public void SpecTest_gc_array_copy() => SpecTestRunner.Run("gc/array_copy");
 
     /// <summary>Runs the gc/array_fill tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_fill() => SpecTestRunner.RunAllSkipped("gc/array_fill", "GC types — Phase 8");
+    public void SpecTest_gc_array_fill() => SpecTestRunner.Run("gc/array_fill");
 
     /// <summary>Runs the gc/array_init_data tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_init_data() => SpecTestRunner.RunAllSkipped("gc/array_init_data", "GC types — Phase 8");
+    public void SpecTest_gc_array_init_data() => SpecTestRunner.Run("gc/array_init_data");
 
     /// <summary>Runs the gc/array_init_elem tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_init_elem() => SpecTestRunner.RunAllSkipped("gc/array_init_elem", "GC types — Phase 8");
+    public void SpecTest_gc_array_init_elem() => SpecTestRunner.Run("gc/array_init_elem");
 
     /// <summary>Runs the gc/array_new_data tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_new_data() => SpecTestRunner.RunAllSkipped("gc/array_new_data", "GC types — Phase 8");
+    public void SpecTest_gc_array_new_data() => SpecTestRunner.Run("gc/array_new_data");
 
     /// <summary>Runs the gc/array_new_elem tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_array_new_elem() => SpecTestRunner.RunAllSkipped("gc/array_new_elem", "GC types — Phase 8");
+    public void SpecTest_gc_array_new_elem() => SpecTestRunner.Run("gc/array_new_elem");
 
     /// <summary>Runs the gc/binary-gc tests.</summary>
     [TestMethod]
@@ -1103,78 +1092,69 @@ public class SpecTests
 
     /// <summary>Runs the gc/br_on_cast tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_br_on_cast() => SpecTestRunner.RunAllSkipped("gc/br_on_cast", "GC types — Phase 8");
+    public void SpecTest_gc_br_on_cast() => SpecTestRunner.Run("gc/br_on_cast");
 
     /// <summary>Runs the gc/br_on_cast_fail tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_br_on_cast_fail() => SpecTestRunner.RunAllSkipped("gc/br_on_cast_fail", "GC types — Phase 8");
+    public void SpecTest_gc_br_on_cast_fail() => SpecTestRunner.Run("gc/br_on_cast_fail");
 
     /// <summary>Runs the gc/extern tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_extern() => SpecTestRunner.RunAllSkipped("gc/extern", "GC types — Phase 8");
+    public void SpecTest_gc_extern() => SpecTestRunner.Run("gc/extern");
 
     /// <summary>Runs the gc/i31 tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_i31() => SpecTestRunner.RunAllSkipped("gc/i31", "GC types — Phase 8");
+    public void SpecTest_gc_i31() => SpecTestRunner.Run("gc/i31");
 
     /// <summary>Runs the gc/ref_cast tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_ref_cast() => SpecTestRunner.RunAllSkipped("gc/ref_cast", "GC types — Phase 8");
+    public void SpecTest_gc_ref_cast() => SpecTestRunner.Run("gc/ref_cast");
 
     /// <summary>Runs the gc/ref_eq tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_ref_eq() => SpecTestRunner.RunAllSkipped("gc/ref_eq", "GC types — Phase 8");
+    public void SpecTest_gc_ref_eq() => SpecTestRunner.Run("gc/ref_eq");
 
     /// <summary>Runs the gc/ref_test tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_ref_test() => SpecTestRunner.RunAllSkipped("gc/ref_test", "GC types — Phase 8");
+    public void SpecTest_gc_ref_test() => SpecTestRunner.Run("gc/ref_test");
 
     /// <summary>Runs the gc/struct tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_struct() => SpecTestRunner.RunAllSkipped("gc/struct", "GC types — Phase 8");
+    public void SpecTest_gc_struct() => SpecTestRunner.Run("gc/struct");
 
     /// <summary>Runs the gc/type-subtyping tests.</summary>
     [TestMethod]
-    // Whole category deferred: GC types — Phase 8.
-    public void SpecTest_gc_type_subtyping() => SpecTestRunner.RunAllSkipped("gc/type-subtyping", "GC types — Phase 8");
+    // Runtime function-type identity (M8.8, design §10) closes this category: its runtime asserts exercise
+    // ref.test/ref.cast to a concrete function index, call_indirect canonical-type mismatch, and function-import
+    // "incompatible import type" — all now decided by the funcref canonical-ancestry registry rather than the
+    // arity-shaped CLR delegate. Struct/array/i31 subtyping (M8.6) was already exercised by the other gc categories.
+    public void SpecTest_gc_type_subtyping() => SpecTestRunner.Run("gc/type-subtyping");
 
     /// <summary>Runs the type-canon tests.</summary>
     [TestMethod]
-    // Whole category deferred: recursive/structural type groups (GC) — Phase 8.
-    public void SpecTest_type_canon() => SpecTestRunner.RunAllSkipped("type-canon", "recursive/structural type groups (GC) — Phase 8");
+    public void SpecTest_type_canon()
+        // Recursive/structural type-group canonicalization (GC). With rec/sub/composite parsing and rec-group
+        // reference scoping (Phase 8 M8.1), a fresh SpecDiscovery reports 0 failures, so the whole category passes.
+        => SpecTestRunner.Run("type-canon");
 
     /// <summary>Runs the type-equivalence tests.</summary>
     [TestMethod]
     public void SpecTest_type_equivalence()
-        // Recursive/structural type-group equivalence (GC) — Phase 8. Several formerly-skipped lines now pass
-        // (typed-ref parsing and "unknown type" bounds checks landed in Phase 5); the list below is the fresh
-        // SpecDiscovery set. Line 77 references a later type index across singleton rec groups (an "unknown type"
-        // only the rec-group scoping rules reject — Phase 8).
-        => SpecTestRunner.Run("type-equivalence", skip:
-        [
-        30, 49, 77, 136, 161, 233, 238, 246, 257, 268, 279, 290, 308,
-        ]);
+        // Recursive/structural type-group equivalence (GC). Rec-group parsing plus the forward-reference scoping rule
+        // (Phase 8 M8.1) close the remaining gaps — including line 77's cross-singleton-group forward reference — so a
+        // fresh SpecDiscovery reports 0 failures and the whole category passes.
+        => SpecTestRunner.Run("type-equivalence");
 
     /// <summary>Runs the type-rec tests.</summary>
     [TestMethod]
     public void SpecTest_type_rec()
-        // recursive/structural type groups (GC) — Phase 8.
-        => SpecTestRunner.Run("type-rec", skip:
-        [
-        3, 39, 45, 71, 78, 137, 141, 143, 149, 157, 167, 174, 176, 183, 185, 192, 197,
-        // 22: a type references a later type index (forward reference across singleton rec groups), an "unknown
-        // type" the rec-group scoping rules reject — Phase 8. Previously threw by accident of the pre-M5.2 reftype
-        // mis-parse; the encoding now parses cleanly, so it defers until rec groups land.
-        22,
-        ]);
+        // Recursive/structural type groups (GC). Rec-group parsing + reference scoping (M8.1) and the iso-recursive
+        // CanonicalTypeMap (M8.2) rejected every "type mismatch" assert_invalid. The four formerly-skipped lines close
+        // with runtime function-type identity (M8.8, design §10): 149/157 (assert_unlinkable "incompatible import
+        // type") are function imports whose declared type is a distinct rec-group member — now matched by the exported
+        // function's canonical ancestry at link time; 183/192 (assert_trap "indirect call type mismatch") are
+        // call_indirect over a canonically-distinct table function — now trapped by the call_indirect canonical guard.
+        => SpecTestRunner.Run("type-rec");
 
 
     // ==== WASM 3.0 — Module instances & annotations ====
@@ -1185,6 +1165,8 @@ public class SpecTests
 
     /// <summary>Runs the instance tests.</summary>
     [TestMethod]
-    // Whole category deferred: module instances with 3.0 features — Part B.
-    public void SpecTest_instance() => SpecTestRunner.RunAllSkipped("instance", "module instances with 3.0 features — Part B");
+    public void SpecTest_instance()
+        // The RunAllSkipped label was stale: instance.* uses tags/tables/globals/funcref/refnull (no GC), and a fresh
+        // SpecDiscovery (Phase 8 M8.1) reports 0 failures, so the whole category passes.
+        => SpecTestRunner.Run("instance");
 }

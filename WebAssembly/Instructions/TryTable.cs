@@ -115,7 +115,7 @@ public class TryTable : BlockTypeInstruction
         {
             var slotType = snapshot[entryHeight - 1 - slot]
                 ?? throw new OpCodeCompilationException(OpCode.TryTable, "Cannot determine the type of an operand at try_table entry.");
-            var local = context.DeclareLocal(slotType.ToSystemType());
+            var local = context.DeclareLocal(context.SystemType(slotType));
             context.Emit(OpCodes.Stloc, local);
             spillLocals[slot - spillStart] = local;
         }
@@ -362,7 +362,7 @@ public class TryTable : BlockTypeInstruction
             context.Emit(OpCodes.Ldloc, exception);
             context.Emit(OpCodes.Ldc_I4, i);
             context.Emit(OpCodes.Call, getArgument); // Public accessor: the boxed operand at index i.
-            var clr = tagParameters[i].ToSystemType();
+            var clr = context.SystemType(tagParameters[i]);
             if (clr.IsValueType)
                 context.Emit(OpCodes.Unbox_Any, context.Configuration.NeutralizeType(clr));
             else if (clr != typeof(object))

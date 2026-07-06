@@ -32,38 +32,62 @@ internal sealed class Signature : IEquatable<WebAssemblyType>
     // A synthetic single-result signature used for an inline typed-reference block result
     // (`block (result (ref null? ht))`), routing it through the same multi-value block machinery.
     public Signature(ValType returnType, CompilerConfiguration configuration)
+        : this(returnType, configuration, null)
+    {
+    }
+
+    // As above, with the per-index composite kinds so a concrete struct/array result resolves to a GC object slot.
+    public Signature(ValType returnType, CompilerConfiguration configuration, FunctionType[]? indexedKinds)
         : this()
     {
-        this.ReturnTypes = [configuration.NeutralizeType(returnType.ToSystemType())];
+        this.ReturnTypes = [configuration.NeutralizeType(returnType.ToSystemType(indexedKinds))];
         this.RawReturnTypes = [returnType];
     }
 
-    public Signature(Reader reader, uint typeIndex, CompilerConfiguration configuration)
+    // True for a function composite type; false for a WASM 3.0 GC composite (struct/array), which is recorded so its
+    // index stays addressable but carries no runtime function signature yet.
+    public readonly bool IsFunction;
+
+    public Signature(WebAssemblyType type, uint typeIndex, CompilerConfiguration configuration)
+        : this(type, typeIndex, configuration, null)
+    {
+    }
+
+    // indexedKinds carries the composite kind of every declared type index so a concrete struct/array reference in
+    // a parameter/result resolves to a GC object slot (object) rather than the Delegate assumed for func indices.
+    public Signature(WebAssemblyType type, uint typeIndex, CompilerConfiguration configuration, FunctionType[]? indexedKinds)
     {
         this.TypeIndex = typeIndex;
 
-        var form = reader.ReadVarInt7(); //Function Type
-        if ((FunctionType)form != FunctionType.Function)
-            throw new ModuleLoadException($"GC composite types (form 0x{(byte)form:X2}) are not yet supported (Phase 8).", reader.Offset);
+        if (type.Form != FunctionType.Function)
+        {
+            // A struct/array composite has no runtime function signature; record an empty placeholder so the type
+            // index remains addressable (its CLR representation is the emitted GC class, resolved separately).
+            this.ReturnTypes = this.ParameterTypes = [];
+            this.RawReturnTypes = this.RawParameterTypes = [];
+            return;
+        }
 
-        var parameters = this.ParameterTypes = new Type[reader.ReadVarUInt32()];
+        this.IsFunction = true;
+
+        var sourceParameters = type.Parameters;
+        var parameters = this.ParameterTypes = new Type[sourceParameters.Count];
         var rawParameters = this.RawParameterTypes = new ValType[parameters.Length];
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var value = ReferenceType.ReadValueType(reader, out var refType);
-            var canonical = rawParameters[i] = ValType.FromValueType(value, refType);
-            parameters[i] = configuration.NeutralizeType(canonical.ToSystemType());
+            var canonical = rawParameters[i] = ValType.FromValueType(sourceParameters[i], type.GetParameterRefType(i));
+            parameters[i] = configuration.NeutralizeType(canonical.ToSystemType(indexedKinds));
         }
 
-        var returns = this.ReturnTypes = new Type[reader.ReadVarUInt32()];
+        var sourceReturns = type.Returns;
+        var returns = this.ReturnTypes = new Type[sourceReturns.Count];
         var rawReturns = this.RawReturnTypes = new ValType[returns.Length];
 
         for (var i = 0; i < returns.Length; i++)
         {
-            var value = ReferenceType.ReadValueType(reader, out var refType);
-            var canonical = rawReturns[i] = ValType.FromValueType(value, refType);
-            returns[i] = configuration.NeutralizeType(canonical.ToSystemType());
+            var canonical = rawReturns[i] = ValType.FromValueType(sourceReturns[i], type.GetReturnRefType(i));
+            returns[i] = configuration.NeutralizeType(canonical.ToSystemType(indexedKinds));
         }
     }
 

@@ -82,7 +82,7 @@ public class Throw : Instruction, IEquatable<Throw>
         for (var i = parameters.Length - 1; i >= 0; i--)
         {
             context.PopStackNoReturn(OpCode.Throw, parameters[i]);
-            temps[i] = context.DeclareLocal(parameters[i].ToSystemType());
+            temps[i] = context.DeclareLocal(context.SystemType(parameters[i]));
             context.Emit(OpCodes.Stloc, temps[i]);
         }
 
@@ -97,7 +97,7 @@ public class Throw : Instruction, IEquatable<Throw>
             context.Emit(OpCodes.Dup);
             context.Emit(OpCodes.Ldc_I4, i);
             context.Emit(OpCodes.Ldloc, temps[i]);
-            var clrType = parameters[i].ToSystemType();
+            var clrType = context.SystemType(parameters[i]);
             if (clrType.IsValueType)
                 context.Emit(OpCodes.Box, context.Configuration.NeutralizeType(clrType));
             context.Emit(OpCodes.Stelem_Ref);

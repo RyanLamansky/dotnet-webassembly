@@ -92,6 +92,26 @@ public abstract class Instruction : IEquatable<Instruction>
                         throw new ModuleLoadException($"Opcode \"{simdOpCode}\" is not permitted in intializer expressions.", initialOffset);
                     yield return new V128Const(reader);
                     break;
+                case OpCode.GCPrefix:
+                    // WebAssembly 3.0 GC constants: struct.new / struct.new_default (M8.3) and array.new / array.new_default
+                    // / array.new_fixed (M8.4) appear in global and element-item initializers (ref.i31 and the extern
+                    // conversions join in later milestones). The "251" in the not-permitted message preserves the
+                    // pre-3.0 pending-feature signature for the rest.
+                    var gcConstOffset = reader.Offset;
+                    var gcConstOpCode = (GCOpCode)reader.ReadVarUInt32();
+                    switch (gcConstOpCode)
+                    {
+                        default: throw new ModuleLoadException($"Opcode \"251\" is not permitted in intializer expressions (GC {gcConstOpCode}).", gcConstOffset);
+                        case GCOpCode.StructNew: yield return new StructNew(reader); break;
+                        case GCOpCode.StructNewDefault: yield return new StructNewDefault(reader); break;
+                        case GCOpCode.ArrayNew: yield return new ArrayNew(reader); break;
+                        case GCOpCode.ArrayNewDefault: yield return new ArrayNewDefault(reader); break;
+                        case GCOpCode.ArrayNewFixed: yield return new ArrayNewFixed(reader); break;
+                        case GCOpCode.AnyConvertExtern: yield return new AnyConvertExtern(reader); break;
+                        case GCOpCode.ExternConvertAny: yield return new ExternConvertAny(reader); break;
+                        case GCOpCode.RefI31: yield return new RefI31(reader); break;
+                    }
+                    break;
                 case OpCode.End: yield return new End(); yield break;
             }
         }
@@ -161,6 +181,7 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.CallRef: yield return new CallRef(reader); break;
                 case OpCode.ReturnCallRef: yield return new ReturnCallRef(reader); break;
                 case OpCode.RefAsNonNull: yield return new RefAsNonNull(); break;
+                case OpCode.RefEqual: yield return new RefEqual(); break;
                 case OpCode.BranchOnNull: yield return new BranchOnNull(reader); break;
                 case OpCode.BranchOnNonNull: yield return new BranchOnNonNull(reader); break;
                 case OpCode.Drop: yield return new Drop(); break;
@@ -333,6 +354,49 @@ public abstract class Instruction : IEquatable<Instruction>
                 case OpCode.Int64Extend8Signed: yield return new Int64Extend8Signed(); break;
                 case OpCode.Int64Extend16Signed: yield return new Int64Extend16Signed(); break;
                 case OpCode.Int64Extend32Signed: yield return new Int64Extend32Signed(); break;
+
+                case OpCode.GCPrefix:
+                    var gcOpCodeOffset = reader.Offset;
+                    // The opcode following the 0xFB prefix is a LEB128 u32. struct.* (M8.3) and array.* (M8.4) are
+                    // implemented; the "251" in the default message preserves the pre-3.0 pending-feature signature
+                    // for the remainder (i31/ref.test/ref.cast/br_on_cast/conversions).
+                    var gcOpCode = (GCOpCode)reader.ReadVarUInt32();
+                    switch (gcOpCode)
+                    {
+                        default: throw new ModuleLoadException($"Don't know how to parse opcode \"251\" (GC {gcOpCode}).", gcOpCodeOffset);
+                        case GCOpCode.StructNew: yield return new StructNew(reader); break;
+                        case GCOpCode.StructNewDefault: yield return new StructNewDefault(reader); break;
+                        case GCOpCode.StructGet: yield return new StructGet(reader); break;
+                        case GCOpCode.StructGetSigned: yield return new StructGetSigned(reader); break;
+                        case GCOpCode.StructGetUnsigned: yield return new StructGetUnsigned(reader); break;
+                        case GCOpCode.StructSet: yield return new StructSet(reader); break;
+                        case GCOpCode.ArrayNew: yield return new ArrayNew(reader); break;
+                        case GCOpCode.ArrayNewDefault: yield return new ArrayNewDefault(reader); break;
+                        case GCOpCode.ArrayNewFixed: yield return new ArrayNewFixed(reader); break;
+                        case GCOpCode.ArrayNewData: yield return new ArrayNewData(reader); break;
+                        case GCOpCode.ArrayNewElem: yield return new ArrayNewElem(reader); break;
+                        case GCOpCode.ArrayGet: yield return new ArrayGet(reader); break;
+                        case GCOpCode.ArrayGetSigned: yield return new ArrayGetSigned(reader); break;
+                        case GCOpCode.ArrayGetUnsigned: yield return new ArrayGetUnsigned(reader); break;
+                        case GCOpCode.ArraySet: yield return new ArraySet(reader); break;
+                        case GCOpCode.ArrayLen: yield return new ArrayLen(reader); break;
+                        case GCOpCode.ArrayFill: yield return new ArrayFill(reader); break;
+                        case GCOpCode.ArrayCopy: yield return new ArrayCopy(reader); break;
+                        case GCOpCode.ArrayInitData: yield return new ArrayInitData(reader); break;
+                        case GCOpCode.ArrayInitElem: yield return new ArrayInitElem(reader); break;
+                        case GCOpCode.RefTest: yield return new RefTest(false, reader); break;
+                        case GCOpCode.RefTestNull: yield return new RefTest(true, reader); break;
+                        case GCOpCode.RefCast: yield return new RefCast(false, reader); break;
+                        case GCOpCode.RefCastNull: yield return new RefCast(true, reader); break;
+                        case GCOpCode.BranchOnCast: yield return new BranchOnCast(reader); break;
+                        case GCOpCode.BranchOnCastFail: yield return new BranchOnCastFail(reader); break;
+                        case GCOpCode.AnyConvertExtern: yield return new AnyConvertExtern(reader); break;
+                        case GCOpCode.ExternConvertAny: yield return new ExternConvertAny(reader); break;
+                        case GCOpCode.RefI31: yield return new RefI31(reader); break;
+                        case GCOpCode.I31GetSigned: yield return new I31GetSigned(reader); break;
+                        case GCOpCode.I31GetUnsigned: yield return new I31GetUnsigned(reader); break;
+                    }
+                    break;
 
                 case OpCode.MiscellaneousOperationPrefix:
                     var miscellaneousOpCodeOffset = reader.Offset;

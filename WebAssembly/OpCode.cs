@@ -1151,6 +1151,12 @@ public enum OpCode : byte
     RefFunc = 0xd2,
 
     /// <summary>
+    /// (eqref eqref){i32}; Compare two references for equality, with i31 identity value-based (WASM 3.0 GC).
+    /// </summary>
+    [OpCodeCharacteristics("ref.eq")]
+    RefEqual = 0xd3,
+
+    /// <summary>
     /// (ref null ht){ref ht}; Convert a nullable reference to a non-null one, trapping on null (WASM 3.0).
     /// </summary>
     [OpCodeCharacteristics("ref.as_non_null")]
@@ -1167,6 +1173,12 @@ public enum OpCode : byte
     /// </summary>
     [OpCodeCharacteristics("br_on_non_null")]
     BranchOnNonNull = 0xd6,
+
+    /// <summary>
+    /// Prefix byte for WASM 3.0 garbage-collection operations (struct/array/i31/ref.test/ref.cast).
+    /// </summary>
+    [OpCodeCharacteristics("gc")]
+    GCPrefix = 0xfb,
 
     /// <summary>
     /// Prefix byte for miscellaneous operations.

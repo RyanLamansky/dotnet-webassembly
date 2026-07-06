@@ -11,9 +11,12 @@ internal static class TypeAlgebra
 {
     /// <summary>
     /// Determines whether <paramref name="sub"/> is a subtype of <paramref name="super"/>. <paramref name="types"/>
-    /// is the module's type section, consulted only for structural comparison of concrete-index references.
+    /// is the module's type section, consulted only for structural comparison of concrete-index references, and
+    /// <paramref name="canonical"/> is its iso-recursive canonicalization (WebAssembly 3.0), used to decide
+    /// concrete-index equality and declared subtyping. When <paramref name="canonical"/> is null the pre-3.0
+    /// structural rule applies.
     /// </summary>
-    public static bool IsSubtype(ValType sub, ValType super, Signature[]? types)
+    public static bool IsSubtype(ValType sub, ValType super, Signature[]? types, CanonicalTypeMap? canonical = null)
     {
         if (sub.IsReference != super.IsReference)
             return false;
@@ -25,24 +28,48 @@ internal static class TypeAlgebra
         if (sub.IsNullable && !super.IsNullable)
             return false;
 
-        return HeapSubtype(sub, super, types);
+        return HeapSubtype(sub, super, types, canonical);
     }
 
-    private static bool HeapSubtype(ValType sub, ValType super, Signature[]? types)
+    private static bool HeapSubtype(ValType sub, ValType super, Signature[]? types, CanonicalTypeMap? canonical)
     {
         if (sub.IsIndexed && super.IsIndexed)
-            return StructurallyEqual(sub.TypeIndex, super.TypeIndex, types, null);
+        {
+            // Iso-recursive identity plus declared single inheritance (canonicalization respects rec-group
+            // boundaries and member position); fall back to raw structural equality only pre-canonicalization.
+            return canonical is { } map
+                ? map.IsDeclaredSubtype(sub.TypeIndex, super.TypeIndex)
+                : StructurallyEqual(sub.TypeIndex, super.TypeIndex, types, null);
+        }
 
-        // A concrete function type is a subtype of func (and, reflexively, of itself, handled above).
+        // A concrete type is a subtype of the abstract top(s) of its own hierarchy.
         if (sub.IsIndexed)
-            return super.HeapType == WebAssemblyHeapType.Func;
+            return ConcreteSubtypeOfAbstract(ConcreteKind(sub.TypeIndex, types, canonical), super.HeapType);
 
-        // nofunc is the bottom of the func hierarchy, so it is a subtype of every concrete function type.
+        // The bottom of a hierarchy is a subtype of every concrete type in that hierarchy.
         if (super.IsIndexed)
-            return sub.HeapType == WebAssemblyHeapType.NoFunc;
+        {
+            return ConcreteKind(super.TypeIndex, types, canonical) switch
+            {
+                FunctionType.Struct or FunctionType.Array => sub.HeapType == WebAssemblyHeapType.None,
+                _ => sub.HeapType == WebAssemblyHeapType.NoFunc,
+            };
+        }
 
         return AbstractHeapSubtype(sub.HeapType, super.HeapType);
     }
+
+    // The composite kind of a concrete type index. Without a canonical map (pre-3.0) every concrete type is a
+    // function; with one, struct/array indices report their real kind so the abstract lattice routes correctly.
+    private static FunctionType ConcreteKind(uint index, Signature[]? types, CanonicalTypeMap? canonical) =>
+        canonical is { } map && index < (uint)map.Kind.Length ? map.Kind[index] : FunctionType.Function;
+
+    private static bool ConcreteSubtypeOfAbstract(FunctionType kind, WebAssemblyHeapType super) => kind switch
+    {
+        FunctionType.Struct => super is WebAssemblyHeapType.Struct or WebAssemblyHeapType.Eq or WebAssemblyHeapType.Any,
+        FunctionType.Array => super is WebAssemblyHeapType.Array or WebAssemblyHeapType.Eq or WebAssemblyHeapType.Any,
+        _ => super == WebAssemblyHeapType.Func,
+    };
 
     private static bool AbstractHeapSubtype(WebAssemblyHeapType a, WebAssemblyHeapType b)
     {

@@ -114,7 +114,7 @@ public class SelectWithType : Instruction, IEquatable<SelectWithType>
         context.PopStackNoReturn(this.OpCode, valType);
         context.Stack.Push(valType);
 
-        var systemType = valType.ToSystemType();
+        var systemType = context.SystemType(valType);
         HelperMethod helper;
         if (valType.IsReference)
             helper = HelperMethod.SelectObject; // Every reference (funcref/externref/typed) selects via the object helper.

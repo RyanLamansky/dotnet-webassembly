@@ -196,19 +196,31 @@ public class ReferenceTypeTests
     }
 
     /// <summary>
+    /// A type-section entry whose form byte is <c>0x5F</c> (struct) is a WASM 3.0 GC composite type, parsed since
+    /// Phase 8 (M8.1) and surfaced through the object model with a byte-identical round-trip.
     /// </summary>
     [TestMethod]
-    public void ReferenceType_CompositeTypeForm_Rejected()
+    public void ReferenceType_CompositeTypeForm_StructParsed()
     {
-        // A type section entry whose form byte is 0x5F (struct) is a GC composite type, deferred to Phase 8.
         var bytes = new byte[]
         {
             0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
-            0x01, 0x03, 0x01, 0x5f, 0x00, // type section: 1 entry, form 0x5f (struct), 0 fields
+            0x01, 0x03, 0x01, 0x5f, 0x00, // type section: 1 group, bare struct composite (0x5f), 0 fields
         };
         using var input = new MemoryStream(bytes);
-        var exception = Assert.ThrowsExactly<ModuleLoadException>(() => Module.ReadFromBinary(input));
-        StringAssert.Contains(exception.Message, "Phase 8");
+        var module = Module.ReadFromBinary(input);
+
+        var type = module.Types.Single();
+        Assert.AreEqual(FunctionType.Struct, type.Form);
+        Assert.IsNotNull(type.Fields);
+        Assert.AreEqual(0, type.Fields!.Count);
+        Assert.IsTrue(type.IsFinal);
+        Assert.IsNotNull(module.RecursionGroups);
+        Assert.AreEqual(1, module.RecursionGroups!.Count);
+
+        using var output = new MemoryStream();
+        module.WriteToBinary(output);
+        CollectionAssert.AreEqual(bytes, output.ToArray());
     }
 
     private static Module BuildModuleWithGlobalInit(ReferenceType contentRefType, Instruction value)

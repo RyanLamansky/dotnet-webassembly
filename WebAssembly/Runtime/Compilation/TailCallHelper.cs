@@ -31,7 +31,7 @@ internal static class TailCallHelper
         var locals = new LocalBuilder[types.Length];
         for (var i = types.Length - 1; i >= 0; i--)
         {
-            locals[i] = context.DeclareLocal(types[i].ToSystemType());
+            locals[i] = context.DeclareLocal(context.SystemType(types[i]));
             context.Emit(OpCodes.Stloc, locals[i]);
         }
 

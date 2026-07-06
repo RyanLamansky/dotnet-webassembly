@@ -135,5 +135,73 @@ public class PersistedAssemblyTests
         Assert.AreEqual(42, f.Invoke(instance, [1]), "No throw: the try body's result flows out.");
         Assert.AreEqual(23, f.Invoke(instance, [0]), "Throw caught: control reaches the catch label.");
     }
+
+    /// <summary>
+    /// A module that allocates a garbage-collected struct, downcasts it through the abstract and concrete
+    /// <c>ref.cast</c> forms, and reads a field survives the WASM-to-DLL path. This exercises the emitted GC class,
+    /// its parameterless constructor, and the <see cref="WasmStructObject"/>/<see cref="WasmI31"/> references under
+    /// the persisted <c>NeutralizeType</c> mapping (the M8.6 cast lowering).
+    /// </summary>
+    [TestMethod]
+    public void PersistedAssembly_StructCast_RoundTrip()
+    {
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType
+        {
+            Form = FunctionType.Struct,
+            Fields = [new StructField { StorageType = WebAssemblyValueType.Int32, IsMutable = true }],
+        }); // 0: (struct (field i32))
+        module.Types.Add(new WebAssemblyType { Returns = [WebAssemblyValueType.Int32] }); // 1: () -> (i32)
+        module.Functions.Add(new Function { Type = 1 });
+        module.Exports.Add(new Export { Name = "f", Index = 0 });
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new Int32Constant(42),
+                new StructNew { Type = 0 },                        // (ref 0)
+                new RefCast { HeapType = WebAssemblyHeapType.Struct }, // (ref struct) via WasmStructObject
+                new RefCast { TypeIndex = 0 },                     // back to (ref 0) via the emitted class
+                new StructGet { Type = 0, Field = 0 },             // 42
+                new End(),
+            ],
+        });
+
+        var (type, instance) = CompileLoadAndInstantiate(module, out _);
+
+        var f = type.GetMethod("f");
+        Assert.IsNotNull(f);
+        Assert.AreEqual(42, f.Invoke(instance, null));
+    }
+
+    /// <summary>
+    /// A module that boxes an <c>i31</c> and reads it back survives the WASM-to-DLL path, exercising the
+    /// <see cref="WasmI31"/> allocation and accessor under the persisted <c>NeutralizeType</c> mapping.
+    /// </summary>
+    [TestMethod]
+    public void PersistedAssembly_I31_RoundTrip()
+    {
+        var module = new Module();
+        module.Types.Add(new WebAssemblyType { Returns = [WebAssemblyValueType.Int32] }); // 0: () -> (i32)
+        module.Functions.Add(new Function { Type = 0 });
+        module.Exports.Add(new Export { Name = "f", Index = 0 });
+        module.Codes.Add(new FunctionBody
+        {
+            Code =
+            [
+                new Int32Constant(-1),
+                new RefI31(),                                      // (ref i31), payload masked to 0x7FFFFFFF
+                new RefCast { HeapType = WebAssemblyHeapType.I31 }, // downcast via WasmI31
+                new I31GetUnsigned(),                              // 2147483647
+                new End(),
+            ],
+        });
+
+        var (type, instance) = CompileLoadAndInstantiate(module, out _);
+
+        var f = type.GetMethod("f");
+        Assert.IsNotNull(f);
+        Assert.AreEqual(2147483647, f.Invoke(instance, null));
+    }
 }
 #endif

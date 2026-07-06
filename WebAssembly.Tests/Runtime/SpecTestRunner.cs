@@ -312,6 +312,21 @@ static partial class SpecTestRunner
                             // point (WebAssembly 3.0 definite-assignment); the compiler rejects it at validation.
                             case "uninitialized local":
                             case "unknown type":
+                            // WASM 3.0 garbage collection: struct.set targeting an immutable field is rejected at
+                            // validation because the emitted field is written only through struct.new.
+                            case "field is immutable":
+                            // WASM 3.0 garbage collection arrays: array.set/fill/copy/init_* on an immutable array,
+                            // array.new_data/init_data on a reference element, and array.copy with an unassignable
+                            // source element are all rejected at validation.
+                            case "array is immutable":
+                            case "array type is not numeric or vector":
+                            case "array types do not match":
+                            // WASM 3.0 garbage collection: an illegal declared subtype — a final or out-of-range
+                            // supertype, or a composite that is not a structural subtype of its declared supertype —
+                            // is rejected at validation. wasm-tools emits both the bare "sub type" and the longer
+                            // "sub type N does not match super type M".
+                            case "sub type":
+                            case var subType when subType.StartsWith("sub type", StringComparison.Ordinal):
                             // WASM 3.0 exception handling: a tag whose referenced type has non-empty results, or a
                             // catch clause / throw naming a tag index the module doesn't define.
                             case "non-empty tag result type":
@@ -385,6 +400,12 @@ static partial class SpecTestRunner
                             // .NET NullReferenceException from the delegate invoke / explicit null check.
                             case "null function reference":
                             case "null reference":
+                            // WASM 3.0 garbage collection: struct.get/struct.set (and array access) on a null reference
+                            // surfaces as a .NET NullReferenceException from the field/element access.
+                            case "null structure reference":
+                            case "null array reference":
+                            // i31.get_s/get_u on a null i31 reference surfaces as a .NET NullReferenceException.
+                            case "null i31 reference":
                                 Assert.ThrowsExactly<NullReferenceException>(trapExpected, $"{command.line}");
                                 continue;
                             case "out of bounds memory access":
@@ -406,6 +427,9 @@ static partial class SpecTestRunner
                                 }
                                 throw new AssertFailedException($"{command.line} should have thrown an exception but did not.");
                             case "out of bounds table access":
+                            // WASM 3.0 garbage collection: an out-of-range array index (array.get/set/fill/copy/init_*)
+                            // surfaces as a .NET IndexOutOfRangeException.
+                            case "out of bounds array access":
                             // wasm-tools emits the bare "out of bounds" for some memory64/table64 bulk traps; it
                             // covers either a memory or a table access, so accept any of the range-trap types.
                             case "out of bounds":
@@ -456,6 +480,11 @@ static partial class SpecTestRunner
                                 }
                                 continue;
                             case "indirect call type mismatch":
+                            // WASM 3.0 garbage collection: ref.cast / br_on_cast_fail to a mismatched type surfaces as
+                            // a .NET InvalidCastException (from castclass or the WasmGC.FailCast helper). wasm-tools
+                            // emits the shorter "cast" text for the gc/type-subtyping suite.
+                            case "cast failure":
+                            case "cast":
                                 Assert.ThrowsExactly<InvalidCastException>(trapExpected, $"{command.line}");
                                 continue;
                             case "unreachable":
@@ -675,6 +704,39 @@ static partial class SpecTestRunner
         // non-null function reference (a CLR Delegate).
         if (rawExpected is FuncRefValue funcRef)
             return funcRef.value == "null" ? actual is null : actual is Delegate;
+
+        // WASM 3.0 GC: a bare structref/arrayref/eqref/i31ref (no value) asserts "any non-null reference of this
+        // kind"; a "null" payload asserts a null reference. Struct/array/i31 are the emitted GC classes, eq is any
+        // of them (IWasmEq). These carry no identity in the JSON, exactly like the funcref precedent.
+        if (rawExpected is StructRefValue or ArrayRefValue or EqRefValue or I31RefValue)
+        {
+            if (((ReferenceLikeValue)rawExpected).value is "null")
+                return actual is null;
+            return rawExpected switch
+            {
+                StructRefValue => actual is WasmStructObject,
+                ArrayRefValue => actual is WasmArrayObject,
+                I31RefValue => actual is WasmI31,
+                _ => actual is IWasmEq,
+            };
+        }
+
+        // WASM 3.0 GC: a bare anyref asserts any non-null reference; a "null" payload asserts null; a host-ref
+        // payload (an internalized/externalized extern) compares by its opaque string value.
+        if (rawExpected is AnyRefValue anyRef)
+        {
+            if (anyRef.value is null)
+                return actual is not null;
+            if (anyRef.value == "null")
+                return actual is null;
+            return Equals(anyRef.BoxedValue, actual);
+        }
+
+        // A bare externref (no value) likewise asserts any non-null reference — an externalized GC value
+        // (i31/struct/array) surfaces as its emitted object. A "null" payload asserts null; a host-ref payload
+        // compares by its opaque string value (handled by the boxed-value path below).
+        if (rawExpected is ExternRefValue externRef && externRef.value is null)
+            return actual is not null;
 
         // 'either' (relaxed-simd): the actual result matches if it equals any one of the listed alternatives.
         // The deterministic profile this library implements always produces one of them. A comparison that
@@ -1095,7 +1157,13 @@ static partial class SpecTestRunner
         public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
-    class AnyRefValue() : ReferenceLikeValue(RawValueType.anyref);
+    // WASM 3.0 GC: an anyref value carries a host reference by its opaque string payload, exactly like externref
+    // (an internalized (ref.extern N) surfaces as the string "N"); a bare anyref (no value) asserts any non-null
+    // reference and "null" asserts null. This mirrors ExternRefValue's boxing rather than the throwing base.
+    class AnyRefValue() : ReferenceLikeValue(RawValueType.anyref)
+    {
+        public override object? BoxedValue => value == "null" ? null : value;
+    }
     class EqRefValue() : ReferenceLikeValue(RawValueType.eqref);
     class StructRefValue() : ReferenceLikeValue(RawValueType.structref);
     class ArrayRefValue() : ReferenceLikeValue(RawValueType.arrayref);

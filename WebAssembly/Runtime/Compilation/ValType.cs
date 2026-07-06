@@ -103,14 +103,29 @@ internal readonly struct ValType : IEquatable<ValType>
     public BlockType ToBlockType() => (BlockType)(sbyte)this.ToNarrow();
 
     /// <summary>The CLR type used to represent a value of this type at runtime.</summary>
-    public Type ToSystemType()
+    /// <remarks>
+    /// Without <paramref name="indexedKinds"/> a concrete type index is assumed to be a function type
+    /// (Delegate-shaped), which is correct for every pre-3.0 module.  When the module's per-index composite kinds
+    /// are supplied (WebAssembly 3.0 garbage collection), a concrete struct/array index instead maps to
+    /// <see cref="object"/> — a GC reference slot — with its specific emitted class applied by <c>castclass</c> at
+    /// use sites (slot uniformity).
+    /// </remarks>
+    /// <param name="indexedKinds">
+    /// The composite kind of each declared type index, or null to treat every concrete index as a function type.
+    /// </param>
+    public Type ToSystemType(FunctionType[]? indexedKinds)
     {
         if (!this.IsReference)
             return this.Numeric.ToSystemType();
 
-        // Every concrete type in Phase 5 is a function type; the func hierarchy is Delegate-shaped, everything else is object.
+        // The func hierarchy is Delegate-shaped; every other reference (abstract or concrete GC) is object.
         if (this.IsIndexed)
+        {
+            if (indexedKinds is { } kinds && this.TypeIndex < (uint)kinds.Length
+                && kinds[this.TypeIndex] is FunctionType.Struct or FunctionType.Array)
+                return typeof(object);
             return typeof(System.Delegate);
+        }
 
         return this.HeapType switch
         {
@@ -118,6 +133,9 @@ internal readonly struct ValType : IEquatable<ValType>
             _ => typeof(object),
         };
     }
+
+    /// <summary>The CLR type used to represent a value of this type at runtime (concrete indices assumed func).</summary>
+    public Type ToSystemType() => this.ToSystemType(null);
 
     /// <summary>
     /// The narrow <see cref="WebAssemblyValueType"/> that best represents this type, for the public exception surfaces.

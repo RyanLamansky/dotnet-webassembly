@@ -191,6 +191,82 @@ public static class Compile
             throw new ModuleLoadException($"unknown type {valType.TypeIndex}: the module defines only {typeCount} type(s).", offset);
     }
 
+    // Whether the composite type `sub` is a legal declared subtype of `super` (WASM 3.0 GC). The composite kinds must
+    // match; a function's params are contravariant and results covariant; a struct may add fields (width) and refine
+    // shared ones (depth); an array refines its element. Field/element refinement is covariant when immutable and
+    // invariant when mutable, and packedness/mutability must match exactly.
+    static bool IsValidCompositeSubtype(WebAssemblyType sub, WebAssemblyType super, CompilationContext context)
+    {
+        if (sub.Form != super.Form)
+            return false;
+
+        switch (sub.Form)
+        {
+            case FunctionType.Struct:
+            {
+                var subFields = sub.Fields ?? [];
+                var superFields = super.Fields ?? [];
+                if (subFields.Count < superFields.Count)
+                    return false; // Width subtyping: a subtype may only add trailing fields.
+                for (var k = 0; k < superFields.Count; k++)
+                {
+                    if (!IsValidFieldSubtype(subFields[k], superFields[k], context))
+                        return false;
+                }
+
+                return true;
+            }
+
+            case FunctionType.Array:
+            {
+                var subElement = sub.Fields is { Count: > 0 } sa ? sa[0] : null;
+                var superElement = super.Fields is { Count: > 0 } pa ? pa[0] : null;
+                return subElement is not null && superElement is not null
+                    && IsValidFieldSubtype(subElement, superElement, context);
+            }
+
+            default:
+            {
+                // Function subtyping requires equal arity; params are contravariant, results covariant.
+                if (sub.Parameters.Count != super.Parameters.Count || sub.Returns.Count != super.Returns.Count)
+                    return false;
+                for (var k = 0; k < sub.Parameters.Count; k++)
+                {
+                    var subParam = ValType.FromValueType(sub.Parameters[k], sub.GetParameterRefType(k));
+                    var superParam = ValType.FromValueType(super.Parameters[k], super.GetParameterRefType(k));
+                    if (!context.IsSubtype(superParam, subParam)) // contravariant
+                        return false;
+                }
+
+                for (var k = 0; k < sub.Returns.Count; k++)
+                {
+                    var subReturn = ValType.FromValueType(sub.Returns[k], sub.GetReturnRefType(k));
+                    var superReturn = ValType.FromValueType(super.Returns[k], super.GetReturnRefType(k));
+                    if (!context.IsSubtype(subReturn, superReturn)) // covariant
+                        return false;
+                }
+
+                return true;
+            }
+        }
+    }
+
+    // Whether struct/array field `sub` legally refines `super`: same mutability and packedness, then covariant storage
+    // when immutable / invariant (equal) storage when mutable.
+    static bool IsValidFieldSubtype(StructField sub, StructField super, CompilationContext context)
+    {
+        if (sub.IsMutable != super.IsMutable || sub.Packed != super.Packed)
+            return false;
+        if (sub.Packed != PackedType.None)
+            return true; // Both share the same packed kind (i8/i16); no storage type to compare.
+
+        var subStorage = ValType.FromValueType(sub.StorageType, sub.StorageRefType);
+        var superStorage = ValType.FromValueType(super.StorageType, super.StorageRefType);
+        return sub.IsMutable
+            ? context.IsSubtype(subStorage, superStorage) && context.IsSubtype(superStorage, subStorage) // invariant
+            : context.IsSubtype(subStorage, superStorage); // covariant
+    }
+
     // Interprets an already-consumed table element-type lead byte, which in WebAssembly 3.0 is any reference type
     // (funcref/externref shorthands or a long-form typed reference). Rejects a non-reference type.
     static ValType ReadTableElementTypeFromLead(Reader reader, sbyte lead, long offset)
@@ -224,7 +300,7 @@ public static class Compile
         if (!elementValType.IsNullable && tableInit == null)
             throw new ModuleLoadException("type mismatch: a table with a non-nullable element type requires an initializer expression.", offset);
 
-        var isFuncTable = CompilationContext.IsFunctionReference(elementValType);
+        var isFuncTable = CompilationContext.IsFunctionReference(elementValType, context.CanonicalTypes?.Kind);
         var tableType = configuration.NeutralizeType(isFuncTable ? typeof(FunctionTable) : typeof(ExternRefTable));
         var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
@@ -346,6 +422,7 @@ public static class Compile
     static readonly MethodInfo ValidateTableImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTable),
         [typeof(TableImport), typeof(uint), typeof(uint), typeof(bool), typeof(bool), typeof(string), typeof(string), typeof(string)])!;
     static readonly MethodInfo ValidateTagImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateTag))!;
+    static readonly MethodInfo ValidateFunctionImport = typeof(ImportException).GetMethod(nameof(ImportException.ValidateFunction))!;
 
     // The ExceptionTag(string descriptor) constructor, resolved through NeutralizeType so the persisted-assembly path
     // references the right (mirrored) type.
@@ -368,6 +445,16 @@ public static class Compile
         else
             il.Emit(OpCodes.Ldstr, descriptor);
     }
+
+    // The closed structural descriptor used to match an exception tag across a module boundary. When the module's
+    // iso-recursive canonicalization is available it renders the tag type's whole recursion group (in De Bruijn form)
+    // plus the type's position, so tags whose signatures are structurally identical but live in differently-shaped
+    // recursion groups — or at different positions of the same group — are correctly distinguished (WebAssembly 3.0
+    // GC rec-group identity). Otherwise it falls back to the func-signature rendering.
+    static string RenderTagDescriptor(CompilationContext context, Signature signature, Signature[]? signatures) =>
+        context.CanonicalTypes is { } map && signature.TypeIndex < (uint)map.Descriptor.Length
+            ? map.Descriptor[signature.TypeIndex]
+            : WasmTypeDescriptor.RenderTagSignature(signature, signatures);
 
     // The (offset, length) constructor used to trap an out-of-bounds active data segment, matching the
     // exception the runtime's RangeCheck helpers throw for ordinary memory accesses.
@@ -558,7 +645,7 @@ public static class Compile
             if (functionSignatures == null || functionSignatures.Length == 0)
                 return;
             context.FunctionReferences = exportsBuilder.DefineField("☣ FunctionReferences", typeof(Delegate[]), PrivateReadonlyField);
-            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, delegateInvokersByTypeIndex, configuration, exportsBuilder);
+            EmitFunctionReferencesInitialization(instanceConstructorIL, context.FunctionReferences, internalFunctions, functionSignatures, delegateInvokersByTypeIndex, configuration, exportsBuilder, context.CanonicalTypes);
         }
 
         var preSectionOffset = reader.Offset;
@@ -580,19 +667,110 @@ public static class Compile
 
                 case Section.Type:
                     {
-                        signatures = context.Types = new Signature[reader.ReadVarUInt32()];
+                        // WASM 3.0: the type section is a vector of recursion groups, each expanding to one or more
+                        // sub/composite types.  The types are flattened into a single index-addressable array, and
+                        // each type's group boundary is recorded for rec-group reference-scoping validation.
+                        var groupCount = reader.ReadVarUInt32();
+                        var signatureList = new List<Signature>(checked((int)groupCount));
+                        var referenceSources = new List<WebAssemblyType>(checked((int)groupCount));
+                        var groupEndByTypeIndex = new List<int>(checked((int)groupCount));
+                        var groupBounds = new List<(int Start, int Count)>(checked((int)groupCount));
 
-                        for (var i = 0; i < signatures.Length; i++)
-                            signatures[i] = new Signature(reader, (uint)i, configuration);
-
-                        // A typed reference may target a concrete type index; that index must refer to a defined type.
-                        // (Forward references within the section are legal, so this is checked once the count is known.)
-                        foreach (var signature in signatures)
+                        for (var g = 0; g < groupCount; g++)
                         {
-                            foreach (var valType in signature.RawParameterTypes)
-                                ValidateTypeIndex(valType, signatures.Length, reader.Offset);
-                            foreach (var valType in signature.RawReturnTypes)
-                                ValidateTypeIndex(valType, signatures.Length, reader.Offset);
+                            var lead = reader.ReadVarInt7();
+                            var groupTypes = new List<WebAssemblyType>();
+
+                            if (lead == CompositeTypeReader.RecursionGroupForm)
+                            {
+                                var subCount = checked((int)reader.ReadVarUInt32());
+                                for (var s = 0; s < subCount; s++)
+                                {
+                                    var subLead = reader.ReadVarInt7();
+                                    groupTypes.Add(CompositeTypeReader.ReadSubType(reader, subLead));
+                                }
+                            }
+                            else
+                            {
+                                groupTypes.Add(CompositeTypeReader.ReadSubType(reader, lead));
+                            }
+
+                            var groupStart = referenceSources.Count;
+                            referenceSources.AddRange(groupTypes);
+
+                            var groupEnd = referenceSources.Count;
+                            for (var i = 0; i < groupTypes.Count; i++)
+                                groupEndByTypeIndex.Add(groupEnd);
+                            groupBounds.Add((groupStart, groupTypes.Count));
+                        }
+
+                        // The composite kind of every declared type index, so a concrete struct/array reference in a
+                        // signature (or field, local, global) resolves to a GC object slot rather than a Delegate.
+                        var indexedKinds = new FunctionType[referenceSources.Count];
+                        for (var i = 0; i < referenceSources.Count; i++)
+                            indexedKinds[i] = referenceSources[i].Form;
+
+                        for (var i = 0; i < referenceSources.Count; i++)
+                            signatureList.Add(new Signature(referenceSources[i], (uint)i, configuration, indexedKinds));
+
+                        signatures = context.Types = [.. signatureList];
+                        var canonical = context.CanonicalTypes = CanonicalTypeMap.Build(referenceSources, groupBounds);
+
+                        // Emit one CLR class per canonical struct/array type (WebAssembly 3.0 GC), so instructions and
+                        // signatures can reference the emitted classes; they are baked before the exports type.
+                        context.GCTypes = GCTypeEmitter.Emit(module, configuration, canonical, referenceSources);
+
+                        // A typed reference may target a concrete type index.  Under WASM 3.0 rec-group scoping, a type
+                        // may reference only an earlier recursion group or its own group — a forward reference into a
+                        // later group is the spec's "unknown type" failure (this is what makes cross-singleton-group
+                        // forward references invalid).
+                        for (var i = 0; i < referenceSources.Count; i++)
+                        {
+                            var groupEnd = groupEndByTypeIndex[i];
+                            var source = referenceSources[i];
+
+                            if (source.Form == FunctionType.Function)
+                            {
+                                var signature = signatureList[i];
+                                foreach (var valType in signature.RawParameterTypes)
+                                    ValidateTypeIndex(valType, groupEnd, reader.Offset);
+                                foreach (var valType in signature.RawReturnTypes)
+                                    ValidateTypeIndex(valType, groupEnd, reader.Offset);
+                            }
+                            else if (source.Fields is { } fields)
+                            {
+                                foreach (var field in fields)
+                                {
+                                    if (field.StorageRefType is { } refType)
+                                        ValidateTypeIndex(ValType.FromReferenceType(refType), groupEnd, reader.Offset);
+                                }
+                            }
+                        }
+
+                        // Declared-subtype legality (WASM 3.0 GC): a supertype must be an in-range, non-final type, and
+                        // the sub type's composite must actually be a valid subtype of its supertype's composite
+                        // (function params contravariant / results covariant; struct width+depth subtyping; array element
+                        // subtyping — immutable fields covariant, mutable fields invariant).
+                        for (var i = 0; i < referenceSources.Count; i++)
+                        {
+                            var source = referenceSources[i];
+                            if (source.SuperTypes is not { Count: > 0 } supers)
+                                continue;
+
+                            var groupEnd = groupEndByTypeIndex[i];
+                            foreach (var superIndexRaw in supers)
+                            {
+                                var superIndex = checked((int)superIndexRaw);
+                                if ((uint)superIndex >= (uint)referenceSources.Count || superIndex >= groupEnd)
+                                    throw new ModuleLoadException($"unknown type {superIndex}: a supertype must reference an earlier or same-group type.", reader.Offset);
+
+                                var super = referenceSources[superIndex];
+                                if (super.IsFinal)
+                                    throw new ModuleLoadException($"sub type {i}: super type {superIndex} is final and cannot be extended.", reader.Offset);
+
+                                if (!IsValidCompositeSubtype(source, super, context))
+                                    throw new ModuleLoadException($"sub type {i} does not match super type {superIndex}.", reader.Offset);
+                            }
                         }
                     }
                     break;
@@ -770,7 +948,7 @@ public static class Compile
                             if (signature.RawReturnTypes.Length != 0)
                                 throw new ModuleLoadException($"non-empty tag result type: tag references type {tag.TypeIndex} which has {signature.RawReturnTypes.Length} result(s).", preTagOffset);
 
-                            var descriptor = WasmTypeDescriptor.RenderTagSignature(signature, signatures);
+                            var descriptor = RenderTagDescriptor(context, signature, signatures);
                             var tagField = exportsBuilder.DefineField($"☢ Tag{context.Tags.Count}", tagClrType, PrivateReadonlyField);
                             context.Tags.Add(tagField);
                             context.TagSignatures.Add(signature);
@@ -895,7 +1073,12 @@ public static class Compile
 #if NET9_0_OR_GREATER
                 if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
-                method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key));
+                // The descriptor carries the function's canonical type ancestry (own descriptor + declared supertypes),
+                // so a re-importing module can match it by canonical identity (WASM 3.0 GC, design §10).
+                method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key,
+                    context.CanonicalTypes is { } exportMap && signature.TypeIndex < (uint)exportMap.Descriptor.Length
+                        ? exportMap.Ancestry(signature.TypeIndex)
+                        : null));
 
                 var il = method.GetILGenerator();
                 for (var parm = 0; parm < signature.ParameterTypes.Length; parm++)
@@ -914,6 +1097,11 @@ public static class Compile
         }
 
         instanceConstructorIL.Emit(OpCodes.Ret); //Finish the constructor.
+
+        // Bake the emitted GC struct/array classes (base classes first) before the exports type, so every
+        // castclass/newobj/ldfld against them in the compiled bodies resolves to a created type.
+        context.GCTypes?.CreateAllTypes();
+
         var exportInfo = exportsBuilder.CreateTypeInfo();
 
         if (importBuilder is null && instanceContainer is null)
@@ -1054,6 +1242,19 @@ public static class Compile
                             .GetDeclaredProperty(nameof(FunctionImport.Method))!
                             .GetMethod!);
                         ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
+
+                        // WASM 3.0 GC (design §10): a function linked from another compiled module carries a canonical
+                        // type ancestry; the declared import type must be a supertype of the supplied function's type,
+                        // which the arity-shaped delegate cast cannot see. A host (unregistered) delegate is accepted.
+                        if (context.CanonicalTypes is { } importMap && typeIndex < (uint)importMap.Descriptor.Length)
+                        {
+                            instanceConstructorIL.Emit(OpCodes.Dup);
+                            instanceConstructorIL.Emit(OpCodes.Ldstr, importMap.Descriptor[typeIndex]);
+                            instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
+                            instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
+                            instanceConstructorIL.Emit(OpCodes.Call, ValidateFunctionImport);
+                        }
+
                         instanceConstructorIL.Emit(OpCodes.Stfld, delFieldBuilder);
 
                         functionImports.Add(invoker);
@@ -1068,7 +1269,7 @@ public static class Compile
 
                         var limits = new ResizableLimits(reader);
 
-                        var isFuncTable = CompilationContext.IsFunctionReference(elementValType);
+                        var isFuncTable = CompilationContext.IsFunctionReference(elementValType, context.CanonicalTypes?.Kind);
                         var tableType = configuration.NeutralizeType(isFuncTable ? typeof(FunctionTable) : typeof(ExternRefTable));
                         var tableField = exportsBuilder.DefineField($"☣ Table{context.Tables.Count}", tableType, FieldAttributes.Private | FieldAttributes.InitOnly);
 
@@ -1299,7 +1500,7 @@ public static class Compile
 
                         ImportException.EmitTryCast(instanceConstructorIL, configuration.NeutralizeType(typeof(TagImport)), configuration);
 
-                        EmitDescriptor(instanceConstructorIL, WasmTypeDescriptor.RenderTagSignature(tagSignature, signatures));
+                        EmitDescriptor(instanceConstructorIL, RenderTagDescriptor(context, tagSignature, signatures));
                         instanceConstructorIL.Emit(OpCodes.Ldstr, moduleName);
                         instanceConstructorIL.Emit(OpCodes.Ldstr, fieldName);
                         instanceConstructorIL.Emit(OpCodes.Call, ValidateTagImport);
@@ -1359,7 +1560,7 @@ public static class Compile
             var contentValueType = ReferenceType.ReadValueType(reader, out var contentRefType);
             var contentValType = ValType.FromValueType(contentValueType, contentRefType);
             ValidateTypeIndex(contentValType, context.Types?.Length ?? 0, preContentOffset);
-            var contentClrType = configuration.NeutralizeType(contentValType.ToSystemType());
+            var contentClrType = configuration.NeutralizeType(contentValType.ToSystemType(context.CanonicalTypes?.Kind));
             var isMutable = reader.ReadVarUInt1() == 1;
 
             // A global initializer (a constant expression) may reference any previously-declared immutable global:
@@ -1381,10 +1582,19 @@ public static class Compile
                 );
 
             var il = getter.GetILGenerator();
-            var getterSignature = new Signature(contentValType, configuration);
+            var getterSignature = new Signature(contentValType, configuration, context.CanonicalTypes?.Kind);
             MethodBuilder? setter;
 
-            if (!isMutable)
+            // An immutable global is normally lowered as a getter that re-runs its constant expression, which is
+            // sound for stable expressions (numbers, ref.null, ref.func, global.get). A GC allocation
+            // (struct.new/array.new/ref.i31), however, must be evaluated exactly once at instantiation so the single
+            // object's identity and mutations persist across global.get; those are the object-typed reference globals
+            // (struct/array/i31/eq/any/extern), which are instead cached in an init-only field like a mutable global.
+            var cacheOnce = !isMutable
+                && contentValType.IsReference
+                && contentClrType == configuration.NeutralizeType(typeof(object));
+
+            if (!isMutable && !cacheOnce)
             {
                 context.Reset(
                     il,
@@ -1404,7 +1614,7 @@ public static class Compile
 
                 setter = null;
             }
-            else //Mutable
+            else //Mutable, or an immutable GC global cached once at instantiation.
             {
                 var field = exportsBuilder.DefineField(
                     $"🌍 {i}",
@@ -1416,19 +1626,26 @@ public static class Compile
                 il.Emit(OpCodes.Ldfld, field);
                 il.Emit(OpCodes.Ret);
 
-                setter = exportsBuilder.DefineMethod(
-                $"🌍 Set {i}",
-                    InternalFunctionAttributes,
-                    CallingConventions.Standard,
-                    configuration.NeutralizeType(typeof(void)),
-                    [contentClrType, exportsBuilder]
-                    );
+                if (isMutable)
+                {
+                    setter = exportsBuilder.DefineMethod(
+                    $"🌍 Set {i}",
+                        InternalFunctionAttributes,
+                        CallingConventions.Standard,
+                        configuration.NeutralizeType(typeof(void)),
+                        [contentClrType, exportsBuilder]
+                        );
 
-                il = setter.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Stfld, field);
-                il.Emit(OpCodes.Ret);
+                    var setterIL = setter.GetILGenerator();
+                    setterIL.Emit(OpCodes.Ldarg_1);
+                    setterIL.Emit(OpCodes.Ldarg_0);
+                    setterIL.Emit(OpCodes.Stfld, field);
+                    setterIL.Emit(OpCodes.Ret);
+                }
+                else
+                {
+                    setter = null;
+                }
 
                 context.Reset(
                     instanceConstructorIL,
@@ -1563,7 +1780,8 @@ public static class Compile
 
                     {
                         var global = globals[index];
-                        var property = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, configuration.NeutralizeType(global.Type.ToSystemType()), emptyTypes);
+                        var globalClrType = configuration.NeutralizeType(global.Type.ToSystemType(context.CanonicalTypes?.Kind));
+                        var property = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, globalClrType, emptyTypes);
 #if NET9_0_OR_GREATER
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
@@ -1572,7 +1790,7 @@ public static class Compile
                         var wrappedGet = exportsBuilder.DefineMethod("get_" + memberName,
                             exportedPropertyAttributes,
                             CallingConventions.HasThis,
-                            configuration.NeutralizeType(global.Type.ToSystemType()),
+                            globalClrType,
                             emptyTypes
                             );
 
@@ -1590,7 +1808,7 @@ public static class Compile
                                 exportedPropertyAttributes,
                                 CallingConventions.HasThis,
                                 null,
-                                [configuration.NeutralizeType(global.Type.ToSystemType())]
+                                [globalClrType]
                                 );
 
                             var wrappedSetIL = wrappedSet.GetILGenerator();
@@ -1629,7 +1847,7 @@ public static class Compile
                         if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
                         tagProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Tag, name,
-                            WasmTypeDescriptor.RenderTagSignature(context.TagSignatures[(int)index], context.Types)));
+                            RenderTagDescriptor(context, context.TagSignatures[(int)index], context.Types)));
                         tagProperty.SetGetMethod(tagGetter);
                     }
                     break;
@@ -1659,8 +1877,14 @@ public static class Compile
     // Builds the per-function delegate array used by ref.func and reference-typed element segments, indexed by the
     // global function index (imported functions first, then internally-defined). Emitted into the instance constructor
     // before any element/global population that may reference it.
-    static void EmitFunctionReferencesInitialization(ILGenerator il, FieldBuilder functionReferencesField, MethodInfo[]? internalFunctions, Signature[] functionSignatures, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
+    static void EmitFunctionReferencesInitialization(ILGenerator il, FieldBuilder functionReferencesField, MethodInfo[]? internalFunctions, Signature[] functionSignatures, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder, CanonicalTypeMap? canonicalTypes)
     {
+        // WebAssembly 3.0 GC (design §10): every funcref delegate is registered with its canonical type ancestry, so
+        // call_indirect / ref.cast / import matching can decide structural function identity that the arity-shaped CLR
+        // delegate cannot express.
+        var registerFunctionReference = canonicalTypes is null ? null
+            : configuration.NeutralizeType(typeof(WasmGC)).GetMethod(nameof(WasmGC.RegisterFunctionReference))!;
+
         var total = functionSignatures.Length;
         var arrLocal = il.DeclareLocal(typeof(Delegate[]));
         il.EmitLoadConstant(total);
@@ -1711,6 +1935,16 @@ public static class Compile
                 il.Emit(OpCodes.Ldftn, wrapper);
                 il.Emit(OpCodes.Newobj, invoker.DeclaringType!.GetTypeInfo().DeclaredConstructors.Single());
                 il.Emit(OpCodes.Stelem_Ref);
+
+                // Register this funcref delegate with the canonical ancestry of its declared function type.
+                if (registerFunctionReference is not null && signature.TypeIndex < (uint)canonicalTypes!.Descriptor.Length)
+                {
+                    il.Emit(OpCodes.Ldloc, arrLocal);
+                    il.EmitLoadConstant(i);
+                    il.Emit(OpCodes.Ldelem_Ref);
+                    il.Emit(OpCodes.Ldstr, canonicalTypes.Ancestry(signature.TypeIndex));
+                    il.Emit(OpCodes.Call, registerFunctionReference);
+                }
             }
         }
 
@@ -1723,14 +1957,38 @@ public static class Compile
     // FunctionReferences (and the function index registered as declared), or a null reference for ref.null.
     static void ValidateElementInitExpr(IList<Instruction> initExpr, ValType elemType, CompilationContext context)
     {
-        // A reference-type element initializer is a constant expression yielding exactly one reference value, then end.
-        if (initExpr.Count != 2 || initExpr[1] is not Instructions.End)
+        // A reference-type element initializer is a constant expression yielding one reference value, then end.
+        // Most forms are a single instruction (ref.func / ref.null / global.get); ref.i31 is preceded by its i32
+        // constant operand, so inspect the instruction immediately before end.
+        if (initExpr.Count < 2 || initExpr[^1] is not Instructions.End)
             throw new ModuleLoadException("An element initializer expression must be a single reference-producing constant expression followed by end.", 0);
 
         ValType produced;
-        switch (initExpr[0])
+        switch (initExpr[^2])
         {
-            case Instructions.RefFunc refFunc:
+            case Instructions.RefI31:
+                // ref.i31 always produces (ref i31); its i32 operand is a nested constant expression.
+                produced = ValType.Ref(false, WebAssemblyHeapType.I31);
+                break;
+            // GC allocations produce a non-null reference to their concrete type; their operands are themselves a
+            // nested constant expression (e.g. [i32.const, i32.const, array.new_fixed $t 2, end]). The general
+            // constant-expression compiler in EmitElementRefValue emits them; here only the produced type matters.
+            case Instructions.ArrayNewFixed arrayNewFixed:
+                produced = ValType.RefIndexed(false, arrayNewFixed.Type);
+                break;
+            case Instructions.ArrayNew arrayNew:
+                produced = ValType.RefIndexed(false, arrayNew.Type);
+                break;
+            case Instructions.ArrayNewDefault arrayNewDefault:
+                produced = ValType.RefIndexed(false, arrayNewDefault.Type);
+                break;
+            case Instructions.StructNew structNew:
+                produced = ValType.RefIndexed(false, structNew.Type);
+                break;
+            case Instructions.StructNewDefault structNewDefault:
+                produced = ValType.RefIndexed(false, structNewDefault.Type);
+                break;
+            case Instructions.RefFunc refFunc when initExpr.Count == 2:
             {
                 var sigs = context.CheckedFunctionSignatures;
                 if (refFunc.Index >= (uint)sigs.Length)
@@ -1738,12 +1996,12 @@ public static class Compile
                 produced = ValType.RefIndexed(false, sigs[refFunc.Index].TypeIndex); // (ref $sig(f))
                 break;
             }
-            case Instructions.RefNull refNull:
+            case Instructions.RefNull refNull when initExpr.Count == 2:
                 produced = refNull.TypeIndex is { } idx
                     ? ValType.RefIndexed(true, idx)
                     : ValType.Ref(true, refNull.HeapType ?? WebAssemblyHeapType.Func);
                 break;
-            case Instructions.GlobalGet globalGet:
+            case Instructions.GlobalGet globalGet when initExpr.Count == 2:
             {
                 var globals = context.Globals ?? [];
                 if (globalGet.Index >= (uint)globals.Length)
@@ -1752,7 +2010,7 @@ public static class Compile
                 break;
             }
             default:
-                throw new ModuleLoadException($"Element initializer expression ({initExpr[0].OpCode}) is not a supported constant reference expression.", 0);
+                throw new ModuleLoadException($"Element initializer expression ({initExpr[^2].OpCode}) is not a supported constant reference expression.", 0);
         }
 
         // The initializer's produced reference type must be a subtype of the segment's element type.
@@ -1763,8 +2021,30 @@ public static class Compile
     static void EmitElementRefValue(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
     {
         // Each per-element initializer is a constant expression of the form [ref.func N, end], [ref.null t, end],
-        // or [global.get N, end].
-        if (initExpr.Count >= 1 && initExpr[0] is Instructions.RefFunc refFunc)
+        // [global.get N, end], or [<i32 const>, ref.i31, end].
+        if (initExpr.Count == 3 && initExpr[1] is Instructions.RefI31)
+        {
+            // Emit the leading constant i32 operand (an i32.const or a global.get of an imported i32 global), mask
+            // to 31 bits, and box as a WasmI31.
+            switch (initExpr[0])
+            {
+                case Instructions.Int32Constant i32:
+                    il.EmitLoadConstant(i32.Value);
+                    break;
+                case Instructions.GlobalGet globalGet:
+                    var global = context.Globals![globalGet.Index];
+                    if (global.RequiresInstance)
+                        il.EmitLoadArg(0);
+                    il.Emit(OpCodes.Call, global.Getter);
+                    break;
+                default:
+                    throw new ModuleLoadException($"A ref.i31 element initializer operand ({initExpr[0].OpCode}) is not a supported constant i32 expression.", 0);
+            }
+            il.EmitLoadConstant(0x7FFFFFFF);
+            il.Emit(OpCodes.And);
+            il.Emit(OpCodes.Newobj, context.Configuration.NeutralizeType(typeof(WasmI31)).GetConstructor([typeof(int)])!);
+        }
+        else if (initExpr.Count >= 1 && initExpr[0] is Instructions.RefFunc refFunc)
         {
             context.DeclaredFunctionReferences.Add(refFunc.Index);
             il.EmitLoadArg(0);
@@ -1772,7 +2052,7 @@ public static class Compile
             il.EmitLoadConstant(refFunc.Index);
             il.Emit(OpCodes.Ldelem_Ref);
         }
-        else if (initExpr.Count >= 1 && initExpr[0] is Instructions.GlobalGet globalGet)
+        else if (initExpr.Count == 2 && initExpr[0] is Instructions.GlobalGet globalGet)
         {
             // The referenced (imported, immutable) global holds the reference value to store. Its getter
             // return type is Delegate (funcref) or object (externref), matching the destination table's setter.
@@ -1781,10 +2061,44 @@ public static class Compile
                 il.EmitLoadArg(0);
             il.Emit(OpCodes.Call, global.Getter);
         }
-        else
+        else if (initExpr.Count == 2 && initExpr[0] is Instructions.RefNull)
         {
             il.Emit(OpCodes.Ldnull);
         }
+        else
+        {
+            // A general constant expression (e.g. a GC allocation — array.new / array.new_fixed / struct.new — that
+            // builds a whole-array/struct element item). Route it through the general constant-expression compiler,
+            // exactly as the active-table offset and global-initializer paths do; the produced reference is left on
+            // the IL stack for the caller's stelem_ref / table setter.
+            EmitConstantElementExpr(il, context, initExpr);
+        }
+    }
+
+    // Compiles a per-element initializer as a general constant expression, leaving the produced reference on the IL
+    // stack. Used for element items whose initializer is not one of the simple single-value reference shapes handled
+    // above (GC allocations built by array.new / array.new_fixed / struct.new, etc.). Mirrors the active-table-offset
+    // and cached-global mechanism: reset the validation frame, compile in constant-expression mode, and stop at end so
+    // the value remains on the stack. The caller has already pushed the destination array/table and index.
+    static void EmitConstantElementExpr(ILGenerator il, CompilationContext context, IList<Instruction> initExpr)
+    {
+        context.Reset(il, Signature.Empty, Signature.Empty.RawParameterTypes);
+        context.ConstantExpression = true;
+        // By section order all globals precede the element section, so any immutable global is in scope.
+        context.ConstantExpressionGlobalBound = context.Globals?.Length ?? 0;
+        foreach (var instruction in initExpr)
+        {
+            if (instruction.OpCode == OpCode.End)
+                break; // Leave the produced value on the stack for the caller to consume.
+
+            if (instruction is Instructions.RefFunc refFunc)
+                context.DeclaredFunctionReferences.Add(refFunc.Index); // A ref.func nested in the item declares that function.
+
+            instruction.Compile(context);
+            context.Previous = instruction.OpCode;
+        }
+
+        context.ConstantExpression = false;
     }
 
     static void SectionElement(Reader reader, CompilationContext context, ILGenerator instanceConstructorIL, Signature[]? functionSignatures, MethodInfo[]? internalFunctions, CompilerConfiguration configuration, TypeBuilder exportsBuilder)
@@ -1814,7 +2128,7 @@ public static class Compile
                     ? ValType.FromValueType((WebAssemblyValueType)(sbyte)element.ElemType)
                     : ValType.Ref(false, WebAssemblyHeapType.Func);
             ValidateTypeIndex(elemValType, context.Types?.Length ?? 0, 0);
-            var elemIsFunc = CompilationContext.IsFunctionReference(elemValType);
+            var elemIsFunc = CompilationContext.IsFunctionReference(elemValType, context.CanonicalTypes?.Kind);
             var entryCount = usesInitExprs ? element.InitExprs.Count : element.Elements.Count;
 
             // Register declared function references (func-index forms); init-expr forms register in EmitElementRefValue.
@@ -2015,7 +2329,7 @@ public static class Compile
                 ]);
 
             foreach (var local in localValTypes)
-                il.DeclareLocal(local.ToSystemType());
+                il.DeclareLocal(context.SystemType(local));
 
             foreach (var instruction in Instruction.Parse(reader))
             {

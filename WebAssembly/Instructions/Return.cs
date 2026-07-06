@@ -38,7 +38,7 @@ public class Return : SimpleInstruction
             if (returnsLength == 1)
             {
                 context.PopStackNoReturn(OpCode.Return, returns[0]);
-                context.Emit(OpCodes.Stloc, functionBlock.ResultLocal ??= context.DeclareLocal(returns[0].ToSystemType()));
+                context.Emit(OpCodes.Stloc, functionBlock.ResultLocal ??= context.DeclareLocal(context.SystemType(returns[0])));
             }
             else if (returnsLength > 1)
             {
@@ -63,7 +63,7 @@ public class Return : SimpleInstruction
                 }
                 else
                 {
-                    var value = context.DeclareLocal(returns[0].ToSystemType());
+                    var value = context.DeclareLocal(context.SystemType(returns[0]));
                     context.Emit(OpCodes.Stloc, value.LocalIndex);
 
                     for (var i = 0; i < stackCount - returnsLength; i++)

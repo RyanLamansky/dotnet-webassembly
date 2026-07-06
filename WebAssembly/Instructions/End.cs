@@ -63,6 +63,12 @@ public class End : SimpleInstruction
 
             if (!context.IsUnreachable && !ifNoElsePassThrough && returns.Length > 0)
             {
+                // Validate that the values on the stack are subtypes of the declared results (the single-value inline
+                // path below already does this via ValidateStack; a multi-value or synthesized-single-reference block
+                // signature must do so here — e.g. a br_on_cast fall-through leaving a nullable residual where the
+                // block declares a non-null reference result).
+                BranchHelper.ValidateBranchTypes(context, OpCode.End, returns, blockContext);
+
                 blockContext.ResultLocals ??= context.DeclareResultLocals(returns);
                 BranchHelper.StashResults(context, blockContext.ResultLocals);
             }

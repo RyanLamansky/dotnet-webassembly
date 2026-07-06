@@ -106,6 +106,20 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public Signature[]? Types;
 
+    /// <summary>
+    /// The iso-recursive canonicalization of <see cref="Types"/> (WebAssembly 3.0 garbage collection), assigning each
+    /// declared type index a canonical id so the validator can decide concrete-index subtyping. Built during the type
+    /// section pass; null before then and for modules with no type section.
+    /// </summary>
+    public CanonicalTypeMap? CanonicalTypes;
+
+    /// <summary>
+    /// The emitted CLR classes for the module's WebAssembly 3.0 garbage-collected struct/array types (one per
+    /// canonical id). Built during the type-section pass and baked before the exports type; null for modules with
+    /// no struct/array types.
+    /// </summary>
+    public GCTypeEmitter? GCTypes;
+
     public GlobalInfo[]? Globals;
 
     /// <summary>
@@ -165,9 +179,12 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>
     /// Whether the given reference type belongs to the function hierarchy (backed at runtime by
     /// <see cref="FunctionTable"/>/<see cref="System.Delegate"/>); everything else is backed by
-    /// <see cref="ExternRefTable"/>/<see cref="object"/>.
+    /// <see cref="ExternRefTable"/>/<see cref="object"/>. The kind map distinguishes a concrete function index
+    /// (→ <see cref="System.Delegate"/>) from a concrete struct/array index (→ <see cref="object"/>); without it the
+    /// parameterless <see cref="ValType.ToSystemType()"/> reports every concrete index as a delegate.
     /// </summary>
-    public static bool IsFunctionReference(ValType type) => type.IsReference && type.ToSystemType() == typeof(System.Delegate);
+    public static bool IsFunctionReference(ValType type, FunctionType[]? indexedKinds = null) =>
+        type.IsReference && type.ToSystemType(indexedKinds) == typeof(System.Delegate);
 
     /// <summary>Whether each table (indexed by table index) uses a 64-bit (i64) index type — WebAssembly 3.0 table64.</summary>
     public readonly List<bool> TableIs64 = [];
@@ -193,7 +210,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     }
 
     /// <summary>Whether the table at <paramref name="tableIndex"/> holds function references (vs. external references).</summary>
-    public bool IsFuncTable(uint tableIndex) => IsFunctionReference(this.TableElementValType(tableIndex));
+    public bool IsFuncTable(uint tableIndex) => IsFunctionReference(this.TableElementValType(tableIndex), this.CanonicalTypes?.Kind);
 
     /// <summary>
     /// Validates a table index for a table instruction and resolves its backing field and whether it holds function
@@ -444,7 +461,13 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// Whether <paramref name="actual"/> is a subtype of <paramref name="expected"/> under the WebAssembly 3.0
     /// lattice (equality for numerics). Consults the module's type section for concrete-index references.
     /// </summary>
-    public bool IsSubtype(ValType actual, ValType expected) => TypeAlgebra.IsSubtype(actual, expected, this.Types);
+    public bool IsSubtype(ValType actual, ValType expected) => TypeAlgebra.IsSubtype(actual, expected, this.Types, this.CanonicalTypes);
+
+    /// <summary>
+    /// The CLR type used to represent a value of <paramref name="type"/> at runtime, resolving concrete GC
+    /// (struct/array) type indices to <see cref="object"/> via the module's canonical composite kinds.
+    /// </summary>
+    public Type SystemType(ValType type) => type.ToSystemType(this.CanonicalTypes?.Kind);
 
     public readonly Dictionary<int, BlockContext> BlockContexts = [];
 
@@ -504,6 +527,9 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public void Emit(ILOpCode opcode, LocalBuilder local) => CheckedGenerator.Emit(opcode, local);
 
     public void Emit(ILOpCode opcode, Type type) => CheckedGenerator.Emit(opcode, type);
+
+    /// <summary>Emits an opcode with a string operand (e.g. <c>ldstr</c>).</summary>
+    public void Emit(ILOpCode opcode, string arg) => CheckedGenerator.Emit(opcode, arg);
 
     // Miscellaneous (0xFC) and SIMD (0xFD) instructions all report OpCode.MiscellaneousOperationPrefix /
     // OpCode.SimdOperationPrefix as their OpCode, so a validation failure attributed to the raw opcode would
@@ -683,7 +709,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     public LocalBuilder GetOrCreateResultLocal(int depthIndex, ValType valueType)
     {
         var blockContext = this.BlockContexts[this.Depth.Count - depthIndex];
-        return blockContext.ResultLocal ??= this.DeclareLocal(valueType.ToSystemType());
+        return blockContext.ResultLocal ??= this.DeclareLocal(this.SystemType(valueType));
     }
 
     /// <summary>
@@ -693,7 +719,7 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     {
         var locals = new LocalBuilder[types.Length];
         for (var i = 0; i < types.Length; i++)
-            locals[i] = this.DeclareLocal(types[i].ToSystemType());
+            locals[i] = this.DeclareLocal(this.SystemType(types[i]));
         return locals;
     }
 

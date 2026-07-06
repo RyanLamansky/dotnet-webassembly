@@ -2,6 +2,9 @@
 
 dotnet_analyzer_diagnostic.severity = suggestion
 
+# "New" is a legitimate type-name suffix here: it maps to the WebAssembly struct.new / array.new instruction family.
+dotnet_code_quality.CA1711.allowed_suffixes = New
+
 csharp_prefer_braces = when_multiline:suggestion
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_expression_bodied_accessors = true:suggestion

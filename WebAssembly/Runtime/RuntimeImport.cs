@@ -57,7 +57,12 @@ public abstract class RuntimeImport
                         if (member is not MethodInfo method)
                             throw new ArgumentException($"Function export '{native.Name}' must be a method, but {member.Name} is a {member.MemberType}.", nameof(exports));
 
-                        yield return (native.Name, new FunctionImport(GetDelegate(method)));
+                        var functionDelegate = GetDelegate(method);
+                        // Re-register the export delegate with its canonical type ancestry so a re-importing module can
+                        // match it by canonical identity (WASM 3.0 GC, design §10); host exports carry no descriptor.
+                        if (native.Descriptor is { } functionAncestry)
+                            WasmGC.RegisterFunctionReference(functionDelegate, functionAncestry);
+                        yield return (native.Name, new FunctionImport(functionDelegate));
                     }
                     continue;
 

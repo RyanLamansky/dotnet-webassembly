@@ -64,6 +64,34 @@ static class BranchHelper
     }
 
     /// <summary>
+    /// The single carried result type for a target with exactly one result not handled by <see cref="BranchTypes"/>
+    /// (which returns the multi-value list): an inline <see cref="BlockType"/> (numeric or shorthand reference) or a
+    /// function boundary whose single result is a long-form/indexed reference the outer block's <see cref="BlockType"/>
+    /// cannot express. Returns false for a void or multi-value target.
+    /// </summary>
+    public static bool TrySingleResultType(CompilationContext context, BlockTypeInstruction blockType, int targetDepthKey, bool isLoop, out ValType type)
+    {
+        if (!isLoop && blockType.Type.TryToValueType(out var narrow))
+        {
+            type = ValType.FromValueType(narrow);
+            return true;
+        }
+
+        if (!isLoop && targetDepthKey == 1)
+        {
+            var returns = context.CheckedSignature.RawReturnTypes;
+            if (returns.Length == 1)
+            {
+                type = returns[0];
+                return true;
+            }
+        }
+
+        type = default;
+        return false;
+    }
+
+    /// <summary>
     /// Validates, without popping, that the top of the evaluation stack holds <paramref name="branchTypes"/> (the
     /// last type on top), and that they sit above the target block's baseline.
     /// </summary>
@@ -116,7 +144,7 @@ static class BranchHelper
                 ReloadResults(context, temporaries);
             }
         }
-        else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+        else if (TrySingleResultType(context, blockType, context.Depth.Count - index, isLoop, out var expectedType))
         {
             context.ValidateStack(opCode, expectedType);
             context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(index, expectedType));
@@ -168,7 +196,7 @@ static class BranchHelper
                 StashResults(context, stub!.CarriedLocals!);
             }
         }
-        else if (!isLoop && blockType.Type.TryToValueType(out var expectedType))
+        else if (TrySingleResultType(context, blockType, targetDepthKey, isLoop, out var expectedType))
         {
             context.ValidateStack(opCode, expectedType);
             context.Emit(OpCodes.Stloc, context.GetOrCreateResultLocal(index, expectedType));
