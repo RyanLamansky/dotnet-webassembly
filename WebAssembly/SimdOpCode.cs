@@ -813,16 +813,16 @@ public enum SimdOpCode : uint
     Float64x2RelaxedNegativeMultiplyAdd = 0x108,
     /// <summary>Relaxed i8x16 lane select (deterministic profile equals v128.bitselect).</summary>
     [OpCodeCharacteristics("i8x16.relaxed_laneselect")]
-    Int8x16RelaxedLaneselect = 0x109,
+    Int8x16RelaxedLaneSelect = 0x109,
     /// <summary>Relaxed i16x8 lane select (deterministic profile equals v128.bitselect).</summary>
     [OpCodeCharacteristics("i16x8.relaxed_laneselect")]
-    Int16x8RelaxedLaneselect = 0x10A,
+    Int16x8RelaxedLaneSelect = 0x10A,
     /// <summary>Relaxed i32x4 lane select (deterministic profile equals v128.bitselect).</summary>
     [OpCodeCharacteristics("i32x4.relaxed_laneselect")]
-    Int32x4RelaxedLaneselect = 0x10B,
+    Int32x4RelaxedLaneSelect = 0x10B,
     /// <summary>Relaxed i64x2 lane select (deterministic profile equals v128.bitselect).</summary>
     [OpCodeCharacteristics("i64x2.relaxed_laneselect")]
-    Int64x2RelaxedLaneselect = 0x10C,
+    Int64x2RelaxedLaneSelect = 0x10C,
     /// <summary>Relaxed f32x4 min (deterministic profile equals f32x4.min).</summary>
     [OpCodeCharacteristics("f32x4.relaxed_min")]
     Float32x4RelaxedMinimum = 0x10D,

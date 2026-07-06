@@ -343,8 +343,12 @@ public class WebAssemblyType : IEquatable<WebAssemblyType>
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
     {
+        var valueHash = new HashCode();
+        foreach (var value in this.Parameters.Concat(this.Returns))
+            valueHash.Add((int)value);
+
         return (int)this.Form
-            ^ HashCode.Combine(this.Parameters.Concat(this.Returns).Select(v => (int)v))
+            ^ valueHash.ToHashCode()
             ^ RefSidecarHash(this.parameterRefTypes)
             ^ RefSidecarHash(this.returnRefTypes)
             ^ (this.IsFinal ? 0 : 0x4F4F4F4F)

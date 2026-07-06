@@ -679,10 +679,10 @@ public abstract class Instruction : IEquatable<Instruction>
                         case SimdOpCode.Float32x4RelaxedNegativeMultiplyAdd: yield return new Float32x4RelaxedNegativeMultiplyAdd(); break;
                         case SimdOpCode.Float64x2RelaxedMultiplyAdd: yield return new Float64x2RelaxedMultiplyAdd(); break;
                         case SimdOpCode.Float64x2RelaxedNegativeMultiplyAdd: yield return new Float64x2RelaxedNegativeMultiplyAdd(); break;
-                        case SimdOpCode.Int8x16RelaxedLaneselect: yield return new Int8x16RelaxedLaneselect(); break;
-                        case SimdOpCode.Int16x8RelaxedLaneselect: yield return new Int16x8RelaxedLaneselect(); break;
-                        case SimdOpCode.Int32x4RelaxedLaneselect: yield return new Int32x4RelaxedLaneselect(); break;
-                        case SimdOpCode.Int64x2RelaxedLaneselect: yield return new Int64x2RelaxedLaneselect(); break;
+                        case SimdOpCode.Int8x16RelaxedLaneSelect: yield return new Int8x16RelaxedLaneSelect(); break;
+                        case SimdOpCode.Int16x8RelaxedLaneSelect: yield return new Int16x8RelaxedLaneSelect(); break;
+                        case SimdOpCode.Int32x4RelaxedLaneSelect: yield return new Int32x4RelaxedLaneSelect(); break;
+                        case SimdOpCode.Int64x2RelaxedLaneSelect: yield return new Int64x2RelaxedLaneSelect(); break;
                         case SimdOpCode.Float32x4RelaxedMinimum: yield return new Float32x4RelaxedMinimum(); break;
                         case SimdOpCode.Float32x4RelaxedMaximum: yield return new Float32x4RelaxedMaximum(); break;
                         case SimdOpCode.Float64x2RelaxedMinimum: yield return new Float64x2RelaxedMinimum(); break;

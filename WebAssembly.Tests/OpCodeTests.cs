@@ -71,6 +71,10 @@ public class OpCodeTests
         { "madd", "MultiplyAdd" },
         { "nmadd", "NegativeMultiplyAdd" },
         { "q15mulr", "Q15Mulr" },
+        { "extmul", "ExtMul" }, // Compact form kept deliberately; these names are already long.
+        { "avgr", "AverageRounded" }, // avgr = rounding average.
+        { "bitselect", "BitSelect" },
+        { "laneselect", "LaneSelect" },
     };
 
     private static string ExpectedName(string nativeName)
@@ -186,9 +190,12 @@ public class OpCodeTests
         { "V128Const", "V128Constant" }, // v128.const
         { "V128AndNot", "V128Andnot" }, // v128.andnot
         { "V128Xor", "V128ExclusiveOr" }, // v128.xor
+        { "V128Bitselect", "V128BitSelect" }, // v128.bitselect
         { "Int8x16Abs", "Int8x16Absolute" }, // i8x16.abs
         { "Int8x16Neg", "Int8x16Negate" }, // i8x16.neg
-        { "Int8x16Popcnt", "Int8x16CountOneBits" }, // i8x16.popcnt
+        // i8x16.popcnt. The convention maps popcnt -> CountOneBits to match the released core Int32CountOneBits.
+        // PopCount is the alternative spelling a future breaking release could adopt if it also renames the core members.
+        { "Int8x16Popcnt", "Int8x16CountOneBits" },
         { "Int8x16Sub", "Int8x16Subtract" }, // i8x16.sub
         { "Int8x16SubSaturateSigned", "Int8x16SubtractSaturateSigned" }, // i8x16.sub_sat_s
         { "Int8x16SubSaturateUnsigned", "Int8x16SubtractSaturateUnsigned" }, // i8x16.sub_sat_u
@@ -196,6 +203,7 @@ public class OpCodeTests
         { "Int8x16MinUnsigned", "Int8x16MinimumUnsigned" }, // i8x16.min_u
         { "Int8x16MaxSigned", "Int8x16MaximumSigned" }, // i8x16.max_s
         { "Int8x16MaxUnsigned", "Int8x16MaximumUnsigned" }, // i8x16.max_u
+        { "Int8x16AvgrUnsigned", "Int8x16AverageRoundedUnsigned" }, // i8x16.avgr_u
         { "Int16x8Abs", "Int16x8Absolute" }, // i16x8.abs
         { "Int16x8Neg", "Int16x8Negate" }, // i16x8.neg
         { "Int16x8Q15MulrSatSigned", "Int16x8Q15MulrSaturateSigned" }, // i16x8.q15mulr_sat_s
@@ -207,6 +215,11 @@ public class OpCodeTests
         { "Int16x8MinUnsigned", "Int16x8MinimumUnsigned" }, // i16x8.min_u
         { "Int16x8MaxSigned", "Int16x8MaximumSigned" }, // i16x8.max_s
         { "Int16x8MaxUnsigned", "Int16x8MaximumUnsigned" }, // i16x8.max_u
+        { "Int16x8AvgrUnsigned", "Int16x8AverageRoundedUnsigned" }, // i16x8.avgr_u
+        { "Int16x8ExtmulLowInt8x16Signed", "Int16x8ExtMulLowInt8x16Signed" }, // i16x8.extmul_low_i8x16_s
+        { "Int16x8ExtmulHighInt8x16Signed", "Int16x8ExtMulHighInt8x16Signed" }, // i16x8.extmul_high_i8x16_s
+        { "Int16x8ExtmulLowInt8x16Unsigned", "Int16x8ExtMulLowInt8x16Unsigned" }, // i16x8.extmul_low_i8x16_u
+        { "Int16x8ExtmulHighInt8x16Unsigned", "Int16x8ExtMulHighInt8x16Unsigned" }, // i16x8.extmul_high_i8x16_u
         { "Int32x4Abs", "Int32x4Absolute" }, // i32x4.abs
         { "Int32x4Neg", "Int32x4Negate" }, // i32x4.neg
         { "Int32x4Sub", "Int32x4Subtract" }, // i32x4.sub
@@ -215,10 +228,18 @@ public class OpCodeTests
         { "Int32x4MinUnsigned", "Int32x4MinimumUnsigned" }, // i32x4.min_u
         { "Int32x4MaxSigned", "Int32x4MaximumSigned" }, // i32x4.max_s
         { "Int32x4MaxUnsigned", "Int32x4MaximumUnsigned" }, // i32x4.max_u
+        { "Int32x4ExtmulLowInt16x8Signed", "Int32x4ExtMulLowInt16x8Signed" }, // i32x4.extmul_low_i16x8_s
+        { "Int32x4ExtmulHighInt16x8Signed", "Int32x4ExtMulHighInt16x8Signed" }, // i32x4.extmul_high_i16x8_s
+        { "Int32x4ExtmulLowInt16x8Unsigned", "Int32x4ExtMulLowInt16x8Unsigned" }, // i32x4.extmul_low_i16x8_u
+        { "Int32x4ExtmulHighInt16x8Unsigned", "Int32x4ExtMulHighInt16x8Unsigned" }, // i32x4.extmul_high_i16x8_u
         { "Int64x2Abs", "Int64x2Absolute" }, // i64x2.abs
         { "Int64x2Neg", "Int64x2Negate" }, // i64x2.neg
         { "Int64x2Sub", "Int64x2Subtract" }, // i64x2.sub
         { "Int64x2Mul", "Int64x2Multiply" }, // i64x2.mul
+        { "Int64x2ExtmulLowInt32x4Signed", "Int64x2ExtMulLowInt32x4Signed" }, // i64x2.extmul_low_i32x4_s
+        { "Int64x2ExtmulHighInt32x4Signed", "Int64x2ExtMulHighInt32x4Signed" }, // i64x2.extmul_high_i32x4_s
+        { "Int64x2ExtmulLowInt32x4Unsigned", "Int64x2ExtMulLowInt32x4Unsigned" }, // i64x2.extmul_low_i32x4_u
+        { "Int64x2ExtmulHighInt32x4Unsigned", "Int64x2ExtMulHighInt32x4Unsigned" }, // i64x2.extmul_high_i32x4_u
         { "Float32x4Ceil", "Float32x4Ceiling" }, // f32x4.ceil
         { "Float32x4Trunc", "Float32x4Truncate" }, // f32x4.trunc
         { "Float32x4Abs", "Float32x4Absolute" }, // f32x4.abs

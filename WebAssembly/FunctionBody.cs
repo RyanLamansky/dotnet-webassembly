@@ -89,10 +89,14 @@ public class FunctionBody : IEquatable<FunctionBody>
     /// </summary>
     /// <returns>The hash code.</returns>
     public override int GetHashCode()
-        => HashCode.Combine(
-            this.Locals.Select(local => local.GetHashCode())
-            .Concat(this.Code.Select(instruction => instruction.GetHashCode()
-            )));
+    {
+        var hash = new HashCode();
+        foreach (var local in this.Locals)
+            hash.Add(local);
+        foreach (var instruction in this.Code)
+            hash.Add(instruction);
+        return hash.ToHashCode();
+    }
 
     /// <summary>
     /// Determines whether this instance is identical to another.

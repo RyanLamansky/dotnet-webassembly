@@ -1,4 +1,6 @@
-﻿namespace WebAssembly.Instructions;
+using System;
+
+namespace WebAssembly.Instructions;
 
 /// <summary>
 /// Miscellaneous instructions have a prefix byte 0xfc; they are defined by the combination of their <see cref="OpCode"/> and <see cref="MiscellaneousOpCode"/>.

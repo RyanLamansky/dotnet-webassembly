@@ -113,11 +113,15 @@ public class BranchTable : Instruction, IEquatable<BranchTable>
     /// Returns a simple hash code based on the value of the instruction.
     /// </summary>
     /// <returns>The hash code.</returns>
-    public override int GetHashCode() => HashCode.Combine(
-        (int)this.OpCode,
-        (int)this.DefaultLabel,
-        HashCode.Combine(this.Labels.Select(label => (int)label))
-        );
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add((int)this.OpCode);
+        hash.Add((int)this.DefaultLabel);
+        foreach (var label in this.Labels)
+            hash.Add((int)label);
+        return hash.ToHashCode();
+    }
 
     internal sealed override void Compile(CompilationContext context)
     {

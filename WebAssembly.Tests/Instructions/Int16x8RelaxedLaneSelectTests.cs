@@ -2,9 +2,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace WebAssembly.Instructions;
 
-/// <summary>Tests the <see cref="Int64x2RelaxedLaneselect"/> instruction.</summary>
+/// <summary>Tests the <see cref="Int16x8RelaxedLaneSelect"/> instruction.</summary>
 [TestClass]
-public class Int64x2RelaxedLaneselectTests
+public class Int16x8RelaxedLaneSelectTests
 {
     /// <summary>Export for the test.</summary>
     public abstract class Export
@@ -30,7 +30,7 @@ public class Int64x2RelaxedLaneselectTests
                 new V128Const { Value = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
                 // mask: first 8 bytes select a, last 8 select b
                 new V128Const { Value = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00] },
-                new Int64x2RelaxedLaneselect(),
+                new Int16x8RelaxedLaneSelect(),
                 new V128Store(),
                 new LocalGet(0),
                 new Int32Load8Unsigned(),
@@ -42,21 +42,21 @@ public class Int64x2RelaxedLaneselectTests
 
     /// <summary>Verifies the deterministic (bitselect) result.</summary>
     [TestMethod]
-    public void Int64x2RelaxedLaneselect_IsCorrect()
+    public void Int16x8RelaxedLaneSelect_IsCorrect()
     {
         var exports = Build();
         Assert.AreEqual(0xFF, exports.GetByte(0), "masked lanes select a");
         Assert.AreEqual(0x00, exports.GetByte(8), "unmasked lanes select b");
     }
 
-    /// <summary>Verifies the <see cref="Int64x2RelaxedLaneselect"/> opcode and equality.</summary>
+    /// <summary>Verifies the <see cref="Int16x8RelaxedLaneSelect"/> opcode and equality.</summary>
     [TestMethod]
-    public void Int64x2RelaxedLaneselect_OpCodeAndEquality()
+    public void Int16x8RelaxedLaneSelect_OpCodeAndEquality()
     {
-        var instruction = new Int64x2RelaxedLaneselect();
+        var instruction = new Int16x8RelaxedLaneSelect();
         Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
-        Assert.AreEqual(SimdOpCode.Int64x2RelaxedLaneselect, instruction.SimdOpCode);
-        Assert.AreEqual(new Int64x2RelaxedLaneselect(), instruction);
-        Assert.AreEqual(new Int64x2RelaxedLaneselect().GetHashCode(), instruction.GetHashCode());
+        Assert.AreEqual(SimdOpCode.Int16x8RelaxedLaneSelect, instruction.SimdOpCode);
+        Assert.AreEqual(new Int16x8RelaxedLaneSelect(), instruction);
+        Assert.AreEqual(new Int16x8RelaxedLaneSelect().GetHashCode(), instruction.GetHashCode());
     }
 }
