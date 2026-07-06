@@ -214,11 +214,20 @@ See `Wasm3Phase6Design.md`'s Implementation notes (M6.1–M6.5) for detail.
 
 ### Phase 7 — Relaxed SIMD  *(small-medium)*
 
-- [ ] ~12 opcodes under the `0xFD` SIMD prefix (`SimdOpCode.cs`): relaxed `madd`/`nmadd` (FMA), `laneselect`, relaxed `min`/`max`, relaxed `q15mulr`, relaxed `dot` (i16x8, i32x4), relaxed `trunc` families.
-- [ ] Implement the **deterministic-profile default** for each (the spec permits implementation-defined results; we pick the deterministic one, consistent with our stance below). Reuse existing `Vector128<T>` lowering patterns from the 2.0 SIMD instructions.
-- [ ] Harness: relaxed-simd fixtures use the `either` expected-result form (see A1); assert the deterministic result matches one of the listed alternatives.
-- [ ] Categories: `relaxed-simd/*`.
-- Risk: small-medium. Watch FMA: .NET `Vector128` FMA availability is hardware-dependent; provide a deterministic fallback.
+> Full design (opcode table, deterministic-profile semantics, harness changes, milestones M7.1–M7.3): [Wasm3Phase7Design.md](Wasm3Phase7Design.md).
+
+**Progress: Phase 7 is complete.** M7.1–M7.3 are all done, gated green (Debug+Release, net8/9/10, 0 failures).
+All 20 relaxed-SIMD opcodes (`0x100`–`0x113`) are implemented under the deterministic profile, and all seven `relaxed-simd/*` categories pass outright (skip count 30 → 23).
+See `Wasm3Phase7Design.md`'s Implementation notes for the opcode verification, the resolved dot-product semantics, and surprises.
+
+- [x] 20 opcodes under the `0xFD` SIMD prefix (`SimdOpCode.cs`): relaxed `madd`/`nmadd` (FMA), `laneselect`, relaxed `min`/`max`, relaxed `q15mulr`, relaxed `dot` (i16x8, i32x4), relaxed `trunc` families, and relaxed `swizzle`.
+      Done: sub-opcodes `0x100`–`0x113`, one instruction class each, a new `SimdTernaryV128Instruction` base for the four-operand-shape ops (madd/nmadd, laneselect, i32x4 dot-add), plus general-parser dispatch.
+- [x] Implement the **deterministic-profile default** for each (the spec permits implementation-defined results; we pick the deterministic one, consistent with our stance below). Reuse existing `Vector128<T>` lowering patterns from the 2.0 SIMD instructions.
+      Done: most ops delegate to their existing non-relaxed twin's `Execute`; madd/nmadd use scalar `MathF`/`Math.FusedMultiplyAdd` (correctly-rounded and portable, no hardware-FMA dependence); the two dot products are new per-lane implementations (signed × signed, saturating i16 pairwise add, wrapping i32 accumulate).
+- [x] Harness: relaxed-simd fixtures use the `either` expected-result form (see A1); assert the deterministic result matches one of the listed alternatives.
+      Done: `CompareReturnValue` handles `EitherValue` by trying each alternative (non-final ones under a `UnitTestAssertException` catch, the final one propagating).
+- [x] Categories: `relaxed-simd/*` — all seven green outright, no per-line skips.
+- Risk: small-medium — resolved. FMA needed no `Vector128` intrinsic path: the scalar `FusedMultiplyAdd` fallback is already deterministic and portable, so there is nothing hardware-dependent to guard.
 
 ### Phase 8 — Garbage collection  *(largest; depends on Phase 5)*
 

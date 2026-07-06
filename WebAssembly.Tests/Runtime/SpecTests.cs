@@ -1033,38 +1033,31 @@ public class SpecTests
 
     /// <summary>Runs the relaxed-simd/i16x8_relaxed_q15mulr_s tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_i16x8_relaxed_q15mulr_s() => SpecTestRunner.RunAllSkipped("relaxed-simd/i16x8_relaxed_q15mulr_s", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_i16x8_relaxed_q15mulr_s() => SpecTestRunner.Run("relaxed-simd/i16x8_relaxed_q15mulr_s");
 
     /// <summary>Runs the relaxed-simd/i32x4_relaxed_trunc tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_i32x4_relaxed_trunc() => SpecTestRunner.RunAllSkipped("relaxed-simd/i32x4_relaxed_trunc", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_i32x4_relaxed_trunc() => SpecTestRunner.Run("relaxed-simd/i32x4_relaxed_trunc");
 
     /// <summary>Runs the relaxed-simd/i8x16_relaxed_swizzle tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_i8x16_relaxed_swizzle() => SpecTestRunner.RunAllSkipped("relaxed-simd/i8x16_relaxed_swizzle", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_i8x16_relaxed_swizzle() => SpecTestRunner.Run("relaxed-simd/i8x16_relaxed_swizzle");
 
     /// <summary>Runs the relaxed-simd/relaxed_dot_product tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_relaxed_dot_product() => SpecTestRunner.RunAllSkipped("relaxed-simd/relaxed_dot_product", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_relaxed_dot_product() => SpecTestRunner.Run("relaxed-simd/relaxed_dot_product");
 
     /// <summary>Runs the relaxed-simd/relaxed_laneselect tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_relaxed_laneselect() => SpecTestRunner.RunAllSkipped("relaxed-simd/relaxed_laneselect", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_relaxed_laneselect() => SpecTestRunner.Run("relaxed-simd/relaxed_laneselect");
 
     /// <summary>Runs the relaxed-simd/relaxed_madd_nmadd tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_relaxed_madd_nmadd() => SpecTestRunner.RunAllSkipped("relaxed-simd/relaxed_madd_nmadd", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_relaxed_madd_nmadd() => SpecTestRunner.Run("relaxed-simd/relaxed_madd_nmadd");
 
     /// <summary>Runs the relaxed-simd/relaxed_min_max tests.</summary>
     [TestMethod]
-    // Whole category deferred: relaxed SIMD — Phase 7.
-    public void SpecTest_relaxedsimd_relaxed_min_max() => SpecTestRunner.RunAllSkipped("relaxed-simd/relaxed_min_max", "relaxed SIMD — Phase 7");
+    public void SpecTest_relaxedsimd_relaxed_min_max() => SpecTestRunner.Run("relaxed-simd/relaxed_min_max");
 
 
     // ==== WASM 3.0 — Garbage collection & type system (Phase 8) ====

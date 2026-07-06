@@ -781,6 +781,69 @@ public enum SimdOpCode : uint
     /// <summary>Convert unsigned i32x4 (low) to f64x2.</summary>
     [OpCodeCharacteristics("f64x2.convert_low_i32x4_u")]
     Float64x2ConvertLowInt32x4Unsigned = 0xFF,
+
+    // ---- relaxed SIMD (WASM 3.0) ----
+    // The deterministic profile pins one behavior per op; see the individual instruction classes.
+    /// <summary>Relaxed i8x16 swizzle (deterministic profile equals i8x16.swizzle).</summary>
+    [OpCodeCharacteristics("i8x16.relaxed_swizzle")]
+    Int8x16RelaxedSwizzle = 0x100,
+    /// <summary>Relaxed truncate f32x4 to i32x4, signed (deterministic profile equals i32x4.trunc_sat_f32x4_s).</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_trunc_f32x4_s")]
+    Int32x4RelaxedTruncFloat32x4Signed = 0x101,
+    /// <summary>Relaxed truncate f32x4 to i32x4, unsigned (deterministic profile equals i32x4.trunc_sat_f32x4_u).</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_trunc_f32x4_u")]
+    Int32x4RelaxedTruncFloat32x4Unsigned = 0x102,
+    /// <summary>Relaxed truncate f64x2 to i32x4, signed (deterministic profile equals i32x4.trunc_sat_f64x2_s_zero).</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_trunc_f64x2_s_zero")]
+    Int32x4RelaxedTruncFloat64x2SignedZero = 0x103,
+    /// <summary>Relaxed truncate f64x2 to i32x4, unsigned (deterministic profile equals i32x4.trunc_sat_f64x2_u_zero).</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_trunc_f64x2_u_zero")]
+    Int32x4RelaxedTruncFloat64x2UnsignedZero = 0x104,
+    /// <summary>f32x4 fused multiply-add (a*b + c, single rounding).</summary>
+    [OpCodeCharacteristics("f32x4.relaxed_madd")]
+    Float32x4RelaxedMultiplyAdd = 0x105,
+    /// <summary>f32x4 fused negative multiply-add (-(a*b) + c, single rounding).</summary>
+    [OpCodeCharacteristics("f32x4.relaxed_nmadd")]
+    Float32x4RelaxedNegativeMultiplyAdd = 0x106,
+    /// <summary>f64x2 fused multiply-add (a*b + c, single rounding).</summary>
+    [OpCodeCharacteristics("f64x2.relaxed_madd")]
+    Float64x2RelaxedMultiplyAdd = 0x107,
+    /// <summary>f64x2 fused negative multiply-add (-(a*b) + c, single rounding).</summary>
+    [OpCodeCharacteristics("f64x2.relaxed_nmadd")]
+    Float64x2RelaxedNegativeMultiplyAdd = 0x108,
+    /// <summary>Relaxed i8x16 lane select (deterministic profile equals v128.bitselect).</summary>
+    [OpCodeCharacteristics("i8x16.relaxed_laneselect")]
+    Int8x16RelaxedLaneselect = 0x109,
+    /// <summary>Relaxed i16x8 lane select (deterministic profile equals v128.bitselect).</summary>
+    [OpCodeCharacteristics("i16x8.relaxed_laneselect")]
+    Int16x8RelaxedLaneselect = 0x10A,
+    /// <summary>Relaxed i32x4 lane select (deterministic profile equals v128.bitselect).</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_laneselect")]
+    Int32x4RelaxedLaneselect = 0x10B,
+    /// <summary>Relaxed i64x2 lane select (deterministic profile equals v128.bitselect).</summary>
+    [OpCodeCharacteristics("i64x2.relaxed_laneselect")]
+    Int64x2RelaxedLaneselect = 0x10C,
+    /// <summary>Relaxed f32x4 min (deterministic profile equals f32x4.min).</summary>
+    [OpCodeCharacteristics("f32x4.relaxed_min")]
+    Float32x4RelaxedMin = 0x10D,
+    /// <summary>Relaxed f32x4 max (deterministic profile equals f32x4.max).</summary>
+    [OpCodeCharacteristics("f32x4.relaxed_max")]
+    Float32x4RelaxedMax = 0x10E,
+    /// <summary>Relaxed f64x2 min (deterministic profile equals f64x2.min).</summary>
+    [OpCodeCharacteristics("f64x2.relaxed_min")]
+    Float64x2RelaxedMin = 0x10F,
+    /// <summary>Relaxed f64x2 max (deterministic profile equals f64x2.max).</summary>
+    [OpCodeCharacteristics("f64x2.relaxed_max")]
+    Float64x2RelaxedMax = 0x110,
+    /// <summary>Relaxed i16x8 Q15 multiply (deterministic profile equals i16x8.q15mulr_sat_s).</summary>
+    [OpCodeCharacteristics("i16x8.relaxed_q15mulr_s")]
+    Int16x8RelaxedQ15MulrSigned = 0x111,
+    /// <summary>Relaxed i16x8 signed dot product of i8x16 and i7x16.</summary>
+    [OpCodeCharacteristics("i16x8.relaxed_dot_i8x16_i7x16_s")]
+    Int16x8RelaxedDotInt8x16Int7x16Signed = 0x112,
+    /// <summary>Relaxed i32x4 signed dot product of i8x16 and i7x16, with accumulator add.</summary>
+    [OpCodeCharacteristics("i32x4.relaxed_dot_i8x16_i7x16_add_s")]
+    Int32x4RelaxedDotInt8x16Int7x16AddSigned = 0x113,
 }
 
 static class SimdOpCodeExtensions

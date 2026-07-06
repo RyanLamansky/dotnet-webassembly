@@ -676,6 +676,29 @@ static partial class SpecTestRunner
         if (rawExpected is FuncRefValue funcRef)
             return funcRef.value == "null" ? actual is null : actual is Delegate;
 
+        // 'either' (relaxed-simd): the actual result matches if it equals any one of the listed alternatives.
+        // The deterministic profile this library implements always produces one of them. A comparison that
+        // fails may throw (the v128 path uses Assert), so each non-final alternative is tried under a catch;
+        // the final alternative propagates its failure so the message names a concrete expected value.
+        if (rawExpected is EitherValue either)
+        {
+            var alternatives = either.values ?? [];
+            for (var i = 0; i < alternatives.Length - 1; i++)
+            {
+                try
+                {
+                    if (CompareReturnValue(alternatives[i], actual, line))
+                        return true;
+                }
+                catch (UnitTestAssertException)
+                {
+                    // This alternative didn't match; fall through to the next one.
+                }
+            }
+
+            return alternatives.Length > 0 && CompareReturnValue(alternatives[^1], actual, line);
+        }
+
         if (Equals(rawExpected.BoxedValue, actual))
             return true;
 
