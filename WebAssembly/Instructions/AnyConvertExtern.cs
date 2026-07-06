@@ -8,7 +8,7 @@ namespace WebAssembly.Instructions;
 /// identity conversion: <c>externref</c> and <c>anyref</c> share the same runtime representation, so no code is
 /// emitted and the value survives the round-trip unchanged.
 /// </summary>
-public class AnyConvertExtern : GCInstruction
+public class AnyConvertExtern : NullaryGCInstruction
 {
     /// <summary>Always <see cref="GCOpCode.AnyConvertExtern"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.AnyConvertExtern;
@@ -16,15 +16,7 @@ public class AnyConvertExtern : GCInstruction
     /// <summary>Creates a new <see cref="AnyConvertExtern"/> instance.</summary>
     public AnyConvertExtern() { }
 
-    internal AnyConvertExtern(Reader reader) { }
-
-    private protected sealed override void WriteImmediates(Writer writer) { }
-
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is AnyConvertExtern;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => (int)this.GCOpCode;
+    internal AnyConvertExtern(Reader reader) : base(reader) { }
 
     internal sealed override void Compile(CompilationContext context)
     {

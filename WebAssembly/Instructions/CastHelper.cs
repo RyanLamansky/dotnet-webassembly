@@ -28,7 +28,7 @@ static class CastHelper
         /// <summary>A bottom heap type (<c>none</c>/<c>nofunc</c>/<c>noextern</c>/<c>noexn</c>): no value matches.</summary>
         Bottom,
 
-        /// <summary>A concrete function index: checked by canonical function-type identity (WASM 3.0, design §10).</summary>
+        /// <summary>A concrete function index: checked by canonical function-type identity (WebAssembly 3.0 GC).</summary>
         FuncType,
     }
 
@@ -46,7 +46,7 @@ static class CastHelper
                 return (TargetKind.IsInst, emitter.GetClass(index), null);
 
             // A concrete function index is checked by canonical function-type identity via the registry, not just
-            // Delegate shape (design §10): two differently-shaped rec groups can share the same CLR delegate type.
+            // Delegate shape: two differently-shaped rec groups can share the same CLR delegate type.
             if (context.CanonicalTypes is { } map && index < (uint)map.Descriptor.Length)
                 return (TargetKind.FuncType, null, map.Descriptor[index]);
 
@@ -56,17 +56,17 @@ static class CastHelper
         return heapType switch
         {
             WebAssemblyHeapType.Func => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(Delegate)), null),
-            WebAssemblyHeapType.Struct => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WasmStructObject)), null),
-            WebAssemblyHeapType.Array => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WasmArrayObject)), null),
-            WebAssemblyHeapType.I31 => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WasmI31)), null),
-            WebAssemblyHeapType.Eq => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(IWasmEq)), null),
+            WebAssemblyHeapType.Struct => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WebAssemblyStructObject)), null),
+            WebAssemblyHeapType.Array => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WebAssemblyArrayObject)), null),
+            WebAssemblyHeapType.I31 => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WebAssemblyI31)), null),
+            WebAssemblyHeapType.Eq => (TargetKind.IsInst, context.Configuration.NeutralizeType(typeof(WebAssemblyGCObject)), null),
             WebAssemblyHeapType.Any or WebAssemblyHeapType.Extern or WebAssemblyHeapType.Exn => (TargetKind.Top, null, null),
             _ => (TargetKind.Bottom, null, null), // none / nofunc / noextern / noexn
         };
     }
 
-    private static MethodInfo WasmGCMethod(CompilationContext context, string name) =>
-        context.Configuration.NeutralizeType(typeof(WasmGC)).GetMethod(name)!;
+    private static MethodInfo WebAssemblyGCMethod(CompilationContext context, string name) =>
+        context.Configuration.NeutralizeType(typeof(WebAssemblyGC)).GetMethod(name)!;
 
     /// <summary>
     /// Emits a type test: consumes the reference on top of the stack and pushes an <c>i32</c> (1 when the value
@@ -83,8 +83,8 @@ static class CastHelper
                     var done = context.DefineLabel();
                     context.Emit(OpCodes.Dup);
                     context.Emit(OpCodes.Brfalse, isNull);
-                    context.Emit(OpCodes.Ldstr, descriptor!);
-                    context.Emit(OpCodes.Call, WasmGCMethod(context, nameof(WasmGC.IsFunctionReferenceOfType)));
+                    context.EmitLoadFuncTypeToken(descriptor!);
+                    context.Emit(OpCodes.Call, WebAssemblyGCMethod(context, nameof(WebAssemblyGC.IsFunctionReferenceOfType)));
                     context.Emit(OpCodes.Br, done);
                     context.MarkLabel(isNull);
                     context.Emit(OpCodes.Pop);
@@ -94,8 +94,8 @@ static class CastHelper
                 else
                 {
                     // A null value is not a Delegate, so the helper returns false — the correct non-null result.
-                    context.Emit(OpCodes.Ldstr, descriptor!);
-                    context.Emit(OpCodes.Call, WasmGCMethod(context, nameof(WasmGC.IsFunctionReferenceOfType)));
+                    context.EmitLoadFuncTypeToken(descriptor!);
+                    context.Emit(OpCodes.Call, WebAssemblyGCMethod(context, nameof(WebAssemblyGC.IsFunctionReferenceOfType)));
                 }
                 break;
 
@@ -170,15 +170,15 @@ static class CastHelper
                     var done = context.DefineLabel();
                     context.Emit(OpCodes.Dup);
                     context.Emit(OpCodes.Brfalse, done);
-                    context.Emit(OpCodes.Ldstr, descriptor!);
-                    context.Emit(OpCodes.Call, WasmGCMethod(context, nameof(WasmGC.CastFunctionReference)));
+                    context.EmitLoadFuncTypeToken(descriptor!);
+                    context.Emit(OpCodes.Call, WebAssemblyGCMethod(context, nameof(WebAssemblyGC.CastFunctionReference)));
                     context.MarkLabel(done);
                 }
                 else
                 {
                     // A null (or mismatched) value traps "cast failure"; a match returns the value unchanged.
-                    context.Emit(OpCodes.Ldstr, descriptor!);
-                    context.Emit(OpCodes.Call, WasmGCMethod(context, nameof(WasmGC.CastFunctionReference)));
+                    context.EmitLoadFuncTypeToken(descriptor!);
+                    context.Emit(OpCodes.Call, WebAssemblyGCMethod(context, nameof(WebAssemblyGC.CastFunctionReference)));
                 }
                 break;
 
@@ -209,8 +209,8 @@ static class CastHelper
                 else
                 {
                     // Every value (including null) fails; the helper always throws but keeps the IL stack balanced.
-                    context.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WasmGC))
-                        .GetMethod(nameof(WasmGC.FailCast), [typeof(object)])!);
+                    context.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WebAssemblyGC))
+                        .GetMethod(nameof(WebAssemblyGC.FailCast), [typeof(object)])!);
                 }
                 break;
         }

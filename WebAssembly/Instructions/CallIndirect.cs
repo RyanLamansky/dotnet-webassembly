@@ -151,18 +151,23 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
             il.EmitLoadArg(parms.Length);
             il.Emit(OpCodes.Call, isTable64 ? FunctionTable.Get64Method : FunctionTable.IndexGetter);
 
-            // WebAssembly 3.0 GC (design §10): guard the arity castclass with the canonical function-type check.
-            // Two canonically-distinct func types can share a CLR delegate shape (differently-shaped rec groups, or
-            // (ref $a)/(ref $b) params both lowering to object), so the castclass alone would wrongly succeed; the
-            // guard traps ("indirect call type mismatch") when the selected function's registered canonical type is
-            // not a subtype of this call's declared type. A null or unregistered (host) delegate is left to the
-            // castclass and the subsequent invoke.
+            // Guard the arity castclass with the canonical function-type check. Two canonically-distinct func types
+            // can share a CLR delegate shape (differently-shaped rec groups, or (ref $a)/(ref $b) params both lowering
+            // to object), so the castclass alone would wrongly succeed; the guard traps ("indirect call type
+            // mismatch") when the selected function's registered canonical type is not a subtype of this call's
+            // declared type. A null or unregistered (host) delegate is left to the castclass and the subsequent
+            // invoke. The expected type is a token interned once at instantiation and loaded from the exports
+            // instance's FuncTypeTokens field, so no descriptor is re-interned per call.
             if (context.CanonicalTypes is { } map && this.Type < (uint)map.Descriptor.Length)
             {
+                var tokenIndex = context.GetFuncTypeTokenIndex(map.Descriptor[this.Type]);
                 il.Emit(OpCodes.Dup);
-                il.Emit(OpCodes.Ldstr, map.Descriptor[this.Type]);
-                il.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WebAssembly.Runtime.WasmGC))
-                    .GetMethod(nameof(WebAssembly.Runtime.WasmGC.CheckIndirectCallType))!);
+                il.EmitLoadArg(parms.Length + 1); // the exports instance
+                il.Emit(OpCodes.Ldfld, context.FuncTypeTokens!);
+                il.EmitLoadConstant(tokenIndex);
+                il.Emit(OpCodes.Ldelem_Ref);
+                il.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WebAssembly.Runtime.WebAssemblyGC))
+                    .GetMethod(nameof(WebAssembly.Runtime.WebAssemblyGC.CheckIndirectCallType))!);
             }
 
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);

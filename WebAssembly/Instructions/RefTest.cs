@@ -1,4 +1,3 @@
-using System;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
 
@@ -21,17 +20,6 @@ public class RefTest : ReferenceTestInstruction
     public RefTest(bool nullable) => this.Nullable = nullable;
 
     internal RefTest(bool nullable, Reader reader) : base(nullable, reader) { }
-
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) =>
-        other is RefTest instruction
-        && instruction.Nullable == this.Nullable
-        && instruction.HeapType == this.HeapType
-        && instruction.TypeIndex == this.TypeIndex;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() =>
-        HashCode.Combine((int)this.GCOpCode, this.Nullable ? 1 : 0, (int)(this.HeapType ?? 0), (int)(this.TypeIndex ?? uint.MaxValue));
 
     internal sealed override void Compile(CompilationContext context)
     {

@@ -48,4 +48,15 @@ public class Float32x4RelaxedMaxTests
         Assert.AreEqual(7f, exports.GetFloat(8));
         Assert.IsTrue(float.IsNaN(exports.GetFloat(12)), "NaN propagates");
     }
+
+    /// <summary>Verifies the <see cref="Float32x4RelaxedMax"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float32x4RelaxedMax_OpCodeAndEquality()
+    {
+        var instruction = new Float32x4RelaxedMax();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float32x4RelaxedMax, instruction.SimdOpCode);
+        Assert.AreEqual(new Float32x4RelaxedMax(), instruction);
+        Assert.AreEqual(new Float32x4RelaxedMax().GetHashCode(), instruction.GetHashCode());
+    }
 }

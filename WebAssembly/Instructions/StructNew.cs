@@ -48,10 +48,7 @@ public class StructNew : GCInstruction
         for (var i = fields.Length - 1; i >= 0; i--)
         {
             var local = locals[i] = context.DeclareLocal(fields[i].Builder.FieldType);
-            if (fields[i].Packed == PackedType.I8)
-                context.Emit(OpCodes.Conv_U1);
-            else if (fields[i].Packed == PackedType.I16)
-                context.Emit(OpCodes.Conv_U2);
+            GCEmit.EmitPackedStoreConversion(context, fields[i].Packed);
             context.Emit(OpCodes.Stloc, local);
         }
 

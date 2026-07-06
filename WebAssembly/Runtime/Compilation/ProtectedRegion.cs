@@ -10,10 +10,6 @@ namespace WebAssembly.Runtime.Compilation;
 /// physically-present operand stack into <see cref="SpillLocals"/> and reloads only the block's parameters inside the
 /// try; branches that leave the region reconstruct the physical stack from the spill in an <see cref="ExitStub"/>.
 /// </summary>
-/// <remarks>
-/// Internal-only: state is exposed as public readonly fields rather than trivial properties (maintainer preference,
-/// matching <see cref="ValType"/>).
-/// </remarks>
 internal sealed class ProtectedRegion
 {
     /// <summary>The absolute stack index of the first slot this region spilled — the physical floor of the enclosing region (or 0).</summary>

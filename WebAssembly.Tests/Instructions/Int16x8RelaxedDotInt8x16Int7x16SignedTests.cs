@@ -47,4 +47,15 @@ public class Int16x8RelaxedDotInt8x16Int7x16SignedTests
         Assert.AreEqual(32767, exports.GetShort(2), "(-128*-128)*2 = 32768 saturates to i16 max");
         Assert.AreEqual(0, exports.GetShort(4));
     }
+
+    /// <summary>Verifies the <see cref="Int16x8RelaxedDotInt8x16Int7x16Signed"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int16x8RelaxedDotInt8x16Int7x16Signed_OpCodeAndEquality()
+    {
+        var instruction = new Int16x8RelaxedDotInt8x16Int7x16Signed();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int16x8RelaxedDotInt8x16Int7x16Signed, instruction.SimdOpCode);
+        Assert.AreEqual(new Int16x8RelaxedDotInt8x16Int7x16Signed(), instruction);
+        Assert.AreEqual(new Int16x8RelaxedDotInt8x16Int7x16Signed().GetHashCode(), instruction.GetHashCode());
+    }
 }

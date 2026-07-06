@@ -47,4 +47,15 @@ public class Int32x4RelaxedTruncFloat32x4SignedTests
         Assert.AreEqual(int.MaxValue, exports.GetInt(8), "positive overflow saturates");
         Assert.AreEqual(0, exports.GetInt(12), "NaN yields 0");
     }
+
+    /// <summary>Verifies the <see cref="Int32x4RelaxedTruncFloat32x4Signed"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int32x4RelaxedTruncFloat32x4Signed_OpCodeAndEquality()
+    {
+        var instruction = new Int32x4RelaxedTruncFloat32x4Signed();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int32x4RelaxedTruncFloat32x4Signed, instruction.SimdOpCode);
+        Assert.AreEqual(new Int32x4RelaxedTruncFloat32x4Signed(), instruction);
+        Assert.AreEqual(new Int32x4RelaxedTruncFloat32x4Signed().GetHashCode(), instruction.GetHashCode());
+    }
 }

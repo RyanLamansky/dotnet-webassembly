@@ -49,4 +49,15 @@ public class Int64x2RelaxedLaneselectTests
         Assert.AreEqual(0xFF, exports.GetByte(0), "masked lanes select a");
         Assert.AreEqual(0x00, exports.GetByte(8), "unmasked lanes select b");
     }
+
+    /// <summary>Verifies the <see cref="Int64x2RelaxedLaneselect"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int64x2RelaxedLaneselect_OpCodeAndEquality()
+    {
+        var instruction = new Int64x2RelaxedLaneselect();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int64x2RelaxedLaneselect, instruction.SimdOpCode);
+        Assert.AreEqual(new Int64x2RelaxedLaneselect(), instruction);
+        Assert.AreEqual(new Int64x2RelaxedLaneselect().GetHashCode(), instruction.GetHashCode());
+    }
 }

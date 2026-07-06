@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayInitData : GCInstruction
 {
-    private static readonly MethodInfo initArrayFromDataMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.InitArrayFromData))!;
+    private static readonly MethodInfo initArrayFromDataMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.InitArrayFromData))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayInitData"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayInitData;
@@ -47,15 +47,11 @@ public class ArrayInitData : GCInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
         if (element.Packed == PackedType.None && element.ValueType.IsReference)
             throw new ModuleLoadException($"array type is not numeric or vector: array.init_data requires a numeric or vector element (type {this.Type}).", 0);
         if (!element.IsMutable)
             throw new ModuleLoadException($"array is immutable: array type {this.Type} cannot be written by array.init_data.", 0);
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
 
         if (!context.DataSegments.TryGetValue(this.Data, out var segmentField))
             throw new ModuleLoadException($"unknown data segment {this.Data}: array.init_data requires a passive data segment.", 0);
@@ -75,7 +71,7 @@ public class ArrayInitData : GCInstruction
 
         // array on top: InitArrayFromData(items, index, data, offset, count).
         context.Emit(OpCodes.Castclass, emitter.GetClass(this.Type));
-        context.Emit(OpCodes.Ldfld, array.ItemsField);
+        context.Emit(OpCodes.Ldfld, array.ItemsField!);
         context.Emit(OpCodes.Ldloc, index);
         context.EmitLoadThis();
         context.Emit(OpCodes.Ldfld, segmentField);

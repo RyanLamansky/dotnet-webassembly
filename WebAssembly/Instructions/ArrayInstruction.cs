@@ -1,3 +1,5 @@
+using System;
+
 namespace WebAssembly.Instructions;
 
 /// <summary>
@@ -16,4 +18,13 @@ public abstract class ArrayInstruction : GCInstruction
     public uint Type { get; set; }
 
     private protected sealed override void WriteImmediates(Writer writer) => writer.WriteVar(this.Type);
+
+    /// <inheritdoc/>
+    public override bool Equals(Instruction? other) =>
+        other is ArrayInstruction instruction
+        && instruction.GetType() == this.GetType()
+        && instruction.Type == this.Type;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type);
 }

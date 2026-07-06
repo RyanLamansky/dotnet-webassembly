@@ -1,3 +1,4 @@
+using System;
 using WebAssembly.Runtime.Compilation;
 
 namespace WebAssembly.Instructions;
@@ -53,6 +54,18 @@ public abstract class ReferenceTestInstruction : GCInstruction
 
     private protected sealed override void WriteImmediates(Writer writer) =>
         writer.WriteHeapType(this.heapType, this.typeIndex);
+
+    /// <inheritdoc/>
+    public override bool Equals(Instruction? other) =>
+        other is ReferenceTestInstruction instruction
+        && instruction.GetType() == this.GetType()
+        && instruction.Nullable == this.Nullable
+        && instruction.heapType == this.heapType
+        && instruction.typeIndex == this.typeIndex;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() =>
+        HashCode.Combine((int)this.GCOpCode, this.Nullable ? 1 : 0, (int)(this.heapType ?? 0), (int)(this.typeIndex ?? uint.MaxValue));
 
     /// <summary>The <c>(ref null? target)</c> value type this instruction produces or matches against.</summary>
     private protected ValType TargetType => this.typeIndex is { } index

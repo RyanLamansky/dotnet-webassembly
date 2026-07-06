@@ -52,4 +52,15 @@ public class Int8x16RelaxedSwizzleTests
         Assert.AreEqual(0, exports.GetByte(1), "index with high bit set selects 0");
         Assert.AreEqual(10, exports.GetByte(2));
     }
+
+    /// <summary>Verifies the <see cref="Int8x16RelaxedSwizzle"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int8x16RelaxedSwizzle_OpCodeAndEquality()
+    {
+        var instruction = new Int8x16RelaxedSwizzle();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int8x16RelaxedSwizzle, instruction.SimdOpCode);
+        Assert.AreEqual(new Int8x16RelaxedSwizzle(), instruction);
+        Assert.AreEqual(new Int8x16RelaxedSwizzle().GetHashCode(), instruction.GetHashCode());
+    }
 }

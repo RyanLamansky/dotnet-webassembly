@@ -12,8 +12,11 @@ Personal, machine-specific preferences can go in `CLAUDE.local.md` (gitignored, 
 **WebAssembly for .NET** — a pure-.NET library (NuGet package `WebAssembly`) to create, read, modify, write, and execute WebAssembly (`.wasm`) binaries, plus convert them to .NET DLLs.
 Execution is not an interpreter: WASM instructions are emitted as .NET IL via `System.Reflection.Emit` and JIT-compiled to native code by the CLR.
 
-- Execution targets ratified WASM **2.0** — bulk memory, reference types, fixed-width SIMD, multi-value, and typed `select` — with spec compliance that's good but imperfect.
-  Post-2.0 proposals aren't covered yet; the remaining 2.0 gaps (a few validation edge cases, NaN-payload bit patterns) are documented as skips in `SpecTests.cs`.
+- Execution targets ratified WASM **3.0** (released 2025-09-17) — extended constant expressions, tail calls, multiple memories, 64-bit address space (memory64 / table64), typed function references, exception handling (the `try_table` model), relaxed SIMD (deterministic profile), and garbage collection (struct / array / i31) — on top of the earlier 2.0 feature set (bulk memory, reference types, fixed-width SIMD, multi-value, typed `select`).
+  Spec compliance is strong: every ratified-3.0 spec-suite category runs green.
+  The only intentional exclusions are the seven `float_exprs` NaN-folding lines marked `unsupported` in `SpecTests.cs` (the JIT folds `x±0` / `x*1` so a signaling NaN is never quieted), and they keep the category green rather than deferring it.
+  This library targets the **deterministic profile**; that stance is documented in `docs/Wasm3Plan.md`.
+  Post-3.0 proposals (custom page sizes, wide arithmetic, JS string builtins, …) aren't covered.
 - `WebAssembly.Module` is the object-model root for reading, writing, and modifying.
   It exposes typed section collections — `Types`, `Imports`, `Functions`, `Tables`, `Memories`, `Globals`, `Exports`, `Elements`, `Codes`, `Data`, `CustomSections` — with `ReadFromBinary()` / `WriteToBinary()` for serialization.
 - `WebAssembly.Runtime.Compile` drives execution and the WASM→DLL path.
@@ -33,7 +36,7 @@ Execution is not an interpreter: WASM instructions are emitted as .NET IL via `S
 | `WebAssembly.Tests/Runtime/SpecTestData/` | **Generated** spec-suite fixtures (`.wasm` + `.json`). Do not hand-edit. |
 | `Tools/RefreshSpecTests/` | Tool that regenerates `SpecTestData/` from the upstream WebAssembly spec suite. |
 | `Examples/` | Standalone runnable samples (`RunExisting`, `GenerateClassFromWasm`, `ReadMeSample`). |
-| `docs/BreakingChanges.md` | Breaking-change log. |
+| `docs/` | Long-form docs: `BreakingChanges.md` (breaking-change log), `Wasm3Plan.md` (the completed 2.0→3.0 upgrade plan), and the `Wasm3Phase*Design.md` historical design records for the larger phases. |
 
 ## Build & test
 
@@ -80,9 +83,10 @@ Each opcode is a class in `WebAssembly/Instructions/` deriving from `Instruction
 A new or modified instruction touches several coordinated places:
 
 1. The instruction class itself: exposes `OpCode`, implements `WriteTo(Writer)` (binary emission), `Compile(CompilationContext)` (IL emission, including `context.ValidateStack(...)`), `Equals`, and a `reader`-based constructor if it has immediates.
-2. `WebAssembly/OpCode.cs` (and `MiscellaneousOpCode.cs` for `0xFC`-prefixed ops) — the opcode enum value.
+2. The opcode enum value: `WebAssembly/OpCode.cs` for single-byte ops, or the prefixed-op enum matching the prefix byte — `MiscellaneousOpCode.cs` (`0xFC`), `SimdOpCode.cs` (`0xFD`), or `GCOpCode.cs` (`0xFB`).
 3. `WebAssembly/Instruction.cs` — the binary **parse dispatch** `switch (opCode)` that maps a byte to `new SomeInstruction(reader)`.
-   Both the initializer-expression parser and the general parser live here.
+   Both parsers live here: the general parser and the restricted initializer-expression parser (`ParseInitializerExpression`).
+   A constant-capable instruction (usable in a global / element / data offset initializer) needs a dispatch entry in **both**.
 4. Tests in `WebAssembly.Tests/Instructions/` — there's a test file per instruction; follow the neighbors.
    Shared base classes cut the boilerplate: `CompilerTestBase` (and its arity variants), `ComparisonTestBase`, `ConversionTestBase`, `MemoryReadTestBase` / `MemoryWriteTestBase`.
 
@@ -109,8 +113,8 @@ To refresh (rarely needed):
 dotnet run --project Tools/RefreshSpecTests
 ```
 
-It downloads a pinned `wabt` release, checks out a pinned spec commit, runs `wast2json`, and rewrites `SpecTestData/`.
-The pins (`SpecCommit`, `WabtVersion`) and the rationale for the current ratified-2.0 scope are documented at length in `Tools/RefreshSpecTests/Program.cs` — read that header before bumping anything.
+It downloads a pinned `wasm-tools` release (`wabt` was retired — it can't parse the 3.0 GC / exception / script syntax), checks out a pinned spec commit, runs `wasm-tools json-from-wast`, and rewrites `SpecTestData/`.
+The pins (`SpecCommit`, `WasmToolsVersion`) and the rationale for the current ratified-3.0 scope are documented at length in `Tools/RefreshSpecTests/Program.cs` — read that header before bumping anything.
 After a refresh you must re-curate `SpecTests.cs` by hand (line numbers and categories shift).
 
 ## Gotchas

@@ -213,7 +213,7 @@ public class ImportException : RuntimeException
     /// <summary>
     /// Throws an <see cref="ImportException"/> if a supplied function import's canonical type is not a subtype of the
     /// type the importing module declared. When the supplied delegate was registered with a canonical type ancestry
-    /// (a function linked from another compiled module, WASM 3.0 GC, design §10), the declared type must appear on
+    /// (a function linked from another compiled module, WebAssembly 3.0 GC), the declared type must appear on
     /// that ancestry; a host-supplied (unregistered) delegate is accepted, its arity/shape already verified by the
     /// caller's type cast. This is finer than the CLR delegate-shape check, which cannot see structural rec-group
     /// identity (for example a func type that is member 0 of one rec group versus member 1 of another).
@@ -224,7 +224,7 @@ public class ImportException : RuntimeException
     /// <param name="field">The import's field name, for diagnostics.</param>
     public static void ValidateFunction(Delegate function, string expectedDescriptor, string module, string field)
     {
-        if (!WasmGC.FunctionReferenceMatches(function, WasmGC.InternFunctionType(expectedDescriptor)))
+        if (!WebAssemblyGC.FunctionReferenceMatches(function, WebAssemblyGC.InternFunctionType(expectedDescriptor)))
             throw new ImportException($"Import {module}::{field} has an incompatible function type.");
     }
 }

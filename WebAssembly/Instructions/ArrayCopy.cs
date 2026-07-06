@@ -13,7 +13,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayCopy : GCInstruction
 {
-    private static readonly MethodInfo arrayCopyMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.ArrayCopy))!;
+    private static readonly MethodInfo arrayCopyMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.ArrayCopy))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayCopy"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayCopy;
@@ -79,7 +79,7 @@ public class ArrayCopy : GCInstruction
         var destinationReference = context.DeclareLocal(typeof(object));
         context.Emit(OpCodes.Stloc, destinationReference);
 
-        // WasmGC.ArrayCopy(destItems, destIndex, srcItems, srcIndex, count).
+        // WebAssemblyGC.ArrayCopy(destItems, destIndex, srcItems, srcIndex, count).
         context.Emit(OpCodes.Ldloc, destinationReference);
         context.Emit(OpCodes.Castclass, emitter.GetClass(this.DestinationType));
         context.Emit(OpCodes.Ldfld, destination.ItemsField!);

@@ -59,9 +59,9 @@ public abstract class RuntimeImport
 
                         var functionDelegate = GetDelegate(method);
                         // Re-register the export delegate with its canonical type ancestry so a re-importing module can
-                        // match it by canonical identity (WASM 3.0 GC, design §10); host exports carry no descriptor.
+                        // match it by canonical identity (WebAssembly 3.0 GC); host exports carry no descriptor.
                         if (native.Descriptor is { } functionAncestry)
-                            WasmGC.RegisterFunctionReference(functionDelegate, functionAncestry);
+                            WebAssemblyGC.RegisterFunctionReference(functionDelegate, functionAncestry);
                         yield return (native.Name, new FunctionImport(functionDelegate));
                     }
                     continue;

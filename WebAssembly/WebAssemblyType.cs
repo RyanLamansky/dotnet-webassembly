@@ -7,7 +7,8 @@ using System.Linq;
 namespace WebAssembly;
 
 /// <summary>
-/// Describes the signature of a function.
+/// Describes a WebAssembly composite type: a function signature, or — with WebAssembly 3.0 garbage collection —
+/// a struct or array (selected by <see cref="Form"/>).
 /// </summary>
 public class WebAssemblyType : IEquatable<WebAssemblyType>
 {

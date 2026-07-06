@@ -46,4 +46,15 @@ public class Int16x8RelaxedQ15MulrSignedTests
         Assert.AreEqual(8192, exports.GetShort(0));
         Assert.AreEqual(32767, exports.GetShort(2), "(-32768)^2 rounded saturates to i16 max");
     }
+
+    /// <summary>Verifies the <see cref="Int16x8RelaxedQ15MulrSigned"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int16x8RelaxedQ15MulrSigned_OpCodeAndEquality()
+    {
+        var instruction = new Int16x8RelaxedQ15MulrSigned();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int16x8RelaxedQ15MulrSigned, instruction.SimdOpCode);
+        Assert.AreEqual(new Int16x8RelaxedQ15MulrSigned(), instruction);
+        Assert.AreEqual(new Int16x8RelaxedQ15MulrSigned().GetHashCode(), instruction.GetHashCode());
+    }
 }

@@ -1,3 +1,5 @@
+using System;
+
 namespace WebAssembly.Instructions;
 
 /// <summary>
@@ -27,4 +29,14 @@ public abstract class StructFieldInstruction : GCInstruction
         writer.WriteVar(this.Type);
         writer.WriteVar(this.Field);
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(Instruction? other) =>
+        other is StructFieldInstruction instruction
+        && instruction.GetType() == this.GetType()
+        && instruction.Type == this.Type
+        && instruction.Field == this.Field;
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type, (int)this.Field);
 }

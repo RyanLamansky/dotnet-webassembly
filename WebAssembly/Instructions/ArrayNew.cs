@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
@@ -12,7 +11,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayNew : ArrayInstruction
 {
-    private static readonly MethodInfo newArrayMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.NewArray))!;
+    private static readonly MethodInfo newArrayMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.NewArray))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayNew"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayNew;
@@ -22,19 +21,9 @@ public class ArrayNew : ArrayInstruction
 
     internal ArrayNew(Reader reader) : base(reader) { }
 
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is ArrayNew instruction && instruction.Type == this.Type;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type);
-
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
 
         // Stack (bottom→top): value, size.
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // size
@@ -44,21 +33,15 @@ public class ArrayNew : ArrayInstruction
         var size = context.DeclareLocal(typeof(uint));
         context.Emit(OpCodes.Stloc, size);
         var value = context.DeclareLocal(elementClrType);
-        if (element.Packed == PackedType.I8)
-            context.Emit(OpCodes.Conv_U1);
-        else if (element.Packed == PackedType.I16)
-            context.Emit(OpCodes.Conv_U2);
+        GCEmit.EmitPackedStoreConversion(context, element.Packed);
         context.Emit(OpCodes.Stloc, value);
 
         context.Emit(OpCodes.Ldloc, size);
         context.Emit(OpCodes.Ldloc, value);
         context.Emit(OpCodes.Call, newArrayMethod.MakeGenericMethod(elementClrType));
-        var items = context.DeclareLocal(array.ItemsField.FieldType);
+        var items = context.DeclareLocal(array.ItemsField!.FieldType);
         context.Emit(OpCodes.Stloc, items);
 
-        context.Emit(OpCodes.Newobj, emitter.GetDefaultConstructor(this.Type));
-        context.Emit(OpCodes.Dup);
-        context.Emit(OpCodes.Ldloc, items);
-        context.Emit(OpCodes.Stfld, array.ItemsField);
+        GCEmit.EmitWrapArrayObject(context, emitter, this.Type, array, items);
     }
 }

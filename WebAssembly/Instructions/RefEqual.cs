@@ -26,7 +26,7 @@ public class RefEqual : SimpleInstruction
         context.PopStackNoReturn(this.OpCode, ValType.Ref(true, WebAssemblyHeapType.Eq));
         context.Stack.Push(WebAssemblyValueType.Int32);
 
-        var wasmGC = context.Configuration.NeutralizeType(typeof(WasmGC));
-        context.Emit(OpCodes.Call, wasmGC.GetMethod(nameof(WasmGC.RefEq), BindingFlags.Static | BindingFlags.Public)!);
+        var webAssemblyGC = context.Configuration.NeutralizeType(typeof(WebAssemblyGC));
+        context.Emit(OpCodes.Call, webAssemblyGC.GetMethod(nameof(WebAssemblyGC.RefEqual), BindingFlags.Static | BindingFlags.Public)!);
     }
 }

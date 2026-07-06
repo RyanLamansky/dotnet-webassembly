@@ -94,8 +94,7 @@ internal static class TypeAlgebra
 
     /// <summary>
     /// Structural equality of two concrete function types, with a bisimulation assumption set so self-referential
-    /// (single-type rec-group) types terminate. Phase 5 fixtures do not exercise recursion, but the machinery is
-    /// cheap and Phase 8 requires it.
+    /// (single-type rec-group) types terminate.
     /// </summary>
     private static bool StructurallyEqual(uint i, uint j, Signature[]? types, HashSet<(uint, uint)>? assume)
     {

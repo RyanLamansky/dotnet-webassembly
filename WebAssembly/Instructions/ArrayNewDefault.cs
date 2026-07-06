@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -19,19 +18,9 @@ public class ArrayNewDefault : ArrayInstruction
 
     internal ArrayNewDefault(Reader reader) : base(reader) { }
 
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is ArrayNewDefault instruction && instruction.Type == this.Type;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type);
-
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
 
         // A non-nullable reference element has no default value, so array.new_default is invalid for it.
         if (element.Packed == PackedType.None && element.ValueType.IsReference && !element.ValueType.IsNullable)
@@ -45,12 +34,9 @@ public class ArrayNewDefault : ArrayInstruction
         context.Emit(OpCodes.Stloc, size);
         context.Emit(OpCodes.Ldloc, size);
         context.Emit(OpCodes.Newarr, elementClrType);
-        var items = context.DeclareLocal(array.ItemsField.FieldType);
+        var items = context.DeclareLocal(array.ItemsField!.FieldType);
         context.Emit(OpCodes.Stloc, items);
 
-        context.Emit(OpCodes.Newobj, emitter.GetDefaultConstructor(this.Type));
-        context.Emit(OpCodes.Dup);
-        context.Emit(OpCodes.Ldloc, items);
-        context.Emit(OpCodes.Stfld, array.ItemsField);
+        GCEmit.EmitWrapArrayObject(context, emitter, this.Type, array, items);
     }
 }

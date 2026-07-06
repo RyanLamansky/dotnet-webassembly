@@ -7,12 +7,12 @@ namespace WebAssembly.Runtime;
 /// <see cref="object"/>/<see cref="System.Delegate"/>).  Element mutability is part of the array type's identity,
 /// so a mutable and an immutable array of the same element compile to distinct classes.
 /// </summary>
-public abstract class WasmArrayObject : WasmGCObject
+public abstract class WebAssemblyArrayObject : WebAssemblyGCObject
 {
     /// <summary>
-    /// Creates a new <see cref="WasmArrayObject"/> instance.  Only compiler-emitted subclasses call this.
+    /// Creates a new <see cref="WebAssemblyArrayObject"/> instance.  Only compiler-emitted subclasses call this.
     /// </summary>
-    protected WasmArrayObject()
+    protected WebAssemblyArrayObject()
     {
     }
 

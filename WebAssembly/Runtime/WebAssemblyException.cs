@@ -16,7 +16,8 @@ namespace WebAssembly.Runtime;
 /// </remarks>
 public sealed class WebAssemblyException : RuntimeException
 {
-    // Direct field access for the emitted IL (which reads ArgumentValues[i]); also surfaced publicly below.
+    // The boxed operand values; the emitted try_table catch IL reads these through GetArgument, and they are
+    // surfaced publicly as Arguments below.
     internal readonly object?[] argumentValues;
 
     /// <summary>
@@ -37,7 +38,7 @@ public sealed class WebAssemblyException : RuntimeException
     /// <param name="arguments">The boxed operand values carried by this exception.</param>
     /// <exception cref="ArgumentNullException"><paramref name="tag"/> or <paramref name="arguments"/> cannot be null.</exception>
     public WebAssemblyException(ExceptionTag tag, object?[] arguments)
-        : base(Describe(tag, arguments))
+        : base("")
     {
         this.Tag = tag ?? throw new ArgumentNullException(nameof(tag));
         this.argumentValues = arguments ?? throw new ArgumentNullException(nameof(arguments));
@@ -50,6 +51,8 @@ public sealed class WebAssemblyException : RuntimeException
     /// <returns>The boxed operand value.</returns>
     public object? GetArgument(int index) => this.argumentValues[index];
 
-    private static string Describe(ExceptionTag tag, object?[] arguments) =>
-        $"WebAssembly exception ({tag?.Descriptor ?? "func()->()"}) with {arguments?.Length ?? 0} argument(s): [{string.Join(", ", (arguments ?? []).Select(a => a?.ToString() ?? "null"))}].";
+    /// <inheritdoc/>
+    // Computed on demand rather than in the constructor, so a caught-and-handled throw pays nothing for the message.
+    public override string Message =>
+        $"WebAssembly exception ({this.Tag.Descriptor}) with {this.argumentValues.Length} argument(s): [{string.Join(", ", this.argumentValues.Select(a => a?.ToString() ?? "null"))}].";
 }

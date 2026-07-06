@@ -46,4 +46,15 @@ public class Float64x2RelaxedMaxTests
         Assert.AreEqual(2d, exports.GetDouble(0));
         Assert.AreEqual(5d, exports.GetDouble(8));
     }
+
+    /// <summary>Verifies the <see cref="Float64x2RelaxedMax"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float64x2RelaxedMax_OpCodeAndEquality()
+    {
+        var instruction = new Float64x2RelaxedMax();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float64x2RelaxedMax, instruction.SimdOpCode);
+        Assert.AreEqual(new Float64x2RelaxedMax(), instruction);
+        Assert.AreEqual(new Float64x2RelaxedMax().GetHashCode(), instruction.GetHashCode());
+    }
 }

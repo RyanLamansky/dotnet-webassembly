@@ -5,9 +5,9 @@ namespace WebAssembly;
 /// Each member's value is the signed byte (s7) that encodes it in the binary format.
 /// </summary>
 /// <remarks>
-/// All twelve are defined here as pure encoding facts. Phase 5 (typed function references) exercises the func, extern,
-/// and — as null values only — the any and exn hierarchies; the garbage-collection (any/eq/i31/struct/array) and
-/// exception (exn) <em>semantics</em> arrive in later phases without changing this enum.
+/// All twelve are defined here as pure encoding facts: the binary encoding of the abstract heap types across the
+/// function, external, garbage-collection (any/eq/i31/struct/array), and exception (exn) hierarchies, independent of
+/// which reference-type semantics a given module exercises.
 /// </remarks>
 public enum WebAssemblyHeapType : sbyte
 {

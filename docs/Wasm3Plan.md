@@ -1,5 +1,9 @@
 # WebAssembly 3.0 Upgrade Plan
 
+> **Status: complete as of 2026-07.**
+> All phases (1–8) plus the cross-cutting deterministic-profile stance landed on `main`; every ratified-3.0 spec-suite category runs green.
+> The per-phase specifics live in the `Wasm3Phase*Design.md` records; the checklist below is retained as the historical plan.
+
 Planning notes for moving this library from ratified WASM 2.0 to WASM 3.0 (released 2025-09-17).
 This is a rough, living plan: a strategy for the spec-test harness plus a phased implementation checklist.
 It is meant to be edited as work proceeds — check items off, split phases, record decisions inline.

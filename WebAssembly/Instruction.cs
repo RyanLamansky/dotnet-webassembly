@@ -93,10 +93,10 @@ public abstract class Instruction : IEquatable<Instruction>
                     yield return new V128Const(reader);
                     break;
                 case OpCode.GCPrefix:
-                    // WebAssembly 3.0 GC constants: struct.new / struct.new_default (M8.3) and array.new / array.new_default
-                    // / array.new_fixed (M8.4) appear in global and element-item initializers (ref.i31 and the extern
-                    // conversions join in later milestones). The "251" in the not-permitted message preserves the
-                    // pre-3.0 pending-feature signature for the rest.
+                    // WebAssembly 3.0 GC constant expressions permitted in global and element-item initializers:
+                    // struct.new / struct.new_default, array.new / array.new_default / array.new_fixed, the extern
+                    // conversions, and ref.i31. The "251" in the not-permitted message preserves the pre-3.0
+                    // pending-feature signature for any other (non-constant) GC opcode.
                     var gcConstOffset = reader.Offset;
                     var gcConstOpCode = (GCOpCode)reader.ReadVarUInt32();
                     switch (gcConstOpCode)
@@ -357,9 +357,10 @@ public abstract class Instruction : IEquatable<Instruction>
 
                 case OpCode.GCPrefix:
                     var gcOpCodeOffset = reader.Offset;
-                    // The opcode following the 0xFB prefix is a LEB128 u32. struct.* (M8.3) and array.* (M8.4) are
-                    // implemented; the "251" in the default message preserves the pre-3.0 pending-feature signature
-                    // for the remainder (i31/ref.test/ref.cast/br_on_cast/conversions).
+                    // The opcode following the 0xFB prefix is a LEB128 u32. The full WebAssembly 3.0 GC set (struct.*,
+                    // array.*, i31, ref.test/ref.cast/br_on_cast, and the extern conversions) is parsed below; the
+                    // "251" in the default message preserves the pre-3.0 pending-feature signature for any unrecognized
+                    // GC opcode.
                     var gcOpCode = (GCOpCode)reader.ReadVarUInt32();
                     switch (gcOpCode)
                     {

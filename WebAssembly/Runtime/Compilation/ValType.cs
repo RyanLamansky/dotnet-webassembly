@@ -12,8 +12,7 @@ namespace WebAssembly.Runtime.Compilation;
 /// (for example <see cref="WebAssemblyValueType.FuncRef"/> becomes <c>(ref null func)</c>), so that
 /// subtyping (<see cref="TypeAlgebra"/>) can treat every reference uniformly. An implicit conversion
 /// from <see cref="WebAssemblyValueType"/> keeps the hundreds of numeric validation call sites textually
-/// unchanged. Being internal-only, state is exposed as public readonly fields rather than properties to
-/// avoid accessor overhead on the validator's hottest path.
+/// unchanged. State is exposed as public readonly fields to avoid accessor overhead on the validator's hottest path.
 /// </remarks>
 internal readonly struct ValType : IEquatable<ValType>
 {

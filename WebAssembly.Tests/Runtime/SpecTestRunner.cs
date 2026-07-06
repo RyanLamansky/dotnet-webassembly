@@ -36,23 +36,6 @@ static partial class SpecTestRunner
     }
 
     /// <summary>
-    /// Runs a whole spec category as deferred: every command is skipped and the category ends
-    /// Inconclusive. Used for WASM 3.0 feature categories whose modules cannot yet load under the
-    /// current library at all (pending Part B of the 3.0 upgrade), where an explicit per-line skip
-    /// list would just enumerate every line in the file. The <paramref name="reason"/> names the
-    /// missing feature so each call self-documents what remains.
-    /// </summary>
-    /// <param name="category">The spec category, as in <see cref="Run(string, ReadOnlySpan{uint}, ReadOnlySpan{uint})"/>.</param>
-    /// <param name="reason">The pending feature this category waits on (documentation only).</param>
-    public static void RunAllSkipped(string category, string reason)
-    {
-        _ = reason; // Documentation only; kept as a required parameter so each call states its deferral.
-        var parts = category.Split('/');
-        Run<object>(Path.Combine(["Runtime", "SpecTestData", ..parts]), parts[^1] + ".json",
-            skip: default, unsupported: default, onFailure: null, skipAll: true);
-    }
-
-    /// <summary>
     /// Runs every command in the JSON file, catching all failures into the returned list rather
     /// than throwing on the first one. Used by <see cref="SpecDiscovery"/> to enumerate the line
     /// numbers that need skip coverage after a spec test refresh.
@@ -71,7 +54,7 @@ static partial class SpecTestRunner
     {
     }
 
-    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure, bool skipAll = false)
+    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure)
         where TExports : class
     {
         TestInfo testInfo;
@@ -114,10 +97,6 @@ static partial class SpecTestRunner
         TExports? exports = null;
         foreach (var command in testInfo.commands)
         {
-            // Whole-category deferral (RunAllSkipped): skip every command without attempting it.
-            if (skipAll)
-                continue;
-
             if (skip.Contains(command.line))
                 continue;
 
@@ -481,7 +460,7 @@ static partial class SpecTestRunner
                                 continue;
                             case "indirect call type mismatch":
                             // WASM 3.0 garbage collection: ref.cast / br_on_cast_fail to a mismatched type surfaces as
-                            // a .NET InvalidCastException (from castclass or the WasmGC.FailCast helper). wasm-tools
+                            // a .NET InvalidCastException (from castclass or the WebAssemblyGC.FailCast helper). wasm-tools
                             // emits the shorter "cast" text for the gc/type-subtyping suite.
                             case "cast failure":
                             case "cast":
@@ -688,9 +667,8 @@ static partial class SpecTestRunner
         }
 
         // Only deferred skips make a category Inconclusive; an `unsupported` list alone leaves it green,
-        // because those lines are intentional avoidance rather than pending work. A whole-category
-        // deferral (skipAll) is Inconclusive for the same pending-work reason.
-        if (onFailure == null && (skipAll || !skip.IsEmpty))
+        // because those lines are intentional avoidance rather than pending work.
+        if (onFailure == null && !skip.IsEmpty)
             Assert.Inconclusive("Some scenarios were skipped.");
     }
 
@@ -707,17 +685,17 @@ static partial class SpecTestRunner
 
         // WASM 3.0 GC: a bare structref/arrayref/eqref/i31ref (no value) asserts "any non-null reference of this
         // kind"; a "null" payload asserts a null reference. Struct/array/i31 are the emitted GC classes, eq is any
-        // of them (IWasmEq). These carry no identity in the JSON, exactly like the funcref precedent.
+        // internal GC reference (a WebAssemblyGCObject). These carry no identity in the JSON, exactly like the funcref precedent.
         if (rawExpected is StructRefValue or ArrayRefValue or EqRefValue or I31RefValue)
         {
             if (((ReferenceLikeValue)rawExpected).value is "null")
                 return actual is null;
             return rawExpected switch
             {
-                StructRefValue => actual is WasmStructObject,
-                ArrayRefValue => actual is WasmArrayObject,
-                I31RefValue => actual is WasmI31,
-                _ => actual is IWasmEq,
+                StructRefValue => actual is WebAssemblyStructObject,
+                ArrayRefValue => actual is WebAssemblyArrayObject,
+                I31RefValue => actual is WebAssemblyI31,
+                _ => actual is WebAssemblyGCObject,
             };
         }
 
@@ -963,16 +941,16 @@ static partial class SpecTestRunner
         i64 = WebAssemblyValueType.Int64,
         f32 = WebAssemblyValueType.Float32,
         f64 = WebAssemblyValueType.Float64,
-        // Reference types (WASM 2.0). Library doesn't implement them yet; these exist only so
-        // STJ can deserialize the JSON. Tests that reach the runtime path on a ref-type value
-        // will fail (caught per-line by Discover or by skip predicates).
+        // Reference types (WASM 2.0). Live comparison types: the runner compares actual results
+        // against these (externref by opaque payload, funcref by CLR-shape) in CompareReturnValue.
         externref = -100,
         funcref = -101,
         v128 = WebAssemblyValueType.V128,
-        // Reference types added by WASM 3.0 (typed function references, GC, exceptions). As with
-        // the 2.0 ref types above, these are deserialize-only: the categories that use them are
-        // wholesale-skipped pending Part B (Phases 5–8). Distinct negative sentinels so the
-        // polymorphic discriminator round-trips.
+        // Reference types added by WASM 3.0 (typed function references, GC, exceptions). Like the
+        // 2.0 ref types above, these are live comparison types — CompareReturnValue matches a bare
+        // ref against "any non-null reference of this kind", a "null" payload against null, and a
+        // host-ref payload by its opaque value. Distinct negative sentinels so the polymorphic
+        // discriminator round-trips.
         anyref = -102,
         eqref = -103,
         structref = -104,
@@ -986,7 +964,7 @@ static partial class SpecTestRunner
         // The wasm-tools "refnull" expected value is a bare null of unspecified ref type.
         refnull = -112,
         // "either" is not a value type but a multi-alternative expected result (relaxed-simd): the
-        // actual result may match any one of `values`. Deserialize-only for now (Phase 7).
+        // actual result matches if it equals any one of `values`. Compared in CompareReturnValue.
         either = -113,
     }
 
@@ -1141,18 +1119,19 @@ static partial class SpecTestRunner
         public override string ToString() => $"{type}: {value ?? "null"}";
     }
 
-    // Reference-type values added by WASM 3.0 (typed function references, GC, exceptions). The
-    // library doesn't implement these yet, so they are deserialize-only: a bare null (no value, or
-    // value "null") boxes to null; any concrete payload throws, which the wholesale category skips
-    // (Phases 5–8) keep out of the run. One leaf class per JSON discriminator, sharing the boxing
-    // logic through this base.
+    // Reference-type values added by WASM 3.0 (typed function references, GC, exceptions). These are
+    // compared structurally in CompareReturnValue, which handles a bare ref (any non-null of the kind)
+    // and a "null" payload directly without ever boxing. A bare null (no value, or value "null") boxes
+    // to null for the rare path that does read BoxedValue; any concrete payload has no CLR boxing, so
+    // the base throws as a defensive guard for a case CompareReturnValue never routes here. One leaf
+    // class per JSON discriminator, sharing the boxing logic through this base.
     abstract class ReferenceLikeValue(RawValueType valueType) : TypedValue(valueType)
     {
         public string? value;
 
         public override object? BoxedValue => value is null or "null"
             ? null
-            : throw new NotSupportedException($"{type} value '{value}' cannot be boxed - not implemented.");
+            : throw new NotSupportedException($"{type} value '{value}' has no CLR boxing; compared structurally instead.");
 
         public override string ToString() => $"{type}: {value ?? "null"}";
     }
@@ -1176,13 +1155,14 @@ static partial class SpecTestRunner
     class RefNullValue() : ReferenceLikeValue(RawValueType.refnull);
 
     // Multi-alternative expected result (relaxed-simd): the actual result is a match if it equals
-    // any one of `values`. Deserialize-only for now; comparison support lands with Phase 7.
+    // any one of `values`. Comparison is handled in CompareReturnValue, which tries each alternative
+    // in turn; BoxedValue is never read for an 'either', so it throws as a never-called guard.
     class EitherValue() : TypedValue(RawValueType.either)
     {
         public TypedValue[]? values;
 
         public override object? BoxedValue =>
-            throw new NotSupportedException("'either' expected results are not yet supported (Phase 7).");
+            throw new NotSupportedException("'either' expected results are compared via CompareReturnValue, not boxed.");
 
         public override string ToString() => $"either[{string.Join(',', (IEnumerable<TypedValue>?)values ?? [])}]";
     }
@@ -1409,8 +1389,8 @@ static partial class SpecTestRunner
     }
 
     // WASM 3.0 exception handling: the action is expected to throw a WASM exception carrying the
-    // named tag. Deserialize-only for now — implementation lands with Phase 6, so the runner defers
-    // these through the normal skip mechanism (see the switch handler).
+    // named tag. The runner handles these fully (see the AssertException case in the switch), asserting
+    // the action throws a WebAssemblyException.
     class AssertException() : AssertCommand(CommandType.assert_exception);
 
     class AssertUnlinkable() : InvalidCommand(CommandType.assert_unlinkable);

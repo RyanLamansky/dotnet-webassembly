@@ -8,19 +8,19 @@ namespace WebAssembly.Runtime;
 /// <summary>
 /// Runtime helpers for WebAssembly 3.0 garbage-collected references, called from compiled modules.
 /// </summary>
-public static class WasmGC
+public static class WebAssemblyGC
 {
     /// <summary>
-    /// The <c>ref.eq</c> comparison: reference identity, except that two distinct <see cref="WasmI31"/> values
+    /// The <c>ref.eq</c> comparison: reference identity, except that two distinct <see cref="WebAssemblyI31"/> values
     /// with equal payloads compare equal (so i31 identity is value-based).
     /// </summary>
     /// <param name="a">The first reference.</param>
     /// <param name="b">The second reference.</param>
     /// <returns>True when the two references are <c>eq</c>-equal.</returns>
-    public static bool RefEq(object? a, object? b) =>
-        ReferenceEquals(a, b) || (a is WasmI31 x && b is WasmI31 y && x.Value == y.Value);
+    public static bool RefEqual(object? a, object? b) =>
+        ReferenceEquals(a, b) || (a is WebAssemblyI31 x && b is WebAssemblyI31 y && x.Value == y.Value);
 
-    // === Runtime function-type identity (WebAssembly 3.0 GC, design §10) ===
+    // === Runtime function-type identity (WebAssembly 3.0 GC) ===
     //
     // A funcref crosses the runtime as an arity-shaped .NET Delegate, which is coarser than WASM's canonical
     // function-type identity (two canonically-distinct func types conflate whenever their CLR shapes agree —
@@ -95,14 +95,14 @@ public static class WasmGC
     /// trapping (the arity <c>castclass</c> that follows handles the remaining shape check).
     /// </summary>
     /// <param name="function">The function selected from the table.</param>
-    /// <param name="descriptor">The call's declared closed function-type descriptor.</param>
+    /// <param name="expectedType">The call's declared type token (from <see cref="InternFunctionType"/>).</param>
     /// <exception cref="InvalidCastException">The function's canonical type does not match.</exception>
-    public static void CheckIndirectCallType(Delegate? function, string descriptor)
+    public static void CheckIndirectCallType(Delegate? function, object expectedType)
     {
         if (function is null)
             return;
 
-        if (!FunctionReferenceMatches(function, InternFunctionType(descriptor)))
+        if (!FunctionReferenceMatches(function, expectedType))
             throw new InvalidCastException("indirect call type mismatch");
     }
 
@@ -111,22 +111,22 @@ public static class WasmGC
     /// canonical type is, or declares as an ancestor, the target type.
     /// </summary>
     /// <param name="value">The reference value.</param>
-    /// <param name="descriptor">The target's closed function-type descriptor.</param>
+    /// <param name="expectedType">The target's type token (from <see cref="InternFunctionType"/>).</param>
     /// <returns>True when the value matches.</returns>
-    public static bool IsFunctionReferenceOfType(object? value, string descriptor) =>
-        value is Delegate function && FunctionReferenceMatches(function, InternFunctionType(descriptor));
+    public static bool IsFunctionReferenceOfType(object? value, object expectedType) =>
+        value is Delegate function && FunctionReferenceMatches(function, expectedType);
 
     /// <summary>
     /// The <c>ref.cast</c> to a concrete function index: returns the value when it is a funcref whose registered
     /// canonical type matches the target, otherwise traps.
     /// </summary>
     /// <param name="value">The reference value.</param>
-    /// <param name="descriptor">The target's closed function-type descriptor.</param>
+    /// <param name="expectedType">The target's type token (from <see cref="InternFunctionType"/>).</param>
     /// <returns>The value, unchanged, when it matches.</returns>
     /// <exception cref="InvalidCastException">The value is not a matching funcref.</exception>
-    public static object CastFunctionReference(object? value, string descriptor)
+    public static object CastFunctionReference(object? value, object expectedType)
     {
-        if (value is Delegate function && FunctionReferenceMatches(function, InternFunctionType(descriptor)))
+        if (value is Delegate function && FunctionReferenceMatches(function, expectedType))
             return value;
 
         throw new InvalidCastException("cast failure");

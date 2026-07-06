@@ -1074,7 +1074,7 @@ public static class Compile
                 if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
 #endif
                 // The descriptor carries the function's canonical type ancestry (own descriptor + declared supertypes),
-                // so a re-importing module can match it by canonical identity (WASM 3.0 GC, design §10).
+                // so a re-importing module can match it by canonical identity (WebAssembly 3.0 GC).
                 method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key,
                     context.CanonicalTypes is { } exportMap && signature.TypeIndex < (uint)exportMap.Descriptor.Length
                         ? exportMap.Ancestry(signature.TypeIndex)
@@ -1088,6 +1088,29 @@ public static class Compile
                 il.Emit(OpCodes.Call, internalFunctions[exported.Value]);
                 il.Emit(OpCodes.Ret);
             }
+        }
+
+        // Intern each distinct canonical function-type descriptor once here and stash the tokens in the instance's
+        // FuncTypeTokens array, so call_indirect / ref.test / ref.cast load a pre-interned token per invocation
+        // instead of re-interning the descriptor string. Must precede the start function, which may execute such an
+        // instruction during instantiation.
+        if (context.FuncTypeTokens is { } funcTypeTokensField)
+        {
+            var internFunctionType = configuration.NeutralizeType(typeof(WebAssemblyGC)).GetMethod(nameof(WebAssemblyGC.InternFunctionType))!;
+            var slots = context.FuncTypeTokenSlots;
+            instanceConstructorIL.Emit(OpCodes.Ldarg_0);
+            instanceConstructorIL.EmitLoadConstant(slots.Count);
+            instanceConstructorIL.Emit(OpCodes.Newarr, typeof(object));
+            foreach (var (descriptor, index) in slots)
+            {
+                instanceConstructorIL.Emit(OpCodes.Dup);
+                instanceConstructorIL.EmitLoadConstant(index);
+                instanceConstructorIL.Emit(OpCodes.Ldstr, descriptor);
+                instanceConstructorIL.Emit(OpCodes.Call, internFunctionType);
+                instanceConstructorIL.Emit(OpCodes.Stelem_Ref);
+            }
+
+            instanceConstructorIL.Emit(OpCodes.Stfld, funcTypeTokensField);
         }
 
         if (startFunction != null)
@@ -1243,8 +1266,8 @@ public static class Compile
                             .GetMethod!);
                         ImportException.EmitTryCast(instanceConstructorIL, typedDelegate, configuration);
 
-                        // WASM 3.0 GC (design §10): a function linked from another compiled module carries a canonical
-                        // type ancestry; the declared import type must be a supertype of the supplied function's type,
+                        // A function linked from another compiled module carries a canonical type ancestry (WebAssembly
+                        // 3.0 GC); the declared import type must be a supertype of the supplied function's type,
                         // which the arity-shaped delegate cast cannot see. A host (unregistered) delegate is accepted.
                         if (context.CanonicalTypes is { } importMap && typeIndex < (uint)importMap.Descriptor.Length)
                         {
@@ -1879,11 +1902,11 @@ public static class Compile
     // before any element/global population that may reference it.
     static void EmitFunctionReferencesInitialization(ILGenerator il, FieldBuilder functionReferencesField, MethodInfo[]? internalFunctions, Signature[] functionSignatures, Dictionary<uint, MethodInfo> delegateInvokersByTypeIndex, CompilerConfiguration configuration, TypeBuilder exportsBuilder, CanonicalTypeMap? canonicalTypes)
     {
-        // WebAssembly 3.0 GC (design §10): every funcref delegate is registered with its canonical type ancestry, so
+        // Every funcref delegate is registered with its canonical type ancestry (WebAssembly 3.0 GC), so
         // call_indirect / ref.cast / import matching can decide structural function identity that the arity-shaped CLR
         // delegate cannot express.
         var registerFunctionReference = canonicalTypes is null ? null
-            : configuration.NeutralizeType(typeof(WasmGC)).GetMethod(nameof(WasmGC.RegisterFunctionReference))!;
+            : configuration.NeutralizeType(typeof(WebAssemblyGC)).GetMethod(nameof(WebAssemblyGC.RegisterFunctionReference))!;
 
         var total = functionSignatures.Length;
         var arrLocal = il.DeclareLocal(typeof(Delegate[]));
@@ -2025,7 +2048,7 @@ public static class Compile
         if (initExpr.Count == 3 && initExpr[1] is Instructions.RefI31)
         {
             // Emit the leading constant i32 operand (an i32.const or a global.get of an imported i32 global), mask
-            // to 31 bits, and box as a WasmI31.
+            // to 31 bits, and box as a WebAssemblyI31.
             switch (initExpr[0])
             {
                 case Instructions.Int32Constant i32:
@@ -2042,7 +2065,7 @@ public static class Compile
             }
             il.EmitLoadConstant(0x7FFFFFFF);
             il.Emit(OpCodes.And);
-            il.Emit(OpCodes.Newobj, context.Configuration.NeutralizeType(typeof(WasmI31)).GetConstructor([typeof(int)])!);
+            il.Emit(OpCodes.Newobj, context.Configuration.NeutralizeType(typeof(WebAssemblyI31)).GetConstructor([typeof(int)])!);
         }
         else if (initExpr.Count >= 1 && initExpr[0] is Instructions.RefFunc refFunc)
         {

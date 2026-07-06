@@ -47,4 +47,15 @@ public class Float64x2RelaxedMultiplyAddTests
         Assert.AreEqual(21d, exports.GetDouble(0));
         Assert.AreEqual(32d, exports.GetDouble(8));
     }
+
+    /// <summary>Verifies the <see cref="Float64x2RelaxedMultiplyAdd"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float64x2RelaxedMultiplyAdd_OpCodeAndEquality()
+    {
+        var instruction = new Float64x2RelaxedMultiplyAdd();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float64x2RelaxedMultiplyAdd, instruction.SimdOpCode);
+        Assert.AreEqual(new Float64x2RelaxedMultiplyAdd(), instruction);
+        Assert.AreEqual(new Float64x2RelaxedMultiplyAdd().GetHashCode(), instruction.GetHashCode());
+    }
 }

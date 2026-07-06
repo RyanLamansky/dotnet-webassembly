@@ -43,11 +43,7 @@ public class ArrayNewFixed : GCInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
 
         var count = checked((int)this.Size);
 
@@ -60,16 +56,13 @@ public class ArrayNewFixed : GCInstruction
         for (var i = count - 1; i >= 0; i--)
         {
             var local = locals[i] = context.DeclareLocal(elementClrType);
-            if (element.Packed == PackedType.I8)
-                context.Emit(OpCodes.Conv_U1);
-            else if (element.Packed == PackedType.I16)
-                context.Emit(OpCodes.Conv_U2);
+            GCEmit.EmitPackedStoreConversion(context, element.Packed);
             context.Emit(OpCodes.Stloc, local);
         }
 
         context.Emit(OpCodes.Ldc_I4, count);
         context.Emit(OpCodes.Newarr, elementClrType);
-        var items = context.DeclareLocal(array.ItemsField.FieldType);
+        var items = context.DeclareLocal(array.ItemsField!.FieldType);
         context.Emit(OpCodes.Stloc, items);
         for (var i = 0; i < count; i++)
         {
@@ -79,9 +72,6 @@ public class ArrayNewFixed : GCInstruction
             context.Emit(OpCodes.Stelem, elementClrType);
         }
 
-        context.Emit(OpCodes.Newobj, emitter.GetDefaultConstructor(this.Type));
-        context.Emit(OpCodes.Dup);
-        context.Emit(OpCodes.Ldloc, items);
-        context.Emit(OpCodes.Stfld, array.ItemsField);
+        GCEmit.EmitWrapArrayObject(context, emitter, this.Type, array, items);
     }
 }

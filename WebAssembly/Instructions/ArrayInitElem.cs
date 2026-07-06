@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayInitElem : GCInstruction
 {
-    private static readonly MethodInfo initArrayFromElementMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.InitArrayFromElement))!;
+    private static readonly MethodInfo initArrayFromElementMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.InitArrayFromElement))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayInitElem"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayInitElem;
@@ -46,10 +46,7 @@ public class ArrayInitElem : GCInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
+        var (emitter, array, element, _) = GCEmit.ResolveArray(context, this.Type);
         if (element.Packed != PackedType.None || !element.ValueType.IsReference)
             throw new ModuleLoadException($"type mismatch: array.init_elem requires a reference element (type {this.Type}).", 0);
         if (!element.IsMutable)

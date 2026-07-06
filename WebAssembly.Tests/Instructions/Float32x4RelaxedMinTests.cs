@@ -48,4 +48,15 @@ public class Float32x4RelaxedMinTests
         Assert.AreEqual(3f, exports.GetFloat(8));
         Assert.IsTrue(float.IsNaN(exports.GetFloat(12)), "NaN propagates");
     }
+
+    /// <summary>Verifies the <see cref="Float32x4RelaxedMin"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float32x4RelaxedMin_OpCodeAndEquality()
+    {
+        var instruction = new Float32x4RelaxedMin();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float32x4RelaxedMin, instruction.SimdOpCode);
+        Assert.AreEqual(new Float32x4RelaxedMin(), instruction);
+        Assert.AreEqual(new Float32x4RelaxedMin().GetHashCode(), instruction.GetHashCode());
+    }
 }

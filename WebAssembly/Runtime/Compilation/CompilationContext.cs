@@ -302,6 +302,50 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
     /// <summary>Per-function reference delegates, used by <c>ref.func</c>. Assigned during compilation.</summary>
     public FieldBuilder? FunctionReferences;
 
+    /// <summary>
+    /// The per-instance <c>object[]</c> field holding interned canonical function-type tokens, one slot per distinct
+    /// descriptor referenced by <c>call_indirect</c> / <c>ref.test</c> / <c>ref.cast</c> against a concrete function
+    /// index. Defined lazily on first reference and populated once during instance construction, so runtime checks
+    /// load a pre-interned token instead of re-interning a descriptor string on every invocation. Null when no code
+    /// references a concrete function type.
+    /// </summary>
+    public FieldBuilder? FuncTypeTokens;
+
+    private readonly Dictionary<string, int> funcTypeTokenIndices = [];
+
+    /// <summary>The distinct canonical function-type descriptors referenced by compiled code, each paired with its slot in <see cref="FuncTypeTokens"/>.</summary>
+    public IReadOnlyCollection<KeyValuePair<string, int>> FuncTypeTokenSlots => this.funcTypeTokenIndices;
+
+    /// <summary>
+    /// Returns the <see cref="FuncTypeTokens"/> slot for a canonical function-type descriptor, assigning a new slot
+    /// (and defining the field on first use) when the descriptor has not been referenced before.
+    /// </summary>
+    public int GetFuncTypeTokenIndex(string descriptor)
+    {
+        if (this.funcTypeTokenIndices.TryGetValue(descriptor, out var index))
+            return index;
+
+        this.FuncTypeTokens ??= this.CheckedExportsBuilder.DefineField(
+            "☣ FuncTypeTokens", typeof(object[]), FieldAttributes.Private | FieldAttributes.InitOnly);
+        index = this.funcTypeTokenIndices.Count;
+        this.funcTypeTokenIndices.Add(descriptor, index);
+        return index;
+    }
+
+    /// <summary>
+    /// Emits, into the current function body, the load of the interned canonical function-type token for
+    /// <paramref name="descriptor"/> from the per-instance <see cref="FuncTypeTokens"/> field (defining a slot on
+    /// first use). The value already on the stack is left untouched beneath the pushed token.
+    /// </summary>
+    public void EmitLoadFuncTypeToken(string descriptor)
+    {
+        var index = this.GetFuncTypeTokenIndex(descriptor);
+        this.EmitLoadThis();
+        this.Emit(OpCodes.Ldfld, this.FuncTypeTokens!);
+        this.Emit(OpCodes.Ldc_I4, index);
+        this.Emit(OpCodes.Ldelem_Ref);
+    }
+
     /// <summary>Maps a passive/declarative element segment index to the field that backs it (for table.init / elem.drop).</summary>
     public readonly Dictionary<uint, FieldBuilder> ElementSegments = [];
 

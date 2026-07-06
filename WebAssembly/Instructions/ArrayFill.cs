@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
@@ -12,7 +11,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayFill : ArrayInstruction
 {
-    private static readonly MethodInfo fillArrayMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.FillArray))!;
+    private static readonly MethodInfo fillArrayMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.FillArray))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayFill"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayFill;
@@ -22,21 +21,11 @@ public class ArrayFill : ArrayInstruction
 
     internal ArrayFill(Reader reader) : base(reader) { }
 
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is ArrayFill instruction && instruction.Type == this.Type;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type);
-
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
         if (!element.IsMutable)
             throw new ModuleLoadException($"array is immutable: array type {this.Type} cannot be written by array.fill.", 0);
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
 
         // Stack (bottom→top): array, index, value, count.
         context.PopStackNoReturn(this.OpCode, WebAssemblyValueType.Int32); // count
@@ -47,17 +36,14 @@ public class ArrayFill : ArrayInstruction
         var count = context.DeclareLocal(typeof(uint));
         context.Emit(OpCodes.Stloc, count);
         var value = context.DeclareLocal(elementClrType);
-        if (element.Packed == PackedType.I8)
-            context.Emit(OpCodes.Conv_U1);
-        else if (element.Packed == PackedType.I16)
-            context.Emit(OpCodes.Conv_U2);
+        GCEmit.EmitPackedStoreConversion(context, element.Packed);
         context.Emit(OpCodes.Stloc, value);
         var index = context.DeclareLocal(typeof(uint));
         context.Emit(OpCodes.Stloc, index);
 
         // array on top: cast, load Items, then (items, index, value, count).
         context.Emit(OpCodes.Castclass, emitter.GetClass(this.Type));
-        context.Emit(OpCodes.Ldfld, array.ItemsField);
+        context.Emit(OpCodes.Ldfld, array.ItemsField!);
         context.Emit(OpCodes.Ldloc, index);
         context.Emit(OpCodes.Ldloc, value);
         context.Emit(OpCodes.Ldloc, count);

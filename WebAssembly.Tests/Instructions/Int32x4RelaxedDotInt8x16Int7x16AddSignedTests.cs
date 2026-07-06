@@ -50,4 +50,15 @@ public class Int32x4RelaxedDotInt8x16Int7x16AddSignedTests
         Assert.AreEqual(368, exports.GetInt(8));
         Assert.AreEqual(737, exports.GetInt(12));
     }
+
+    /// <summary>Verifies the <see cref="Int32x4RelaxedDotInt8x16Int7x16AddSigned"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int32x4RelaxedDotInt8x16Int7x16AddSigned_OpCodeAndEquality()
+    {
+        var instruction = new Int32x4RelaxedDotInt8x16Int7x16AddSigned();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int32x4RelaxedDotInt8x16Int7x16AddSigned, instruction.SimdOpCode);
+        Assert.AreEqual(new Int32x4RelaxedDotInt8x16Int7x16AddSigned(), instruction);
+        Assert.AreEqual(new Int32x4RelaxedDotInt8x16Int7x16AddSigned().GetHashCode(), instruction.GetHashCode());
+    }
 }

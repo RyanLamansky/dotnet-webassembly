@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -19,12 +18,6 @@ public class StructSet : StructFieldInstruction
 
     internal StructSet(Reader reader) : base(reader) { }
 
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is StructSet i && i.Type == this.Type && i.Field == this.Field;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type, (int)this.Field);
-
     internal sealed override void Compile(CompilationContext context)
     {
         var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no struct types are defined.", 0);
@@ -38,10 +31,7 @@ public class StructSet : StructFieldInstruction
 
         // The struct reference is below the value; spill the value, cast the reference, restore the value, store.
         var value = context.DeclareLocal(field.Builder.FieldType);
-        if (field.Packed == PackedType.I8)
-            context.Emit(OpCodes.Conv_U1);
-        else if (field.Packed == PackedType.I16)
-            context.Emit(OpCodes.Conv_U2);
+        GCEmit.EmitPackedStoreConversion(context, field.Packed);
         context.Emit(OpCodes.Stloc, value);
         context.Emit(OpCodes.Castclass, emitter.GetClass(this.Type));
         context.Emit(OpCodes.Ldloc, value);

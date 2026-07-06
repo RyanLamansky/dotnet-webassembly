@@ -47,4 +47,15 @@ public class Int32x4RelaxedTruncFloat64x2UnsignedZeroTests
         Assert.AreEqual(0, exports.GetInt(8), "upper lanes are zero");
         Assert.AreEqual(0, exports.GetInt(12), "upper lanes are zero");
     }
+
+    /// <summary>Verifies the <see cref="Int32x4RelaxedTruncFloat64x2UnsignedZero"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Int32x4RelaxedTruncFloat64x2UnsignedZero_OpCodeAndEquality()
+    {
+        var instruction = new Int32x4RelaxedTruncFloat64x2UnsignedZero();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Int32x4RelaxedTruncFloat64x2UnsignedZero, instruction.SimdOpCode);
+        Assert.AreEqual(new Int32x4RelaxedTruncFloat64x2UnsignedZero(), instruction);
+        Assert.AreEqual(new Int32x4RelaxedTruncFloat64x2UnsignedZero().GetHashCode(), instruction.GetHashCode());
+    }
 }

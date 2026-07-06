@@ -12,7 +12,7 @@ namespace WebAssembly.Instructions;
 /// </summary>
 public class ArrayNewData : GCInstruction
 {
-    private static readonly MethodInfo newArrayFromDataMethod = typeof(WasmGC).GetMethod(nameof(WasmGC.NewArrayFromData))!;
+    private static readonly MethodInfo newArrayFromDataMethod = typeof(WebAssemblyGC).GetMethod(nameof(WebAssemblyGC.NewArrayFromData))!;
 
     /// <summary>Always <see cref="GCOpCode.ArrayNewData"/>.</summary>
     public sealed override GCOpCode GCOpCode => GCOpCode.ArrayNewData;
@@ -46,13 +46,9 @@ public class ArrayNewData : GCInstruction
 
     internal sealed override void Compile(CompilationContext context)
     {
-        var emitter = context.GCTypes ?? throw new ModuleLoadException($"unknown type {this.Type}: no array types are defined.", 0);
-        emitter.RequireArray(this.Type);
-        var array = emitter.GetArray(this.Type);
-        var element = array.Element!;
+        var (emitter, array, element, elementClrType) = GCEmit.ResolveArray(context, this.Type);
         if (element.Packed == PackedType.None && element.ValueType.IsReference)
             throw new ModuleLoadException($"array type is not numeric or vector: array.new_data requires a numeric or vector element (type {this.Type}).", 0);
-        var elementClrType = array.ItemsField!.FieldType.GetElementType()!;
 
         if (!context.DataSegments.TryGetValue(this.Data, out var segmentField))
             throw new ModuleLoadException($"unknown data segment {this.Data}: array.new_data requires a passive data segment.", 0);
@@ -72,12 +68,9 @@ public class ArrayNewData : GCInstruction
         context.Emit(OpCodes.Ldloc, offset);
         context.Emit(OpCodes.Ldloc, size);
         context.Emit(OpCodes.Call, newArrayFromDataMethod.MakeGenericMethod(elementClrType));
-        var items = context.DeclareLocal(array.ItemsField.FieldType);
+        var items = context.DeclareLocal(array.ItemsField!.FieldType);
         context.Emit(OpCodes.Stloc, items);
 
-        context.Emit(OpCodes.Newobj, emitter.GetDefaultConstructor(this.Type));
-        context.Emit(OpCodes.Dup);
-        context.Emit(OpCodes.Ldloc, items);
-        context.Emit(OpCodes.Stfld, array.ItemsField);
+        GCEmit.EmitWrapArrayObject(context, emitter, this.Type, array, items);
     }
 }

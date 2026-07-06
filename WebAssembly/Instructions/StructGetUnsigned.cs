@@ -1,4 +1,3 @@
-using System;
 using System.Reflection.Emit;
 using WebAssembly.Runtime;
 using WebAssembly.Runtime.Compilation;
@@ -18,12 +17,6 @@ public class StructGetUnsigned : StructFieldInstruction
     public StructGetUnsigned() { }
 
     internal StructGetUnsigned(Reader reader) : base(reader) { }
-
-    /// <inheritdoc/>
-    public override bool Equals(Instruction? other) => other is StructGetUnsigned i && i.Type == this.Type && i.Field == this.Field;
-
-    /// <inheritdoc/>
-    public override int GetHashCode() => HashCode.Combine((int)this.GCOpCode, (int)this.Type, (int)this.Field);
 
     internal sealed override void Compile(CompilationContext context)
     {

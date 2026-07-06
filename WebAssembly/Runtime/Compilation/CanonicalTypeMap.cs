@@ -19,8 +19,7 @@ namespace WebAssembly.Runtime.Compilation;
 /// closed descriptor of its target group plus that target's position. Because that rendering is fully
 /// module-independent, two separately-compiled modules produce byte-equal descriptors for canonically-equal types,
 /// so it doubles as the closed descriptor used for cross-module import matching (tags, functions). Groups whose
-/// descriptors are byte-equal merge to the same canonical ids. Being internal-only, state is exposed as public
-/// readonly fields.
+/// descriptors are byte-equal merge to the same canonical ids.
 /// </remarks>
 internal sealed class CanonicalTypeMap
 {

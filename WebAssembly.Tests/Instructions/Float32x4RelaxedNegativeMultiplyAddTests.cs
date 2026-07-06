@@ -49,4 +49,15 @@ public class Float32x4RelaxedNegativeMultiplyAddTests
         Assert.AreEqual(-37f, exports.GetFloat(8));
         Assert.AreEqual(-46f, exports.GetFloat(12));
     }
+
+    /// <summary>Verifies the <see cref="Float32x4RelaxedNegativeMultiplyAdd"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float32x4RelaxedNegativeMultiplyAdd_OpCodeAndEquality()
+    {
+        var instruction = new Float32x4RelaxedNegativeMultiplyAdd();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float32x4RelaxedNegativeMultiplyAdd, instruction.SimdOpCode);
+        Assert.AreEqual(new Float32x4RelaxedNegativeMultiplyAdd(), instruction);
+        Assert.AreEqual(new Float32x4RelaxedNegativeMultiplyAdd().GetHashCode(), instruction.GetHashCode());
+    }
 }

@@ -46,4 +46,15 @@ public class Float64x2RelaxedMinTests
         Assert.AreEqual(1d, exports.GetDouble(0));
         Assert.AreEqual(4d, exports.GetDouble(8));
     }
+
+    /// <summary>Verifies the <see cref="Float64x2RelaxedMin"/> opcode and equality.</summary>
+    [TestMethod]
+    public void Float64x2RelaxedMin_OpCodeAndEquality()
+    {
+        var instruction = new Float64x2RelaxedMin();
+        Assert.AreEqual(OpCode.SimdOperationPrefix, instruction.OpCode);
+        Assert.AreEqual(SimdOpCode.Float64x2RelaxedMin, instruction.SimdOpCode);
+        Assert.AreEqual(new Float64x2RelaxedMin(), instruction);
+        Assert.AreEqual(new Float64x2RelaxedMin().GetHashCode(), instruction.GetHashCode());
+    }
 }

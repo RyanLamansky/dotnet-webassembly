@@ -13,7 +13,6 @@ namespace WebAssembly.Runtime.Compilation;
 /// so <c>ref.cast</c>/<c>ref.test</c> to a concrete type can lower to <c>castclass</c>/<c>isinst</c>. All builders
 /// are defined during the type-section pass and baked (<see cref="CreateAllTypes"/>) before the exports type.
 /// </summary>
-/// <remarks>Being internal-only, state is exposed as public readonly fields rather than trivial properties.</remarks>
 internal sealed class GCTypeEmitter
 {
     // Not sealed: a declared subtype's emitted class inherits from its supertype's emitted class, so bases must
@@ -143,7 +142,7 @@ internal sealed class GCTypeEmitter
         }
         else
         {
-            baseClrType = configuration.NeutralizeType(kind == FunctionType.Array ? typeof(WasmArrayObject) : typeof(WasmStructObject));
+            baseClrType = configuration.NeutralizeType(kind == FunctionType.Array ? typeof(WebAssemblyArrayObject) : typeof(WebAssemblyStructObject));
         }
 
         var builder = module.DefineType($"☘ GC{canonicalId}", GCClassAttributes, baseClrType);
@@ -192,7 +191,7 @@ internal sealed class GCTypeEmitter
         var itemsField = builder.DefineField("☘ Items", elementClrType.MakeArrayType(), GCFieldAttributes);
         emitted.ItemsField = itemsField;
 
-        // Override the abstract WasmArrayObject.Length getter to return Items.Length.
+        // Override the abstract WebAssemblyArrayObject.Length getter to return Items.Length.
         var lengthGetter = builder.DefineMethod(
             "get_Length",
             MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.SpecialName,

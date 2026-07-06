@@ -52,11 +52,11 @@ public class GCTypeModelTests
         $"{method.Name}({Path.GetFileName((string)data[0]!)})";
 
     /// <summary>
-    /// Every GC/structural-type fixture round-trips byte-identically at the object-model level.  Fixtures whose
-    /// function bodies use GC instructions (the <c>0xFB</c> prefix, <c>ref.eq</c> <c>0xD3</c>, or a GC constant in an
-    /// initializer expression) cannot be parsed until a later Phase 8 milestone adds those instruction classes; such a
-    /// fixture is required to fail with exactly that pending-feature signature (so a real regression still fails, and
-    /// the round-trip assertion engages automatically once the instructions land).
+    /// Every GC/structural-type fixture round-trips byte-identically at the object-model level, including the GC
+    /// instruction bodies (the <c>0xFB</c> prefix and <c>ref.eq</c> <c>0xD3</c>), which the parser reads in full.
+    /// The one remaining gap is a GC constant (<c>array.new_data</c> / <c>array.new_elem</c>) inside an initializer
+    /// expression, which the parser rejects; a fixture that hits it is required to fail with exactly that signature
+    /// (so a real regression still fails, and the round-trip assertion engages automatically once it is supported).
     /// </summary>
     /// <param name="path">The fixture path.</param>
     [TestMethod]
@@ -71,10 +71,11 @@ public class GCTypeModelTests
             using var input = new MemoryStream(original);
             module = Module.ReadFromBinary(input);
         }
-        catch (ModuleLoadException x) when (IsPendingGCInstruction(x))
+        catch (ModuleLoadException x) when (IsGCConstantInInitializer(x))
         {
-            // The type section parsed; only a GC instruction body (later milestone) is unimplemented. The type-section
-            // round-trip for this fixture is covered once those instructions land.
+            // These fixtures are spec-invalid modules (assert_invalid "constant expression required"): they place
+            // non-constant instructions (array.new_data / array.new_elem) in initializer expressions, which the
+            // parser correctly rejects. A rejected module has no object model to round-trip.
             return;
         }
 
@@ -84,16 +85,14 @@ public class GCTypeModelTests
         CollectionAssert.AreEqual(original, output.ToArray(), $"Round-trip of {path} was not byte-identical.");
     }
 
-    // The GC instruction set (0xFB prefix / ref.eq 0xD3 / GC constants in initializer expressions) is added in later
-    // Phase 8 milestones; until then these fixtures are expected to fail to parse with exactly these signatures.
-    private static bool IsPendingGCInstruction(ModuleLoadException exception)
+    // array.new_data / array.new_elem are not constant instructions, so a module placing them in an initializer
+    // expression is spec-invalid and must be rejected; this matches that rejection's exact signature (the 0xFB
+    // prefix reported as not permitted) so no other parse failure slips through.
+    private static bool IsGCConstantInInitializer(ModuleLoadException exception)
     {
         for (System.Exception? e = exception; e != null; e = e.InnerException)
         {
-            var message = e.Message;
-            if (message.Contains("opcode \"251\"", System.StringComparison.Ordinal)      // 0xFB GC prefix
-                || message.Contains("opcode \"211\"", System.StringComparison.Ordinal)   // 0xD3 ref.eq
-                || message.Contains("\"251\" is not permitted", System.StringComparison.Ordinal))
+            if (e.Message.Contains("\"251\" is not permitted", System.StringComparison.Ordinal))
                 return true;
         }
 
