@@ -101,9 +101,8 @@ internal sealed class GCTypeEmitter
             if (map.Kind[i] is not (FunctionType.Struct or FunctionType.Array))
                 continue;
             var id = map.CanonicalId[i];
-            if (repByCanonicalId.ContainsKey(id))
+            if (!repByCanonicalId.TryAdd(id, i))
                 continue;
-            repByCanonicalId.Add(id, i);
             any = true;
         }
 

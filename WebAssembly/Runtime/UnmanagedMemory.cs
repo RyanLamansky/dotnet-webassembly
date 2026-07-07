@@ -100,30 +100,6 @@ public sealed class UnmanagedMemory : IDisposable
         if (delta == 0)
             return oldCurrent;
 
-        static unsafe void ZeroMemory(IntPtr s, uint offset, uint n)
-        {
-            // CIL `initblk` can't be generated from C# (as of v8.0).
-            // Using run-time code generation here would interfere with AoT efforts.
-            // The logic below is 95% as fast as `initblk`.
-            // `offset` is applied via byte* arithmetic (zero-extended) so it stays correct above 2 GiB,
-            // where a 32-bit cast would overflow or sign-extend.
-            var p = (ulong*)((byte*)s + offset);
-            var limit = n / 8;
-            var init = 0ul; // Not const for smaller CIL size and potentially more favorable JIT optimization.
-
-            for (var i = 0; i < limit; i += 8)
-            {
-                p[i] = init;
-                p[i + 1] = init;
-                p[i + 2] = init;
-                p[i + 3] = init;
-                p[i + 4] = init;
-                p[i + 5] = init;
-                p[i + 6] = init;
-                p[i + 7] = init;
-            }
-        }
-
         const uint failed = unchecked((uint)-1);
         try
         {
@@ -132,15 +108,21 @@ public sealed class UnmanagedMemory : IDisposable
 
             var newCurrent = oldCurrent + delta;
             var newSize = newCurrent * Memory.PageSize;
-            if (this.Start == default)
+            unsafe
             {
-                this.Start = Marshal.AllocHGlobal(new IntPtr(newSize));
-                ZeroMemory(this.Start, 0, newSize);
-            }
-            else
-            {
-                this.Start = Marshal.ReAllocHGlobal(this.Start, new IntPtr(newSize));
-                ZeroMemory(this.Start, this.Size, newSize - this.Size);
+                if (this.Start == default)
+                {
+                    // AllocZeroed hands back zero-filled pages, so no explicit clearing is needed.
+                    this.Start = (IntPtr)NativeMemory.AllocZeroed(newSize);
+                }
+                else
+                {
+                    // Realloc preserves the existing bytes (C realloc semantics, like the ReAllocHGlobal it
+                    // replaced); the grown tail is uninitialized and must be cleared. The old size is applied
+                    // via byte* arithmetic (zero-extended) so it stays correct above 2 GiB.
+                    this.Start = (IntPtr)NativeMemory.Realloc((void*)this.Start, newSize);
+                    NativeMemory.Clear((byte*)this.Start + this.Size, newSize - this.Size);
+                }
             }
             this.Size = newSize;
 
@@ -327,10 +309,7 @@ public sealed class UnmanagedMemory : IDisposable
             throw new MemoryAccessOutOfRangeException(dstEnd, this.Size);
         if (length == 0)
             return;
-        var p = (byte*)this.Start + dst;
-        var b = (byte)(value & 0xFF);
-        for (uint i = 0; i < length; i++)
-            p[i] = b;
+        NativeMemory.Fill((byte*)this.Start + dst, length, (byte)value);
     }
 
     /// <summary>
@@ -348,10 +327,8 @@ public sealed class UnmanagedMemory : IDisposable
             throw new MemoryAccessOutOfRangeException(dst, length);
         if (length == 0)
             return;
-        var p = (byte*)this.Start + dst;
-        var b = (byte)(value & 0xFF);
-        for (ulong i = 0; i < length; i++)
-            p[i] = b;
+        // The range check above bounds length by Size (always under 4 GiB), so the nuint narrowing is exact.
+        NativeMemory.Fill((byte*)this.Start + dst, (nuint)length, (byte)value);
     }
 
     /// <summary>
@@ -371,7 +348,10 @@ public sealed class UnmanagedMemory : IDisposable
         if (this.Size == 0)
             return;
 
-        Marshal.FreeHGlobal(this.Start);
+        unsafe
+        {
+            NativeMemory.Free((void*)this.Start);
+        }
         this.Start = IntPtr.Zero;
         this.Size = 0;
         GC.SuppressFinalize(this);
