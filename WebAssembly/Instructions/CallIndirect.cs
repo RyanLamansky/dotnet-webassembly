@@ -161,13 +161,27 @@ public class CallIndirect : Instruction, IEquatable<CallIndirect>
             if (context.CanonicalTypes is { } map && this.Type < (uint)map.Descriptor.Length)
             {
                 var tokenIndex = context.GetFuncTypeTokenIndex(map.Descriptor[this.Type]);
+
+                // Monomorphic inline cache for the canonical guard: a private static Delegate slot holding the last
+                // function that passed. The emitted call checks ReferenceEquals against it and skips the
+                // ConditionalWeakTable ancestry lookup on a hit — the dominant per-call cost. The cache is
+                // per-remapper (shared by every call_indirect site with the same type+table), so a site that
+                // alternates between distinct targets through one remapper degrades to the uncached path plus one
+                // reference compare — never worse than before in any meaningful way. It is static and shared across
+                // instances because "delegate D passed for token T" is a permanent, process-global fact (a delegate's
+                // registered canonical ancestry is immutable, and tokens are process-globally interned); see
+                // WebAssemblyGC.CheckIndirectCallTypeCached for the full soundness argument.
+                var cacheField = context.CheckedExportsBuilder.DefineField(
+                    $"🔁🧠 {signature.TypeIndex}_{this.Table}", typeof(Delegate), FieldAttributes.Private | FieldAttributes.Static);
+
                 il.Emit(OpCodes.Dup);
                 il.EmitLoadArg(parms.Length + 1); // the exports instance
                 il.Emit(OpCodes.Ldfld, context.FuncTypeTokens!);
                 il.EmitLoadConstant(tokenIndex);
                 il.Emit(OpCodes.Ldelem_Ref);
+                il.Emit(OpCodes.Ldsflda, cacheField);
                 il.Emit(OpCodes.Call, context.Configuration.NeutralizeType(typeof(WebAssembly.Runtime.WebAssemblyGC))
-                    .GetMethod(nameof(WebAssembly.Runtime.WebAssemblyGC.CheckIndirectCallType))!);
+                    .GetMethod(nameof(WebAssembly.Runtime.WebAssemblyGC.CheckIndirectCallTypeCached))!);
             }
 
             il.Emit(OpCodes.Castclass, invoker.DeclaringType!);

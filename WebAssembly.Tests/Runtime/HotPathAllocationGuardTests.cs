@@ -27,6 +27,7 @@ public class HotPathAllocationGuardTests
     [
         nameof(WebAssemblyGC.RefEqual),
         nameof(WebAssemblyGC.CheckIndirectCallType),
+        nameof(WebAssemblyGC.CheckIndirectCallTypeCached),
         nameof(WebAssemblyGC.IsFunctionReferenceOfType),
         nameof(WebAssemblyGC.CastFunctionReference),
     ];

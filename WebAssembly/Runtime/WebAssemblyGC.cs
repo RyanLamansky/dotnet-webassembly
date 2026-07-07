@@ -107,6 +107,43 @@ public static class WebAssemblyGC
     }
 
     /// <summary>
+    /// The monomorphic inline-cache form of <see cref="CheckIndirectCallType"/>: skips the canonical guard when the
+    /// selected function is the same delegate instance that last passed for this call site.
+    /// </summary>
+    /// <remarks>
+    /// Soundness rests on three permanent facts, so the cache never needs invalidation and a single slot is safely
+    /// shared across instances and threads:
+    /// <list type="number">
+    /// <item>A delegate's registered canonical ancestry in <see cref="funcRefAncestry"/> is immutable once registered
+    /// (WASM-born delegates register at birth; host delegates never register; re-registration writes the same value),
+    /// so there is no registered→different-ancestry transition.</item>
+    /// <item>Type tokens are process-globally interned by canonical descriptor (<see cref="InternFunctionType"/>), so
+    /// the same canonical type yields the same token object across module instances.</item>
+    /// <item>Therefore "delegate <paramref name="function"/> passed the guard for <paramref name="expectedType"/>" is a
+    /// permanent, process-global fact. Races are benign — a reference store is atomic, and the worst outcome of a lost
+    /// update is one redundant slow-path check.</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="function">The function selected from the table, or null (ignored — the following castclass/invoke handles null).</param>
+    /// <param name="expectedType">The call's declared type token (from <see cref="InternFunctionType"/>).</param>
+    /// <param name="cache">The call site's cache slot holding the last delegate that passed this guard.</param>
+    /// <exception cref="InvalidCastException">The function's canonical type does not match.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void CheckIndirectCallTypeCached(Delegate? function, object expectedType, ref Delegate? cache)
+    {
+        if (function is null)
+            return;
+
+        if (ReferenceEquals(function, cache))
+            return; // Cache hit: this exact delegate already passed the guard for this call site's (permanent) type.
+
+        if (!FunctionReferenceMatches(function, expectedType))
+            throw new InvalidCastException("indirect call type mismatch");
+
+        cache = function;
+    }
+
+    /// <summary>
     /// The <c>ref.test</c> check against a concrete function index: whether the value is a funcref whose registered
     /// canonical type is, or declares as an ancestor, the target type.
     /// </summary>
