@@ -73,20 +73,27 @@ public class PersistedCompilerConfiguration : CompilerConfiguration
 
     internal override Type NeutralizeType(Type type)
     {
-        switch (type.Namespace)
-        {
-            case "System":
-                if (type.IsGenericType)
-                {
-                    var genericArguments = type.GetGenericArguments().Select(NeutralizeType).ToArray();
-                    var rawType = CoreAssembly.GetType($"{type.Namespace}.{type.Name}")!;
-                    return rawType.MakeGenericType(genericArguments);
-                }
+        var ns = type.Namespace;
 
-                return CoreAssembly.GetType($"{type.Namespace}.{type.Name}")!;
+        // Framework types (System and every sub-namespace, e.g. System.Runtime.Intrinsics.Vector128<T>) are resolved
+        // through the configured core assembly so the emitted metadata references it rather than the running runtime.
+        if (ns is not null && (ns == "System" || ns.StartsWith("System.", StringComparison.Ordinal)))
+        {
+            if (type.IsGenericType)
+            {
+                var genericArguments = type.GetGenericArguments().Select(NeutralizeType).ToArray();
+                var rawType = CoreAssembly.GetType($"{ns}.{type.Name}")!;
+                return rawType.MakeGenericType(genericArguments);
+            }
+
+            return CoreAssembly.GetType($"{ns}.{type.Name}")!;
+        }
+
+        switch (ns)
+        {
             case "WebAssembly.Runtime":
             case "WebAssembly.Runtime.Compilation":
-                return WebAssembly.GetType($"{type.Namespace}.{type.Name}")!;
+                return WebAssembly.GetType($"{ns}.{type.Name}")!;
         }
 
         throw new InvalidOperationException($"Failed to neutralize type {type.Namespace}.{type.Name}.");

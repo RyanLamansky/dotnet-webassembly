@@ -109,7 +109,6 @@ public static class Compile
                     AssemblyBuilderAccess.RunAndCollect);
 
                 constructor = FromBinary(
-                    assembly,
                     reader,
                     configuration,
                     typeof(Instance<TExports>),
@@ -527,7 +526,7 @@ public static class Compile
 
             var module = assembly.DefineDynamicModule(configuration.ModuleName);
 
-            FromBinary(assembly, reader, configuration, null, null, module, null);
+            FromBinary(reader, configuration, null, null, module, null);
 
             return assembly;
         }
@@ -559,7 +558,6 @@ public static class Compile
 #endif
 
     private static ConstructorInfo FromBinary(
-        AssemblyBuilder assembly,
         Reader reader,
         CompilerConfiguration configuration,
         Type? instanceContainer,
@@ -1069,9 +1067,6 @@ public static class Compile
                     MultiValueHelper.ClrReturnType(signature.ReturnTypes),
                     signature.ParameterTypes
                     );
-#if NET9_0_OR_GREATER
-                if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
                 // The descriptor carries the function's canonical type ancestry (own descriptor + declared supertypes),
                 // so a re-importing module can match it by canonical identity (WebAssembly 3.0 GC).
                 method.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Function, exported.Key,
@@ -1759,9 +1754,6 @@ public static class Compile
                         var tableProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, tableClrType, emptyTypes);
                         // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
                         // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
-#if NET9_0_OR_GREATER
-                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
                         tableProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Table, name,
                             WasmTypeDescriptor.Render(context.TableElementValType(index), context.Types)));
                         tableProperty.SetGetMethod(tableGetter);
@@ -1787,9 +1779,6 @@ public static class Compile
                         var memoryProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, configuration.NeutralizeType(typeof(UnmanagedMemory)), emptyTypes);
                         // The attribute must sit on the property (not the getter): RuntimeImport.FromCompiledExports
                         // looks up table/memory/global exports by PropertyInfo when re-importing into another instance.
-#if NET9_0_OR_GREATER
-                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
                         memoryProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Memory, name));
                         memoryProperty.SetGetMethod(memoryGetter);
                     }
@@ -1804,9 +1793,6 @@ public static class Compile
                         var global = globals[index];
                         var globalClrType = configuration.NeutralizeType(global.Type.ToSystemType(context.CanonicalTypes?.Kind));
                         var property = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, globalClrType, emptyTypes);
-#if NET9_0_OR_GREATER
-                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
                         property.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Global, name,
                             WasmTypeDescriptor.Render(global.Type, context.Types)));
                         var wrappedGet = exportsBuilder.DefineMethod("get_" + memberName,
@@ -1865,9 +1851,6 @@ public static class Compile
                         var tagProperty = exportsBuilder.DefineProperty(memberName, PropertyAttributes.None, tagClrType, emptyTypes);
                         // The attribute must sit on the property: RuntimeImport.FromCompiledExports looks up tag exports
                         // by PropertyInfo when re-importing (register "test" then import test.tag) into another instance.
-#if NET9_0_OR_GREATER
-                        if (configuration is not PersistedCompilerConfiguration) // Need to redesign this for persisted.
-#endif
                         tagProperty.SetCustomAttribute(NativeExportAttribute.Emit(ExternalKind.Tag, name,
                             RenderTagDescriptor(context, context.TagSignatures[(int)index])));
                         tagProperty.SetGetMethod(tagGetter);

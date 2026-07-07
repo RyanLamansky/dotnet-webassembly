@@ -9,7 +9,7 @@ namespace WebAssembly.Runtime.Compilation;
 /// </summary>
 /// <param name="kind">The original export type.</param>
 /// <param name="name">Creates a new <see cref="NativeExportAttribute"/> from the provided parameters.</param>
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Method)]
 public sealed class NativeExportAttribute(ExternalKind kind, string name) : Attribute
 {
     /// <summary>

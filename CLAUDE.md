@@ -21,7 +21,7 @@ Execution is not an interpreter: WASM instructions are emitted as .NET IL via `S
   It exposes typed section collections — `Types`, `Imports`, `Functions`, `Tables`, `Memories`, `Globals`, `Exports`, `Elements`, `Codes`, `Data`, `CustomSections` — with `ReadFromBinary()` / `WriteToBinary()` for serialization.
 - `WebAssembly.Runtime.Compile` drives execution and the WASM→DLL path.
   `Compile.FromBinary<TExports>(...)` takes an abstract class whose members map to WASM exports plus an `ImportDictionary`, and returns an `InstanceCreator<TExports>` factory.
-  `Compile.CreatePersistedAssembly(...)` is the experimental .NET 9+ path that emits a DLL instead (via `PersistedAssemblyBuilder`).
+  `Compile.CreatePersistedAssembly(...)` is the .NET 9+ path that emits a DLL instead (via `PersistedAssemblyBuilder`); it shares the compiler with in-memory execution, and the full spec suite runs green through it (`PersistedSpecTests.cs`).
 - Imports are supplied through `ImportDictionary`, keyed by module/field name: `FunctionImport` (wraps a delegate), `MemoryImport`, `GlobalImport`, `TableImport`.
 
 ## Layout
@@ -120,6 +120,8 @@ The non-obvious design decisions behind the 3.0 features; each is easy to subtly
 
 `WebAssembly.Tests/Runtime/SpecTests.cs` is **hand-curated**, one `[TestMethod]` per spec category, each calling `SpecTestRunner.Run(...)` with optional per-line predicates.
 Each carries a comment explaining *why* a line is excluded.
+Every category also runs through the WASM→DLL path via `PersistedSpecTests.cs` (net9+ only): compile → save → load into a collectible `AssemblyLoadContext` → instantiate → execute, using `SpecTestRunner`'s `Persisted` execution mode.
+Per-line curation is defined **once** and shared by both modes (see `SpecTests.Curation`) — never duplicate a line list into the persisted methods.
 A line falls into one of two buckets:
 
 - `skip` — a **deferral**: a fixable limitation or an unimplemented assert harness. A category with any `skip` line ends Inconclusive (shown as "Skipped"), signalling work that remains. When you fix the limitation, remove the now-passing skips — and re-check the whole set, since one fix often clears many stale skips at once.

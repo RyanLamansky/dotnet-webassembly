@@ -8,6 +8,9 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.Intrinsics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+#if NET9_0_OR_GREATER
+using System.Runtime.Loader;
+#endif
 
 // Effect of this is trusting that the source JSONs are valid.
 #pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
@@ -30,9 +33,19 @@ static partial class SpecTestRunner
     /// are skipped like <paramref name="skip"/> lines but do <em>not</em> make the category Inconclusive, since
     /// nothing is pending. This is the per-line counterpart to the shape-based auto-skip at the top of the loop.</param>
     public static void Run(string category, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
+        => Run(category, SpecExecutionMode.InMemory, skip, unsupported);
+
+    /// <summary>
+    /// Runs every command in the spec category's JSON file using the chosen execution back-end.
+    /// </summary>
+    /// <param name="category">The spec category (see the other <see cref="Run(string, ReadOnlySpan{uint}, ReadOnlySpan{uint})"/> overload).</param>
+    /// <param name="mode">The execution back-end: the in-memory Reflection.Emit path or the persisted WASM-to-DLL path.</param>
+    /// <param name="skip">Lines deferred because of a fixable limitation.</param>
+    /// <param name="unsupported">Lines intentionally not supported.</param>
+    public static void Run(string category, SpecExecutionMode mode, ReadOnlySpan<uint> skip = default, ReadOnlySpan<uint> unsupported = default)
     {
         var parts = category.Split('/');
-        Run<object>(Path.Combine(["Runtime", "SpecTestData", .. parts]), parts[^1] + ".json", skip, unsupported, onFailure: null);
+        Run<object>(Path.Combine(["Runtime", "SpecTestData", .. parts]), parts[^1] + ".json", mode, skip, unsupported, onFailure: null);
     }
 
     /// <summary>
@@ -43,7 +56,7 @@ static partial class SpecTestRunner
     public static List<(uint Line, string Message)> Discover(string pathBase, string json)
     {
         var failures = new List<(uint, string)>();
-        Run<object>(pathBase, json, skip: default, unsupported: default,
+        Run<object>(pathBase, json, SpecExecutionMode.InMemory, skip: default, unsupported: default,
             onFailure: (line, x) => failures.Add((line, $"{x.GetType().Name}: {x.Message.Split('\n')[0]}")));
         return failures;
     }
@@ -54,7 +67,7 @@ static partial class SpecTestRunner
     {
     }
 
-    private static void Run<TExports>(string pathBase, string json, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure)
+    private static void Run<TExports>(string pathBase, string json, SpecExecutionMode mode, ReadOnlySpan<uint> skip, ReadOnlySpan<uint> unsupported, Action<uint, Exception>? onFailure)
         where TExports : class
     {
         TestInfo testInfo;
@@ -63,11 +76,13 @@ static partial class SpecTestRunner
             testInfo = JsonSerializer.Deserialize(reader, SpecTestSerializerContext.Default.TestInfo)!;
         }
 
+        using var compiler = SpecCompiler.Create<TExports>(mode);
+
         ObjectMethods? methodsByName = null;
         var moduleMethodsByName = new Dictionary<string, ObjectMethods>();
         // WASM 3.0 `module definition`s: a compiled-but-not-yet-instantiated module kept by name so
         // one or more later `module instance` commands can instantiate it.
-        var moduleDefinitions = new Dictionary<string, InstanceCreator<TExports>>();
+        var moduleDefinitions = new Dictionary<string, Func<ImportDictionary, object>>();
 
         // From https://github.com/WebAssembly/spec/blob/master/interpreter/host/spectest.ml
         var imports = new ImportDictionary
@@ -94,7 +109,6 @@ static partial class SpecTestRunner
         object? result;
         object obj;
         MethodInfo methodInfo;
-        TExports? exports = null;
         foreach (var command in testInfo.commands)
         {
             if (skip.Contains(command.line))
@@ -132,7 +146,7 @@ static partial class SpecTestRunner
                         var path = Path.Combine(pathBase, module.LoadFilename);
                         var parsed = Module.ReadFromBinary(path); // Ensure the module parser can read it.
                         Assert.IsNotNull(parsed);
-                        methodsByName = new ObjectMethods(exports = Compile.FromBinary<TExports>(path)(imports).Exports);
+                        methodsByName = new ObjectMethods(compiler.Compile(path)(imports));
                         if (module.name != null)
                             moduleMethodsByName[module.name] = methodsByName;
                         continue;
@@ -140,7 +154,7 @@ static partial class SpecTestRunner
                         // Compile once; instantiation is deferred to the matching module_instance commands.
                         var defPath = Path.Combine(pathBase, definition.LoadFilename);
                         Assert.IsNotNull(Module.ReadFromBinary(defPath)); // Ensure the module parser can read it.
-                        var definitionCreator = Compile.FromBinary<TExports>(defPath);
+                        var definitionCreator = compiler.Compile(defPath);
                         // An anonymous definition (no name) is a standalone validation check with no later
                         // module_instance to reference it; compiling it above is the whole test, so don't try to
                         // register it under a null key.
@@ -151,7 +165,7 @@ static partial class SpecTestRunner
                         Assert.IsTrue(moduleDefinitions.TryGetValue(instance.module, out var creator),
                             $"{command.line} references undefined module definition {instance.module}.");
                         // A fresh instantiation of the shared compiled definition, keyed by instance name.
-                        moduleMethodsByName[instance.instance] = new ObjectMethods(creator!(imports).Exports);
+                        moduleMethodsByName[instance.instance] = new ObjectMethods(creator!(imports));
                         continue;
                     case AssertReturn assert:
                         GetMethod(assert.action, out methodInfo, out obj);
@@ -221,7 +235,7 @@ static partial class SpecTestRunner
                         {
                             try
                             {
-                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename));
+                                compiler.Compile(Path.Combine(pathBase, assert.filename));
                             }
                             catch (TargetInvocationException x) when (x.InnerException != null)
                             {
@@ -553,7 +567,7 @@ static partial class SpecTestRunner
                         {
                             try
                             {
-                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
+                                compiler.Compile(Path.Combine(pathBase, assert.filename))(imports);
                             }
                             catch (TargetInvocationException x) when (x.InnerException != null
 #if DEBUG
@@ -603,7 +617,7 @@ static partial class SpecTestRunner
                             {
                                 // Instantiate, not just compile: active data/element-segment bounds checks and the
                                 // start function run in the instance constructor, which is where these modules trap.
-                                Compile.FromBinary<TExports>(Path.Combine(pathBase, assert.filename))(imports);
+                                compiler.Compile(Path.Combine(pathBase, assert.filename))(imports);
                             }
                             catch (TargetInvocationException x) when (x.InnerException != null)
                             {
@@ -816,6 +830,116 @@ static partial class SpecTestRunner
         }
 
         return values;
+    }
+
+    // Abstracts the two execution back-ends behind a single "compile a module file into an instance factory"
+    // operation, so the runner's assertion logic is identical for both. The in-memory factory yields the
+    // Instance<TExports>.Exports host; the persisted factory yields the loaded, freshly-constructed compiled type
+    // (which is itself the exports host). Both throw compile-time validation eagerly from the shared compiler, so
+    // the assert_invalid path expects the same exceptions in either mode.
+    abstract class SpecCompiler : IDisposable
+    {
+#if !NET9_0_OR_GREATER
+        // On net8 the persisted back-end is compiled out, so only one concrete type is ever returned; the
+        // abstraction is still intentional (it exists for the net9+ persisted path), so suppress the collapse hint.
+#pragma warning disable CA1859
+#endif
+        public static SpecCompiler Create<TExports>(SpecExecutionMode mode) where TExports : class
+            => mode switch
+            {
+                SpecExecutionMode.InMemory => new InMemorySpecCompiler<TExports>(),
+#if NET9_0_OR_GREATER
+                SpecExecutionMode.Persisted => new PersistedSpecCompiler(),
+#endif
+                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported execution mode."),
+            };
+#if !NET9_0_OR_GREATER
+#pragma warning restore CA1859
+#endif
+
+        // Compiles the module file at the given path into a factory that instantiates it against a set of imports,
+        // yielding the exports host object.
+        public abstract Func<ImportDictionary, object> Compile(string path);
+
+        public virtual void Dispose() { }
+    }
+
+    sealed class InMemorySpecCompiler<TExports> : SpecCompiler where TExports : class
+    {
+        public override Func<ImportDictionary, object> Compile(string path)
+        {
+            var creator = WebAssembly.Runtime.Compile.FromBinary<TExports>(path);
+            return imports => creator(imports).Exports!;
+        }
+    }
+
+#if NET9_0_OR_GREATER
+    sealed class PersistedSpecCompiler : SpecCompiler
+    {
+        // One collectible context per category run: each module's assembly loads into it, and the whole set is
+        // reclaimed on Dispose. Dependencies (WebAssembly.dll, System.*) fall back to the default context, keeping
+        // WebAssemblyGC's canonical-type interning process-global.
+        readonly AssemblyLoadContext context = new("SpecPersisted", isCollectible: true);
+        int counter;
+
+        public override Func<ImportDictionary, object> Compile(string path)
+        {
+            using var wasm = File.OpenRead(path);
+
+            // A distinct assembly name per module so multiple modules coexist in the one load context.
+            var configuration = new PersistedCompilerConfiguration(
+                typeof(object).Assembly,
+                typeof(WebAssembly.Runtime.Compile).Assembly,
+                new AssemblyName($"SpecPersisted{++counter}"),
+                "SpecPersistedModule");
+
+            // CreatePersistedAssembly runs the shared compiler, throwing validation exceptions here (matching FromBinary),
+            // so assert_invalid observes identical behavior across modes.
+            var builder = WebAssembly.Runtime.Compile.CreatePersistedAssembly(wasm, configuration);
+
+            using var dll = new MemoryStream();
+            builder.Save(dll);
+            dll.Position = 0;
+
+            var assembly = context.LoadFromStream(dll);
+            var type = assembly.GetType(configuration.TypeName)!;
+            var constructor = type.GetConstructors().Single();
+
+            return imports =>
+            {
+                // Mirror the in-memory findImport: resolve from the dictionary, else throw ImportException.
+                Func<string, string, RuntimeImport> resolver = (module, field) =>
+                    imports.TryGetValue(module, out var fields) && fields.TryGetValue(field, out var import)
+                        ? import
+                        : throw new ImportException($"Missing import for {module}::{field}.");
+
+                try
+                {
+                    return constructor.Invoke([resolver]);
+                }
+                catch (TargetInvocationException x) when (x.InnerException != null)
+                {
+                    // Surface the underlying failure (trap, ImportException, …) exactly as the in-memory factory does.
+                    ExceptionDispatchInfo.Capture(x.InnerException).Throw();
+                    throw;
+                }
+            };
+        }
+
+        public override void Dispose() => context.Unload();
+    }
+#endif
+
+    /// <summary>
+    /// Selects the execution back-end used by <see cref="SpecTestRunner"/>.
+    /// </summary>
+    internal enum SpecExecutionMode
+    {
+        /// <summary>The in-memory Reflection.Emit path.</summary>
+        InMemory,
+
+        /// <summary>The persisted WASM-to-DLL path: compile, save, load, then instantiate.</summary>
+        Persisted,
     }
 
     class ObjectMethods : Dictionary<string, MethodInfo>

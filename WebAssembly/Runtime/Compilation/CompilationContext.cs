@@ -558,7 +558,20 @@ internal sealed class CompilationContext(CompilerConfiguration configuration)
 
     public void Emit(ILOpCode opcode, Label label) => CheckedGenerator.Emit(opcode, label);
 
-    public void Emit(ILOpCode opcode, Label[] labels) => CheckedGenerator.Emit(opcode, labels);
+    public void Emit(ILOpCode opcode, Label[] labels)
+    {
+        // A `switch` with an empty jump table pops its index and falls through to the next instruction. The legacy
+        // ILGenerator tolerated a zero-length label array, but the persisted-assembly IL encoder
+        // (InstructionEncoder.Switch) rejects a zero branch count. Emit the equivalent `pop` explicitly so both
+        // back-ends agree. This only arises for a br_table whose label vector is empty (a lone default target).
+        if (labels.Length == 0)
+        {
+            CheckedGenerator.Emit(OpCodes.Pop);
+            return;
+        }
+
+        CheckedGenerator.Emit(opcode, labels);
+    }
 
     public void Emit(ILOpCode opcode, FieldInfo field) => CheckedGenerator.Emit(opcode, field);
 

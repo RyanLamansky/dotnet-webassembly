@@ -16,6 +16,15 @@ namespace WebAssembly.Runtime;
 [TestClass]
 public class SpecTests
 {
+    // Shared curation: the per-line skip/unsupported lists live here once so both the in-memory SpecTest_*
+    // methods and the persisted PersistedSpecTests methods reference the same source of truth (never a copy).
+    // The per-category rationale stays on the in-memory method that owns the scenario.
+    internal static class Curation
+    {
+        // float_exprs: 7x no_fold assertions (see SpecTest_float_exprs for the full rationale) — the JIT folds
+        // identity float ops, so a signaling NaN is never quieted. Intentional avoidance in both modes.
+        public static readonly uint[] FloatExprsUnsupported = [2403, 2405, 2407, 2409, 2411, 2413, 2415];
+    }
 
     // ==== WASM 1.0 ====
 
@@ -131,7 +140,7 @@ public class SpecTests
         // fixed and don't affect normal execution, so they are unsupported (intentional avoidance) and
         // the category stays green.
         SpecTestRunner.Run("float_exprs",
-            unsupported: [2403, 2405, 2407, 2409, 2411, 2413, 2415]);
+            unsupported: Curation.FloatExprsUnsupported);
     }
 
     /// <summary>Runs the float_literals tests.</summary>
