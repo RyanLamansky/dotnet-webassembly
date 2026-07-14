@@ -3,14 +3,14 @@
 
 > [!NOTE]
 > WebAssembly 3.0 is supported.
-> WASM files that use proposals newer than the ratified 3.0 standard may encounter errors.
+> WASM files that use features newer than the ratified 3.0 standard may encounter errors.
 
-A library able to create, read, modify, write, execute WebAssembly (WASM) files from .NET-based applications.
-It can also convert WASM files to .NET DLLs.
-*Execution does not use an interpreter or a 3rd party library:*
-WASM instructions are mapped to their .NET equivalents and converted to native machine language by the .NET JIT compiler.
+A library able to create, read, modify, write, execute, and DLL-convert WebAssembly (WASM) files from .NET-based applications.
+- Zero dependencies: Execution does not use an interpreter or a 3rd party library.
+- WASM instructions are mapped to their .NET CIL equivalents and converted to native machine language by the .NET JIT compiler.
+- Runs in-process in .NET, providing fast interop between the host application and the loaded WASM.
 
-Available on NuGet at https://www.nuget.org/packages/WebAssembly .
+Available on NuGet at https://www.nuget.org/packages/WebAssembly.
 
 ## Getting Started
 
@@ -107,9 +107,6 @@ public abstract class Sample
 }
 ```
 ## Sample: Convert a WASM file to a .NET DLL
-
-> [!NOTE]
-> This feature is experimental.
 
 The saving process uses the [PersistedAssemblyBuilder](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit.persistedassemblybuilder.-ctor) feature introduced in .NET 9.
 Aided by [MetadataLoadContext](https://www.nuget.org/packages/System.Reflection.MetadataLoadContext), this example produces a DLL for .NET 8.
